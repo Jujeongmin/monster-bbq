@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create TWO images in the art style of the attached forest objects sheet (cozy cartoon pixel art, same palette, same chunky pixel size, same dark outline).
+
+Layout rules for both: flat solid magenta (#FF00FF) background; a strict grid of equal square cells with NO borders or lines; exactly one item centred in every cell, nothing touching the cell edges; no text, no shadows.
+
+1) Save as art-src/codex/raw/forage_nodes.png — a 3 columns x 1 row grid of gatherable spots growing on the forest floor, seen from a slight high angle (top-down quarter view), each a small cluster about the size of a bush in the reference but lower and flatter:
+ cell 1: a cluster of brown shiitake mushrooms on a little mossy log stump
+ cell 2: a clump of wild garlic (long green leaves with small white bulbs and little white flowers)
+ cell 3: a clump of perilla plants (broad jagged green-purple leaves)
+
+2) Save as art-src/codex/raw/item_icons.png — a 5 columns x 2 rows grid of inventory icons, each a single appetising raw ingredient shown at an angle, icon-like and readable at small size:
+ row 1: pork belly slab (layered meat and fat), pork neck chop, pork rib rack, a rabbit leg cut, a chunk of golden honeycomb dripping honey
+ row 2: a chicken thigh cut, a chicken breast fillet, a pair of shiitake mushrooms, a bunch of wild garlic, a stack of perilla leaves
+
+Reply only with the two saved file paths.
