@@ -63,4 +63,26 @@ describe("Server", () => {
     }
     expect(refused).toBe(true);
   });
+
+  test("refuses to open a service without a menu", async (server) => {
+    server.connect({ account: "svc-a" });
+    let refused = false;
+    try {
+      await server.act({ type: "startService" });
+    } catch {
+      refused = true;
+    }
+    expect(refused).toBe(true);
+  });
+
+  test("refuses a service report with no service going on", async (server) => {
+    server.connect({ account: "svc-b" });
+    let refused = false;
+    try {
+      await server.act({ type: "finishService", serviceId: "forged", served: [{ customer: "c0", keys: ["boar_belly:premium"], accuracy: 1 }], left: [] });
+    } catch {
+      refused = true;
+    }
+    expect(refused).toBe(true);
+  });
 });
