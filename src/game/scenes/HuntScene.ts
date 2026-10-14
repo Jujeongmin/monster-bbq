@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { HuntEvent } from "../../../shared/actions";
 import { BALANCE } from "../../../shared/balance";
+import type { DishId } from "../../../shared/content/dishes";
 import { itemKey, parseItemKey, type ItemId } from "../../../shared/content/items";
 import { OBJECT_KINDS } from "../../../shared/content/objects";
 import { addToBag, bagCount } from "../../../shared/hunt/bag";
@@ -46,6 +47,8 @@ export interface HuntData {
   // health, how big the bag
   stats: { meleeDamage: number; rangedDamage: number; rangedRange: number; maxHp: number };
   bagSlots: number;
+  // dishes packed for this hunt: eat one with its button (or keys 1-3)
+  lunchbox: DishId[];
 }
 
 // What the hunt hands to the day flow when it ends (PhaserGame forwards the "hunt:end" event).
@@ -73,7 +76,7 @@ interface Node {
   taken: boolean;
 }
 
-type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "R" | "E", Phaser.Input.Keyboard.Key>;
+type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "R" | "E" | "ONE" | "TWO" | "THREE", Phaser.Input.Keyboard.Key>;
 
 export class HuntScene extends Phaser.Scene {
   private huntData!: HuntData;
@@ -81,6 +84,8 @@ export class HuntScene extends Phaser.Scene {
   private ranged = H.weapons.ranged;
   private maxHp: number = H.player.maxHp;
   private bagSlots: number = H.bagSlots;
+  private lunch: { dish: DishId; button: Phaser.GameObjects.Container; eaten: boolean }[] = [];
+  private speedUntil = 0;
   private plan!: HuntPlan;
   private player!: Player;
   private hunter!: Phaser.GameObjects.Sprite;
@@ -129,6 +134,8 @@ export class HuntScene extends Phaser.Scene {
     this.ranged = { ...H.weapons.ranged, damage: data.stats.rangedDamage, range: H.weapons.ranged.range * data.stats.rangedRange };
     this.maxHp = data.stats.maxHp;
     this.bagSlots = data.bagSlots;
+    this.lunch = [];
+    this.speedUntil = 0;
     this.plan = planHunt(data.seed, data.zone);
     this.player = { pos: { ...HUNT_START }, aim: { x: 1, y: 0 }, hp: this.maxHp, cooldownMs: 0, harpoonCooldownMs: 0, swingMs: 0, comboStep: 0, msSinceSwing: Infinity, down: false };
     this.mobs = [];
@@ -160,6 +167,7 @@ export class HuntScene extends Phaser.Scene {
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
     loadCharacterArt(this);
     loadUiArt(this);
+    for (const id of new Set(this.huntData.lunchbox)) this.load.image(`dish_${id}`, artUrl(`test/dishes/${id}.png`));
     for (const id of ["shiitake", "wild_garlic", "perilla"]) this.load.image(`node_${id}`, artUrl(`test/items/node_${id}.png`));
     for (const id of ["boar_belly", "boar_neck", "boar_rib", "rabbit_leg", "honeycomb", "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla"])
       this.load.image(`icon_${id}`, artUrl(`test/items/icon_${id}.png`));
@@ -187,7 +195,7 @@ export class HuntScene extends Phaser.Scene {
 
     const keyboard = this.input.keyboard!;
     this.cursors = keyboard.createCursorKeys();
-    this.keys = keyboard.addKeys("W,A,S,D,Z,J,X,K,R,E") as Keys;
+    this.keys = keyboard.addKeys("W,A,S,D,Z,J,X,K,R,E,ONE,TWO,THREE") as Keys;
 
     // touch controls on touch devices (add ?touch to the URL to try them with a mouse)
     this.touch = this.sys.game.device.input.touch || new URLSearchParams(location.search).has("touch");
@@ -203,6 +211,15 @@ export class HuntScene extends Phaser.Scene {
     this.gatherHint = this.add.text(0, 0, t("hunt.gather"), hudStyle).setOrigin(0.5).setDepth(9500).setVisible(false);
     const back = addButton(this, GAME_WIDTH - 36, 18, t("hunt.return"), () => this.endHunt(false), 56);
     this.returnButton = back.box.setScrollFactor(0).setDepth(10000);
+    // the lunchbox: one button per packed dish under the way home
+    this.huntData.lunchbox.forEach((dish, i) => {
+      const bubble = this.add.nineslice(0, 0, "ui_bubble", undefined, 40, 36, 22, 8, 8, 14);
+      const pic = this.add.image(2, -3, `dish_${dish}`).setScale(0.7);
+      const key = this.add.text(14, 8, `${i + 1}`, TEXT_SMALL).setOrigin(0.5);
+      const button = this.add.container(GAME_WIDTH - 24, 52 + i * 40, [bubble, pic, key]).setSize(40, 36).setScrollFactor(0).setDepth(10000);
+      button.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.eat(i));
+      this.lunch.push({ dish, button, eaten: false });
+    });
   }
 
   update(_time: number, rawDt: number) {
@@ -227,7 +244,7 @@ export class HuntScene extends Phaser.Scene {
   private createMouseControls() {
     this.input.mouse?.disableContextMenu();
     this.input.on("pointerdown", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
-      if (over.includes(this.returnButton)) return;
+      if (this.overHud(over)) return;
       if (p.rightButtonDown()) this.slashQueued = true;
       else this.shotQueued = this.toWorld(p.x, p.y);
     });
@@ -254,7 +271,7 @@ export class HuntScene extends Phaser.Scene {
     const onButton = (p: Phaser.Input.Pointer) =>
       [SLASH_BTN, ...(this.gatherButton?.visible ? [GATHER_BTN] : [])].some((b) => Phaser.Math.Distance.Between(p.x, p.y, b.x, b.y) <= b.radius + 6);
     this.input.on("pointerdown", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
-      if (onButton(p) || over.includes(this.returnButton)) return;
+      if (onButton(p) || this.overHud(over)) return;
       if (p.x < GAME_WIDTH * 0.45) {
         if (this.stickPointer === null) {
           this.stickPointer = p.id;
@@ -323,6 +340,9 @@ export class HuntScene extends Phaser.Scene {
     if (JD(k.Z) || JD(k.J)) this.slashQueued = true;
     if (JD(k.X) || JD(k.K)) this.shotQueued = { x: p.pos.x + p.aim.x * 100, y: p.pos.y + p.aim.y * 100 - H.harpoon.handHeight };
     if (JD(k.E)) this.gatherQueued = true;
+    if (JD(k.ONE)) this.eat(0);
+    if (JD(k.TWO)) this.eat(1);
+    if (JD(k.THREE)) this.eat(2);
 
     // Dave-style: on PC the hunter always looks at the mouse
     if (!this.touch) {
@@ -363,7 +383,8 @@ export class HuntScene extends Phaser.Scene {
     const moving = move.x !== 0 || move.y !== 0;
     if (moving) {
       this.gathering = null;
-      const next = moveByInput(p.pos, move, H.player.speed, dt, H.field, H.player.depthSpeedRatio);
+      const speed = H.player.speed * (this.time.now < this.speedUntil ? BALANCE.lunch.speedMul : 1);
+      const next = moveByInput(p.pos, move, speed, dt, H.field, H.player.depthSpeedRatio);
       p.pos = clampToField(pushOutOfRects(next, this.obstacles, H.player.radius), H.field);
       if (this.touch && this.aimPointer === null) p.aim = unit(move, p.aim);
     }
@@ -385,6 +406,27 @@ export class HuntScene extends Phaser.Scene {
     }
     // drawn in front of anything standing exactly level with the hunter
     this.hunter.setPosition(p.pos.x, p.pos.y + (moving ? stepBob(this.hunter) : 0)).setDepth(p.pos.y + 0.5);
+  }
+
+  // A press on the HUD (the way home, a lunch) is not a shot or a slash.
+  private overHud(over: Phaser.GameObjects.GameObject[]) {
+    return over.includes(this.returnButton) || this.lunch.some((l) => over.includes(l.button));
+  }
+
+  // Lunch from the box: health back by the dish's worth, and a quick step for a few dishes.
+  private eat(i: number) {
+    const l = this.lunch[i];
+    const p = this.player;
+    if (!l || l.eaten || p.down || this.ended) return;
+    l.eaten = true;
+    l.button.setAlpha(0.3).disableInteractive();
+    const heal = Math.round(BALANCE.service.dishPrice[l.dish] * BALANCE.lunch.healPerGold);
+    p.hp = Math.min(this.maxHp, p.hp + heal);
+    this.popText(p.pos.x, p.pos.y - 44, `+${heal}`, "#7fe07f");
+    if (BALANCE.lunch.speedDishes.includes(l.dish)) {
+      this.speedUntil = this.time.now + BALANCE.lunch.speedMs;
+      this.popText(p.pos.x, p.pos.y - 58, t("hunt.speedUp"), "#ffd166", 1200);
+    }
   }
 
   private hand(): Vec {

@@ -76,6 +76,9 @@ export const BALANCE: {
   // per upgrade: its starting level, the cost of each next level, and target levels locked until later
   // chapters (boss parts, story)
   upgrades: Record<UpgradeId, { base: 0 | 1; costs: number[]; locked?: number[] }>;
+  // lunchbox effects on the hunt: health back per gold of the dish's price, and a few dishes that
+  // also put a spring in the step
+  lunch: { healPerGold: number; speedDishes: DishId[]; speedMul: number; speedMs: number };
   // what each upgrade level does (index = level - 1)
   growth: {
     meleeDamage: number[];
@@ -198,6 +201,7 @@ export const BALANCE: {
     seats: { base: 1, costs: [800, 1600, 3200, 6400] },
     lunchbox: { base: 1, costs: [300, 1500] },
   },
+  lunch: { healPerGold: 0.8, speedDishes: ["honey_rabbit", "baeksuk"], speedMul: 1.2, speedMs: 10000 },
   growth: {
     meleeDamage: [10, 14, 19, 26],
     rangedDamage: [5, 8, 12],

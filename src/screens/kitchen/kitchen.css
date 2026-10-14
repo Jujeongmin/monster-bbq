@@ -54,3 +54,12 @@
 .menu-row.on .dish-name::before { content: "✔ "; color: var(--good); }
 .menu-info { color: var(--paper-ink-soft); }
 .menu-dish { display: flex; align-items: center; gap: calc(4px * var(--s)); }
+
+/* lunchbox */
+.lunch-pick { display: flex; flex-direction: column; gap: calc(3px * var(--s)); height: 100%; }
+/* keeps its height when empty, so the list below never jumps under a finger */
+.lunch-box { display: flex; gap: calc(3px * var(--s)); min-height: calc(50px * var(--s)); }
+.lunch-slot { display: inline-flex; padding: 0; background: none; cursor: pointer; }
+.lunch-slot.packed { cursor: default; filter: saturate(0.6); }
+.lunch-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: calc(3px * var(--s)); flex: 1; min-height: 0; overflow: auto; align-content: start; }
+.lunch-pick > .ui-btn { align-self: flex-start; }

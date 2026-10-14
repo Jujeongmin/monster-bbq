@@ -96,7 +96,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
       {phase === "hunt" && save.hunt && (
         <PhaserGame
           key={save.hunt.id}
-          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, stats: huntStats(save), bagSlots: bagSlots(save) }}
+          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, stats: huntStats(save), bagSlots: bagSlots(save), lunchbox: save.lunchbox }}
           onHuntEnd={(r: HuntResult) => act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, ko: r.ko }, "kitchen")}
         />
       )}

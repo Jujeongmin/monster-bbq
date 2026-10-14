@@ -4,6 +4,7 @@ import type { DishId } from "../../../shared/content/dishes";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
 import { Cookbook } from "./Cookbook";
+import { LunchPick } from "./LunchPick";
 import { MenuPick } from "./MenuPick";
 import { Research } from "./Research";
 import "./kitchen.css";
@@ -11,8 +12,8 @@ import "./kitchen.css";
 // The evening kitchen (spec 4): research new recipes, read the cookbook, pick tonight's menu. Every
 // change goes through `act` (the server's rules); the screen shows what the save says. The ready
 // button sends the picked menu and opens the shop.
-type Tab = "research" | "cookbook" | "menu";
-const TABS: Tab[] = ["research", "cookbook", "menu"];
+type Tab = "research" | "cookbook" | "menu" | "lunch";
+const TABS: Tab[] = ["research", "cookbook", "menu", "lunch"];
 
 export function Kitchen({
   save,
@@ -44,6 +45,7 @@ export function Kitchen({
         {tab === "research" && <Research save={save} busy={busy} act={act} />}
         {tab === "cookbook" && <Cookbook save={save} />}
         {tab === "menu" && <MenuPick save={save} picked={picked} setPicked={setPicked} />}
+        {tab === "lunch" && <LunchPick save={save} busy={busy} act={act} />}
       </div>
     </div>
   );
