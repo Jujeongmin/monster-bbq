@@ -150,7 +150,7 @@ export const BALANCE: {
       stickBelow: 0.7,
       edgeHeat: 0.45,
       sideMs: 9000,
-      charMs: 4000,
+      charMs: 6000,
       cutFaceMs: 2500,
       cutReady: 0.6,
       fatPerSec: 0.12,
@@ -171,7 +171,7 @@ export const BALANCE: {
       skimAmount: 0.3,
     },
     items: {
-      boar_belly: { grillRate: 1, burnAt: 1.35, potRate: 1 / 25 },
+      boar_belly: { grillRate: 1, burnAt: 1.5, potRate: 1 / 25 },
       boar_neck: { grillRate: 0.75, burnAt: 1.4, potRate: 1 / 25 },
       boar_rib: { grillRate: 0.85, burnAt: 1.3, potRate: 1 / 30 },
       rabbit_leg: { grillRate: 0.8, burnAt: 1.35, potRate: 1 / 25 },

@@ -55,3 +55,10 @@
 .cook-result .dish-icon { margin: 4px auto; }
 .cook-result.new .dish-icon { animation: cook-bounce 0.6s ease-out; }
 .menu-dish { display: flex; align-items: center; gap: 8px; }
+.research { position: relative; display: block; }
+.cook-stage { width: 100%; aspect-ratio: 16 / 9; max-height: calc(100vh - 110px); margin: 0 auto; background: #2b211c; }
+.cook-result-wrap { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); min-width: 240px; max-width: 90%; padding: 10px; background: #1b1530ee; border: 2px solid #5b4b8a; border-radius: 8px; text-align: center; }
+.cook-result-wrap .cook-result { margin-top: 0; }
+.cook-skill { margin: 6px 0 0; font-size: 13px; color: #ddd8f0; }
+.cook-stars { color: #ffd166; letter-spacing: 1px; }
+.cook-again { margin-top: 8px; }
