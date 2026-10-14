@@ -30,6 +30,7 @@ export const BALANCE: {
     boar: ChargerTuning & { maxHp: number; contactDamage: number; radius: number };
     boarCount: number;
   };
+  economy: { meatPrice: { premium: number; normal: number }; maxMeatPerHunt: number };
 } = {
   hunt: {
     // top-down forest made of the 256 px ground tile, mirrored
@@ -79,4 +80,6 @@ export const BALANCE: {
     },
     boarCount: 8,
   },
+  // temporary shop until plan 05 (cooking): meat sells raw at these prices
+  economy: { meatPrice: { premium: 30, normal: 15 }, maxMeatPerHunt: 20 },
 };
