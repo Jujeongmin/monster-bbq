@@ -27,6 +27,7 @@ export const BALANCE: {
     hitStopMs: number;
     boar: ChargerTuning & { maxHp: number; contactDamage: number; radius: number };
     boarCount: number;
+    bagSlots: number;
   };
   economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
 } = {
@@ -75,6 +76,7 @@ export const BALANCE: {
       radius: 12,
     },
     boarCount: 8,
+    bagSlots: 12,
   },
   // temporary shop until plan 05 (cooking): items sell raw at these prices (premium parts pay double)
   economy: {
