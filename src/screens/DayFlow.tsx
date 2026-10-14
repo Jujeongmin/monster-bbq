@@ -10,6 +10,7 @@ import type { HuntResult } from "../game/scenes/HuntScene";
 import { t, type StringKey } from "../i18n";
 import type { Transport } from "../net/transport";
 import { Kitchen } from "./kitchen/Kitchen";
+import { Upgrades } from "./Upgrades";
 import { artUrl } from "../game/art";
 import "./dayflow.css";
 
@@ -33,6 +34,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
   const [failed, setFailed] = useState<{ action: Action; next: Phase; code: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [shopping, setShopping] = useState(false);
   // a second click can land before React re-renders with busy=true
   const busyRef = useRef(false);
 
@@ -125,9 +127,13 @@ export function DayFlow({ transport }: { transport: Transport }) {
               <li>{t("settle.rep", { rep: save.reputation, delta: (save.lastService.repDelta >= 0 ? "+" : "") + save.lastService.repDelta })}</li>
             </ul>
           )}
-          <button className="ui-btn" disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("nextDay")}</button>
+          <div className="dayflow-actions">
+            <button className="ui-btn" disabled={busy} onClick={() => setShopping(true)}>{t("upgrade.open")}</button>
+            <button className="ui-btn" disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("nextDay")}</button>
+          </div>
         </Panel>
       )}
+      {phase === "settle" && shopping && <Upgrades save={save} busy={busy} act={(a) => void act(a, "settle")} onClose={() => setShopping(false)} />}
 
       {failed && (
         <div className="dayflow-error ui-panel">
