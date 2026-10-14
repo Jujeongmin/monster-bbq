@@ -8,7 +8,9 @@ so the feet stay at the same spot in every frame.
 """
 from pathlib import Path
 
+import numpy as np
 from PIL import Image
+from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "art-src/codex/raw"
@@ -43,7 +45,7 @@ PIECES = [
 ]
 
 
-def key_magenta(im: Image.Image) -> Image.Image:
+def key_magenta(im: Image.Image, despill: bool = False) -> Image.Image:
     im = im.convert("RGBA")
     px = im.load()
     w, h = im.size
@@ -53,7 +55,64 @@ def key_magenta(im: Image.Image) -> Image.Image:
             # magenta and its anti-aliased fringe: red and blue high, green low
             if (r + b) / 2 - g > 90 and abs(r - b) < 90:
                 px[x, y] = (0, 0, 0, 0)
+    if despill:
+        # dark purple left where magenta met a dark outline: peel it off the edge only (purple inside the
+        # art, like perilla veins, is never next to the cleared background)
+        for _ in range(2):
+            edge = []
+            for y in range(h):
+                for x in range(w):
+                    r, g, b, a = px[x, y]
+                    if a == 0 or not ((r + b) / 2 - g > 35 and abs(r - b) < 70):
+                        continue
+                    if any(0 <= x + dx < w and 0 <= y + dy < h and px[x + dx, y + dy][3] == 0 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                        edge.append((x, y))
+            for x, y in edge:
+                px[x, y] = (0, 0, 0, 0)
     return im
+
+
+def grid_objects(sheet: Image.Image, cols: int, rows: int) -> list[Image.Image]:
+    """One picture per grid cell, cut by drawing rather than by the grid: Codex lets pots, handles and
+    steam cross into the next cell, and a plain grid cut would clip them (art-src/codex/check_cells.py).
+    Big blobs belong to the cell they overlap most; small detached bits (steam, smoke, crumbs) join the
+    nearest big blob. Each picture keeps only its own blobs, cropped to their bounds."""
+    alpha = np.array(sheet.getchannel("A")) > 0
+    h, w = alpha.shape
+    cw, ch = w / cols, h / rows
+    labels, n = ndimage.label(alpha)
+    sizes = ndimage.sum(alpha, labels, range(1, n + 1))
+    big_min = 0.01 * cw * ch
+    owner = {}
+    for lab in range(1, n + 1):
+        if sizes[lab - 1] < big_min:
+            continue
+        ys, xs = np.nonzero(labels == lab)
+        cells = (np.minimum((ys / ch).astype(int), rows - 1)) * cols + np.minimum((xs / cw).astype(int), cols - 1)
+        owner[lab] = int(np.bincount(cells).argmax())
+    # distance from every pixel to each big blob, for the small bits
+    big = list(owner)
+    dist = {lab: ndimage.distance_transform_edt(labels != lab) for lab in big}
+    for lab in range(1, n + 1):
+        if lab in owner:
+            continue
+        ys, xs = np.nonzero(labels == lab)
+        near = min(big, key=lambda b: dist[b][ys, xs].min())
+        owner[lab] = owner[near]
+    out = []
+    rgba = np.array(sheet)
+    for k in range(cols * rows):
+        mine = [lab for lab, cell in owner.items() if cell == k]
+        mask = np.isin(labels, mine)
+        if not mask.any():
+            out.append(Image.new("RGBA", (1, 1)))
+            continue
+        ys, xs = np.nonzero(mask)
+        y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+        piece = rgba[y0:y1, x0:x1].copy()
+        piece[~mask[y0:y1, x0:x1]] = 0
+        out.append(Image.fromarray(piece, "RGBA"))
+    return out
 
 
 def main():
@@ -81,17 +140,15 @@ def main():
     for name, file, cols, rows, names, scale in GRIDS:
         if not (RAW / file).exists():
             continue
-        sheet = key_magenta(Image.open(RAW / file))
-        cw, ch = sheet.width / cols, sheet.height / rows
+        # the cooking sheets were drawn later with a darker outline that leaves a purple fringe
+        sheet = key_magenta(Image.open(RAW / file), despill=name == "cooking")
+        cells = grid_objects(sheet, cols, rows)
         out = ROOT / "art/test" / name
         out.mkdir(parents=True, exist_ok=True)
         for k, piece in enumerate(names):
             if piece is None:  # cell taken by another entry at another scale
                 continue
-            c, r = k % cols, k // cols
-            cell = sheet.crop((round(c * cw), round(r * ch), round((c + 1) * cw), round((r + 1) * ch)))
-            box = cell.getbbox()
-            cell = cell.crop(box) if box else cell
+            cell = cells[k]
             size = (max(1, round(cell.width * scale)), max(1, round(cell.height * scale)))
             small = cell.convert("RGBa").resize(size, Image.BOX).convert("RGBA")
             rr, gg, bb, aa = small.split()
