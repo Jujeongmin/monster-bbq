@@ -1,4 +1,7 @@
 import type { ChargerTuning } from "./hunt/charger";
+import type { FleerTuning } from "./hunt/fleer";
+import type { PackTuning } from "./hunt/pack";
+import type { ShooterTuning } from "./hunt/shooter";
 import type { HitTuning, WeaponKind, WeaponStats } from "./hunt/combat";
 import type { ItemId } from "./content/items";
 import type { Field } from "./hunt/types";
@@ -26,6 +29,11 @@ export const BALANCE: {
     };
     hitStopMs: number;
     boar: ChargerTuning & { maxHp: number; contactDamage: number; radius: number };
+    rabbit: FleerTuning;
+    bee: ShooterTuning & { shotDamage: number; shotRadius: number };
+    chicken: PackTuning & { peckDamage: number };
+    // a hunt report needs at least this long per kill (server check, spec 7)
+    minMsPerKill: number;
     boarCount: number;
     bagSlots: number;
   };
@@ -75,6 +83,10 @@ export const BALANCE: {
       hitRadius: 18,
       radius: 12,
     },
+    rabbit: { wanderSpeed: 22, fleeSpeed: 115, fleeRange: 95, fleeMs: 1300, restMs: 1600 },
+    bee: { speed: 55, keepDistance: 120, range: 160, aimMs: 650, cooldownMs: 1400, shotSpeed: 210, shotLifeMs: 1100, shotDamage: 12, shotRadius: 9 },
+    chicken: { wanderSpeed: 16, wanderRadius: 40, chaseSpeed: 72, peckRange: 18, windupMs: 380, peckMs: 160, recoverMs: 750, hitRadius: 18, peckDamage: 8 },
+    minMsPerKill: 1500,
     boarCount: 8,
     bagSlots: 12,
   },
