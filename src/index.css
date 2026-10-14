@@ -1,0 +1,3 @@
+html, body, #root { width: 100%; height: 100%; }
+body { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+canvas { image-rendering: pixelated; display: block; }

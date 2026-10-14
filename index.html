@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0b12" />
+    <title>몬스터 고깃집</title>
+    <style>
+      /* The frame the game needs even before (or without) src/index.css. */
+      html, body { margin: 0; padding: 0; height: 100%; background: #0b0b12; color: #fff; overflow: hidden; }
+      #root { height: 100%; }
+      .boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-family: monospace; color: #b8b3d6; }
+    </style>
+    <script>
+      // Verse8 embeds the game in an iframe and asks how big it is (REQUEST_GAME_SIZE); without an
+      // answer the shell cannot size the frame. From the Verse8 template, reporting only real changes
+      // so the shell's resize does not loop back into another report.
+      (function () {
+        var lastWidth = -1;
+        var lastHeight = -1;
+        function reportGameSize(force) {
+          var height = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+          var width = Math.max(document.body.scrollWidth, document.documentElement.scrollWidth);
+          if (force !== true && width === lastWidth && height === lastHeight) return;
+          lastWidth = width;
+          lastHeight = height;
+          window.parent.postMessage({ type: "GAME_SIZE_RESPONSE", height: height, width: width }, "*");
+        }
+        window.addEventListener("load", function () { reportGameSize(true); });
+        window.addEventListener("resize", function () { reportGameSize(false); });
+        window.addEventListener("message", function (event) {
+          if (event.data && event.data.type === "REQUEST_GAME_SIZE") reportGameSize(true);
+        });
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"><div class="boot">불판 달구는 중…</div></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>
