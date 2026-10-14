@@ -1,5 +1,6 @@
 import type { ChargerTuning } from "./hunt/charger";
 import type { HitTuning, WeaponKind, WeaponStats } from "./hunt/combat";
+import type { ItemId } from "./content/items";
 import type { Field } from "./hunt/types";
 
 // Every hunting number lives here. Prototype values from plan 01; tuned in the playtest.
@@ -27,7 +28,7 @@ export const BALANCE: {
     boar: ChargerTuning & { maxHp: number; contactDamage: number; radius: number };
     boarCount: number;
   };
-  economy: { meatPrice: { premium: number; normal: number }; maxMeatPerHunt: number };
+  economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
 } = {
   hunt: {
     // top-down forest made of the 256 px ground tile, mirrored
@@ -75,6 +76,20 @@ export const BALANCE: {
     },
     boarCount: 8,
   },
-  // temporary shop until plan 05 (cooking): meat sells raw at these prices
-  economy: { meatPrice: { premium: 30, normal: 15 }, maxMeatPerHunt: 20 },
+  // temporary shop until plan 05 (cooking): items sell raw at these prices (premium parts pay double)
+  economy: {
+    itemPrice: {
+      boar_belly: { normal: 15, premium: 30 },
+      boar_neck: { normal: 14, premium: 28 },
+      boar_rib: { normal: 18, premium: 36 },
+      rabbit_leg: { normal: 12, premium: 24 },
+      honeycomb: { normal: 16, premium: 32 },
+      chicken_thigh: { normal: 13, premium: 26 },
+      chicken_breast: { normal: 11, premium: 22 },
+      shiitake: { normal: 6 },
+      wild_garlic: { normal: 5 },
+      perilla: { normal: 4 },
+    },
+    maxMeatPerHunt: 20,
+  },
 };

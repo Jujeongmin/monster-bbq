@@ -75,7 +75,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
         <span>{t("hud.day", { day: save.day })}</span>
         <span>{t("hud.gold", { gold: save.gold })}</span>
         {/* during the hunt the scene shows the live bag; the stored meat would read as a second count */}
-        {phase !== "hunt" && <span>{t("hud.meat", save.meat)}</span>}
+        {phase !== "hunt" && <span>{t("hud.items", { count: Object.values(save.items).reduce((a, b) => a + b, 0) })}</span>}
         <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>
       </div>
 

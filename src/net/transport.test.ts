@@ -11,7 +11,7 @@ describe("LocalTransport", () => {
   it("plays by the shared rules and remembers the save", async () => {
     const store = memory();
     await new LocalTransport(store).act({ type: "huntResult", meat: { premium: 1, normal: 0 } });
-    expect((await new LocalTransport(store).load()).meat.premium).toBe(1);
+    expect((await new LocalTransport(store).load()).items["boar_belly:premium"]).toBe(1);
   });
   it("starts fresh instead of failing when the stored save is not even JSON", async () => {
     const store = memory();
@@ -21,13 +21,13 @@ describe("LocalTransport", () => {
   it("throws on a rejected action and keeps the save", async () => {
     const t = new LocalTransport(memory());
     await expect(t.act({ type: "huntResult", meat: { premium: 99, normal: 0 } })).rejects.toThrow("bad_hunt");
-    expect((await t.load()).meat.premium).toBe(0);
+    expect((await t.load()).items).toEqual({});
   });
 });
 
 describe("Verse8Transport", () => {
   it("calls the server and checks the reply", async () => {
-    const t = new Verse8Transport({ remoteFunction: async (fn) => (fn === "load" ? { version: 1, day: 3, gold: 5, meat: { premium: 0, normal: 0 } } : null) });
+    const t = new Verse8Transport({ remoteFunction: async (fn) => (fn === "load" ? { version: 2, day: 3, gold: 5, items: {}, hunt: null } : null) });
     expect((await t.load()).day).toBe(3);
     await expect(t.act({ type: "endDay" })).rejects.toThrow("bad_reply");
   });

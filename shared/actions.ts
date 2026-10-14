@@ -1,10 +1,28 @@
 import { BALANCE } from "./balance";
+import { itemKey, parseItemKey } from "./content/items";
 import type { SaveData } from "./save";
 
-type Meat = SaveData["meat"];
+// Plan 02's hunt report (pork belly by grade); replaced by startHunt/finishHunt in plan 03 Task 6.
+type Meat = { premium: number; normal: number };
 export type Action = { type: "huntResult"; meat: Meat } | { type: "sellAll" } | { type: "endDay" };
 
 const isCount = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v) && v >= 0;
+
+function add(items: Record<string, number>, key: string, n: number): Record<string, number> {
+  return n > 0 ? { ...items, [key]: (items[key] ?? 0) + n } : items;
+}
+
+// What the items fetch at the temporary shop (BALANCE.economy.itemPrice; premium parts their own price).
+export function saleValue(items: Record<string, number>): number {
+  let gold = 0;
+  for (const [key, n] of Object.entries(items)) {
+    const item = parseItemKey(key);
+    if (!item) continue;
+    const price = BALANCE.economy.itemPrice[item.id];
+    gold += n * (item.grade === "premium" ? (price.premium ?? price.normal) : price.normal);
+  }
+  return gold;
+}
 
 // The server's rules for every change to a save (the in-page LocalTransport runs the same code).
 // `action` comes from the client, so it is checked here; a rejected action leaves the save as it was.
@@ -15,12 +33,11 @@ export function applyAction(save: SaveData, action: unknown): { save: SaveData; 
     case "huntResult": {
       const m = a.meat;
       if (!m || !isCount(m.premium) || !isCount(m.normal) || m.premium + m.normal > BALANCE.economy.maxMeatPerHunt) return { save, error: "bad_hunt" };
-      return { save: { ...save, meat: { premium: save.meat.premium + m.premium, normal: save.meat.normal + m.normal } } };
+      const items = add(add(save.items, itemKey("boar_belly", "premium"), m.premium), itemKey("boar_belly", "normal"), m.normal);
+      return { save: { ...save, items } };
     }
-    case "sellAll": {
-      const p = BALANCE.economy.meatPrice;
-      return { save: { ...save, gold: save.gold + save.meat.premium * p.premium + save.meat.normal * p.normal, meat: { premium: 0, normal: 0 } } };
-    }
+    case "sellAll":
+      return { save: { ...save, gold: save.gold + saleValue(save.items), items: {} } };
     case "endDay":
       return { save: { ...save, day: save.day + 1 } };
     default:
