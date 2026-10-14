@@ -388,6 +388,9 @@ export class HuntScene extends Phaser.Scene {
     if (this.reelingId === b.id) this.reelingId = null;
     const premium = meatGrade(b.hits, H.premiumMaxRangedHits) === "premium";
     this.popText(b.ai.pos.x, b.ai.pos.y - 60, premium ? "삼겹살 ★특급" : "삼겹살 (보통)", premium ? "#ffd166" : "#dddddd", 1400);
+    // stop a wind-up blink first, or it fights the fade-out
+    this.tweens.killTweensOf(b.sprite);
+    b.sprite.setAlpha(1).clearTint();
     this.tweens.add({
       targets: b.sprite,
       alpha: 0,
@@ -406,7 +409,10 @@ export class HuntScene extends Phaser.Scene {
     // a knocked-out hunter is ignored: send the boars wandering
     const seen = this.player.down ? { x: -99999, y: -99999 } : this.player.pos;
     const r = updateCharger(b.ai, seen, dt, H.boar, H.field, Math.random);
-    b.ai = { ...r.state, pos: clampToField(pushOutOfRects(r.state.pos, this.obstacles, H.boar.radius), H.field) };
+    const pos = clampToField(pushOutOfRects(r.state.pos, this.obstacles, H.boar.radius), H.field);
+    // pushed back by a tree or rock: a stroll toward that spot would never arrive, so pick another
+    const blocked = pos.x !== r.state.pos.x || pos.y !== r.state.pos.y;
+    b.ai = { ...r.state, pos, wanderTarget: blocked ? null : r.state.wanderTarget };
     if (r.hit) this.hurtPlayer(H.boar.contactDamage, b.ai.chargeDir);
     b.sprite.setPosition(b.ai.pos.x, b.ai.pos.y).setDepth(b.ai.pos.y).setFlipX(b.ai.facing.x < 0);
     if (b.ai.phase !== before) this.showPhase(b);
