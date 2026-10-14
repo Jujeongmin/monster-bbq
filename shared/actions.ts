@@ -1,8 +1,10 @@
 import { BALANCE } from "./balance";
-import { itemKey, parseItemKey } from "./content/items";
+import { isMethod, type DishId } from "./content/dishes";
+import { itemKey, parseItemKey, type ItemId } from "./content/items";
 import { addToBag } from "./hunt/bag";
 import { dropFor } from "./hunt/drops";
 import { planHunt } from "./hunt/plan";
+import { hintsFor, judgeCook, type Recipe } from "./kitchen/cook";
 import type { SaveData, Zone } from "./save";
 
 // What a hunt report lists, in the order things happened (spec 7: the client says what it took,
@@ -12,13 +14,17 @@ export type HuntEvent = { kill: string; grade: "premium" | "normal" } | { gather
 export type Action =
   | { type: "startHunt"; zone: Zone }
   | { type: "finishHunt"; huntId: string; events: HuntEvent[]; ko: boolean }
+  | { type: "cook"; attemptId: string; items: string[]; method: string }
+  | { type: "setMenu"; dishes: string[] }
   | { type: "sellAll" }
   | { type: "endDay" };
 
-// What only the server may decide: its clock and its dice.
+// What only the server may decide or know: its clock, its dice and the recipe answers (null where the
+// table is not available, e.g. a production build without the server: cooking is then refused).
 export interface ActionContext {
   now: number;
   random: () => number;
+  recipes: Record<DishId, Recipe> | null;
 }
 
 // What each stack fetches at the temporary shop (BALANCE.economy.itemPrice; premium parts their own
@@ -83,6 +89,39 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
   return a.ko ? koPenalty(bag) : bag;
 }
 
+// One try in the research kitchen: up to maxIngredients items of different kinds the player has, and a
+// method. Each item is used up whatever comes out (spec 4). A resent try (same attemptId as the last
+// one) changes nothing, so a lost reply never costs the ingredients twice.
+function cook(save: SaveData, a: Record<string, unknown>, recipes: Record<DishId, Recipe> | null): { save: SaveData; error?: string } {
+  if (!recipes) return { save, error: "unavailable" };
+  const { attemptId, items: keys, method } = a;
+  if (typeof attemptId !== "string" || attemptId.length < 1 || attemptId.length > 40) return { save, error: "bad_cook" };
+  if (save.lastCook?.attemptId === attemptId) return { save };
+  if (!Array.isArray(keys) || keys.length < 1 || keys.length > BALANCE.kitchen.maxIngredients || !isMethod(method)) return { save, error: "bad_cook" };
+  const ids: ItemId[] = [];
+  for (const key of keys) {
+    const item = typeof key === "string" ? parseItemKey(key) : null;
+    if (!item || ids.includes(item.id) || (save.items[key as string] ?? 0) < 1) return { save, error: "bad_cook" };
+    ids.push(item.id);
+  }
+  const items = { ...save.items };
+  for (const key of keys as string[]) {
+    items[key] -= 1;
+    if (items[key] === 0) delete items[key];
+  }
+  const outcome = judgeCook(ids, method, recipes, save.cookbook);
+  const found = outcome.kind === "new" ? outcome.dish : null;
+  return {
+    save: {
+      ...save,
+      items,
+      cookbook: found ? { ...save.cookbook, [found]: recipes[found] } : save.cookbook,
+      hints: found ? save.hints.filter((h) => h !== found) : save.hints,
+      lastCook: { attemptId, outcome },
+    },
+  };
+}
+
 // The server's rules for every change to a save (the in-page LocalTransport runs the same code).
 // `action` comes from the client, so it is checked here; a rejected action leaves the save as it was.
 export function applyAction(save: SaveData, action: unknown, ctx: ActionContext): { save: SaveData; error?: string } {
@@ -100,7 +139,25 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       if (!gained) return { save, error: "bad_hunt" };
       const items = { ...save.items };
       for (const [k, n] of Object.entries(gained)) items[k] = (items[k] ?? 0) + n;
-      return { save: { ...save, items, hunt: null } };
+      // a related ingredient in hand opens a dish's cookbook hint (spec 4)
+      const ids = Object.keys(gained).map((k) => parseItemKey(k)!.id);
+      const hints = ctx.recipes ? hintsFor(ids, ctx.recipes, save.cookbook, save.hints) : save.hints;
+      return { save: { ...save, items, hunt: null, hints } };
+    }
+    case "cook":
+      return cook(save, a, ctx.recipes);
+    case "setMenu": {
+      const d = a.dishes;
+      const ok =
+        Array.isArray(d) &&
+        d.length <= BALANCE.kitchen.menuSlots &&
+        new Set(d).size === d.length &&
+        d.every((id) => {
+          const r = typeof id === "string" ? save.cookbook[id as DishId] : undefined;
+          return r !== undefined && save.tools.includes(r.method);
+        });
+      if (!ok) return { save, error: "bad_menu" };
+      return { save: { ...save, menu: [...(d as DishId[])] } };
     }
     case "sellAll":
       return { save: { ...save, gold: save.gold + saleValue(save.items), items: {} } };

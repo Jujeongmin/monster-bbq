@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { wantsOnline } from "./connection";
+import { newSave } from "../../shared/save";
 import { LocalTransport, Verse8Transport } from "./transport";
 
 function memory() {
@@ -18,6 +19,22 @@ describe("LocalTransport", () => {
     store.setItem("monster-bbq:save", "{broken");
     expect((await new LocalTransport(store).load()).day).toBe(1);
   });
+  it("waits for a context that arrives later (the dev-only recipe table) and cooks with it", async () => {
+    const store = memory();
+    store.setItem("monster-bbq:save", JSON.stringify({ ...newSave(), items: { shiitake: 1 } }));
+    const recipes = Promise.resolve({ shiitake_grill: { method: "grill", items: ["shiitake"] } } as never);
+    const t = new LocalTransport(store, undefined, async () => ({ now: 0, random: Math.random, recipes: await recipes }));
+    const s = await t.act({ type: "cook", attemptId: "a1", items: ["shiitake"], method: "grill" });
+    expect(s.lastCook?.outcome).toEqual({ kind: "new", dish: "shiitake_grill" });
+    expect((await t.load()).cookbook).toHaveProperty("shiitake_grill");
+  });
+  it("refuses cooking without the recipe table and keeps the ingredients", async () => {
+    const store = memory();
+    store.setItem("monster-bbq:save", JSON.stringify({ ...newSave(), items: { shiitake: 1 } }));
+    const t = new LocalTransport(store);
+    await expect(t.act({ type: "cook", attemptId: "a1", items: ["shiitake"], method: "grill" })).rejects.toThrow("unavailable");
+    expect((await t.load()).items).toEqual({ shiitake: 1 });
+  });
   it("throws on a rejected action and keeps the save", async () => {
     const t = new LocalTransport(memory());
     await expect(t.act({ type: "finishHunt", huntId: "nope", events: [], ko: false })).rejects.toThrow("bad_hunt");
@@ -27,9 +44,13 @@ describe("LocalTransport", () => {
 
 describe("Verse8Transport", () => {
   it("calls the server and checks the reply", async () => {
-    const t = new Verse8Transport({ remoteFunction: async (fn) => (fn === "load" ? { version: 2, day: 3, gold: 5, items: {}, hunt: null } : null) });
+    const t = new Verse8Transport({ remoteFunction: async (fn) => (fn === "load" ? { ...newSave(), day: 3, gold: 5 } : null) });
     expect((await t.load()).day).toBe(3);
     await expect(t.act({ type: "endDay" })).rejects.toThrow("bad_reply");
+  });
+  it("refuses a reply from a server still on the old save version", async () => {
+    const t = new Verse8Transport({ remoteFunction: async () => ({ version: 2, day: 3, gold: 5, items: {}, hunt: null }) });
+    await expect(t.load()).rejects.toThrow("bad_reply");
   });
   it("gives up on a server that never answers", async () => {
     const t = new Verse8Transport({ remoteFunction: () => new Promise(() => {}) }, 10);

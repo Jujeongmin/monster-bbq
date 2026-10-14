@@ -5,6 +5,7 @@ import { PhaserGame } from "../game/PhaserGame";
 import type { HuntResult } from "../game/scenes/HuntScene";
 import { itemName, t, type StringKey } from "../i18n";
 import type { Transport } from "../net/transport";
+import { Kitchen } from "./kitchen/Kitchen";
 import "./dayflow.css";
 
 // One day: hunt -> kitchen -> service -> settle -> next day. Every change goes through the transport
@@ -88,11 +89,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
         <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>
       </div>
 
-      {phase === "kitchen" && (
-        <Panel title={t("kitchen.title")} body={t("kitchen.body")}>
-          <button disabled={busy} onClick={() => setPhase("service")}>{t("next")}</button>
-        </Panel>
-      )}
+      {phase === "kitchen" && <Kitchen save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void act({ type: "setMenu", dishes: menu }, "service")} />}
       {phase === "service" && (
         <Panel title={t("service.title")} body={t("service.body")}>
           <button

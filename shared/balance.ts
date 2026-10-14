@@ -38,6 +38,7 @@ export const BALANCE: {
     bagSlots: number;
   };
   economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
+  kitchen: { menuSlots: number; maxIngredients: number };
 } = {
   hunt: {
     // top-down forest made of the 256 px ground tile, mirrored
@@ -106,4 +107,6 @@ export const BALANCE: {
     },
     maxMeatPerHunt: 20,
   },
+  // research kitchen and menu (spec 4); menu slots grow with upgrades (plan 06)
+  kitchen: { menuSlots: 2, maxIngredients: 3 },
 };

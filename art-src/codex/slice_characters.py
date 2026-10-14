@@ -29,6 +29,8 @@ GRIDS = [
     ("items", "forage_nodes.png", 3, 1, ["node_shiitake", "node_wild_garlic", "node_perilla"], 0.085),
     ("items", "item_icons.png", 5, 2, [f"icon_{i}" for i in ["boar_belly", "boar_neck", "boar_rib", "rabbit_leg", "honeycomb",
                                                             "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla"]], 0.06),
+    ("dishes", "dishes.png", 3, 3, ["grilled_belly", "garlic_neck", "belly_ssam", "honey_rabbit", "shiitake_grill", "rib_stew",
+                                    "baeksuk", "chicken_perilla", "fail"], 0.1),
 ]
 # single sprites cut from a sheet: (folder, name, sheet, box in sheet pixels, scale)
 PIECES = [
