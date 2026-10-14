@@ -12,6 +12,18 @@ export const BALANCE: {
     player: { maxHp: number; speed: number; depthSpeedRatio: number };
     weapons: Record<WeaponKind, WeaponStats>;
     hit: HitTuning;
+    harpoon: {
+      speed: number;
+      range: number;
+      cooldownMs: number;
+      throwLockMs: number;
+      hand: { x: number; y: number };
+      bodyOffsetY: number;
+      hitRadius: number;
+      pullSpeed: number;
+      pullStopDist: number;
+      dazeMs: number;
+    };
     hitStopMs: number;
     boar: ChargerTuning & { maxHp: number; contactDamage: number };
     boarCount: number;
@@ -36,6 +48,21 @@ export const BALANCE: {
       backAttackMult: 1.25,
       knockback: 4,
       finisherKnockback: 18,
+    },
+    // ranged damage comes from weapons.ranged; a harpooned boar is reeled in and left open (counter)
+    harpoon: {
+      speed: 340,
+      range: 170,
+      cooldownMs: 600,
+      throwLockMs: 220,
+      // where the rope leaves the hunter, relative to the feet (x toward facing)
+      hand: { x: 8, y: 24 },
+      bodyOffsetY: 20,
+      hitRadius: 18,
+      pullSpeed: 260,
+      pullStopDist: 22,
+      // how long a reeled-in boar stays dazed (open for counters): long enough for a 3-hit combo
+      dazeMs: 1700,
     },
     hitStopMs: 60,
     boar: {
