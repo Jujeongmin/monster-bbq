@@ -62,7 +62,9 @@ function onPlate(x: number, y: number): { x: number; y: number } {
 const follow = (core: number, surface: number, ms: number, tau: number) => (tau <= 0 ? surface : core + (surface - core) * (1 - Math.exp(-ms / tau)));
 const surfaceOf = (p: GrillPiece) => (p.up + p.down) / 2;
 
-function step(g: Grill, ms: number): Grill {
+// `quality` (upgrades, shared/growth toolQuality): a better grill gives more room between just right and
+// burnt, and chars slower; it does not cook faster.
+function step(g: Grill, ms: number, quality: number): Grill {
   const heat = Math.min(1, g.heat + ms / T.preheatMs);
   let soot = g.soot;
   let fat = g.fat;
@@ -74,8 +76,8 @@ function step(g: Grill, ms: number): Grill {
     const h = heatAt(p.x, p.y) * heat;
     const down = p.down + (it.grillRate * h * ms) / T.sideMs;
     let char = p.char;
-    if (down > it.burnAt) {
-      const burnt = Math.min(1 - char, (it.grillRate * h * ms) / T.charMs);
+    if (down > 1 + (it.burnAt - 1) * quality) {
+      const burnt = Math.min(1 - char, (it.grillRate * h * ms) / (T.charMs * quality));
       char += burnt;
       soot += burnt * T.sootPerChar;
     }
@@ -93,10 +95,10 @@ function step(g: Grill, ms: number): Grill {
 }
 
 // Time passes (in steps of at most 50 ms, so a long frame cooks like many short ones).
-export function stepGrill(g: Grill, dt: number): Grill {
+export function stepGrill(g: Grill, dt: number, quality = 1): Grill {
   if (!(dt > 0)) return g;
   let out = g;
-  for (let t = 0; t < dt; t += FRAME_MS) out = step(out, Math.min(FRAME_MS, dt - t));
+  for (let t = 0; t < dt; t += FRAME_MS) out = step(out, Math.min(FRAME_MS, dt - t), quality);
   return out;
 }
 

@@ -99,3 +99,16 @@ describe("big frames", () => {
     expect(stepPot(big, -1)).toEqual(big);
   });
 });
+
+describe("tool quality", () => {
+  it("lets a better pot hold a rolling boil longer before it spills", () => {
+    const spill = (q: number) => {
+      // already boiling, the high flame turned on afresh
+      let p = setDial(stepPot(setDial(boiling(), 2), 50), 3);
+      for (let t = 0; t < P.boilOverMs + 1000; t += 50) p = stepPot(p, 50, q);
+      return p.boilOvers;
+    };
+    expect(spill(1)).toBeGreaterThanOrEqual(1);
+    expect(spill(1.3)).toBe(0);
+  });
+});

@@ -232,3 +232,12 @@ describe("resting", () => {
     expect(piece(cut).core).toBeGreaterThan(piece(whole).core);
   });
 });
+
+describe("tool quality", () => {
+  it("lets a better grill take longer to burn past just right", () => {
+    const base = stepGrill(placePiece(hot(), "a", "boar_belly:normal", 0, 0), 16_000);
+    const better = stepGrill(placePiece(hot(), "a", "boar_belly:normal", 0, 0), 16_000, 1.3);
+    expect(piece(better).char).toBeLessThan(piece(base).char);
+    expect(piece(better).down).toBeCloseTo(piece(base).down, 5); // cooks at the same pace
+  });
+});

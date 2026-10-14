@@ -37,7 +37,8 @@ export function newPot(): Pot {
 const idOf = (key: string): ItemId => parseItemKey(key)!.id;
 const isMeat = (key: string) => ITEMS[idOf(key)].kind === "part" && !ITEM[idOf(key)].soft;
 
-function step(p: Pot, ms: number): Pot {
+// `quality` (upgrades): a better pot holds a rolling boil longer before it spills.
+function step(p: Pot, ms: number, quality: number): Pot {
   const target = T.target[p.dial];
   const rate = p.dial === 0 ? T.coolPerSec : T.heatPerSec[p.dial] * (p.lid ? T.lidBoost : 1);
   const move = (rate * ms) / 1000;
@@ -46,7 +47,7 @@ function step(p: Pot, ms: number): Pot {
   // a rolling boil on high climbs the pot and spills over (a lid traps it sooner)
   if (temp >= BOIL && p.dial === 3) fullBoilMs += ms;
   else fullBoilMs = 0;
-  if (fullBoilMs >= (p.lid ? T.boilOverMs / 2 : T.boilOverMs)) {
+  if (fullBoilMs >= (p.lid ? T.boilOverMs / 2 : T.boilOverMs) * quality) {
     boilOvers += 1;
     fullBoilMs = 0;
     temp -= 5;
@@ -63,10 +64,10 @@ function step(p: Pot, ms: number): Pot {
 }
 
 // Time passes (in steps of at most 50 ms, so a long frame cooks like many short ones).
-export function stepPot(p: Pot, dt: number): Pot {
+export function stepPot(p: Pot, dt: number, quality = 1): Pot {
   if (!(dt > 0)) return p;
   let out = p;
-  for (let t = 0; t < dt; t += FRAME_MS) out = step(out, Math.min(FRAME_MS, dt - t));
+  for (let t = 0; t < dt; t += FRAME_MS) out = step(out, Math.min(FRAME_MS, dt - t), quality);
   return out;
 }
 
