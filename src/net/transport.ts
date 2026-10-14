@@ -16,7 +16,14 @@ export class LocalTransport implements Transport {
 
   async load(): Promise<SaveData> {
     const raw = this.storage.getItem(this.key);
-    return readSave(raw ? JSON.parse(raw) : undefined);
+    let parsed: unknown;
+    try {
+      parsed = raw ? JSON.parse(raw) : undefined;
+    } catch {
+      // not even JSON: readSave starts a fresh save rather than leaving the game stuck
+      parsed = undefined;
+    }
+    return readSave(parsed);
   }
 
   async act(action: Action): Promise<SaveData> {

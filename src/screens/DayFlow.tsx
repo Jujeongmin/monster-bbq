@@ -24,12 +24,15 @@ export function DayFlow({ transport }: { transport: Transport }) {
   const [hunt, setHunt] = useState(0);
   const [failed, setFailed] = useState<{ action: Action; next: Phase } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   // a second click can land before React re-renders with busy=true
   const busyRef = useRef(false);
 
-  useEffect(() => {
-    transport.load().then(setSave, () => setFailed(null));
-  }, [transport]);
+  function load() {
+    setLoadFailed(false);
+    transport.load().then(setSave, () => setLoadFailed(true));
+  }
+  useEffect(load, [transport]);
 
   async function act(action: Action, next: Phase) {
     if (busyRef.current) return;
@@ -48,7 +51,19 @@ export function DayFlow({ transport }: { transport: Transport }) {
     }
   }
 
-  if (!save) return <div className="dayflow-wait">…</div>;
+  if (!save)
+    return (
+      <div className="dayflow dayflow-wait">
+        {loadFailed ? (
+          <div className="dayflow-error">
+            <span>{t("error.retry")}</span>
+            <button onClick={load}>↻</button>
+          </div>
+        ) : (
+          "…"
+        )}
+      </div>
+    );
 
   return (
     <div className="dayflow">

@@ -13,6 +13,11 @@ describe("LocalTransport", () => {
     await new LocalTransport(store).act({ type: "huntResult", meat: { premium: 1, normal: 0 } });
     expect((await new LocalTransport(store).load()).meat.premium).toBe(1);
   });
+  it("starts fresh instead of failing when the stored save is not even JSON", async () => {
+    const store = memory();
+    store.setItem("monster-bbq:save", "{broken");
+    expect((await new LocalTransport(store).load()).day).toBe(1);
+  });
   it("throws on a rejected action and keeps the save", async () => {
     const t = new LocalTransport(memory());
     await expect(t.act({ type: "huntResult", meat: { premium: 99, normal: 0 } })).rejects.toThrow("bad_hunt");
