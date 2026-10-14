@@ -32,11 +32,11 @@ export function Kitchen({
     <div className="kitchen">
       <div className="kitchen-tabs">
         {TABS.map((k) => (
-          <button key={k} className={k === tab ? "on" : ""} onClick={() => setTab(k)}>
+          <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
             {t(`kitchen.tab.${k}` as StringKey)}
           </button>
         ))}
-        <button className="kitchen-ready" disabled={busy} onClick={() => onReady(picked)}>
+        <button className="ui-btn kitchen-ready" disabled={busy} onClick={() => onReady(picked)}>
           {t("kitchen.ready")}
         </button>
       </div>

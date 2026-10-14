@@ -1,3 +1,88 @@
+/* Galmuri (OFL 1.1, docs/CREDITS.md): 11 for text, 11 Bold for titles and buttons, 9 for small numbers.
+   Pixel fonts stay crisp only at whole multiples of their design size (12 px for 11, 10 px for 9), so
+   every size below is a multiple, scaled by --s (1 on narrow screens, 2 on wide ones). */
+@font-face { font-family: "Galmuri11"; src: url("/fonts/Galmuri11.woff2") format("woff2"); font-weight: 400; font-display: block; }
+@font-face { font-family: "Galmuri11"; src: url("/fonts/Galmuri11-Bold.woff2") format("woff2"); font-weight: 700; font-display: block; }
+@font-face { font-family: "Galmuri9"; src: url("/fonts/Galmuri9.woff2") format("woff2"); font-display: block; }
+
+:root {
+  --s: 1;
+  --fs: calc(12px * var(--s));
+  --fs-small: calc(10px * var(--s));
+  --fs-title: 24px;
+  /* UI kit A palette: walnut wood, hanji paper, brass */
+  --wood-dark: #2b211c;
+  --wood: #4a3222;
+  --ink: #3a2414;
+  --paper-ink-soft: #7a5a3e;
+  --cream: #fff3d8;
+  --brass: #ffd166;
+  --red: #b8402a;
+  --good: #3f8a3a;
+}
+@media (min-width: 900px) {
+  :root { --s: 2; --fs-title: 48px; }
+}
+
 html, body, #root { width: 100%; height: 100%; }
-body { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+body { touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: "Galmuri11", monospace; -webkit-font-smoothing: none; font-smooth: never; }
 canvas { image-rendering: pixelated; display: block; }
+
+/* ---- UI kit A pieces (art/test/ui, cut by hand from the approved Codex sheet), stretched as 9-slices ---- */
+.ui-panel {
+  border: calc(18px * var(--s)) solid transparent;
+  border-image: url("../art/test/ui/panel.png") 18 fill / calc(18px * var(--s)) stretch;
+  image-rendering: pixelated;
+  color: var(--ink);
+}
+/* small boxes: the same frame at half size */
+.ui-box {
+  border: calc(9px * var(--s)) solid transparent;
+  border-image: url("../art/test/ui/panel.png") 18 fill / calc(9px * var(--s)) stretch;
+  image-rendering: pixelated;
+  color: var(--ink);
+}
+.ui-btn {
+  font: 700 var(--fs) "Galmuri11", monospace;
+  color: var(--cream);
+  text-shadow: 0 var(--s) 0 #3a1408;
+  padding: 0 calc(4px * var(--s));
+  min-height: calc(40px * var(--s));
+  background: none;
+  border: calc(13px * var(--s)) solid transparent;
+  border-image: url("../art/test/ui/btn_normal.png") 13 fill / calc(13px * var(--s)) stretch;
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+.ui-btn:active:not(:disabled) { border-image-source: url("../art/test/ui/btn_pressed.png"); transform: translateY(var(--s)); }
+.ui-btn:disabled { border-image-source: url("../art/test/ui/btn_disabled.png"); color: #d8d0c4; cursor: default; }
+/* tabs keep their own size (the brass knob on top must not stretch) */
+.ui-tab {
+  font: 700 var(--fs) "Galmuri11", monospace;
+  width: calc(49px * var(--s));
+  height: calc(40px * var(--s));
+  padding: calc(8px * var(--s)) 0 0;
+  border: 0;
+  color: var(--cream);
+  background: url("../art/test/ui/tab_off.png") center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+.ui-tab.on { background-image: url("../art/test/ui/tab_on.png"); color: var(--ink); }
+.ui-bubble {
+  border-style: solid;
+  border-color: transparent;
+  border-width: calc(8px * var(--s)) calc(8px * var(--s)) calc(14px * var(--s)) calc(22px * var(--s));
+  border-image: url("../art/test/ui/bubble.png") 8 8 14 22 fill / calc(8px * var(--s)) calc(8px * var(--s)) calc(14px * var(--s)) calc(22px * var(--s)) stretch;
+  image-rendering: pixelated;
+  color: var(--ink);
+}
+.ui-bar {
+  border-style: solid;
+  border-color: transparent;
+  border-width: calc(6px * var(--s)) calc(12px * var(--s));
+  border-image: url("../art/test/ui/topbar.png") 6 12 fill / calc(6px * var(--s)) calc(12px * var(--s)) stretch;
+  image-rendering: pixelated;
+  color: var(--cream);
+}
+.ui-icon { width: auto; height: calc(16px * var(--s)); image-rendering: pixelated; vertical-align: middle; }

@@ -18,6 +18,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 import { createCharacterAnims, loadCharacterArt, lookOf, stepBob } from "../hunt/anims";
 import { angerFlock, createMob, dazeMob, drawMob, isMobVulnerable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { joystickVector } from "../joystick";
+import { addButton, addGauge, loadUiArt, TEXT, TEXT_SMALL, type UiGauge } from "../ui";
 
 // The forest hunt (plan 03), quarter view, Dave-the-Diver controls.
 // PC: WASD / arrows move, aim with the mouse, left click = harpoon, right click = slash, E = gather,
@@ -90,11 +91,11 @@ export class HuntScene extends Phaser.Scene {
   private slashArc: { at: Vec; aim: Vec; ms: number } | null = null;
   private hitStopMs = 0;
   private ended = false;
-  private hud!: Phaser.GameObjects.Graphics;
+  private hpGauge!: UiGauge;
   private fx!: Phaser.GameObjects.Graphics;
   private bagText!: Phaser.GameObjects.Text;
   private gatherHint!: Phaser.GameObjects.Text;
-  private returnButton!: Phaser.GameObjects.Text;
+  private returnButton!: Phaser.GameObjects.Container;
   private gatherButton: Phaser.GameObjects.Arc | null = null;
   private gatherButtonLabel: Phaser.GameObjects.Text | null = null;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -146,6 +147,7 @@ export class HuntScene extends Phaser.Scene {
     this.load.image("grass", artUrl("test/bg/grass.png"));
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
     loadCharacterArt(this);
+    loadUiArt(this);
     for (const id of ["shiitake", "wild_garlic", "perilla"]) this.load.image(`node_${id}`, artUrl(`test/items/node_${id}.png`));
     for (const id of ["boar_belly", "boar_neck", "boar_rib", "rabbit_leg", "honeycomb", "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla"])
       this.load.image(`icon_${id}`, artUrl(`test/items/icon_${id}.png`));
@@ -180,19 +182,15 @@ export class HuntScene extends Phaser.Scene {
     if (this.touch) this.createTouchControls();
     else this.createMouseControls();
 
-    this.hud = this.add.graphics().setScrollFactor(0).setDepth(10000);
-    const hudStyle = { fontFamily: "monospace", fontSize: "10px", color: "#ffffff", backgroundColor: "#00000088" };
+    const hudStyle = TEXT_SMALL;
     if (!this.touch) this.add.text(6, 4, t("hunt.help"), hudStyle).setScrollFactor(0).setDepth(10000);
-    this.bagText = this.add.text(8, 34, "", hudStyle).setScrollFactor(0).setDepth(10000);
-    this.gatherHint = this.add.text(0, 0, t("hunt.gather"), { ...hudStyle, fontSize: "9px" }).setOrigin(0.5).setDepth(9500).setVisible(false);
-    // placeholder button (UI art comes in plan 08)
-    this.returnButton = this.add
-      .text(GAME_WIDTH - 8, 8, t("hunt.return"), { ...hudStyle, fontSize: "12px", padding: { x: 6, y: 3 } })
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setDepth(10000)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.endHunt(false));
+    // health in a brass gauge, the bag count under it, the way home top right (UI kit A)
+    this.hpGauge = addGauge(this, 40, 26);
+    this.hpGauge.box.setScrollFactor(0).setDepth(10000);
+    this.bagText = this.add.text(8, 40, "", hudStyle).setScrollFactor(0).setDepth(10000);
+    this.gatherHint = this.add.text(0, 0, t("hunt.gather"), hudStyle).setOrigin(0.5).setDepth(9500).setVisible(false);
+    const back = addButton(this, GAME_WIDTH - 36, 18, t("hunt.return"), () => this.endHunt(false), 56);
+    this.returnButton = back.box.setScrollFactor(0).setDepth(10000);
   }
 
   update(_time: number, rawDt: number) {
@@ -229,7 +227,7 @@ export class HuntScene extends Phaser.Scene {
     this.input.addPointer(2);
     const ui = (o: Phaser.GameObjects.Arc) => o.setScrollFactor(0).setDepth(10000);
     const label = (b: { x: number; y: number }, text: string) =>
-      this.add.text(b.x, b.y, text, { fontFamily: "monospace", fontSize: "10px", color: "#ffffff" }).setOrigin(0.5).setScrollFactor(0).setDepth(10001);
+      this.add.text(b.x, b.y, text, TEXT_SMALL).setOrigin(0.5).setScrollFactor(0).setDepth(10001);
     ui(this.add.circle(STICK.x, STICK.y, STICK.radius, 0x000000, 0.35).setStrokeStyle(1, 0xffffff, 0.6));
     this.stickKnob = ui(this.add.circle(STICK.x, STICK.y, 14, 0xffffff, 0.6));
     const slash = ui(this.add.circle(SLASH_BTN.x, SLASH_BTN.y, SLASH_BTN.radius, 0xc03030, 0.6).setStrokeStyle(1, 0xffffff, 0.8));
@@ -399,7 +397,7 @@ export class HuntScene extends Phaser.Scene {
       this.hunter.anims.stop();
       this.hunter.setTint(0x777777).setAngle(-90);
       this.add
-        .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, t("hunt.ko"), { fontFamily: "monospace", fontSize: "12px", color: "#ffffff", backgroundColor: "#000000aa", padding: { x: 6, y: 3 } })
+        .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, t("hunt.ko"), { ...TEXT, fontStyle: "bold" })
         .setOrigin(0.5)
         .setScrollFactor(0)
         .setDepth(10001);
@@ -681,7 +679,7 @@ export class HuntScene extends Phaser.Scene {
   }
 
   private popText(x: number, y: number, text: string, color: string, ms = 700) {
-    const label = this.add.text(x, y, text, { fontFamily: "monospace", fontSize: "10px", color, stroke: "#000000", strokeThickness: 3 }).setOrigin(0.5).setDepth(9000);
+    const label = this.add.text(x, y, text, { ...TEXT_SMALL, color }).setOrigin(0.5).setDepth(9000);
     this.tweens.add({ targets: label, y: y - 14, alpha: 0, duration: ms, ease: "Cubic.easeOut", onComplete: () => label.destroy() });
   }
 
@@ -692,15 +690,13 @@ export class HuntScene extends Phaser.Scene {
     const name = itemName(key);
     const color = item.grade === "premium" ? "#ffd166" : "#ffffff";
     const icon = this.add.image(x - 2, y, `icon_${item.id as ItemId}`).setOrigin(1, 0.5).setDepth(9001);
-    const label = this.add.text(x, y, name, { fontFamily: "monospace", fontSize: "10px", color, stroke: "#000000", strokeThickness: 3 }).setOrigin(0, 0.5).setDepth(9001);
+    const label = this.add.text(x, y, name, { ...TEXT_SMALL, color }).setOrigin(0, 0.5).setDepth(9001);
     this.tweens.add({ targets: [icon, label], y: y - 16, alpha: 0, delay: 500, duration: 900, ease: "Cubic.easeOut", onComplete: () => (icon.destroy(), label.destroy()) });
   }
 
   private drawHud() {
     const p = this.player;
-    this.hud.clear();
-    this.hud.fillStyle(0x000000, 0.6).fillRect(8, 20, 122, 10);
-    this.hud.fillStyle(0xe04040, 1).fillRect(9, 21, (120 * p.hp) / H.player.maxHp, 8);
+    this.hpGauge.set(p.hp / H.player.maxHp);
     this.bagText.setText(t("hud.bag", { n: bagCount(this.bag), max: H.bagSlots }));
   }
 

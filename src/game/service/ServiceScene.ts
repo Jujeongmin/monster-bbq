@@ -5,6 +5,7 @@ import { dishScore, serveValue } from "../../../shared/service/settle";
 import { t } from "../../i18n";
 import type { CookStage, Order } from "../cook/CookStage";
 import { createCharacterAnims, loadCharacterArt } from "../hunt/anims";
+import { addButton, addGauge, loadUiArt, TEXT, type UiButton, type UiGauge } from "../ui";
 
 // The shop at night (cooking-service design 5), seen from the side. Customers (the server's seed, see
 // shared/service/plan) come in at their time, sit at their table and show their order with a patience
@@ -31,7 +32,7 @@ const SEAT_Y = 214;
 const DOOR_X = -30;
 const WALK_SPEED = 70; // px per second
 const STAND_IN = ["rabbit", "chicken", "boar", "bee"] as const;
-const label = { fontFamily: "monospace", fontSize: "11px", color: "#ffffff", stroke: "#000000", strokeThickness: 3 };
+const label = TEXT;
 
 type Phase = "waiting" | "walking" | "seated" | "eating" | "leaving" | "gone";
 
@@ -40,7 +41,7 @@ interface Guest {
   phase: Phase;
   sprite: Phaser.GameObjects.Sprite;
   bubble: Phaser.GameObjects.Container;
-  bar: Phaser.GameObjects.Graphics;
+  gauge: UiGauge | null;
   waitedMs: number;
   targetX: number;
   angry: boolean;
@@ -56,7 +57,7 @@ export class ServiceScene extends Phaser.Scene {
   private left: string[] = [];
   private ended = false;
   private inCook = false;
-  private pauseButton!: Phaser.GameObjects.Text;
+  private pauseButton!: UiButton;
   private tally!: Phaser.GameObjects.Text;
   private earned = 0;
 
@@ -80,6 +81,7 @@ export class ServiceScene extends Phaser.Scene {
   // the grill, plate and dish pictures come from the cooking stage, which loads first (ServiceGame)
   preload() {
     loadCharacterArt(this);
+    loadUiArt(this);
   }
 
   create() {
@@ -87,13 +89,12 @@ export class ServiceScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor("#3a2a20");
     // tables: the grill stands in until the shop picture is approved
     for (const x of SEATS_X) this.add.image(x, SEAT_Y + 34, "grill").setScale(0.3).setDepth(SEAT_Y + 40);
-    this.tally = this.add.text(8, 6, "", label).setDepth(1000);
-    this.pauseButton = this.add
-      .text(632, 6, t("service.pause"), { ...label, backgroundColor: "#3a2f5e", padding: { x: 6, y: 3 } })
-      .setOrigin(1, 0)
-      .setDepth(1000)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.togglePause());
+    // tonight's tally on a wooden strip, and the pause button
+    this.add.nineslice(112, 16, "ui_topbar", undefined, 212, 19, 12, 12, 6, 6).setDepth(999);
+    this.add.image(18, 16, "ui_icon_gold").setDepth(1000);
+    this.tally = this.add.text(34, 16, "", label).setOrigin(0, 0.5).setDepth(1000);
+    this.pauseButton = addButton(this, 596, 18, t("service.pause"), () => this.togglePause(), 64);
+    this.pauseButton.box.setDepth(1000);
     this.game.events.on("service:serve", (r: ServedReport) => this.onServed(r));
     this.game.events.on("service:shop", () => this.toShop());
     this.events.once("shutdown", () => {
@@ -136,20 +137,19 @@ export class ServiceScene extends Phaser.Scene {
     const sprite = this.add.sprite(DOOR_X, SEAT_Y, `${who}_side_0`).setOrigin(0.5, 0.9).setScale(1.3);
     sprite.play(`${who}_walk_side`);
     const bubble = this.add.container(0, 0).setVisible(false).setDepth(900);
-    const bar = this.add.graphics();
-    const g: Guest = { c, phase: "waiting", sprite, bubble, bar, waitedMs: 0, targetX: SEATS_X[c.seat], angry: false };
+    const g: Guest = { c, phase: "waiting", sprite, bubble, gauge: null, waitedMs: 0, targetX: SEATS_X[c.seat], angry: false };
     this.makeBubble(g);
     return g;
   }
 
-  // The order above the customer: the dish on a plate, and patience below it. Tap it to cook.
+  // The order above the customer: the dish in a speech bubble, patience in a gauge below it. Tap to cook.
   private makeBubble(g: Guest) {
     g.bubble.removeAll(true);
-    const plate = this.add.image(0, 0, "plate").setScale(0.8);
-    const dish = this.add.image(0, -2, `dish_${g.c.dish}`).setScale(0.9);
-    g.bar = this.add.graphics();
-    g.bubble.add([plate, dish, g.bar]);
-    g.bubble.setSize(56, 52).setInteractive({ useHandCursor: true }).on("pointerdown", () => this.openOrder(g));
+    const bubble = this.add.nineslice(0, 0, "ui_bubble", undefined, 56, 50, 22, 8, 8, 14);
+    const dish = this.add.image(1, -4, `dish_${g.c.dish}`);
+    g.gauge = addGauge(this, 0, 32);
+    g.bubble.add([bubble, dish, g.gauge.box]);
+    g.bubble.setSize(56, 50).setInteractive({ useHandCursor: true }).on("pointerdown", () => this.openOrder(g));
   }
 
   private stepGuest(g: Guest, dt: number) {
@@ -181,8 +181,7 @@ export class ServiceScene extends Phaser.Scene {
       case "seated": {
         g.waitedMs += dt;
         const left = Math.max(0, 1 - g.waitedMs / g.c.patienceMs);
-        g.bar.clear().fillStyle(0x000000, 0.6).fillRect(-20, 22, 40, 5);
-        g.bar.fillStyle(left > 0.5 ? 0x7fe07f : left > 0.25 ? 0xffd166 : 0xff5050, 1).fillRect(-20, 22, 40 * left, 5);
+        g.gauge?.set(left);
         // impatient: a little jiggle when the bar runs red
         g.bubble.setAngle(left < 0.25 ? Math.sin(this.clock / 60) * 6 : 0);
         if (left <= 0) this.storm(g);

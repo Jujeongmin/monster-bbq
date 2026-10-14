@@ -26,7 +26,7 @@ export function MenuPick({ save, picked, setPicked }: { save: SaveData; picked: 
         const hasTool = save.tools.includes(recipe.method);
         const on = picked.includes(id);
         return (
-          <button key={id} className={`kitchen-box menu-row${on ? " on" : ""}`} disabled={!hasTool} onClick={() => toggle(id)}>
+          <button key={id} className={`ui-box menu-row${on ? " on" : ""}`} disabled={!hasTool} onClick={() => toggle(id)}>
             <span className="menu-dish">
               <DishIcon dish={id} size={40} />
               <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>

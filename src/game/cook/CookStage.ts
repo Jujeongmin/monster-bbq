@@ -6,6 +6,7 @@ import { canPlate } from "../../../shared/cooking/grill";
 import { plateResult, type CookJudgement, type NoteId } from "../../../shared/cooking/notes";
 import { t } from "../../i18n";
 import { artUrl } from "../art";
+import { addButton, addTab, loadUiArt, TEXT, type UiButton, type UiTab } from "../ui";
 import { cookedKey, loadCookArt, makeEffectTextures, rawKey } from "./art";
 import { GrillStation } from "./GrillStation";
 import { PotStation } from "./PotStation";
@@ -45,13 +46,13 @@ const MAX_DT_MS = 50;
 const TOOLS = ["tongs", "scissors", "salt", "ladle"] as const;
 const TRAY_Y = 336;
 const PLATE = { x: 520, y: 160, scale: 2 };
-const CHIPS = { x: 452, y: 54, step: 46, max: 4 };
+const CHIPS = { x: 452, y: 64, step: 46, max: 4 };
 const STATION_CHIPS = { x: 616, y: [124, 182] };
 const PLATE_HIT = { w: 150, h: 130 };
 const ORDER = Object.keys(ITEMS);
 // a leaf goes on the plate as it is (to wrap with); everything else wants cooking
 const SERVED_RAW = new Set(Object.keys(ITEMS).filter((id) => BALANCE.cooking.items[id as keyof typeof ITEMS].oneSide && ITEMS[id as keyof typeof ITEMS].kind === "forage"));
-const label = { fontFamily: "monospace", fontSize: "11px", color: "#ffffff", stroke: "#000000", strokeThickness: 3 };
+const label = TEXT;
 
 export class CookStage extends Phaser.Scene implements CookHost {
   tool: "tongs" | "scissors" | "salt" | "ladle" = "tongs";
@@ -63,10 +64,10 @@ export class CookStage extends Phaser.Scene implements CookHost {
   private ghost: { key: string; img: Phaser.GameObjects.Image } | null = null;
   private toolIcons!: Record<"tongs" | "scissors" | "salt" | "ladle", Phaser.GameObjects.Image>;
   private cursor!: Phaser.GameObjects.Image;
-  private tabs: Phaser.GameObjects.Text[] = [];
+  private tabs: UiTab[] = [];
   private plateMethod: "grill" | "boil" | null = null;
   private bowl!: Phaser.GameObjects.Image;
-  private serveButton!: Phaser.GameObjects.Text;
+  private serveButton!: UiButton;
   private served = false;
   private mode: "research" | "service" = "research";
   private menu: { dish: DishId; items: ItemId[] }[] = [];
@@ -100,6 +101,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
 
   preload() {
     loadCookArt(this);
+    loadUiArt(this);
     for (const id of Object.keys(DISHES)) this.load.image(`dish_${id}`, artUrl(`test/dishes/${id}.png`));
   }
 
@@ -116,12 +118,8 @@ export class CookStage extends Phaser.Scene implements CookHost {
     // soup goes into a bowl on the plate
     this.bowl = this.add.image(PLATE.x, PLATE.y, "bowl").setScale(1.6).setDepth(19).setVisible(false);
     if (this.mode === "research") this.add.text(PLATE.x, PLATE.y - 70, t("cook.plate"), label).setOrigin(0.5);
-    this.serveButton = this.add
-      .text(PLATE.x, PLATE.y + 82, t("cook.serve"), { ...label, fontSize: "14px", backgroundColor: "#7a4a1a", padding: { x: 10, y: 4 } })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.serve());
-    this.serveButton.setVisible(this.mode === "research");
+    this.serveButton = addButton(this, PLATE.x, PLATE.y + 82, t("cook.serve"), () => this.serve(), 70);
+    this.serveButton.box.setVisible(this.mode === "research");
     if (this.mode === "service") this.buildService();
 
     // tools: tap to pick one up (tongs and scissors at the grill, the ladle at the pot)
@@ -135,14 +133,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
     this.cursor = this.add.image(0, 0, "scissors").setScale(0.7).setAngle(-30).setDepth(90).setVisible(false);
 
     // which station is in front: the other keeps cooking where it is
-    (["grill", "pot"] as const).forEach((k, i) => {
-      const tab = this.add
-        .text(470 + i * 54, 14, t(`cook.tab.${k}`), { ...label, fontSize: "12px", backgroundColor: "#3a2f5e", padding: { x: 8, y: 3 } })
-        .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true })
-        .on("pointerdown", () => this.show(this.stations[i]));
-      this.tabs.push(tab);
-    });
+    (["grill", "pot"] as const).forEach((k, i) => this.tabs.push(addTab(this, 474 + i * 52, 22, t(`cook.tab.${k}`), () => this.show(this.stations[i]))));
     this.show(grill);
 
     this.buildTray();
@@ -163,7 +154,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
     for (const s of this.stations) s.update(dt);
     // recounted every frame: a piece moving from a station to the plate is briefly in both
     this.refreshTray();
-    this.serveButton.setAlpha(this.plated.length > 0 && !this.served ? 1 : 0.4);
+    this.serveButton.setEnabled(this.plated.length > 0 && !this.served);
     if (this.mode === "service") this.updateService();
   }
 
@@ -285,7 +276,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
     this.toolIcons.scissors.setVisible(grill);
     this.toolIcons.salt.setVisible(grill);
     this.toolIcons.ladle.setVisible(!grill);
-    this.tabs.forEach((tab, i) => tab.setBackgroundColor(this.stations[i] === station ? "#ffd166" : "#3a2f5e").setColor(this.stations[i] === station ? "#1b1530" : "#ffffff"));
+    this.tabs.forEach((tab, i) => tab.setOn(this.stations[i] === station));
     this.pickTool(grill ? "tongs" : "ladle");
   }
 
@@ -301,11 +292,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
       for (const it of this.plated) box.add(this.add.image((it.sprite.x - PLATE.x) * 0.6, (it.sprite.y - PLATE.y) * 0.6, it.sprite.texture.key).setScale(0.4));
       this.plateDrag = box;
     });
-    this.add
-      .text(604, 14, t("service.toShop"), { ...label, fontSize: "12px", backgroundColor: "#7a4a1a", padding: { x: 6, y: 3 } })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.game.events.emit("service:shop"));
+    addButton(this, 600, 22, t("service.toShop"), () => this.game.events.emit("service:shop"), 60);
     this.stations.forEach((station, i) => {
       const box = this.add.container(STATION_CHIPS.x, STATION_CHIPS.y[i]).setDepth(80);
       const ring = this.add.graphics();

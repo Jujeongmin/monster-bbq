@@ -21,6 +21,7 @@ import {
 import { t } from "../../i18n";
 import { cookedKey, rawKey } from "./art";
 import type { CookHost, Station } from "./host";
+import { TEXT_SMALL } from "../ui";
 
 // The grill plate, seen from above (cooking-service design 2). The rules live in shared/cooking/grill;
 // this draws them and turns pointer moves into tongs and scissors.
@@ -165,7 +166,7 @@ export class GrillStation implements Station {
       lifespan: 1100,
       emitting: false,
     });
-    this.statusText = scene.add.text(this.cx, y - 2, "", { fontFamily: "monospace", fontSize: "10px", color: "#ffd9a0", stroke: "#000", strokeThickness: 3 }).setOrigin(0.5, 1);
+    this.statusText = scene.add.text(this.cx, y - 2, "", { ...TEXT_SMALL, color: "#ffd9a0" }).setOrigin(0.5, 1);
     // effects above the meat (pieces sit at depth 10, a dragged one at 50)
     this.shimmer.setDepth(30);
     this.smoke.setDepth(40);

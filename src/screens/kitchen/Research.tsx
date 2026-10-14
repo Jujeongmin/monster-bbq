@@ -31,9 +31,9 @@ export function Research({ save, act }: { save: SaveData; busy: boolean; act: (a
     <div className="research">
       <CookStageGame items={save.items} round={round} onPlate={onPlate} />
       {attempt && (
-        <div className="cook-result-wrap">
+        <div className="cook-result-wrap ui-panel">
           {result ? <CookResultView key={attempt.id} outcome={result} plate={attempt.plate} /> : <div className="cook-result">…</div>}
-          <button className="cook-again" disabled={!result} onClick={again}>
+          <button className="ui-btn cook-again" disabled={!result} onClick={again}>
             {t("kitchen.again")}
           </button>
         </div>
@@ -75,7 +75,7 @@ function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookP
     return (
       <div className="cook-result near">
         <span className="lid-name">{t("kitchen.lid")}</span>
-        <p className="lid-bubble">{t(line as StringKey)}</p>
+        <p className="lid-bubble ui-bubble">{t(line as StringKey)}</p>
         <SkillLine plate={plate} />
       </div>
     );

@@ -17,7 +17,7 @@ export function Cookbook({ save }: { save: SaveData }) {
           const recipe = save.cookbook[id];
           if (recipe)
             return (
-              <div key={id} className="kitchen-box dish-card found">
+              <div key={id} className="ui-box dish-card found">
                 <DishIcon dish={id} />
                 <div className="dish-name">{t(`dish.${id}` as StringKey)}</div>
                 <div className="dish-recipe">
@@ -29,7 +29,7 @@ export function Cookbook({ save }: { save: SaveData }) {
               </div>
             );
           return (
-            <div key={id} className="kitchen-box dish-card">
+            <div key={id} className="ui-box dish-card">
               <DishIcon dish={id} silhouette />
               <div className="dish-name unknown">{t("kitchen.unknown")}</div>
               {save.hints.includes(id) && <p className="dish-hint">{t(`dish.${id}.hint` as StringKey)}</p>}

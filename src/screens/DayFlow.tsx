@@ -9,6 +9,7 @@ import type { HuntResult } from "../game/scenes/HuntScene";
 import { t, type StringKey } from "../i18n";
 import type { Transport } from "../net/transport";
 import { Kitchen } from "./kitchen/Kitchen";
+import { artUrl } from "../game/art";
 import "./dayflow.css";
 
 // One day: hunt -> kitchen -> service -> settle -> next day. Every change goes through the transport
@@ -74,9 +75,9 @@ export function DayFlow({ transport }: { transport: Transport }) {
     return (
       <div className="dayflow dayflow-wait">
         {loadFailed ? (
-          <div className="dayflow-error">
+          <div className="dayflow-error ui-panel">
             <span>{t("error.retry")}</span>
-            <button onClick={load}>↻</button>
+            <button className="ui-btn" onClick={load}>↻</button>
           </div>
         ) : (
           "…"
@@ -94,9 +95,15 @@ export function DayFlow({ transport }: { transport: Transport }) {
         />
       )}
 
-      <div className="dayflow-bar">
-        <span>{t("hud.day", { day: save.day })}</span>
-        <span>{t("hud.gold", { gold: save.gold })}</span>
+      <div className="dayflow-bar ui-bar">
+        <span>
+          <img className="ui-icon" src={artUrl("test/ui/icon_day.png")} alt="" />
+          {t("hud.day", { day: save.day })}
+        </span>
+        <span>
+          <img className="ui-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />
+          {t("hud.gold", { gold: save.gold })}
+        </span>
         {/* during the hunt the scene shows the live bag; the stored meat would read as a second count */}
         {phase !== "hunt" && <span>{t("hud.items", { count: Object.values(save.items).reduce((a, b) => a + b, 0) })}</span>}
         <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>
@@ -114,15 +121,15 @@ export function DayFlow({ transport }: { transport: Transport }) {
               <li>{t("settle.rep", { rep: save.reputation, delta: (save.lastService.repDelta >= 0 ? "+" : "") + save.lastService.repDelta })}</li>
             </ul>
           )}
-          <button disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("nextDay")}</button>
+          <button className="ui-btn" disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("nextDay")}</button>
         </Panel>
       )}
 
       {failed && (
-        <div className="dayflow-error">
+        <div className="dayflow-error ui-panel">
           <span>{failed.code === "no_menu" || failed.code === "no_ingredients" ? t(`error.${failed.code}`) : t("error.retry")}</span>
           {failed.code !== "no_menu" && failed.code !== "no_ingredients" && (
-            <button disabled={busy} onClick={() => act(failed.action, failed.next)}>↻</button>
+            <button className="ui-btn" disabled={busy} onClick={() => act(failed.action, failed.next)}>↻</button>
           )}
         </div>
       )}
@@ -133,7 +140,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
 function Panel({ title, body, children }: { title: string; body: string; children: React.ReactNode }) {
   return (
     <div className="dayflow-screen">
-      <div className="dayflow-panel">
+      <div className="dayflow-panel ui-panel">
         <h2>{title}</h2>
         <p>{body}</p>
         {children}

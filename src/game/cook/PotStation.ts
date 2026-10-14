@@ -5,6 +5,7 @@ import { addToPot, judgePot, newPot, setDial, skim, stepPot, toggleLid, type Dia
 import { t } from "../../i18n";
 import { cookedKey, rawKey } from "./art";
 import type { CookHost, Station } from "./host";
+import { TEXT_SMALL } from "../ui";
 
 // The stew pot (cooking-service design 2), seen from above. The rules live in shared/cooking/pot.
 //  - drag from the tray into the broth: in it goes (a splash)
@@ -86,7 +87,7 @@ export class PotStation implements Station {
       const a = Phaser.Math.DegToRad(DIAL_ANGLES[i] - 90);
       this.dialLabels.push(
         scene.add
-          .text(rightX + Math.cos(a) * 46, 262 + Math.sin(a) * 46, t(`cook.${k}` as never), { fontFamily: "monospace", fontSize: "9px", color: "#ffe0b0", stroke: "#000", strokeThickness: 3 })
+          .text(rightX + Math.cos(a) * 46, 262 + Math.sin(a) * 46, t(`cook.${k}` as never), { ...TEXT_SMALL, color: "#ffe0b0" })
           .setOrigin(0.5),
       );
     });
@@ -127,7 +128,7 @@ export class PotStation implements Station {
       lifespan: 900,
       emitting: false,
     });
-    this.statusText = scene.add.text(this.cx, y - 2, "", { fontFamily: "monospace", fontSize: "10px", color: "#ffd9a0", stroke: "#000", strokeThickness: 3 }).setOrigin(0.5, 0);
+    this.statusText = scene.add.text(this.cx, y - 2, "", { ...TEXT_SMALL, color: "#ffd9a0" }).setOrigin(0.5, 0);
     this.lidOn.setDepth(30);
     this.steam.setDepth(40);
     this.bubbles.setDepth(12);
