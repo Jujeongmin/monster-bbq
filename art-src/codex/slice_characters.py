@@ -31,17 +31,31 @@ GRIDS = [
     ("items", "forage_nodes.png", 3, 1, ["node_shiitake", "node_wild_garlic", "node_perilla"], 0.085),
     ("items", "item_icons.png", 5, 2, [f"icon_{i}" for i in ["boar_belly", "boar_neck", "boar_rib", "rabbit_leg", "honeycomb",
                                                             "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla"]], 0.06),
-    ("dishes", "dishes.png", 3, 3, ["grilled_belly", "garlic_neck", "belly_ssam", "honey_rabbit", "shiitake_grill", "rib_stew",
-                                    "baeksuk", "chicken_perilla", "fail"], 0.1),
-    ("cooking", "cook_grill.png", 1, 1, ["grill"], 0.2),
-    ("cooking", "cook_pieces.png", 10, 2, [f"{state}_{i}" for state in ["raw", "cooked"] for i in [
-        "boar_belly", "boar_neck", "boar_rib", "rabbit_leg", "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla", "honeycomb"]], 0.32),
-    ("cooking", "cook_tools.png", 5, 2, ["tongs", "scissors", "ladle", "plate", "bowl", None, None, None, "dial", "crumb"], 0.2),
-    ("cooking", "cook_tools.png", 5, 2, [None, None, None, None, None, "pot_clear", "pot_foam", "pot_lid", None, None], 0.6),
 ]
-# single sprites cut from a sheet: (folder, name, sheet, box in sheet pixels, scale)
+# single sprites cut from a sheet by hand: (folder, name, sheet, box in sheet pixels, scale). Boxes are
+# read off by eye from art-src/codex/grid_view.py previews, each with a little magenta margin all round.
 PIECES = [
     ("bee", "stinger", "bee_sheet.png", (815, 1075, 895, 1120), 0.26),
+    ("dishes", "grilled_belly", "dishes.png", (28, 62, 412, 386), 0.1),
+    ("dishes", "garlic_neck", "dishes.png", (436, 68, 812, 383), 0.1),
+    ("dishes", "belly_ssam", "dishes.png", (833, 48, 1242, 388), 0.1),
+    ("dishes", "honey_rabbit", "dishes.png", (26, 428, 412, 778), 0.1),
+    ("dishes", "shiitake_grill", "dishes.png", (433, 458, 812, 778), 0.1),
+    ("dishes", "rib_stew", "dishes.png", (828, 395, 1247, 792), 0.1),
+    ("dishes", "baeksuk", "dishes.png", (8, 793, 418, 1192), 0.1),
+    ("dishes", "chicken_perilla", "dishes.png", (433, 833, 812, 1188), 0.1),
+    ("dishes", "fail", "dishes.png", (833, 828, 1232, 1196), 0.1),
+    ("cooking", "grill", "cook_grill.png", (35, 75, 1225, 1150), 0.2),
+    ("cooking", "tongs", "cook_tools.png", (65, 55, 372, 368), 0.2),
+    ("cooking", "scissors", "cook_tools.png", (445, 45, 812, 368), 0.2),
+    ("cooking", "ladle", "cook_tools.png", (835, 32, 1170, 370), 0.2),
+    ("cooking", "plate", "cook_tools.png", (1198, 52, 1552, 370), 0.2),
+    ("cooking", "bowl", "cook_tools.png", (1600, 50, 1945, 382), 0.2),
+    ("cooking", "pot_clear", "cook_tools.png", (28, 408, 410, 760), 0.6),
+    ("cooking", "pot_foam", "cook_tools.png", (420, 408, 805, 760), 0.6),
+    ("cooking", "pot_lid", "cook_tools.png", (826, 413, 1175, 755), 0.6),
+    ("cooking", "dial", "cook_tools.png", (1240, 443, 1530, 730), 0.2),
+    ("cooking", "crumb", "cook_tools.png", (1698, 513, 1848, 662), 0.2),
 ]
 
 
@@ -155,7 +169,8 @@ def main():
             Image.merge("RGBA", (rr, gg, bb, aa.point(lambda v: 255 if v >= 110 else 0))).save(out / f"{piece}.png")
         print(name, file, "->", len(names), "pieces")
     for name, piece, file, box, scale in PIECES:
-        crop = key_magenta(Image.open(RAW / file).crop(box))
+        crop = key_magenta(Image.open(RAW / file).crop(box), despill=name == "cooking")
+        (ROOT / "art/test" / name).mkdir(parents=True, exist_ok=True)
         size = (max(1, round(crop.width * scale)), max(1, round(crop.height * scale)))
         small = crop.convert("RGBa").resize(size, Image.BOX).convert("RGBA")
         rr, gg, bb, aa = small.split()

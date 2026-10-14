@@ -1,0 +1,13 @@
+Use your image generation tool (do not write code to draw) to create ONE image in the art style of the attached ingredient sheet (cozy, comic, cute cartoon pixel art, same palette, same chunky pixel size, same dark outline). It replaces that sheet: in the attached one several pieces were cut off by the edge of their cell (straight edges with no outline) — this must NOT happen again.
+
+Save as art-src/codex/raw/cook_pieces2.png — a SQUARE image, flat solid magenta (#FF00FF) background, a 5 columns x 4 rows layout of 20 pieces seen from above (as lying on a grill). No text, no shadows, no lines or borders.
+
+VERY IMPORTANT: every piece is drawn COMPLETELY, with its full dark outline closed all the way around. Each piece is small — at most half the width and half the height of its cell — and sits in the middle of its cell with wide empty magenta space on every side. No piece comes near another piece or the image edge.
+
+Rows 1-2 are RAW, rows 3-4 are the SAME pieces COOKED PERFECTLY (same shape, size and orientation as the raw piece in the same position two rows above; only colour and surface change: browned, grill marks, glistening):
+ row 1 (raw): a strip of pork belly (meat and fat layers, both short ends rounded and outlined); a thick pork neck slab; a pork rib piece on the bone; a rabbit leg; a chicken thigh
+ row 2 (raw): a chicken breast fillet; a shiitake mushroom cap (top side up); three peeled garlic cloves; a single perilla leaf; a small block of golden honeycomb
+ row 3: the row 1 pieces cooked
+ row 4: the row 2 pieces cooked (perilla wilted and darker; honeycomb melted into a glossy honey puddle)
+
+Reply only with the saved file path.
