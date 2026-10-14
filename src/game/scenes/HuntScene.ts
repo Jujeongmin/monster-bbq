@@ -214,7 +214,7 @@ export class HuntScene extends Phaser.Scene {
     this.updateHarpoon(dt);
     for (const b of this.boars) this.updateBoar(b, dt);
     this.fadeCanopies();
-    this.drawFx();
+    this.drawFx(dt);
     this.drawHud();
   }
 
@@ -306,8 +306,8 @@ export class HuntScene extends Phaser.Scene {
   private throwHarpoon(at: Vec) {
     const p = this.player;
     p.aim = unit({ x: at.x - p.pos.x, y: at.y - this.hand().y }, p.aim);
-    p.harpoonCooldownMs = H.harpoon.cooldownMs;
-    p.swingMs = H.harpoon.throwLockMs;
+    p.harpoonCooldownMs = H.weapons.ranged.cooldownMs;
+    p.swingMs = H.weapons.ranged.swingMs;
     this.hunter.setFlipX(p.aim.x < 0).play("hunter_throw");
     this.harpoon = fireHarpoon(this.hand(), at, p.aim.x < 0 ? -1 : 1);
   }
@@ -321,7 +321,7 @@ export class HuntScene extends Phaser.Scene {
         this.harpoon = null;
         this.harpoonStrike(struck);
       } else {
-        this.harpoon = harpoonDone(h, H.harpoon.range) ? null : h;
+        this.harpoon = harpoonDone(h, H.weapons.ranged.range) ? null : h;
       }
     }
     if (this.reelingId !== null) {
@@ -585,7 +585,7 @@ export class HuntScene extends Phaser.Scene {
   }
 
   // World-space effects drawn on top: harpoon rope, aiming line, charge warning lines, slash arc.
-  private drawFx() {
+  private drawFx(dt: number) {
     const g = this.fx;
     g.clear();
     for (const b of this.boars) {
@@ -619,7 +619,7 @@ export class HuntScene extends Phaser.Scene {
       const { at, aim } = this.slashArc;
       const a = Math.atan2(aim.y, aim.x);
       g.lineStyle(2, 0xffffff, 0.8).beginPath().arc(at.x, at.y - 10, H.weapons.melee.range * 0.8, a - H.slashHalfAngle, a + H.slashHalfAngle).strokePath();
-      this.slashArc.ms -= 16;
+      this.slashArc.ms -= dt;
       if (this.slashArc.ms <= 0) this.slashArc = null;
     }
     if (this.player.down) return;

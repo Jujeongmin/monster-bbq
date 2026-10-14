@@ -15,9 +15,6 @@ export const BALANCE: {
     hit: HitTuning;
     harpoon: {
       speed: number;
-      range: number;
-      cooldownMs: number;
-      throwLockMs: number;
       // where the rope leaves the hunter, above the feet
       handHeight: number;
       bodyOffsetY: number;
@@ -52,12 +49,10 @@ export const BALANCE: {
       knockback: 4,
       finisherKnockback: 18,
     },
-    // ranged damage comes from weapons.ranged; a harpooned boar is reeled in and left dazed (counter)
+    // range, damage, cooldown and throw lock come from weapons.ranged; a harpooned boar is reeled in
+    // and left dazed (counter)
     harpoon: {
       speed: 340,
-      range: 170,
-      cooldownMs: 600,
-      throwLockMs: 220,
       handHeight: 22,
       bodyOffsetY: 16,
       hitRadius: 18,

@@ -74,7 +74,8 @@ export function DayFlow({ transport }: { transport: Transport }) {
       <div className="dayflow-bar">
         <span>{t("hud.day", { day: save.day })}</span>
         <span>{t("hud.gold", { gold: save.gold })}</span>
-        <span>{t("hud.meat", save.meat)}</span>
+        {/* during the hunt the scene shows the live bag; the stored meat would read as a second count */}
+        {phase !== "hunt" && <span>{t("hud.meat", save.meat)}</span>}
         <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>
       </div>
 
