@@ -54,6 +54,18 @@ describe("finishHunt", () => {
     expect(Object.values(r.save.items).reduce((a, b) => a + b, 0)).toBe(BALANCE.hunt.bagSlots);
   });
 
+  it("accepts refills in the order they appear: one after each kill, even when the kill was a refill", () => {
+    const refills = plan.spawns.filter((s) => s.wave > 0);
+    const events = [wave0[0], refills[0], refills[1], refills[2]].map((s) => ({ kill: s.id, grade: "normal" }));
+    expect(applyAction(s0, report(events), later(4)).error).toBeUndefined();
+  });
+
+  it("refuses a refill that would not have appeared yet", () => {
+    const refills = plan.spawns.filter((s) => s.wave > 0);
+    const events = [wave0[0], refills[1]].map((s) => ({ kill: s.id, grade: "normal" }));
+    expect(applyAction(s0, report(events), later(2)).error).toBe("bad_hunt");
+  });
+
   it("halves each item after a knockout", () => {
     const events = wave0.slice(0, 4).map((s) => ({ kill: s.id, grade: "normal" }));
     const full = applyAction(s0, report(events), later(4)).save.items;

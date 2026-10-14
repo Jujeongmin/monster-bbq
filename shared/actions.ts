@@ -42,8 +42,8 @@ export function koPenalty(items: Record<string, number>): Record<string, number>
 
 const MAX_EVENTS = 200;
 
-// Re-creates the hunt from its seed and checks the report: every kill a real spawn, taken once, a
-// refill only after as many earlier monsters were taken; every gathering spot real and taken once;
+// Re-creates the hunt from its seed and checks the report: every kill a real spawn, taken once, the
+// r-th refill (refills appear one per kill, in plan order) only after r+1 kills; every gathering spot real and taken once;
 // not faster than BALANCE.hunt.minMsPerKill per kill. Items go into the bag in report order until it
 // is full. Returns the items gained, or null for a report that cannot be true.
 function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Record<string, number> | null {
@@ -52,8 +52,8 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
   const plan = planHunt(hunt.seed, hunt.zone);
   const spawns = new Map(plan.spawns.map((s) => [s.id, s]));
   const nodes = new Map(plan.nodes.map((n) => [n.id, n]));
+  const refillOrder = new Map(plan.spawns.filter((s) => s.wave > 0).map((s, i) => [s.id, i]));
   const taken = new Set<string>();
-  const killsByWave: number[] = [];
   let kills = 0;
   let bag: Record<string, number> = {};
   for (const raw of a.events as unknown[]) {
@@ -62,10 +62,9 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
     if (typeof e.kill === "string") {
       const spawn = spawns.get(e.kill);
       if (!spawn || taken.has(e.kill) || (e.grade !== "premium" && e.grade !== "normal")) return null;
-      const earlier = killsByWave.slice(0, spawn.wave).reduce((x, y) => x + y, 0);
-      if (spawn.wave > 0 && (killsByWave[spawn.wave] ?? 0) >= earlier) return null;
+      const refill = refillOrder.get(e.kill);
+      if (refill !== undefined && kills < refill + 1) return null;
       taken.add(e.kill);
-      killsByWave[spawn.wave] = (killsByWave[spawn.wave] ?? 0) + 1;
       kills++;
       bag = addToBag(bag, itemKey(dropFor(hunt.seed, spawn), e.grade), BALANCE.hunt.bagSlots).bag;
     } else if (typeof e.gather === "string") {
