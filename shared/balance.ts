@@ -9,7 +9,7 @@ export const BALANCE: {
     worldWidth: number;
     laneTolerance: number;
     premiumMaxRangedHits: number;
-    player: { maxHp: number; speed: number };
+    player: { maxHp: number; speed: number; depthSpeedRatio: number };
     weapons: Record<WeaponKind, WeaponStats>;
     hit: HitTuning;
     hitStopMs: number;
@@ -18,12 +18,12 @@ export const BALANCE: {
   };
 } = {
   hunt: {
-    // feet positions on the test forest background (400x224 per screen, 3 screens wide)
-    field: { minX: 16, maxX: 1184, minY: 168, maxY: 214 },
+    // feet positions on the dirt floor layer (floor drawn at y 112..224; 3 screens wide)
+    field: { minX: 16, maxX: 1184, minY: 132, maxY: 206 },
     worldWidth: 1200,
     laneTolerance: 8,
     premiumMaxRangedHits: 2,
-    player: { maxHp: 100, speed: 80 },
+    player: { maxHp: 100, speed: 80, depthSpeedRatio: 0.6 },
     weapons: {
       melee: { kind: "melee", range: 26, damage: 10, cooldownMs: 550, swingMs: 450 },
       ranged: { kind: "ranged", range: 140, damage: 5, cooldownMs: 700, swingMs: 450 },

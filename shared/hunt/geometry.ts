@@ -23,7 +23,11 @@ export function stepToward(from: Vec, to: Vec, maxDist: number): { pos: Vec; arr
   return { pos: { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k }, arrived: false };
 }
 
-// The one drawn in front: lowest on screen.
-export function frontmost<T extends { pos: Vec }>(items: T[]): T | undefined {
-  return items.reduce<T | undefined>((best, it) => (!best || it.pos.y > best.pos.y ? it : best), undefined);
+// Direct control (keys or stick): `input` components are -1..1. Diagonals are not faster than straight
+// moves, and depth (y) moves at `depthSpeedRatio` of the sideways speed, like a belt scroller.
+export function moveByInput(pos: Vec, input: Vec, speed: number, dtMs: number, field: Field, depthSpeedRatio: number): Vec {
+  const len = Math.hypot(input.x, input.y);
+  const k = len > 1 ? 1 / len : 1;
+  const dist = (speed * dtMs) / 1000;
+  return clampToField({ x: pos.x + input.x * k * dist, y: pos.y + input.y * k * dist * depthSpeedRatio }, field);
 }

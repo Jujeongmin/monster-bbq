@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampToField, frontmost, sameLane, stepToward } from "./geometry";
+import { clampToField, moveByInput, sameLane, stepToward } from "./geometry";
 
 const field = { minX: 0, maxX: 100, minY: 50, maxY: 80 };
 
@@ -36,13 +36,21 @@ describe("stepToward", () => {
   });
 });
 
-describe("frontmost", () => {
-  it("picks the item lowest on screen, which is drawn in front", () => {
-    const back = { id: "back", pos: { x: 0, y: 55 } };
-    const front = { id: "front", pos: { x: 5, y: 75 } };
-    expect(frontmost([back, front])?.id).toBe("front");
+describe("moveByInput", () => {
+  it("walks right at full speed with the stick or key held right", () => {
+    expect(moveByInput({ x: 10, y: 60 }, { x: 1, y: 0 }, 80, 500, field, 0.6)).toEqual({ x: 50, y: 60 });
   });
-  it("returns undefined for an empty list", () => {
-    expect(frontmost([])).toBeUndefined();
+  it("moves up and down slower than sideways, like a belt scroller", () => {
+    expect(moveByInput({ x: 10, y: 60 }, { x: 0, y: 1 }, 80, 250, field, 0.6)).toEqual({ x: 10, y: 72 });
+  });
+  it("does not move faster diagonally than straight", () => {
+    const p = moveByInput({ x: 10, y: 60 }, { x: 1, y: 1 }, 100, 100, field, 1);
+    expect(Math.hypot(p.x - 10, p.y - 60)).toBeCloseTo(10);
+  });
+  it("keeps a half-pushed stick slower than a full push", () => {
+    expect(moveByInput({ x: 10, y: 60 }, { x: 0.5, y: 0 }, 80, 500, field, 0.6)).toEqual({ x: 30, y: 60 });
+  });
+  it("stops at the edges of the field", () => {
+    expect(moveByInput({ x: 98, y: 79 }, { x: 1, y: 1 }, 80, 1000, field, 0.6)).toEqual({ x: 100, y: 80 });
   });
 });

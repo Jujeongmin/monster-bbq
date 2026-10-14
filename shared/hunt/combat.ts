@@ -16,29 +16,16 @@ export function inAttackRange(attacker: Vec, target: Vec, weapon: WeaponStats, l
   return sameLane(attacker, target, laneTolerance) && Math.abs(attacker.x - target.x) <= weapon.range;
 }
 
-// Where to stand to hit `target`: on its lane, a little inside reach, on the side the attacker is on.
-// Already close enough on x means only the lane changes.
-export function approachPoint(attacker: Vec, target: Vec, weapon: WeaponStats): Vec {
-  const dx = attacker.x - target.x;
-  const reach = weapon.range * 0.8;
-  const x = Math.abs(dx) <= reach ? attacker.x : target.x + Math.sign(dx || -1) * reach;
-  return { x, y: target.y };
-}
-
-export type Order = { kind: "none" } | { kind: "moveTo"; to: Vec } | { kind: "attack"; target: Vec };
-export type PlayerAction = { kind: "idle" } | { kind: "move"; to: Vec } | { kind: "attack" };
-
-export function decidePlayerAction(pos: Vec, order: Order, weapon: WeaponStats, laneTolerance: number): PlayerAction {
-  switch (order.kind) {
-    case "none":
-      return { kind: "idle" };
-    case "moveTo":
-      return pos.x === order.to.x && pos.y === order.to.y ? { kind: "idle" } : { kind: "move", to: order.to };
-    case "attack":
-      return inAttackRange(pos, order.target, weapon, laneTolerance)
-        ? { kind: "attack" }
-        : { kind: "move", to: approachPoint(pos, order.target, weapon) };
-  }
+// What a swing toward `facing` hits: everything in front on the lane within reach for melee,
+// only the nearest such target for the ranged weapon.
+export function swingTargets<T extends { pos: Vec }>(attacker: Vec, facing: 1 | -1, targets: T[], weapon: WeaponStats, laneTolerance: number): T[] {
+  const inFront = targets.filter((t) => (t.pos.x - attacker.x) * facing >= 0 && inAttackRange(attacker, t.pos, weapon, laneTolerance));
+  if (weapon.kind === "melee") return inFront;
+  const nearest = inFront.reduce<T | undefined>(
+    (best, t) => (!best || Math.abs(t.pos.x - attacker.x) < Math.abs(best.pos.x - attacker.x) ? t : best),
+    undefined,
+  );
+  return nearest ? [nearest] : [];
 }
 
 export interface HitTuning {

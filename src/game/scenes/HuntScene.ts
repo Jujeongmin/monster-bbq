@@ -4,28 +4,38 @@ import { isVulnerable, newCharger, updateCharger, type ChargerState } from "../.
 import {
   EMPTY_HIT_LOG,
   computeHit,
-  decidePlayerAction,
-  inAttackRange,
   meatGrade,
   nextComboStep,
   recordHit,
+  swingTargets,
   type HitLog,
-  type Order,
   type WeaponKind,
 } from "../../../shared/hunt/combat";
-import { clampToField, frontmost, stepToward } from "../../../shared/hunt/geometry";
+import { clampToField, moveByInput } from "../../../shared/hunt/geometry";
 import type { Vec } from "../../../shared/hunt/types";
 import { artUrl } from "../art";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
+import { joystickVector } from "../joystick";
 
-// Belt-scroller hunting prototype (plan 01): tap the ground to walk, tap a boar to fight it.
-// Rules live in shared/hunt; this scene only draws them and adds the game feel.
+// Belt-scroller hunting prototype (plan 01). PC: arrow keys / WASD to move, Z (J, Space) to attack,
+// X (K) to switch weapon. Touch: stick on the left, attack and weapon buttons on the right.
+// Rules live in shared/hunt; this scene reads input, draws, and adds the game feel.
 const H = BALANCE.hunt;
 // A frame gap after the tab was hidden must not teleport anything (rules are also clamped).
 const MAX_DT_MS = 50;
 // Where the feet are inside each sprite's canvas (transparent padding underneath). Tune by eye.
 const FEET = { hunter: 0.9, boar: 0.75 };
 const FRAMES = { idle: 4, walk: 6, attack: 7, throw: 7, boarWalk: 6, boarAttack: 7 };
+// Background layers: [texture, parallax factor, y offset, depth]. The floor is where everyone walks.
+const LAYERS = [
+  ["bg_far", 0.15, -60, -300],
+  ["bg_mid", 0.4, -72, -200],
+  ["bg_floor", 1, 112, -100],
+] as const;
+// Touch controls, in screen pixels of the 400x224 game.
+const STICK = { x: 52, y: 176, radius: 26, deadZone: 0.2 };
+const ATTACK_BTN = { x: 356, y: 180, radius: 22 };
+const WEAPON_BTN = { x: 310, y: 198, radius: 13 };
 
 interface Boar {
   id: number;
@@ -38,27 +48,34 @@ interface Boar {
 
 interface Player {
   pos: Vec;
+  facing: 1 | -1;
   hp: number;
   weapon: WeaponKind;
   cooldownMs: number;
   swingMs: number;
   comboStep: number;
   msSinceSwing: number;
-  lastTargetId: number | null;
   down: boolean;
 }
 
+type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "SPACE" | "X" | "K", Phaser.Input.Keyboard.Key>;
+
 export class HuntScene extends Phaser.Scene {
   private player!: Player;
-  private order: Order = { kind: "none" };
-  private targetId: number | null = null;
   private boars: Boar[] = [];
   private nextBoarId = 1;
   private hitStopMs = 0;
   private hunter!: Phaser.GameObjects.Sprite;
   private layers: { tile: Phaser.GameObjects.TileSprite; factor: number }[] = [];
   private hud!: Phaser.GameObjects.Graphics;
-  private weaponButton!: Phaser.GameObjects.Text;
+  private hudText!: Phaser.GameObjects.Text;
+  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private keys!: Keys;
+  private touch = false;
+  private stickPointer: number | null = null;
+  private stickVec: Vec = { x: 0, y: 0 };
+  private stickKnob!: Phaser.GameObjects.Arc;
+  private attackQueued = false;
 
   constructor() {
     super("hunt");
@@ -67,27 +84,28 @@ export class HuntScene extends Phaser.Scene {
   // Runs on every start and restart, so a knocked-out hunter comes back fresh.
   init() {
     this.player = {
-      pos: { x: 120, y: 190 },
+      pos: { x: 120, y: 170 },
+      facing: 1,
       hp: H.player.maxHp,
       weapon: "melee",
       cooldownMs: 0,
       swingMs: 0,
       comboStep: 0,
       msSinceSwing: Infinity,
-      lastTargetId: null,
       down: false,
     };
-    this.order = { kind: "none" };
-    this.targetId = null;
     this.boars = [];
     this.hitStopMs = 0;
     this.layers = [];
+    this.stickPointer = null;
+    this.stickVec = { x: 0, y: 0 };
+    this.attackQueued = false;
   }
 
   preload() {
     this.load.image("bg_far", artUrl("test/bg/far.png"));
     this.load.image("bg_mid", artUrl("test/bg/mid.png"));
-    this.load.image("bg_near", artUrl("test/bg/near.png"));
+    this.load.image("bg_floor", artUrl("test/bg/floor.png"));
     this.load.image("boar_idle", artUrl("test/boar/idle.png"));
     for (let i = 0; i < FRAMES.boarWalk; i++) this.load.image(`boar_walk_${i}`, artUrl(`test/boar/walk_${i}.png`));
     for (let i = 0; i < FRAMES.boarAttack; i++) this.load.image(`boar_attack_${i}`, artUrl(`test/boar/attack_${i}.png`));
@@ -97,19 +115,23 @@ export class HuntScene extends Phaser.Scene {
   }
 
   create() {
-    for (const [key, factor, depth] of [["bg_far", 0.15, -300], ["bg_mid", 0.4, -200], ["bg_near", 1, -100]] as const) {
-      const tile = this.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, key).setOrigin(0).setScrollFactor(0).setDepth(depth);
+    for (const [key, factor, y, depth] of LAYERS) {
+      const tex = this.mirrored(key);
+      const h = this.textures.get(tex).getSourceImage().height;
+      const tile = this.add.tileSprite(0, y, GAME_WIDTH, h, tex).setOrigin(0).setScrollFactor(0).setDepth(depth);
       this.layers.push({ tile, factor });
     }
 
     const frames = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => ({ key: `${prefix}_${i}` }));
     const swingRate = (n: number) => Math.round((n * 1000) / H.weapons.melee.swingMs);
-    this.anims.create({ key: "hunter_idle", frames: frames("hunter_idle", FRAMES.idle), frameRate: 5, repeat: -1 });
-    this.anims.create({ key: "hunter_walk", frames: frames("hunter_walk", FRAMES.walk), frameRate: 10, repeat: -1 });
-    this.anims.create({ key: "hunter_attack", frames: frames("hunter_attack", FRAMES.attack), frameRate: swingRate(FRAMES.attack) });
-    this.anims.create({ key: "hunter_throw", frames: frames("hunter_throw", FRAMES.throw), frameRate: swingRate(FRAMES.throw) });
-    this.anims.create({ key: "boar_walk", frames: frames("boar_walk", FRAMES.boarWalk), frameRate: 8, repeat: -1 });
-    this.anims.create({ key: "boar_charge", frames: frames("boar_walk", FRAMES.boarWalk), frameRate: 20, repeat: -1 });
+    if (!this.anims.exists("hunter_idle")) {
+      this.anims.create({ key: "hunter_idle", frames: frames("hunter_idle", FRAMES.idle), frameRate: 5, repeat: -1 });
+      this.anims.create({ key: "hunter_walk", frames: frames("hunter_walk", FRAMES.walk), frameRate: 10, repeat: -1 });
+      this.anims.create({ key: "hunter_attack", frames: frames("hunter_attack", FRAMES.attack), frameRate: swingRate(FRAMES.attack) });
+      this.anims.create({ key: "hunter_throw", frames: frames("hunter_throw", FRAMES.throw), frameRate: swingRate(FRAMES.throw) });
+      this.anims.create({ key: "boar_walk", frames: frames("boar_walk", FRAMES.boarWalk), frameRate: 8, repeat: -1 });
+      this.anims.create({ key: "boar_charge", frames: frames("boar_walk", FRAMES.boarWalk), frameRate: 20, repeat: -1 });
+    }
 
     this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_idle_0").setOrigin(0.5, FEET.hunter);
     this.hunter.play("hunter_idle");
@@ -120,21 +142,19 @@ export class HuntScene extends Phaser.Scene {
 
     for (let i = 0; i < H.boarCount; i++) this.spawnBoar();
 
+    const keyboard = this.input.keyboard!;
+    this.cursors = keyboard.createCursorKeys();
+    this.keys = keyboard.addKeys("W,A,S,D,Z,J,SPACE,X,K") as Keys;
+
+    // touch controls on touch devices (add ?touch to the URL to try them with a mouse)
+    this.touch = this.sys.game.device.input.touch || new URLSearchParams(location.search).has("touch");
+    if (this.touch) this.createTouchControls();
+
     this.hud = this.add.graphics().setScrollFactor(0).setDepth(1000);
-    this.weaponButton = this.add
-      .text(GAME_WIDTH - 6, GAME_HEIGHT - 6, "", { fontFamily: "monospace", fontSize: "10px", color: "#ffffff", backgroundColor: "#000000aa", padding: { x: 4, y: 2 } })
-      .setOrigin(1, 1)
-      .setScrollFactor(0)
-      .setDepth(1000)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.toggleWeapon());
-    this.refreshWeaponLabel();
-    this.add
-      .text(6, 4, "탭: 이동 · 멧돼지 탭: 공격 · 빨갛게 번쩍이면 위아래로 피하기", { fontFamily: "monospace", fontSize: "8px", color: "#ffffff", backgroundColor: "#00000088" })
+    this.hudText = this.add
+      .text(6, 4, "", { fontFamily: "monospace", fontSize: "8px", color: "#ffffff", backgroundColor: "#00000088" })
       .setScrollFactor(0)
       .setDepth(1000);
-
-    this.input.on("pointerdown", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => this.onTap(p, over));
   }
 
   update(_time: number, rawDt: number) {
@@ -150,112 +170,97 @@ export class HuntScene extends Phaser.Scene {
     this.drawHud();
   }
 
-  private onTap(p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) {
-    if (this.player.down || over.includes(this.weaponButton)) return;
-    const tapped = this.boars.filter((b) => !b.dead && over.includes(b.sprite)).map((b) => ({ pos: b.ai.pos, boar: b }));
-    const target = frontmost(tapped)?.boar;
-    if (target) {
-      this.targetId = target.id;
-      this.order = { kind: "attack", target: target.ai.pos };
-    } else {
-      this.targetId = null;
-      this.order = { kind: "moveTo", to: clampToField({ x: p.worldX, y: p.worldY }, H.field) };
-    }
-  }
-
-  private toggleWeapon() {
-    if (this.player.down) return;
-    this.player.weapon = this.player.weapon === "melee" ? "ranged" : "melee";
-    this.player.comboStep = 0;
-    this.refreshWeaponLabel();
-  }
-
-  private refreshWeaponLabel() {
-    this.weaponButton.setText(this.player.weapon === "melee" ? "근접 ⇄ 원거리" : "원거리 ⇄ 근접");
-  }
-
   private updatePlayer(dt: number) {
     const p = this.player;
     p.cooldownMs = Math.max(0, p.cooldownMs - dt);
     p.swingMs = Math.max(0, p.swingMs - dt);
     p.msSinceSwing += dt;
 
-    // keep an attack order pointed at the boar's current position; drop it once the boar is gone
-    if (this.order.kind === "attack") {
-      const target = this.liveBoar(this.targetId);
-      this.order = target ? { kind: "attack", target: target.ai.pos } : { kind: "none" };
+    const k = this.keys;
+    if (Phaser.Input.Keyboard.JustDown(k.X) || Phaser.Input.Keyboard.JustDown(k.K)) this.toggleWeapon();
+    if (Phaser.Input.Keyboard.JustDown(k.Z) || Phaser.Input.Keyboard.JustDown(k.J) || Phaser.Input.Keyboard.JustDown(k.SPACE)) {
+      this.attackQueued = true;
     }
-    // a swing always finishes before the next order is followed
-    if (p.swingMs > 0) return;
 
-    const weapon = H.weapons[p.weapon];
-    const action = decidePlayerAction(p.pos, this.order, weapon, H.laneTolerance);
-    if (action.kind === "move") {
-      const step = stepToward(p.pos, action.to, (H.player.speed * dt) / 1000);
-      if (step.pos.x !== p.pos.x) this.hunter.setFlipX(step.pos.x < p.pos.x);
-      p.pos = step.pos;
-      if (step.arrived && this.order.kind === "moveTo") this.order = { kind: "none" };
+    // a swing always finishes before the hunter moves or swings again
+    if (p.swingMs > 0) return;
+    if (this.attackQueued && p.cooldownMs === 0) {
+      this.attackQueued = false;
+      this.swing();
+      return;
+    }
+
+    const move = this.readMove();
+    if (move.x !== 0 || move.y !== 0) {
+      p.pos = moveByInput(p.pos, move, H.player.speed, dt, H.field, H.player.depthSpeedRatio);
+      if (move.x !== 0) p.facing = move.x > 0 ? 1 : -1;
       this.loop("hunter_walk");
-    } else if (action.kind === "attack" && this.targetId !== null) {
-      const target = this.liveBoar(this.targetId)!;
-      this.hunter.setFlipX(target.ai.pos.x < p.pos.x);
-      if (p.cooldownMs === 0) this.swing(target);
-      else this.loop("hunter_idle");
     } else {
       this.loop("hunter_idle");
     }
-    this.hunter.setPosition(p.pos.x, p.pos.y).setDepth(p.pos.y);
+    this.hunter.setFlipX(p.facing < 0).setPosition(p.pos.x, p.pos.y).setDepth(p.pos.y);
   }
 
-  private swing(target: Boar) {
+  // Keys and the stick add up; the rules cap the length at 1.
+  private readMove(): Vec {
+    const c = this.cursors;
+    const k = this.keys;
+    const x = (c.right.isDown || k.D.isDown ? 1 : 0) - (c.left.isDown || k.A.isDown ? 1 : 0) + this.stickVec.x;
+    const y = (c.down.isDown || k.S.isDown ? 1 : 0) - (c.up.isDown || k.W.isDown ? 1 : 0) + this.stickVec.y;
+    return { x: Phaser.Math.Clamp(x, -1, 1), y: Phaser.Math.Clamp(y, -1, 1) };
+  }
+
+  private toggleWeapon() {
+    if (this.player.down) return;
+    this.player.weapon = this.player.weapon === "melee" ? "ranged" : "melee";
+    this.player.comboStep = 0;
+  }
+
+  private swing() {
     const p = this.player;
     const weapon = H.weapons[p.weapon];
-    p.comboStep = nextComboStep(p.comboStep, p.msSinceSwing, p.lastTargetId === target.id, p.weapon, H.hit);
-    p.lastTargetId = target.id;
+    // direct control: consecutive swings inside the window chain, whoever they hit
+    p.comboStep = nextComboStep(p.comboStep, p.msSinceSwing, true, p.weapon, H.hit);
     p.msSinceSwing = 0;
     p.cooldownMs = weapon.cooldownMs;
     p.swingMs = weapon.swingMs;
     this.hunter.play(p.weapon === "melee" ? "hunter_attack" : "hunter_throw");
     const kind = p.weapon;
     const comboStep = p.comboStep;
-    // the blow lands mid-swing
-    this.time.delayedCall(weapon.swingMs * 0.5, () => this.landHit(target.id, kind, comboStep));
+    // the blow lands mid-swing, on whatever is in front at that moment
+    this.time.delayedCall(weapon.swingMs * 0.5, () => this.landHit(kind, comboStep));
   }
 
-  private landHit(boarId: number, kind: WeaponKind, comboStep: number) {
-    const b = this.liveBoar(boarId);
+  private landHit(kind: WeaponKind, comboStep: number) {
     const p = this.player;
-    if (!b || p.down) return;
-    // the boar may have run out of reach during the swing: a whiff
-    if (!inAttackRange(p.pos, b.ai.pos, H.weapons[kind], H.laneTolerance)) return;
+    if (p.down) return;
+    const live = this.boars.filter((b) => !b.dead).map((b) => ({ pos: b.ai.pos, boar: b }));
+    const struck = swingTargets(p.pos, p.facing, live, H.weapons[kind], H.laneTolerance).map((t) => t.boar);
+    if (struck.length === 0) return;
 
-    const hit = computeHit(
-      { weapon: H.weapons[kind], comboStep, targetVulnerable: isVulnerable(b.ai), attackerX: p.pos.x, targetX: b.ai.pos.x, targetFacing: b.ai.facing },
-      H.hit,
-    );
-    b.hp -= hit.damage;
-    b.hits = recordHit(b.hits, kind);
-    const away = b.ai.pos.x >= p.pos.x ? 1 : -1;
-    b.ai = { ...b.ai, pos: clampToField({ x: b.ai.pos.x + away * hit.knockback, y: b.ai.pos.y }, H.field) };
-
-    // game feel: freeze, flash, shake on big hits, pop the number and the tags
-    this.hitStop(hit.finisher || hit.counter ? H.hitStopMs * 2 : H.hitStopMs);
-    b.sprite.setTintFill(0xffffff);
-    this.time.delayedCall(70, () => b.sprite.active && b.sprite.clearTint());
-    if (hit.finisher || hit.counter) this.cameras.main.shake(120, 0.012);
-    const tags = [hit.counter && "카운터!", hit.backAttack && "백어택!", hit.finisher && "막타!"].filter(Boolean).join(" ");
-    this.popText(b.ai.pos.x, b.ai.pos.y - 52, `${hit.damage}${tags ? " " + tags : ""}`, hit.counter || hit.finisher ? "#ffd166" : "#ffffff");
-
-    if (b.hp <= 0) this.killBoar(b);
+    let big = false;
+    for (const b of struck) {
+      const hit = computeHit(
+        { weapon: H.weapons[kind], comboStep, targetVulnerable: isVulnerable(b.ai), attackerX: p.pos.x, targetX: b.ai.pos.x, targetFacing: b.ai.facing },
+        H.hit,
+      );
+      big ||= hit.finisher || hit.counter;
+      b.hp -= hit.damage;
+      b.hits = recordHit(b.hits, kind);
+      b.ai = { ...b.ai, pos: clampToField({ x: b.ai.pos.x + p.facing * hit.knockback, y: b.ai.pos.y }, H.field) };
+      b.sprite.setTintFill(0xffffff);
+      this.time.delayedCall(70, () => b.sprite.active && b.sprite.clearTint());
+      const tags = [hit.counter && "카운터!", hit.backAttack && "백어택!", hit.finisher && "막타!"].filter(Boolean).join(" ");
+      this.popText(b.ai.pos.x, b.ai.pos.y - 52, `${hit.damage}${tags ? " " + tags : ""}`, hit.counter || hit.finisher ? "#ffd166" : "#ffffff");
+      if (b.hp <= 0) this.killBoar(b);
+    }
+    // game feel: one freeze per swing, longer and with a shake on big hits
+    this.hitStop(big ? H.hitStopMs * 2 : H.hitStopMs);
+    if (big) this.cameras.main.shake(120, 0.012);
   }
 
   private killBoar(b: Boar) {
     b.dead = true;
-    b.sprite.disableInteractive();
-    if (this.targetId === b.id) {
-      this.targetId = null;
-      this.order = { kind: "none" };
-    }
     const premium = meatGrade(b.hits, H.premiumMaxRangedHits) === "premium";
     this.popText(b.ai.pos.x, b.ai.pos.y - 70, premium ? "삼겹살 ★특급" : "삼겹살 (보통)", premium ? "#ffd166" : "#dddddd", 1400);
     this.tweens.add({
@@ -319,7 +324,6 @@ export class HuntScene extends Phaser.Scene {
     this.popText(p.pos.x, p.pos.y - 50, `-${damage}`, "#ff6060");
     if (p.hp === 0) {
       p.down = true;
-      this.order = { kind: "none" };
       this.hunter.anims.stop();
       this.hunter.setTint(0x777777).setAngle(-90);
       this.add
@@ -338,14 +342,67 @@ export class HuntScene extends Phaser.Scene {
     if (Math.abs(x - this.player.pos.x) < 160) x = Math.min(f.maxX, Math.max(f.minX, x + 220 * (x < this.player.pos.x ? -1 : 1)));
     const y = f.minY + Math.random() * (f.maxY - f.minY);
     const sprite = this.add.sprite(x, y, "boar_idle").setOrigin(0.5, FEET.boar);
-    // tap area: the body inside the 92x92 canvas, a bit generous for fingers
-    sprite.setInteractive(new Phaser.Geom.Rectangle(4, 12, 84, 62), Phaser.Geom.Rectangle.Contains);
     sprite.play("boar_walk");
     this.boars.push({ id: this.nextBoarId++, sprite, ai: newCharger({ x, y }), hp: H.boar.maxHp, hits: EMPTY_HIT_LOG, dead: false });
   }
 
-  private liveBoar(id: number | null): Boar | undefined {
-    return id === null ? undefined : this.boars.find((b) => b.id === id && !b.dead);
+  // Placeholder touch controls (PixelLab art later): a stick that follows the thumb on the left half,
+  // and two buttons on the right.
+  private createTouchControls() {
+    this.input.addPointer(2);
+    const ui = (o: Phaser.GameObjects.Arc) => o.setScrollFactor(0).setDepth(1000);
+    ui(this.add.circle(STICK.x, STICK.y, STICK.radius, 0x000000, 0.35).setStrokeStyle(1, 0xffffff, 0.6));
+    this.stickKnob = ui(this.add.circle(STICK.x, STICK.y, 10, 0xffffff, 0.6));
+    const attack = ui(this.add.circle(ATTACK_BTN.x, ATTACK_BTN.y, ATTACK_BTN.radius, 0xc03030, 0.6).setStrokeStyle(1, 0xffffff, 0.8));
+    const weapon = ui(this.add.circle(WEAPON_BTN.x, WEAPON_BTN.y, WEAPON_BTN.radius, 0x305080, 0.6).setStrokeStyle(1, 0xffffff, 0.8));
+    const label = (x: number, y: number, t: string) =>
+      this.add.text(x, y, t, { fontFamily: "monospace", fontSize: "8px", color: "#ffffff" }).setOrigin(0.5).setScrollFactor(0).setDepth(1001);
+    label(ATTACK_BTN.x, ATTACK_BTN.y, "공격");
+    label(WEAPON_BTN.x, WEAPON_BTN.y, "무기");
+    attack.setInteractive(new Phaser.Geom.Circle(ATTACK_BTN.radius, ATTACK_BTN.radius, ATTACK_BTN.radius + 6), Phaser.Geom.Circle.Contains);
+    weapon.setInteractive(new Phaser.Geom.Circle(WEAPON_BTN.radius, WEAPON_BTN.radius, WEAPON_BTN.radius + 6), Phaser.Geom.Circle.Contains);
+    attack.on("pointerdown", () => (this.attackQueued = true));
+    weapon.on("pointerdown", () => this.toggleWeapon());
+
+    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
+      if (this.stickPointer === null && p.x < GAME_WIDTH * 0.45) {
+        this.stickPointer = p.id;
+        this.updateStick(p);
+      }
+    });
+    this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
+      if (p.id === this.stickPointer) this.updateStick(p);
+    });
+    const release = (p: Phaser.Input.Pointer) => {
+      if (p.id !== this.stickPointer) return;
+      this.stickPointer = null;
+      this.stickVec = { x: 0, y: 0 };
+      this.stickKnob.setPosition(STICK.x, STICK.y);
+    };
+    this.input.on("pointerup", release);
+    this.input.on("pointerupoutside", release);
+  }
+
+  private updateStick(p: Phaser.Input.Pointer) {
+    this.stickVec = joystickVector(STICK, { x: p.x, y: p.y }, STICK.radius, STICK.deadZone);
+    this.stickKnob.setPosition(STICK.x + this.stickVec.x * STICK.radius, STICK.y + this.stickVec.y * STICK.radius);
+  }
+
+  // A texture twice as wide: the image, then its mirror. Tiling that never shows a seam.
+  private mirrored(key: string): string {
+    const out = `${key}_mirrored`;
+    if (this.textures.exists(out)) return out;
+    const src = this.textures.get(key).getSourceImage() as HTMLImageElement;
+    const canvas = this.textures.createCanvas(out, src.width * 2, src.height)!;
+    const ctx = canvas.getContext();
+    ctx.drawImage(src, 0, 0);
+    ctx.save();
+    ctx.translate(src.width * 2, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(src, 0, 0);
+    ctx.restore();
+    canvas.refresh();
+    return out;
   }
 
   private loop(key: string) {
@@ -375,5 +432,7 @@ export class HuntScene extends Phaser.Scene {
     this.hud.clear();
     this.hud.fillStyle(0x000000, 0.6).fillRect(6, 16, 82, 8);
     this.hud.fillStyle(0xe04040, 1).fillRect(7, 17, (80 * p.hp) / H.player.maxHp, 6);
+    const weapon = p.weapon === "melee" ? "근접" : "원거리";
+    this.hudText.setText(this.touch ? `무기: ${weapon}` : `방향키/WASD 이동 · Z 공격 · X 무기(${weapon})`);
   }
 }

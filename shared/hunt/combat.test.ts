@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   EMPTY_HIT_LOG,
-  approachPoint,
   computeHit,
-  decidePlayerAction,
   inAttackRange,
   meatGrade,
   nextComboStep,
   recordHit,
+  swingTargets,
   type HitTuning,
   type WeaponStats,
 } from "./combat";
@@ -36,31 +35,26 @@ describe("inAttackRange", () => {
   });
 });
 
-describe("approachPoint", () => {
-  it("stands on the target's lane, a little inside reach, on the attacker's side", () => {
-    expect(approachPoint({ x: 0, y: 170 }, { x: 100, y: 200 }, melee)).toEqual({ x: 100 - 26 * 0.8, y: 200 });
-    expect(approachPoint({ x: 300, y: 170 }, { x: 100, y: 200 }, melee)).toEqual({ x: 100 + 26 * 0.8, y: 200 });
-  });
-  it("only changes lane when already close enough on x", () => {
-    expect(approachPoint({ x: 60, y: 170 }, { x: 100, y: 200 }, ranged)).toEqual({ x: 60, y: 200 });
-  });
-});
+describe("swingTargets", () => {
+  const me = { x: 100, y: 190 };
+  const ahead = { id: "ahead", pos: { x: 120, y: 193 } };
+  const ahead2 = { id: "ahead2", pos: { x: 110, y: 186 } };
+  const behind = { id: "behind", pos: { x: 85, y: 190 } };
+  const otherLane = { id: "otherLane", pos: { x: 115, y: 210 } };
+  const far = { id: "far", pos: { x: 200, y: 190 } };
+  const ids = (xs: { id: string }[]) => xs.map((x) => x.id).sort();
 
-describe("decidePlayerAction", () => {
-  const here = { x: 100, y: 190 };
-  it("idles with no order", () => {
-    expect(decidePlayerAction(here, { kind: "none" }, melee, 8)).toEqual({ kind: "idle" });
+  it("hits everything in front on the lane within melee reach", () => {
+    expect(ids(swingTargets(me, 1, [ahead, ahead2, behind, otherLane, far], melee, 8))).toEqual(["ahead", "ahead2"]);
   });
-  it("walks to a tapped point and idles once there", () => {
-    expect(decidePlayerAction(here, { kind: "moveTo", to: { x: 150, y: 200 } }, melee, 8)).toEqual({ kind: "move", to: { x: 150, y: 200 } });
-    expect(decidePlayerAction(here, { kind: "moveTo", to: here }, melee, 8)).toEqual({ kind: "idle" });
+  it("swings the other way when facing left", () => {
+    expect(ids(swingTargets(me, -1, [ahead, behind], melee, 8))).toEqual(["behind"]);
   });
-  it("attacks a target in reach and walks toward one out of reach", () => {
-    expect(decidePlayerAction(here, { kind: "attack", target: { x: 115, y: 190 } }, melee, 8)).toEqual({ kind: "attack" });
-    expect(decidePlayerAction(here, { kind: "attack", target: { x: 200, y: 210 } }, melee, 8)).toEqual({
-      kind: "move",
-      to: { x: 200 - 26 * 0.8, y: 210 },
-    });
+  it("shoots only the nearest target in front with the ranged weapon", () => {
+    expect(ids(swingTargets(me, 1, [far, ahead, ahead2], ranged, 8))).toEqual(["ahead2"]);
+  });
+  it("hits nothing when nobody is in front", () => {
+    expect(swingTargets(me, 1, [behind, otherLane], melee, 8)).toEqual([]);
   });
 });
 
