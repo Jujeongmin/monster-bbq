@@ -24,6 +24,12 @@ SHEETS = [
     ("bee", "bee_sheet.png", ["side", "down", "up", "attack"], 0.26),
     ("chicken", "chicken_sheet.png", ["side", "down", "up", "peck"], 0.24),
 ]
+# grids of separate items: (folder, sheet, columns, rows, names in reading order, scale)
+GRIDS = [
+    ("items", "forage_nodes.png", 3, 1, ["node_shiitake", "node_wild_garlic", "node_perilla"], 0.085),
+    ("items", "item_icons.png", 5, 2, [f"icon_{i}" for i in ["boar_belly", "boar_neck", "boar_rib", "rabbit_leg", "honeycomb",
+                                                            "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla"]], 0.06),
+]
 # single sprites cut from a sheet: (folder, name, sheet, box in sheet pixels, scale)
 PIECES = [
     ("bee", "stinger", "bee_sheet.png", (815, 1075, 895, 1120), 0.26),
@@ -65,6 +71,23 @@ def main():
                 if box:
                     bottoms.append(box[3])
         print(name, file, "cell", size, "lowest opaque row per frame: min", min(bottoms), "max", max(bottoms))
+    for name, file, cols, rows, names, scale in GRIDS:
+        if not (RAW / file).exists():
+            continue
+        sheet = key_magenta(Image.open(RAW / file))
+        cw, ch = sheet.width / cols, sheet.height / rows
+        out = ROOT / "art/test" / name
+        out.mkdir(parents=True, exist_ok=True)
+        for k, piece in enumerate(names):
+            c, r = k % cols, k // cols
+            cell = sheet.crop((round(c * cw), round(r * ch), round((c + 1) * cw), round((r + 1) * ch)))
+            box = cell.getbbox()
+            cell = cell.crop(box) if box else cell
+            size = (max(1, round(cell.width * scale)), max(1, round(cell.height * scale)))
+            small = cell.convert("RGBa").resize(size, Image.BOX).convert("RGBA")
+            rr, gg, bb, aa = small.split()
+            Image.merge("RGBA", (rr, gg, bb, aa.point(lambda v: 255 if v >= 110 else 0))).save(out / f"{piece}.png")
+        print(name, file, "->", len(names), "pieces")
     for name, piece, file, box, scale in PIECES:
         crop = key_magenta(Image.open(RAW / file).crop(box))
         size = (max(1, round(crop.width * scale)), max(1, round(crop.height * scale)))

@@ -21,7 +21,6 @@ const PHASE_NAME: Record<Phase, StringKey> = {
 export function DayFlow({ transport }: { transport: Transport }) {
   const [save, setSave] = useState<SaveData | null>(null);
   const [phase, setPhase] = useState<Phase>("hunt");
-  const [hunt, setHunt] = useState(0);
   const [failed, setFailed] = useState<{ action: Action; next: Phase } | null>(null);
   const [busy, setBusy] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -47,7 +46,6 @@ export function DayFlow({ transport }: { transport: Transport }) {
     try {
       setSave(await transport.act(action));
       setPhase(next);
-      if (next === "hunt") setHunt((n) => n + 1);
     } catch {
       setFailed({ action, next });
     } finally {
@@ -73,7 +71,11 @@ export function DayFlow({ transport }: { transport: Transport }) {
   return (
     <div className="dayflow">
       {phase === "hunt" && save.hunt && (
-        <PhaserGame key={hunt} onHuntEnd={(r: HuntResult) => act({ type: "finishHunt", huntId: save.hunt!.id, events: [], ko: r.ko }, "kitchen")} />
+        <PhaserGame
+          key={save.hunt.id}
+          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone }}
+          onHuntEnd={(r: HuntResult) => act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, ko: r.ko }, "kitchen")}
+        />
       )}
 
       <div className="dayflow-bar">
