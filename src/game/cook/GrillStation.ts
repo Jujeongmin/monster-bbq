@@ -248,8 +248,9 @@ export class GrillStation implements Station {
     const id = parseItemKey(p.key)!.id;
     const at = this.toScreen(p.x, p.y);
     const box = scene.add.container(at.x, at.y).setScale(PIECE_SCALE).setDepth(10);
-    // the browning on the plate side shows as a rim creeping out around the piece
-    const rim = scene.add.image(0, 0, cookedKey(id)).setScale(1.28).setAlpha(0);
+    // the browning on the plate side shows as a thin dark crust edge around the piece (a fat halo read as
+    // the piece swelling, so it stays close to the outline)
+    const rim = scene.add.image(0, 0, cookedKey(id)).setScale(1.08).setAlpha(0);
     const raw = scene.add.image(0, 0, rawKey(id));
     const cooked = scene.add.image(0, 0, cookedKey(id)).setAlpha(0);
     const beads = scene.add.graphics();
@@ -413,7 +414,8 @@ export class GrillStation implements Station {
       l.raw.setTint(rawTint);
       l.cooked.setTint(tint);
     }
-    v.rim.setVisible(!p.cut).setAlpha(Math.min(1, p.down) * 0.9).setTint(tint);
+    const crust = Phaser.Display.Color.GetColor(Math.round(darken * 0.55), Math.round(darken * 0.36), Math.round(darken * 0.22));
+    v.rim.setVisible(!p.cut).setAlpha(Math.min(1, p.down) * 0.85).setTint(crust);
     // sizzling: smoke in proportion to the heat under it; more once it starts to burn
     v.flakes.setAlpha(Math.min(1, p.salt * 0.3));
     const at = this.posOf(p);

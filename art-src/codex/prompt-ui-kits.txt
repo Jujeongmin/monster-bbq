@@ -1,0 +1,16 @@
+Use your image generation tool (do not write code to draw) to create THREE images: candidate UI kits for a cozy Korean BBQ restaurant game, "Grandma's secret recipe notebook" story. Same art style as the attached cooking art (comic, cute cartoon pixel art, chunky pixels, dark outline). The game UI theme: a grandmother's old Korean BBQ shop — wood, hanji (Korean mulberry paper), brass, warm charcoal-ember glow.
+
+Rules for all three images: SQUARE image, flat solid magenta (#FF00FF) background, NO text or letters or numbers anywhere, no shadows on the background. Every component drawn COMPLETELY with its outline closed, with wide empty magenta space between components and away from the image edge. Frames and buttons must have even, consistent borders and distinct corner pieces so they can be stretched (9-slice); their centers are plain and empty.
+
+Same component layout in all three images:
+ row 1: one large empty window panel (wide rectangle)
+ row 2: a wide button (normal), the same button pressed (pushed in, darker), the same button disabled (greyed), a tab (selected), the same tab (unselected)
+ row 3: a horizontal gauge bar empty, the same gauge full (warm orange fill), an empty speech bubble with a small tail pointing down-left, a blank ribbon banner badge (for a "300% value" tag), a long thin top bar strip for resources
+ row 4: small icons: a gold coin, a glowing golden charcoal briquette, a calendar page, a cooking pot, a notebook
+
+Save as:
+1) art-src/codex/raw/ui_kit_a.png — dark walnut wood frames, cream hanji paper panel centers with faint paper fiber texture, brass corner caps and studs, buttons of warm red-brown lacquered wood with brass rims.
+2) art-src/codex/raw/ui_kit_b.png — light pine wood frames, hanji paper centers, accents in traditional Korean dancheong colours (muted red, green, blue trims), buttons of red lacquer with golden edges.
+3) art-src/codex/raw/ui_kit_c.png — blackened cast-iron frames like a grill rim with a faint ember-orange inner glow, hanji paper centers, copper rivets, buttons like glowing charcoal-orange plates set in iron.
+
+Reply only with the three saved file paths.
