@@ -89,7 +89,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
         <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>
       </div>
 
-      {phase === "kitchen" && <Kitchen save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={() => setPhase("service")} />}
+      {phase === "kitchen" && <Kitchen save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void act({ type: "setMenu", dishes: menu }, "service")} />}
       {phase === "service" && (
         <Panel title={t("service.title")} body={t("service.body")}>
           <button

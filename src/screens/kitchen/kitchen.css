@@ -35,3 +35,17 @@
 .cook-result .lid-bubble { margin: 4px 0 0; padding: 8px 10px; background: #fff; color: #1b1530; border-radius: 8px; }
 @keyframes cook-pop { from { transform: scale(0.9); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes cook-bounce { 0% { transform: translateY(8px) scale(0.6); } 60% { transform: translateY(-6px) scale(1.15); } 100% { transform: none; } }
+.cookbook-count { margin: 0 0 8px; font-size: 14px; color: #ffd166; }
+.cookbook-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.dish-card { min-height: 64px; }
+.dish-card .dish-name { font-size: 15px; color: #ffd166; }
+.dish-card .dish-name.unknown { color: #6f6894; letter-spacing: 2px; }
+.dish-recipe { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; }
+.dish-recipe .item-icon img { width: 28px; }
+.dish-method { font-size: 12px; color: #ff9f43; }
+.dish-hint { margin: 6px 0 0; font-size: 12px; color: #c9c2ea; }
+.menu-pick { display: flex; flex-direction: column; gap: 6px; max-width: 480px; }
+.dayflow .menu-row { background: #2a2244; border: 2px solid #5b4b8a; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; text-align: left; color: #fff; }
+.dayflow .menu-row.on { border-color: #ffd166; background: #4a3d78; }
+.menu-row .dish-name { font-size: 15px; color: #ffd166; }
+.menu-info { font-size: 13px; color: #ddd8f0; }
