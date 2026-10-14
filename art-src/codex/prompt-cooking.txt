@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create THREE images in the art style of the attached dishes sheet (cozy, comic, cute cartoon pixel art, same palette, same chunky pixel size, same dark outline). These are close-up cooking station art for a Korean BBQ restaurant game; the camera looks down at the counter from a high angle (almost straight down, slight tilt).
+
+Layout rules for all: flat solid magenta (#FF00FF) background; no text; no shadows on the background; nothing touching the image or cell edges. Grids have equal square cells with NO borders or lines and exactly one object centred in each cell.
+
+1) Save as art-src/codex/raw/cook_grill.png — ONE large object filling most of the image: a round Korean BBQ grill plate seen from above (dark cast iron dome with radial grooves, slightly tilted so a small fat-drain spout and a little metal fat cup sit at the bottom edge), sitting on a round gas burner ring with a few blue flame tips peeking out around the rim. Empty, clean, no food.
+
+2) Save as art-src/codex/raw/cook_pieces.png — a 10 columns x 2 rows grid. Row 1 = RAW pieces, row 2 = the SAME pieces COOKED PERFECTLY (same shape, same size, same orientation as the raw one above it, only the colour and surface change: browned, grill marks, glistening). Pieces seen from above, sized to lie on a grill:
+ columns: a long strip of pork belly (layers of meat and fat); a thick pork neck slab; a pork rib piece on the bone; a rabbit leg; a chicken thigh; a chicken breast fillet; a shiitake mushroom cap (gills down); a small cluster of three peeled garlic cloves; a single perilla leaf (cooked = wilted and darker); a piece of golden honeycomb (cooked = melted glossy honey puddle).
+
+3) Save as art-src/codex/raw/cook_tools.png — a 5 columns x 2 rows grid:
+ row 1: metal BBQ tongs (closed, diagonal); kitchen scissors (closed, diagonal); a soup ladle (diagonal); an empty round white plate seen from above; an empty earthenware bowl seen from above
+ row 2: a dark earthenware pot seen from above filled with clear simmering broth with small bubbles; the same pot with broth covered in grey-beige foam scum; the pot's lid seen from above with a knob; a round stove heat dial knob with tick marks around it; a small burnt black crumb (charred bit of meat)
+
+Reply only with the three saved file paths.

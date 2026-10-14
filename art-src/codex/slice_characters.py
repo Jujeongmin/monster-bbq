@@ -31,6 +31,11 @@ GRIDS = [
                                                             "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla"]], 0.06),
     ("dishes", "dishes.png", 3, 3, ["grilled_belly", "garlic_neck", "belly_ssam", "honey_rabbit", "shiitake_grill", "rib_stew",
                                     "baeksuk", "chicken_perilla", "fail"], 0.1),
+    ("cooking", "cook_grill.png", 1, 1, ["grill"], 0.2),
+    ("cooking", "cook_pieces.png", 10, 2, [f"{state}_{i}" for state in ["raw", "cooked"] for i in [
+        "boar_belly", "boar_neck", "boar_rib", "rabbit_leg", "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla", "honeycomb"]], 0.32),
+    ("cooking", "cook_tools.png", 5, 2, ["tongs", "scissors", "ladle", "plate", "bowl", None, None, None, "dial", "crumb"], 0.2),
+    ("cooking", "cook_tools.png", 5, 2, [None, None, None, None, None, "pot_clear", "pot_foam", "pot_lid", None, None], 0.6),
 ]
 # single sprites cut from a sheet: (folder, name, sheet, box in sheet pixels, scale)
 PIECES = [
@@ -81,6 +86,8 @@ def main():
         out = ROOT / "art/test" / name
         out.mkdir(parents=True, exist_ok=True)
         for k, piece in enumerate(names):
+            if piece is None:  # cell taken by another entry at another scale
+                continue
             c, r = k % cols, k // cols
             cell = sheet.crop((round(c * cw), round(r * ch), round((c + 1) * cw), round((r + 1) * ch)))
             box = cell.getbbox()
