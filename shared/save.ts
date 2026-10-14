@@ -58,6 +58,8 @@ export interface SaveData {
   reputation: number;
   // upgrade levels bought (missing = the starting level, see shared/growth)
   upgrades: Partial<Record<UpgradeId, number>>;
+  // dishes packed for the next hunt (emptied when it is settled)
+  lunchbox: DishId[];
   service: PendingService | null;
   lastService: ServiceSummary | null;
 }
@@ -77,6 +79,7 @@ export function newSave(): SaveData {
     lastCook: null,
     reputation: 0,
     upgrades: {},
+    lunchbox: [],
     service: null,
     lastService: null,
   };
@@ -197,6 +200,8 @@ export function readSave(raw: unknown): SaveData {
     lastCook: readLastCook(r.lastCook),
     reputation: count(r.reputation),
     upgrades: readUpgrades(r.upgrades),
+    // the same dish may be packed twice, so no de-duplication here
+    lunchbox: Array.isArray(r.lunchbox) ? r.lunchbox.filter(isDishId) : [],
     service,
     lastService: readSummary(r.lastService),
   };

@@ -1,7 +1,7 @@
 import { BALANCE } from "./balance";
 import { isMethod, type DishId } from "./content/dishes";
 import { isUpgradeId, TOOL_UPGRADES } from "./content/upgrades";
-import { bagSlots, isLocked, level, menuSlots, nextCost, seatBonus } from "./growth";
+import { bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost, seatBonus } from "./growth";
 import { itemKey, parseItemKey, type ItemId } from "./content/items";
 import { addToBag } from "./hunt/bag";
 import { dropFor } from "./hunt/drops";
@@ -23,6 +23,7 @@ export type Action =
   | { type: "startService" }
   | { type: "finishService"; serviceId: string; served: { customer: string; keys: string[]; accuracy: number }[]; left: string[] }
   | { type: "buyUpgrade"; id: string }
+  | { type: "packLunch"; dishes: string[] }
   | { type: "sellAll" }
   | { type: "endDay" };
 
@@ -197,6 +198,26 @@ function finishService(save: SaveData, a: Record<string, unknown>, now: number, 
   };
 }
 
+// Lunchboxes (growth design 2): found dishes packed from real ingredients (regular grade first, so the
+// premium meat stays for paying guests), up to the box's slots, never during a hunt.
+function packLunch(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
+  const bad = { save, error: "bad_lunch" };
+  const d = a.dishes;
+  if (save.hunt || !Array.isArray(d) || d.length === 0 || save.lunchbox.length + d.length > lunchSlots(save)) return bad;
+  const items = { ...save.items };
+  for (const dish of d as unknown[]) {
+    const recipe = typeof dish === "string" ? save.cookbook[dish as DishId] : undefined;
+    if (!recipe) return bad;
+    for (const id of recipe.items) {
+      const key = [itemKey(id, "normal"), itemKey(id, "premium"), id].find((k) => parseItemKey(k) && (items[k] ?? 0) > 0);
+      if (!key) return bad;
+      items[key] -= 1;
+      if (items[key] === 0) delete items[key];
+    }
+  }
+  return { save: { ...save, items, lunchbox: [...save.lunchbox, ...(d as DishId[])] } };
+}
+
 // The server's rules for every change to a save (the in-page LocalTransport runs the same code).
 // `action` comes from the client, so it is checked here; a rejected action leaves the save as it was.
 export function applyAction(save: SaveData, action: unknown, ctx: ActionContext): { save: SaveData; error?: string } {
@@ -218,7 +239,7 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       // a related ingredient in hand opens a dish's cookbook hint (spec 4)
       const ids = Object.keys(gained).map((k) => parseItemKey(k)!.id);
       const hints = ctx.recipes ? hintsFor(ids, ctx.recipes, save.cookbook, save.hints) : save.hints;
-      return { save: { ...save, items, hunt: null, hints, stage: "kitchen" } };
+      return { save: { ...save, items, hunt: null, hints, stage: "kitchen", lunchbox: [] } };
     }
     case "cook":
       return cook(save, a, ctx.recipes);
@@ -255,6 +276,8 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       const tools = method && !save.tools.includes(method) ? [...save.tools, method] : save.tools;
       return { save: { ...save, gold: save.gold - cost, upgrades: { ...save.upgrades, [a.id]: level(save, a.id) + 1 }, tools } };
     }
+    case "packLunch":
+      return packLunch(save, a);
     case "sellAll":
       return { save: { ...save, gold: save.gold + saleValue(save.items), items: {} } };
     case "endDay":
