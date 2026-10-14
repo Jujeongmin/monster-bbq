@@ -1,0 +1,15 @@
+Use your image generation tool (do not write code to draw) to redraw ONLY the walk cycles of the two characters in the attached sprite sheets (first image: the hunter, second image: the boar). Keep each character's design, colours, size, outline and pixel size exactly the same as in the attached sheets; only the poses change.
+
+A good walk cycle has 4 clearly different key poses, in this order:
+ frame 1: CONTACT A — right foot far forward touching the ground, left foot far back, arms swinging opposite, body at its lowest
+ frame 2: PASSING A — legs together under the body, one foot lifted, body at its highest (1-2 pixels higher)
+ frame 3: CONTACT B — left foot far forward, right foot far back, arms swinging the other way, body lowest
+ frame 4: PASSING B — legs together, the other foot lifted, body highest
+For the boar (four legs) use a trot: frame 1 front-left and back-right legs forward, frame 2 legs gathered, frame 3 front-right and back-left legs forward, frame 4 legs gathered.
+
+Layout rules for BOTH sheets: flat solid magenta (#FF00FF) background; a strict grid of equal square cells with NO borders or lines; exactly one pose centred in every cell, the same size in every cell, feet at the same baseline in every cell except the 1-2 pixel lift in the passing frames, nothing touching the cell edges; no text, no ground shadows.
+
+1) Save as art-src/codex/raw/hunter_walk.png — 4 columns x 3 rows: row 1 walking toward the camera (facing down), row 2 walking away (back view), row 3 walking to the right (side view).
+2) Save as art-src/codex/raw/boar_walk.png — 4 columns x 3 rows: row 1 walking to the right (side view), row 2 walking toward the camera, row 3 walking away.
+
+Reply only with the two saved file paths.

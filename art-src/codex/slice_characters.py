@@ -1,4 +1,4 @@
-"""Cut the Codex character sheets (4 columns x 5 rows on magenta) into game frames.
+"""Cut the Codex character sheets (4 columns, one row per animation, on magenta) into game frames.
 
     python art-src/codex/slice_characters.py
 
@@ -13,10 +13,13 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "art-src/codex/raw"
 SCALE = 1 / 3
-SHEETS = {
-    "hunter": ("hunter_sheet.png", ["down", "up", "side", "slash", "throw"]),
-    "boar": ("boar_sheet.png", ["side", "down", "up", "windup", "charge"]),
-}
+# (folder, sheet, row names); later sheets overwrite rows of the same name (the redrawn walk cycles)
+SHEETS = [
+    ("hunter", "hunter_sheet.png", ["down", "up", "side", "slash", "throw"]),
+    ("boar", "boar_sheet.png", ["side", "down", "up", "windup", "charge"]),
+    ("hunter", "hunter_walk.png", ["down", "up", "side"]),
+    ("boar", "boar_walk.png", ["side", "down", "up"]),
+]
 
 
 def key_magenta(im: Image.Image) -> Image.Image:
@@ -33,9 +36,11 @@ def key_magenta(im: Image.Image) -> Image.Image:
 
 
 def main():
-    for name, (file, rows) in SHEETS.items():
+    for name, file, rows in SHEETS:
+        if not (RAW / file).exists():
+            continue
         sheet = key_magenta(Image.open(RAW / file))
-        cw, ch = sheet.width / 4, sheet.height / 5
+        cw, ch = sheet.width / 4, sheet.height / len(rows)
         out = ROOT / "art/test" / name
         out.mkdir(parents=True, exist_ok=True)
         size = (round(cw * SCALE), round(ch * SCALE))
@@ -51,7 +56,7 @@ def main():
                 box = frame.getbbox()
                 if box:
                     bottoms.append(box[3])
-        print(name, "cell", size, "lowest opaque row per frame: min", min(bottoms), "max", max(bottoms))
+        print(name, file, "cell", size, "lowest opaque row per frame: min", min(bottoms), "max", max(bottoms))
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ const H = BALANCE.hunt;
 // A frame gap after the tab was hidden must not teleport anything (rules are also clamped).
 const MAX_DT_MS = 50;
 // Where the feet are inside each sprite's canvas (transparent padding underneath). Tune by eye.
-const FEET = { hunter: 0.9, boar: 0.9 };
+const FEET = { hunter: 0.92, boar: 0.92 };
 // Codex sprite sheets (art-src/codex), 4 frames per row: art/test/<who>/<row>_<n>.png
 const HUNTER_ROWS = ["down", "up", "side", "slash", "throw"] as const;
 const BOAR_ROWS = ["side", "down", "up", "windup", "charge"] as const;
@@ -29,6 +29,13 @@ const BOAR_ROWS = ["side", "down", "up", "windup", "charge"] as const;
 type Look = "down" | "up" | "side";
 function lookOf(v: Vec): Look {
   return Math.abs(v.y) > Math.abs(v.x) ? (v.y > 0 ? "down" : "up") : "side";
+}
+
+// Walk cycles go contact, passing, contact, passing: lift the body a pixel on the passing frames so the
+// step reads (the frames alone barely move).
+function stepBob(sprite: Phaser.GameObjects.Sprite): number {
+  const i = sprite.anims.currentFrame?.index ?? 1;
+  return i % 2 === 0 ? -1 : 0;
 }
 // Touch controls, in screen pixels of the game, placed relative to its size.
 const STICK = { x: GAME_WIDTH * 0.12, y: GAME_HEIGHT * 0.78, radius: 36, deadZone: 0.2 };
@@ -287,7 +294,7 @@ export class HuntScene extends Phaser.Scene {
       this.hunter.anims.stop();
       this.hunter.setTexture(`hunter_${look}_0`);
     }
-    this.hunter.setPosition(p.pos.x, p.pos.y).setDepth(p.pos.y);
+    this.hunter.setPosition(p.pos.x, p.pos.y + (moving ? stepBob(this.hunter) : 0)).setDepth(p.pos.y);
   }
 
   // Keys and the stick add up; the rules cap the length at 1.
@@ -484,6 +491,7 @@ export class HuntScene extends Phaser.Scene {
         key = `boar_walk_${look}`;
     }
     if (s.anims.currentAnim?.key !== key || !s.anims.isPlaying) s.play(key);
+    s.setY(b.ai.pos.y + (b.ai.phase === "wander" ? stepBob(s) : 0));
   }
 
   private hurtPlayer(damage: number, dir: Vec) {
