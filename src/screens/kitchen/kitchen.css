@@ -49,3 +49,9 @@
 .dayflow .menu-row.on { border-color: #ffd166; background: #4a3d78; }
 .menu-row .dish-name { font-size: 15px; color: #ffd166; }
 .menu-info { font-size: 13px; color: #ddd8f0; }
+.dish-icon { display: block; height: auto; image-rendering: pixelated; }
+.dish-icon.silhouette { filter: brightness(0); opacity: 0.35; }
+.dish-card .dish-icon { margin: 0 auto 4px; }
+.cook-result .dish-icon { margin: 4px auto; }
+.cook-result.new .dish-icon { animation: cook-bounce 0.6s ease-out; }
+.menu-dish { display: flex; align-items: center; gap: 8px; }

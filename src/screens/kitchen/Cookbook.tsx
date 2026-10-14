@@ -1,6 +1,7 @@
 import { DISHES, type DishId } from "../../../shared/content/dishes";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
+import { DishIcon } from "./DishIcon";
 import { ItemIcon } from "./ItemIcon";
 
 // The cookbook (spec 4): every dish as a card. Found ones show how they are made; the rest stay "???",
@@ -17,6 +18,7 @@ export function Cookbook({ save }: { save: SaveData }) {
           if (recipe)
             return (
               <div key={id} className="kitchen-box dish-card found">
+                <DishIcon dish={id} />
                 <div className="dish-name">{t(`dish.${id}` as StringKey)}</div>
                 <div className="dish-recipe">
                   {recipe.items.map((item) => (
@@ -28,6 +30,7 @@ export function Cookbook({ save }: { save: SaveData }) {
             );
           return (
             <div key={id} className="kitchen-box dish-card">
+              <DishIcon dish={id} silhouette />
               <div className="dish-name unknown">{t("kitchen.unknown")}</div>
               {save.hints.includes(id) && <p className="dish-hint">{t(`dish.${id}.hint` as StringKey)}</p>}
             </div>

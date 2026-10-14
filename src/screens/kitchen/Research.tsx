@@ -6,6 +6,7 @@ import { ITEMS, parseItemKey } from "../../../shared/content/items";
 import type { CookOutcome } from "../../../shared/kitchen/cook";
 import type { SaveData } from "../../../shared/save";
 import { itemName, t, type StringKey } from "../../i18n";
+import { DishIcon } from "./DishIcon";
 import { ItemIcon } from "./ItemIcon";
 
 const ORDER = Object.keys(ITEMS);
@@ -103,10 +104,12 @@ function CookResultView({ outcome }: { outcome: CookOutcome }) {
     return outcome.kind === "new" ? (
       <div className="cook-result new">
         <div className="cook-banner">{t("kitchen.new")}</div>
+        <DishIcon dish={outcome.dish} size={96} />
         <div className="cook-dish">{t(`dish.${outcome.dish}` as StringKey)}</div>
       </div>
     ) : (
       <div className="cook-result">
+        <DishIcon dish={outcome.dish} size={64} />
         <div className="cook-dish">{t(`dish.${outcome.dish}` as StringKey)}</div>
         <p>{t("kitchen.known")}</p>
       </div>
@@ -122,6 +125,7 @@ function CookResultView({ outcome }: { outcome: CookOutcome }) {
   }
   return (
     <div className="cook-result fail">
+      <DishIcon dish="fail" size={64} />
       <div className="cook-dish">{t(`kitchen.fail.${outcome.method}` as StringKey)}</div>
       <p>{t("kitchen.failLine")}</p>
     </div>

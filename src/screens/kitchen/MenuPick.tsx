@@ -3,6 +3,7 @@ import { DISHES, type DishId } from "../../../shared/content/dishes";
 import { servings } from "../../../shared/kitchen/cook";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
+import { DishIcon } from "./DishIcon";
 
 // Tonight's menu (spec 4): pick up to menuSlots found dishes, seeing how many plates the fridge makes.
 // A dish whose tool is not owned yet is shown but cannot be picked. The choice is sent when the shop
@@ -26,7 +27,10 @@ export function MenuPick({ save, picked, setPicked }: { save: SaveData; picked: 
         const on = picked.includes(id);
         return (
           <button key={id} className={`kitchen-box menu-row${on ? " on" : ""}`} disabled={!hasTool} onClick={() => toggle(id)}>
-            <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>
+            <span className="menu-dish">
+              <DishIcon dish={id} size={40} />
+              <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>
+            </span>
             <span className="menu-info">
               {hasTool ? t("kitchen.servings", { n: servings(recipe, save.items) }) : t("kitchen.needTool", { tool: t(`tool.${recipe.method}` as StringKey) })}
             </span>
