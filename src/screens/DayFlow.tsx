@@ -23,6 +23,9 @@ const PHASE_NAME: Record<Phase, StringKey> = {
   settle: "phase.settle",
 };
 
+const shopShut = (code: string) => code === "no_menu" || code === "no_ingredients";
+const huntRefused = (f: { action: Action; code: string }) => f.action.type === "finishHunt" && f.code === "bad_hunt";
+
 export function DayFlow({ transport }: { transport: Transport }) {
   const [save, setSave] = useState<SaveData | null>(null);
   const [phase, setPhase] = useState<Phase>("hunt");
@@ -36,8 +39,8 @@ export function DayFlow({ transport }: { transport: Transport }) {
     setLoadFailed(false);
     transport.load().then((s) => {
       setSave(s);
-      // a service the server opened and never settled (the page was reloaded): back into it
-      if (s.service) setPhase("service");
+      // back where the server says the day is (a service opened and never settled: back into it)
+      setPhase(s.service ? "service" : s.stage);
     }, () => setLoadFailed(true));
   }
   useEffect(load, [transport]);
@@ -127,8 +130,14 @@ export function DayFlow({ transport }: { transport: Transport }) {
 
       {failed && (
         <div className="dayflow-error ui-panel">
-          <span>{failed.code === "no_menu" || failed.code === "no_ingredients" ? t(`error.${failed.code}`) : t("error.retry")}</span>
-          {failed.code !== "no_menu" && failed.code !== "no_ingredients" && (
+          <span>{shopShut(failed.code) ? t(`error.${failed.code}`) : huntRefused(failed) ? t("error.bad_hunt") : t("error.retry")}</span>
+          {shopShut(failed.code) ? (
+            // nothing to sell tonight: close the shop and go on to tomorrow
+            <button className="ui-btn" disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("error.closeShop")}</button>
+          ) : huntRefused(failed) ? (
+            // the server would never take this report: come home empty-handed rather than stay stuck
+            <button className="ui-btn" disabled={busy} onClick={() => act({ type: "finishHunt", huntId: save.hunt?.id ?? "", events: [], ko: false }, "kitchen")}>{t("error.emptyHanded")}</button>
+          ) : (
             <button className="ui-btn" disabled={busy} onClick={() => act(failed.action, failed.next)}>↻</button>
           )}
         </div>

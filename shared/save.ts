@@ -32,9 +32,14 @@ export interface ServiceSummary {
   repDelta: number;
 }
 
+// Where the day is: the server moves it along (hunt settled -> kitchen, service settled -> settle,
+// next day -> hunt), so a reload cannot skip ahead or hunt twice in one day.
+export type Stage = "hunt" | "kitchen" | "settle";
+
 export interface SaveData {
   version: 4;
   day: number;
+  stage: Stage;
   gold: number;
   // item key (see itemKey) -> count
   items: Record<string, number>;
@@ -57,6 +62,7 @@ export function newSave(): SaveData {
   return {
     version: 4,
     day: 1,
+    stage: "hunt",
     gold: 0,
     items: {},
     hunt: null,
@@ -158,9 +164,13 @@ export function readSave(raw: unknown): SaveData {
   }
   if (r.version !== 2 && r.version !== 3 && r.version !== 4) return newSave();
   const tools = readList(r.tools, isMethod);
+  const service = readService(r.service);
+  // saves from before the stage was kept: a service still open means the kitchen, otherwise the hunt
+  const stage: Stage = r.stage === "hunt" || r.stage === "kitchen" || r.stage === "settle" ? r.stage : service ? "kitchen" : "hunt";
   return {
     version: 4,
     day: count(r.day, 1),
+    stage,
     gold: count(r.gold),
     items: readItems(r.items),
     hunt: readHunt(r.hunt),
@@ -170,7 +180,7 @@ export function readSave(raw: unknown): SaveData {
     tools: tools.length > 0 ? tools : ["grill"],
     lastCook: readLastCook(r.lastCook),
     reputation: count(r.reputation),
-    service: readService(r.service),
+    service,
     lastService: readSummary(r.lastService),
   };
 }

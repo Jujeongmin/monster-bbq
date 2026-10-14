@@ -187,6 +187,7 @@ function finishService(save: SaveData, a: Record<string, unknown>, now: number, 
       items,
       gold: save.gold + sales + tips,
       reputation,
+      stage: "settle",
       service: null,
       lastService: { id: svc.id, served: seen.size, left: gone, sales, tips, happy, repDelta: reputation - save.reputation },
     },
@@ -201,6 +202,7 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
   switch (a.type) {
     case "startHunt": {
       if (a.zone !== "forest") return { save, error: "bad_action" };
+      if (save.stage !== "hunt") return { save, error: "wrong_stage" };
       const seed = Math.floor(ctx.random() * 2 ** 31);
       const id = `h${ctx.now.toString(36)}${Math.floor(ctx.random() * 1e9).toString(36)}`;
       return { save: { ...save, hunt: { id, seed, zone: a.zone, startedAt: ctx.now } } };
@@ -213,7 +215,7 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       // a related ingredient in hand opens a dish's cookbook hint (spec 4)
       const ids = Object.keys(gained).map((k) => parseItemKey(k)!.id);
       const hints = ctx.recipes ? hintsFor(ids, ctx.recipes, save.cookbook, save.hints) : save.hints;
-      return { save: { ...save, items, hunt: null, hints } };
+      return { save: { ...save, items, hunt: null, hints, stage: "kitchen" } };
     }
     case "cook":
       return cook(save, a, ctx.recipes);
@@ -231,6 +233,7 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       return { save: { ...save, menu: [...(d as DishId[])] } };
     }
     case "startService": {
+      if (save.stage !== "kitchen") return { save, error: "wrong_stage" };
       if (save.menu.length === 0) return { save, error: "no_menu" };
       if (!save.menu.some((d) => save.cookbook[d] && servings(save.cookbook[d]!, save.items) > 0)) return { save, error: "no_ingredients" };
       const seed = Math.floor(ctx.random() * 2 ** 31);
@@ -242,7 +245,9 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
     case "sellAll":
       return { save: { ...save, gold: save.gold + saleValue(save.items), items: {} } };
     case "endDay":
-      return { save: { ...save, day: save.day + 1 } };
+      // from the settle screen, or from the kitchen when the shop stays shut tonight; never mid-hunt
+      if (save.stage === "hunt") return { save, error: "wrong_stage" };
+      return { save: { ...save, day: save.day + 1, stage: "hunt" } };
     default:
       return { save, error: "bad_action" };
   }

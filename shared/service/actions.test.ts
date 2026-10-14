@@ -17,6 +17,7 @@ const ctx = (now: number, recipes: Record<DishId, Recipe> | null = TABLE): Actio
 
 const kitchen: SaveData = {
   ...newSave(),
+  stage: "kitchen",
   day: 3,
   reputation: 20,
   items: { "boar_belly:premium": 2, "boar_belly:normal": 4, "boar_neck:normal": 3, wild_garlic: 3 },

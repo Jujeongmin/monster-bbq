@@ -30,10 +30,10 @@ describe("Server", () => {
 
   test("keeps each account's save apart", async (server) => {
     server.connect({ account: "user-a" });
-    await server.act({ type: "endDay" });
+    await server.act({ type: "startHunt", zone: "forest" });
     server.connect({ account: "user-b" });
     const s = await server.load();
-    expect(s.day).toBe(1);
+    expect(s.hunt).toBe(null);
   });
 
   test("starts with only the grill", async (server) => {

@@ -108,7 +108,7 @@ describe("sellAll and endDay", () => {
     expect(applyAction(s, { type: "sellAll" }, ctx(0)).save).toEqual({ ...s, gold: 10 + 2 * 30 + 3 * 15 + 2 * 6, items: {} });
   });
   it("moves to the next day", () => {
-    expect(applyAction(newSave(), { type: "endDay" }, ctx(0)).save.day).toBe(2);
+    expect(applyAction({ ...newSave(), stage: "settle" }, { type: "endDay" }, ctx(0)).save.day).toBe(2);
   });
   it("rejects unknown actions", () => {
     expect(applyAction(newSave(), { type: "giveMeGold", gold: 1e9 }, ctx(0)).error).toBe("bad_action");

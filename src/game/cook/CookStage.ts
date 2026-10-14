@@ -187,6 +187,8 @@ export class CookStage extends Phaser.Scene implements CookHost {
       const id = parseItemKey(e.key)!.id;
       // what was cooked shows cooked; something straight from the tray stays as it is
       const sprite = this.add.image(at.x, at.y, raw ? rawKey(id) : cookedKey(id)).setScale(from === "boil" ? 0.45 : 0.6).setDepth(20);
+      // a burnt piece stays burnt on the plate
+      if (e.judgement.notes.includes("burnt")) sprite.setTint(0x6a5246);
       this.plated.push({ key: e.key, judgement: e.judgement, sprite });
     }
     return true;

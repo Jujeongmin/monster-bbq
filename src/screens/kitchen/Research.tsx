@@ -85,7 +85,6 @@ function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookP
       <DishIcon dish="fail" size={64} />
       <div className="cook-dish">{t(`kitchen.fail.${outcome.method}` as StringKey)}</div>
       <p>{t("kitchen.failLine")}</p>
-      <SkillLine plate={plate} />
     </div>
   );
 }
