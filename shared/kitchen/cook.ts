@@ -10,7 +10,8 @@ export interface Recipe {
 
 // How a try in the research kitchen went (spec 4): a dish, a near miss with a hint, or a flop.
 export type CookOutcome =
-  | { kind: "new" | "known"; dish: DishId }
+  | { kind: "new"; dish: DishId }
+  | { kind: "known"; dish: DishId }
   | { kind: "near"; hint: "method" | "extra" }
   | { kind: "near"; hint: "missing"; taste: Taste }
   | { kind: "fail"; method: Method };

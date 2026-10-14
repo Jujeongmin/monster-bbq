@@ -1,0 +1,37 @@
+/* Placeholder styling for the kitchen (plan 04). The real UI art arrives in plan 08. */
+.kitchen { position: absolute; inset: 0 0 40px; display: flex; flex-direction: column; background: #1b1530; overflow: hidden; }
+.kitchen-tabs { display: flex; gap: 6px; padding: 8px; background: #140f26; }
+.dayflow .kitchen-tabs button { background: #3a2f5e; color: #ddd8f0; padding: 6px 14px; font-size: 14px; }
+.dayflow .kitchen-tabs button.on { background: #ffd166; color: #1b1530; }
+.dayflow .kitchen-tabs .kitchen-ready { margin-left: auto; background: #7fe07f; color: #1b1530; }
+.kitchen-body { flex: 1; overflow: auto; padding: 10px; }
+.kitchen-box { background: #2a2244; border: 2px solid #5b4b8a; border-radius: 6px; padding: 10px 12px; }
+.kitchen-box h3 { margin: 0 0 8px; font-size: 14px; color: #ffd166; }
+.kitchen-empty { margin: 4px 0; font-size: 12px; color: #9a93bd; }
+.research { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+.fridge { flex: 1 1 240px; }
+.pot { flex: 1 1 260px; }
+.fridge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; }
+.dayflow .fridge-item { position: relative; display: flex; align-items: center; justify-content: center; height: 48px; padding: 0; background: #3a2f5e; border: 2px solid transparent; }
+.dayflow .fridge-item.on { border-color: #ffd166; background: #4a3d78; }
+.fridge-count { position: absolute; right: 3px; bottom: 1px; font-size: 11px; color: #fff; text-shadow: 0 0 2px #000; }
+.item-icon { position: relative; display: inline-flex; }
+.item-icon img { width: 40px; height: auto; image-rendering: pixelated; }
+.item-star { position: absolute; left: -4px; top: -6px; font-size: 11px; color: #ffd166; text-shadow: 0 0 2px #000; }
+.pot-slots { display: flex; gap: 6px; margin-bottom: 8px; }
+.dayflow .pot-slot { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 64px; padding: 4px; font-size: 11px; color: #fff; background: #3a2f5e; }
+.methods { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.dayflow .methods button { padding: 6px 10px; font-size: 13px; background: #3a2f5e; color: #ddd8f0; }
+.dayflow .methods button.on { background: #ff9f43; color: #1b1530; }
+.cook-button { width: 100%; }
+.cook-result { margin-top: 10px; padding: 10px; text-align: center; background: #1b1530; border-radius: 6px; animation: cook-pop 0.35s ease-out; }
+.cook-result p { margin: 4px 0 0; font-size: 13px; color: #ddd8f0; }
+.cook-banner { font-size: 13px; color: #7fe07f; }
+.cook-dish { font-size: 18px; color: #ffd166; }
+.cook-result.new .cook-dish { font-size: 22px; animation: cook-bounce 0.6s ease-out; }
+.cook-result.fail .cook-dish { color: #b0a090; }
+.cook-result.near { text-align: left; }
+.lid-name { font-size: 12px; color: #7fc8ff; }
+.cook-result .lid-bubble { margin: 4px 0 0; padding: 8px 10px; background: #fff; color: #1b1530; border-radius: 8px; }
+@keyframes cook-pop { from { transform: scale(0.9); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes cook-bounce { 0% { transform: translateY(8px) scale(0.6); } 60% { transform: translateY(-6px) scale(1.15); } 100% { transform: none; } }
