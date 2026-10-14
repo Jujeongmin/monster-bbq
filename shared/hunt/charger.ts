@@ -1,7 +1,8 @@
-import { clampToField, sameLane, stepToward } from "./geometry";
+import { clampToField, distance, stepToward, unit } from "./geometry";
 import type { Field, Vec } from "./types";
 
-// A charging monster (the boar): wander -> line up and wind up -> charge along its lane -> catch its breath.
+// A charging monster (the boar) on a top-down map: wander -> wind up aiming at the player ->
+// charge straight that way -> catch its breath.
 export interface ChargerTuning {
   wanderSpeed: number;
   chargeSpeed: number;
@@ -9,8 +10,8 @@ export interface ChargerTuning {
   telegraphMs: number;
   chargeMs: number;
   recoverMs: number;
-  hitWidth: number;
-  laneTolerance: number;
+  // a charge hits the player within this distance
+  hitRadius: number;
 }
 
 export type ChargerPhase = "wander" | "telegraph" | "charge" | "recover";
@@ -19,16 +20,19 @@ export interface ChargerState {
   pos: Vec;
   phase: ChargerPhase;
   phaseMs: number;
-  facing: 1 | -1;
+  // the way it looks (unit vector); the sprite flips on facing.x
+  facing: Vec;
+  // locked when the wind-up starts
+  chargeDir: Vec;
   wanderTarget: Vec | null;
   hitThisCharge: boolean;
 }
 
 export function newCharger(pos: Vec): ChargerState {
-  return { pos, phase: "wander", phaseMs: 0, facing: -1, wanderTarget: null, hitThisCharge: false };
+  return { pos, phase: "wander", phaseMs: 0, facing: { x: -1, y: 0 }, chargeDir: { x: -1, y: 0 }, wanderTarget: null, hitThisCharge: false };
 }
 
-// Catching its breath after a charge: hits on it now count as counters.
+// Catching its breath after a charge (or dazed by a harpoon): hits on it now count as counters.
 export function isVulnerable(s: ChargerState): boolean {
   return s.phase === "recover";
 }
@@ -45,21 +49,16 @@ export function updateCharger(
   const phaseMs = s.phaseMs + dtMs;
   switch (s.phase) {
     case "wander": {
-      const dx = player.x - s.pos.x;
-      if (Math.abs(dx) <= t.aggroRange) {
-        const facing: 1 | -1 = dx >= 0 ? 1 : -1;
-        if (sameLane(s.pos, player, t.laneTolerance)) {
-          return { state: { ...s, phase: "telegraph", phaseMs: 0, facing, wanderTarget: null, hitThisCharge: false }, hit: false };
-        }
-        const step = stepToward(s.pos, { x: s.pos.x, y: player.y }, t.wanderSpeed * dt);
-        return { state: { ...s, pos: clampToField(step.pos, field), phaseMs, facing }, hit: false };
+      if (distance(s.pos, player) <= t.aggroRange) {
+        const dir = unit({ x: player.x - s.pos.x, y: player.y - s.pos.y }, s.facing);
+        return { state: { ...s, phase: "telegraph", phaseMs: 0, facing: dir, chargeDir: dir, wanderTarget: null, hitThisCharge: false }, hit: false };
       }
       const target = s.wanderTarget ?? {
         x: field.minX + rand() * (field.maxX - field.minX),
         y: field.minY + rand() * (field.maxY - field.minY),
       };
       const step = stepToward(s.pos, target, t.wanderSpeed * dt);
-      const facing: 1 | -1 = target.x >= s.pos.x ? 1 : -1;
+      const facing = unit({ x: target.x - s.pos.x, y: target.y - s.pos.y }, s.facing);
       return {
         state: { ...s, pos: clampToField(step.pos, field), phaseMs, facing, wanderTarget: step.arrived ? null : target },
         hit: false,
@@ -71,8 +70,8 @@ export function updateCharger(
         hit: false,
       };
     case "charge": {
-      const pos = clampToField({ x: s.pos.x + s.facing * t.chargeSpeed * dt, y: s.pos.y }, field);
-      const hit = !s.hitThisCharge && sameLane(pos, player, t.laneTolerance) && Math.abs(pos.x - player.x) <= t.hitWidth;
+      const pos = clampToField({ x: s.pos.x + s.chargeDir.x * t.chargeSpeed * dt, y: s.pos.y + s.chargeDir.y * t.chargeSpeed * dt }, field);
+      const hit = !s.hitThisCharge && distance(pos, player) <= t.hitRadius;
       const done = phaseMs >= t.chargeMs;
       return {
         state: { ...s, pos, phase: done ? "recover" : "charge", phaseMs: done ? 0 : phaseMs, hitThisCharge: s.hitThisCharge || hit },

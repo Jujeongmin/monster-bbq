@@ -5,19 +5,21 @@ import type { Field } from "./hunt/types";
 // Every hunting number lives here. Prototype values from plan 01; tuned in the playtest.
 export const BALANCE: {
   hunt: {
+    world: { w: number; h: number };
     field: Field;
-    worldWidth: number;
-    laneTolerance: number;
     premiumMaxRangedHits: number;
-    player: { maxHp: number; speed: number; depthSpeedRatio: number };
+    player: { maxHp: number; speed: number; depthSpeedRatio: number; radius: number };
     weapons: Record<WeaponKind, WeaponStats>;
+    // half the opening angle of the slash cone, in radians
+    slashHalfAngle: number;
     hit: HitTuning;
     harpoon: {
       speed: number;
       range: number;
       cooldownMs: number;
       throwLockMs: number;
-      hand: { x: number; y: number };
+      // where the rope leaves the hunter, above the feet
+      handHeight: number;
       bodyOffsetY: number;
       hitRadius: number;
       pullSpeed: number;
@@ -25,21 +27,21 @@ export const BALANCE: {
       dazeMs: number;
     };
     hitStopMs: number;
-    boar: ChargerTuning & { maxHp: number; contactDamage: number };
+    boar: ChargerTuning & { maxHp: number; contactDamage: number; radius: number };
     boarCount: number;
   };
 } = {
   hunt: {
-    // feet positions on the dirt floor layer (floor drawn at y 112..224; 3 screens wide)
-    field: { minX: 16, maxX: 1184, minY: 132, maxY: 206 },
-    worldWidth: 1200,
-    laneTolerance: 8,
+    // top-down forest made of the 256 px ground tile, mirrored
+    world: { w: 1024, h: 768 },
+    field: { minX: 16, maxX: 1008, minY: 24, maxY: 752 },
     premiumMaxRangedHits: 2,
-    player: { maxHp: 100, speed: 80, depthSpeedRatio: 0.6 },
+    player: { maxHp: 100, speed: 85, depthSpeedRatio: 0.9, radius: 6 },
     weapons: {
-      melee: { kind: "melee", range: 26, damage: 10, cooldownMs: 550, swingMs: 450 },
-      ranged: { kind: "ranged", range: 140, damage: 5, cooldownMs: 700, swingMs: 450 },
+      melee: { kind: "melee", range: 32, damage: 10, cooldownMs: 550, swingMs: 450 },
+      ranged: { kind: "ranged", range: 170, damage: 5, cooldownMs: 600, swingMs: 220 },
     },
+    slashHalfAngle: Math.PI / 3,
     hit: {
       comboSteps: 3,
       comboWindowMs: 900,
@@ -49,19 +51,17 @@ export const BALANCE: {
       knockback: 4,
       finisherKnockback: 18,
     },
-    // ranged damage comes from weapons.ranged; a harpooned boar is reeled in and left open (counter)
+    // ranged damage comes from weapons.ranged; a harpooned boar is reeled in and left dazed (counter)
     harpoon: {
       speed: 340,
       range: 170,
       cooldownMs: 600,
       throwLockMs: 220,
-      // where the rope leaves the hunter, relative to the feet (x toward facing)
-      hand: { x: 8, y: 24 },
-      bodyOffsetY: 20,
+      handHeight: 22,
+      bodyOffsetY: 16,
       hitRadius: 18,
       pullSpeed: 260,
-      pullStopDist: 22,
-      // how long a reeled-in boar stays dazed (open for counters): long enough for a 3-hit combo
+      pullStopDist: 24,
       dazeMs: 1700,
     },
     hitStopMs: 60,
@@ -70,13 +70,13 @@ export const BALANCE: {
       contactDamage: 18,
       wanderSpeed: 25,
       chargeSpeed: 190,
-      aggroRange: 150,
+      aggroRange: 130,
       telegraphMs: 700,
       chargeMs: 650,
       recoverMs: 900,
-      hitWidth: 22,
-      laneTolerance: 8,
+      hitRadius: 18,
+      radius: 12,
     },
-    boarCount: 3,
+    boarCount: 5,
   },
 };

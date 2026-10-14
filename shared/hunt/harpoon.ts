@@ -1,4 +1,4 @@
-import { clampToField, distance, stepToward } from "./geometry";
+import { clampToField, distance, stepToward, unit } from "./geometry";
 import type { Field, Vec } from "./types";
 
 // Dave-style harpoon: aimed anywhere on screen, flies in a straight line, and reels in what it hits.
@@ -42,10 +42,10 @@ export function harpoonHit<T extends { pos: Vec }>(tip: Vec, targets: T[], bodyO
   return best;
 }
 
-// Pulls a harpooned target to `stopDist` in front of the hunter, onto the hunter's lane.
+// Pulls a harpooned target to `stopDist` from the hunter, on the side it is coming from.
 export function reelStep(target: Vec, hunter: Vec, pullSpeed: number, dtMs: number, stopDist: number, field: Field): { pos: Vec; done: boolean } {
-  const side = Math.sign(target.x - hunter.x) || 1;
-  const goal = { x: hunter.x + side * stopDist, y: hunter.y };
+  const dir = unit({ x: target.x - hunter.x, y: target.y - hunter.y });
+  const goal = { x: hunter.x + dir.x * stopDist, y: hunter.y + dir.y * stopDist };
   const step = stepToward(target, goal, (pullSpeed * dtMs) / 1000);
   return { pos: clampToField(step.pos, field), done: step.arrived };
 }

@@ -1,4 +1,4 @@
-import { sameLane } from "./geometry";
+import { distance, unit } from "./geometry";
 import type { Vec } from "./types";
 
 export type WeaponKind = "melee" | "ranged";
@@ -12,20 +12,16 @@ export interface WeaponStats {
   swingMs: number;
 }
 
-export function inAttackRange(attacker: Vec, target: Vec, weapon: WeaponStats, laneTolerance: number): boolean {
-  return sameLane(attacker, target, laneTolerance) && Math.abs(attacker.x - target.x) <= weapon.range;
-}
-
-// What a swing toward `facing` hits: everything in front on the lane within reach for melee,
-// only the nearest such target for the ranged weapon.
-export function swingTargets<T extends { pos: Vec }>(attacker: Vec, facing: 1 | -1, targets: T[], weapon: WeaponStats, laneTolerance: number): T[] {
-  const inFront = targets.filter((t) => (t.pos.x - attacker.x) * facing >= 0 && inAttackRange(attacker, t.pos, weapon, laneTolerance));
-  if (weapon.kind === "melee") return inFront;
-  const nearest = inFront.reduce<T | undefined>(
-    (best, t) => (!best || Math.abs(t.pos.x - attacker.x) < Math.abs(best.pos.x - attacker.x) ? t : best),
-    undefined,
-  );
-  return nearest ? [nearest] : [];
+// A slash toward `aim`: everything within `range` whose direction is within `halfAngle` of the aim.
+export function coneTargets<T extends { pos: Vec }>(attacker: Vec, aim: Vec, targets: T[], range: number, halfAngle: number): T[] {
+  const a = unit(aim);
+  const minCos = Math.cos(halfAngle);
+  return targets.filter((t) => {
+    const d = distance(attacker, t.pos);
+    if (d > range) return false;
+    if (d === 0) return true;
+    return ((t.pos.x - attacker.x) * a.x + (t.pos.y - attacker.y) * a.y) / d >= minCos;
+  });
 }
 
 export interface HitTuning {
@@ -38,7 +34,7 @@ export interface HitTuning {
   finisherKnockback: number;
 }
 
-// Melee swings on the same target inside the window chain 1 -> 2 -> ... -> comboSteps, then start over.
+// Melee swings inside the window chain 1 -> 2 -> ... -> comboSteps, then start over.
 export function nextComboStep(prevStep: number, msSinceLastSwing: number, sameTarget: boolean, weapon: WeaponKind, tuning: HitTuning): number {
   if (weapon !== "melee" || !sameTarget || msSinceLastSwing > tuning.comboWindowMs || prevStep >= tuning.comboSteps) return 1;
   return prevStep + 1;
@@ -47,11 +43,12 @@ export function nextComboStep(prevStep: number, msSinceLastSwing: number, sameTa
 export interface HitInput {
   weapon: WeaponStats;
   comboStep: number;
-  // the target is open (a charger catching its breath after a charge): counter bonus
+  // the target is open (dazed, or catching its breath after a charge): counter bonus
   targetVulnerable: boolean;
-  attackerX: number;
-  targetX: number;
-  targetFacing: 1 | -1;
+  attackerPos: Vec;
+  targetPos: Vec;
+  // the way the target looks
+  targetFacing: Vec;
 }
 
 export interface HitResult {
@@ -65,8 +62,9 @@ export interface HitResult {
 export function computeHit(input: HitInput, tuning: HitTuning): HitResult {
   const finisher = input.weapon.kind === "melee" && input.comboStep >= tuning.comboSteps;
   const counter = input.targetVulnerable;
-  // behind = standing on the side opposite to where the target faces
-  const backAttack = (input.attackerX - input.targetX) * input.targetFacing < 0;
+  // behind = the attacker is on the opposite side to where the target looks
+  const toAttacker = { x: input.attackerPos.x - input.targetPos.x, y: input.attackerPos.y - input.targetPos.y };
+  const backAttack = toAttacker.x * input.targetFacing.x + toAttacker.y * input.targetFacing.y < 0;
   let mult = 1;
   if (finisher) mult *= tuning.finisherMult;
   if (counter) mult *= tuning.counterMult;

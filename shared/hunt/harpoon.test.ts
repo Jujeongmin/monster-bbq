@@ -41,14 +41,10 @@ describe("reelStep", () => {
     expect(r.pos).toEqual({ x: 280, y: 170 });
     expect(r.done).toBe(false);
   });
-  it("stops at the stop distance in front of the hunter", () => {
-    const r = reelStep({ x: 130, y: 170 }, { x: 100, y: 170 }, 200, 100, 22, field);
-    expect(r.pos.x).toBeCloseTo(122);
-    expect(r.done).toBe(true);
-  });
-  it("brings the target onto the hunter's lane as it comes", () => {
-    const r = reelStep({ x: 300, y: 200 }, { x: 100, y: 160 }, 2000, 1000, 22, field);
-    expect(r.pos.y).toBeCloseTo(160);
+  it("stops at the stop distance from the hunter, on the side it came from", () => {
+    const r = reelStep({ x: 100, y: 130 }, { x: 100, y: 200 }, 2000, 1000, 22, field);
+    expect(r.pos.x).toBeCloseTo(100);
+    expect(r.pos.y).toBeCloseTo(178);
     expect(r.done).toBe(true);
   });
 });
