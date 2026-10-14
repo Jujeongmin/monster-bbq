@@ -14,6 +14,8 @@ Verse8 횡스크롤 사냥 + 고깃집 경영 게임 (Vite + React + TypeScript,
 - 사냥 시점은 쿼터뷰 탑다운(MMORPG 카메라, 참고: 도깨비의세계). 캐릭터·몬스터는 PixelLab low top-down 각도, 4/8방향. 가게는 옆모습 단면도.
 - 사냥 조작은 데이브 더 다이브식: PC는 WASD 이동 + 마우스 조준(좌클릭 작살, 우클릭 베기), 모바일은 가상 조이스틱 + 오른쪽 눌러 조준·떼면 발사 + 베기 버튼. 가게·주방 화면은 클릭/탭.
 - 그림은 PixelLab 외에 Codex로 만들어도 된다(사용자 허락, 2026-10-14). 단 컨셉(코믹·아기자기 픽셀아트, 쿼터뷰 시점)을 지킨다.
+  - Codex 사용법: 프롬프트를 파일로 써서 `codex exec --skip-git-repo-check -s workspace-write -C <프로젝트> --image <참고그림> - < prompt.txt`. `--image`는 뒤의 인자를 전부 이미지로 먹으니 프롬프트는 표준입력으로 넘긴다. `-s workspace-write`가 없으면 저장을 못 하고, 생성본은 `~/.codex/generated_images/<세션>/`에만 남는다.
+  - 원본은 `art-src/codex/raw/`에 두고 `art-src/codex/slice.py`처럼 잘라 줄여서 `art/`에 넣는다(코드로 그리지 않고 크기만 맞춘다).
 - PixelLab `create_image_pixflux(no_background=True)`로 만든 큰 배경 레이어는 실제로 투명하지 않다. `art-src/test/keyfix.py`로 배경을 지운 뒤 `art/`에 넣는다. 원본은 `art-src/`에 둔다.
 - 그림은 `art/` 아래에 두고 `src/game/art.ts`의 `artUrl("경로")`로 불러온다.
 - 개발 서버 포트는 5190(`npm run dev`). 5173은 grove hunters, 5180은 myeongtoe-hero, 5199는 day-hero-night-demon이 쓴다.

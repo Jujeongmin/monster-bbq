@@ -62,21 +62,3 @@ export function pushOutOfRects(p: Vec, rects: Rect[], radius: number): Vec {
   }
   return { x, y };
 }
-
-// Obstacles drawn in a ground tile that is repeated over the world, mirrored on every other column
-// and row (so the tiling never shows a seam): the tile-local rectangles in world coordinates.
-export function mirroredTileRects(local: Rect[], tile: number, worldW: number, worldH: number): Rect[] {
-  const out: Rect[] = [];
-  for (let i = 0; i * tile < worldW; i++) {
-    for (let j = 0; j * tile < worldH; j++) {
-      const ox = i * tile;
-      const oy = j * tile;
-      for (const r of local) {
-        const [x0, x1] = i % 2 ? [tile - r.x1, tile - r.x0] : [r.x0, r.x1];
-        const [y0, y1] = j % 2 ? [tile - r.y1, tile - r.y0] : [r.y0, r.y1];
-        out.push({ x0: ox + x0, x1: ox + x1, y0: oy + y0, y1: oy + y1 });
-      }
-    }
-  }
-  return out;
-}

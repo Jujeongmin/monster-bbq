@@ -2,7 +2,8 @@ import Phaser from "phaser";
 import { BALANCE } from "../../../shared/balance";
 import { isVulnerable, newCharger, updateCharger, type ChargerState } from "../../../shared/hunt/charger";
 import { EMPTY_HIT_LOG, computeHit, coneTargets, meatGrade, nextComboStep, recordHit, type HitLog, type WeaponKind } from "../../../shared/hunt/combat";
-import { clampToField, distance, mirroredTileRects, moveByInput, pushOutOfRects, unit, type Rect } from "../../../shared/hunt/geometry";
+import { clampToField, distance, moveByInput, pushOutOfRects, unit, type Rect } from "../../../shared/hunt/geometry";
+import { scatter, seededRandom } from "../../../shared/hunt/scatter";
 import { fireHarpoon, harpoonDone, harpoonHit, reelStep, stepHarpoon, type Harpoon } from "../../../shared/hunt/harpoon";
 import type { Vec } from "../../../shared/hunt/types";
 import { artUrl } from "../art";
@@ -20,7 +21,6 @@ const MAX_DT_MS = 50;
 // Where the feet are inside each sprite's canvas (transparent padding underneath). Tune by eye.
 const FEET = { hunter: 0.9, boar: 0.75 };
 const FRAMES = { idle: 4, walk: 6, attack: 7, throw: 7, boarWalk: 6 };
-const TILE = 256;
 // rotation image per 45° step, starting east and turning clockwise (y points down)
 const DIR8 = ["east", "south-east", "south", "south-west", "west", "north-west", "north", "north-east"] as const;
 // Touch controls, in screen pixels of the game, placed relative to its size.
@@ -51,21 +51,35 @@ interface Player {
 
 type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K", Phaser.Input.Keyboard.Key>;
 
-// Trees and bushes painted into art/test/bg/ground.png (measured from the pixels: dark canopy,
-// shadow and trunk), in tile-local coordinates. Solid wherever the tile repeats.
-const GROUND_OBSTACLES: Rect[] = [
-  { x0: 0, x1: 75, y0: 0, y1: 105 },
-  { x0: 175, x1: 256, y0: 0, y1: 105 },
-  { x0: 0, x1: 69, y0: 178, y1: 256 },
-  { x0: 186, x1: 256, y0: 173, y1: 256 },
-];
+// Map objects (Codex art, art/test/objects): sprite size comes from the image; `foot` is the solid
+// base around the anchor (bottom centre), so the hunter can walk behind a canopy.
+const OBJECT_KINDS = {
+  tree_round: { foot: { w: 22, h: 10 }, tree: true },
+  tree_pine: { foot: { w: 18, h: 10 }, tree: true },
+  tree_cluster: { foot: { w: 24, h: 10 }, tree: true },
+  bush_pink: { foot: { w: 40, h: 16 }, tree: false },
+  bush_blue: { foot: { w: 40, h: 16 }, tree: false },
+  rock_big: { foot: { w: 38, h: 18 }, tree: false },
+  rock_small: { foot: { w: 30, h: 12 }, tree: false },
+} as const;
+type ObjectKind = keyof typeof OBJECT_KINDS;
+const TREES: ObjectKind[] = ["tree_round", "tree_pine", "tree_cluster"];
+const SMALL: ObjectKind[] = ["bush_pink", "bush_blue", "rock_big", "rock_small"];
+const MAP_SEED = 20261014;
+
+interface MapObject {
+  kind: ObjectKind;
+  sprite: Phaser.GameObjects.Image;
+  foot: Rect;
+}
 
 export class HuntScene extends Phaser.Scene {
   private player!: Player;
   private boars: Boar[] = [];
   private nextBoarId = 1;
   private hitStopMs = 0;
-  private obstacles = mirroredTileRects(GROUND_OBSTACLES, TILE, H.world.w, H.world.h);
+  private objects: MapObject[] = [];
+  private obstacles: Rect[] = [];
   private hunter!: Phaser.GameObjects.Sprite;
   private hud!: Phaser.GameObjects.Graphics;
   private fx!: Phaser.GameObjects.Graphics;
@@ -100,6 +114,8 @@ export class HuntScene extends Phaser.Scene {
       down: false,
     };
     this.boars = [];
+    this.objects = [];
+    this.obstacles = [];
     this.hitStopMs = 0;
     this.harpoon = null;
     this.reelingId = null;
@@ -112,7 +128,8 @@ export class HuntScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("ground", artUrl("test/bg/ground.png"));
+    this.load.image("grass", artUrl("test/bg/grass.png"));
+    for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
     this.load.image("boar_idle", artUrl("test/boar/idle.png"));
     this.load.image("boar_attack_0", artUrl("test/boar/attack_0.png"));
     for (let i = 0; i < FRAMES.boarWalk; i++) this.load.image(`boar_walk_${i}`, artUrl(`test/boar/walk_${i}.png`));
@@ -123,7 +140,8 @@ export class HuntScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.tileSprite(0, 0, H.world.w, H.world.h, this.mirrored2x2("ground")).setOrigin(0).setDepth(-1000);
+    this.add.tileSprite(0, 0, H.world.w, H.world.h, "grass").setOrigin(0).setDepth(-1000);
+    this.placeObjects();
 
     const frames = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => ({ key: `${prefix}_${i}` }));
     if (!this.anims.exists("hunter_walk")) {
@@ -169,6 +187,7 @@ export class HuntScene extends Phaser.Scene {
     if (!this.player.down) this.updatePlayer(dt, time);
     this.updateHarpoon(dt);
     for (const b of this.boars) this.updateBoar(b, dt);
+    this.fadeCanopies();
     this.drawFx();
     this.drawHud();
   }
@@ -568,24 +587,33 @@ export class HuntScene extends Phaser.Scene {
     }
   }
 
-  // A texture twice as wide and twice as tall: the image mirrored both ways. Tiling that never shows a seam.
-  private mirrored2x2(key: string): string {
-    const out = `${key}_mirrored2x2`;
-    if (this.textures.exists(out)) return out;
-    const src = this.textures.get(key).getSourceImage() as HTMLImageElement;
-    const w = src.width;
-    const h = src.height;
-    const canvas = this.textures.createCanvas(out, w * 2, h * 2)!;
-    const ctx = canvas.getContext();
-    for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]] as const) {
-      ctx.save();
-      ctx.translate(sx < 0 ? w * 2 : 0, sy < 0 ? h * 2 : 0);
-      ctx.scale(sx, sy);
-      ctx.drawImage(src, 0, 0);
-      ctx.restore();
+  // Trees first (spread out), then bushes and rocks in the gaps; the start area stays open.
+  private placeObjects() {
+    const area = { minX: 30, maxX: H.world.w - 30, minY: 60, maxY: H.world.h - 10 };
+    const start = { x: this.player.pos.x, y: this.player.pos.y, r: 110 };
+    const pick = seededRandom(MAP_SEED + 1);
+    const treeSpots = scatter(MAP_SEED, area, 46, 78, [start]);
+    const smallSpots = scatter(MAP_SEED + 2, area, 34, 60, [start, ...treeSpots.map((p) => ({ x: p.x, y: p.y, r: 46 }))]);
+    const place = (pos: Vec, kind: ObjectKind) => {
+      const { foot } = OBJECT_KINDS[kind];
+      const sprite = this.add.image(pos.x, pos.y, `obj_${kind}`).setOrigin(0.5, 1).setDepth(pos.y);
+      const rect = { x0: pos.x - foot.w / 2, x1: pos.x + foot.w / 2, y0: pos.y - foot.h, y1: pos.y };
+      this.objects.push({ kind, sprite, foot: rect });
+      this.obstacles.push(rect);
+    };
+    for (const p of treeSpots) place(p, TREES[Math.floor(pick() * TREES.length)]);
+    for (const p of smallSpots) place(p, SMALL[Math.floor(pick() * SMALL.length)]);
+  }
+
+  // A canopy that hides the hunter (hunter behind and under it) turns see-through, MMORPG style.
+  private fadeCanopies() {
+    const p = this.player.pos;
+    for (const o of this.objects) {
+      if (!OBJECT_KINDS[o.kind].tree) continue;
+      const b = o.sprite.getBounds();
+      const hidden = p.y < o.sprite.y && p.x > b.left + 6 && p.x < b.right - 6 && p.y > b.top + 10;
+      o.sprite.setAlpha(hidden ? 0.45 : 1);
     }
-    canvas.refresh();
-    return out;
   }
 
   private liveBoar(id: number | null): Boar | undefined {

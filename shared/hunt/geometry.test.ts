@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampToField, mirroredTileRects, moveByInput, pushOutOfRects, stepToward, unit } from "./geometry";
+import { clampToField, moveByInput, pushOutOfRects, stepToward, unit } from "./geometry";
 
 const field = { minX: 0, maxX: 100, minY: 50, maxY: 80 };
 
@@ -66,22 +66,5 @@ describe("pushOutOfRects", () => {
   });
   it("blocks a point that only touches the rectangle with its radius", () => {
     expect(pushOutOfRects({ x: 62, y: 60 }, [tree], 4)).toEqual({ x: 64, y: 60 });
-  });
-});
-
-describe("mirroredTileRects", () => {
-  it("repeats tile-local rectangles over the world, mirroring every other tile", () => {
-    const rects = mirroredTileRects([{ x0: 0, x1: 10, y0: 0, y1: 20 }], 100, 200, 100);
-    expect(rects).toEqual([
-      { x0: 0, x1: 10, y0: 0, y1: 20 },
-      { x0: 190, x1: 200, y0: 0, y1: 20 },
-    ]);
-  });
-  it("mirrors vertically on odd rows", () => {
-    const rects = mirroredTileRects([{ x0: 0, x1: 10, y0: 0, y1: 20 }], 100, 100, 200);
-    expect(rects).toEqual([
-      { x0: 0, x1: 10, y0: 0, y1: 20 },
-      { x0: 0, x1: 10, y0: 180, y1: 200 },
-    ]);
   });
 });
