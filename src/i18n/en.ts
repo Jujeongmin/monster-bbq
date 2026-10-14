@@ -1,0 +1,25 @@
+import type { ko } from "./ko";
+
+export const en: Record<keyof typeof ko, string> = {
+  "hud.day": "Day {day}",
+  "hud.gold": "Gold {gold}",
+  "hud.meat": "Meat: prime {premium} · regular {normal}",
+  "phase.hunt": "Day · Hunt",
+  "phase.kitchen": "Evening · Kitchen",
+  "phase.service": "Night · Service",
+  "phase.settle": "Results",
+  "hunt.return": "Return",
+  "hunt.help": "WASD move · aim with the mouse · left click harpoon · right click slash · R return",
+  "hunt.ko": "Knocked out… lost half of the meat",
+  "hunt.bagFull": "The bag is full",
+  "kitchen.title": "Kitchen (placeholder)",
+  "kitchen.body": "Recipe research and the menu arrive in the next plan.",
+  "service.title": "Service (placeholder)",
+  "service.body": "For now the meat sells as it is.",
+  "service.sell": "Sell all meat",
+  "settle.title": "Results",
+  "settle.body": "End of day {day}. Gold {gold}",
+  next: "Next",
+  nextDay: "Next day",
+  "error.retry": "Could not save. Please tap again.",
+};
