@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { wantsOnline } from "./connection";
+import { newSave } from "../../shared/save";
 import { LocalTransport, Verse8Transport } from "./transport";
 
 function memory() {
@@ -27,9 +28,13 @@ describe("LocalTransport", () => {
 
 describe("Verse8Transport", () => {
   it("calls the server and checks the reply", async () => {
-    const t = new Verse8Transport({ remoteFunction: async (fn) => (fn === "load" ? { version: 2, day: 3, gold: 5, items: {}, hunt: null } : null) });
+    const t = new Verse8Transport({ remoteFunction: async (fn) => (fn === "load" ? { ...newSave(), day: 3, gold: 5 } : null) });
     expect((await t.load()).day).toBe(3);
     await expect(t.act({ type: "endDay" })).rejects.toThrow("bad_reply");
+  });
+  it("refuses a reply from a server still on the old save version", async () => {
+    const t = new Verse8Transport({ remoteFunction: async () => ({ version: 2, day: 3, gold: 5, items: {}, hunt: null }) });
+    await expect(t.load()).rejects.toThrow("bad_reply");
   });
   it("gives up on a server that never answers", async () => {
     const t = new Verse8Transport({ remoteFunction: () => new Promise(() => {}) }, 10);

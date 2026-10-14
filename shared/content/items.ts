@@ -1,18 +1,20 @@
 // Everything that can sit in the bag or the fridge. Monster parts come in two grades (spec 3: a clean
-// melee finish gives premium); forage has none. Prices live in BALANCE.economy.itemPrice.
+// melee finish gives premium); forage has none. Prices live in BALANCE.economy.itemPrice. `taste` is
+// what the kitchen's hints talk about ("something fragrant is missing").
 export const ITEMS = {
-  boar_belly: { kind: "part" },
-  boar_neck: { kind: "part" },
-  boar_rib: { kind: "part" },
-  rabbit_leg: { kind: "part" },
-  honeycomb: { kind: "part" },
-  chicken_thigh: { kind: "part" },
-  chicken_breast: { kind: "part" },
-  shiitake: { kind: "forage" },
-  wild_garlic: { kind: "forage" },
-  perilla: { kind: "forage" },
-} as const satisfies Record<string, { kind: "part" | "forage" }>;
+  boar_belly: { kind: "part", taste: "meat" },
+  boar_neck: { kind: "part", taste: "meat" },
+  boar_rib: { kind: "part", taste: "meat" },
+  rabbit_leg: { kind: "part", taste: "meat" },
+  honeycomb: { kind: "part", taste: "sweet" },
+  chicken_thigh: { kind: "part", taste: "meat" },
+  chicken_breast: { kind: "part", taste: "meat" },
+  shiitake: { kind: "forage", taste: "veg" },
+  wild_garlic: { kind: "forage", taste: "veg" },
+  perilla: { kind: "forage", taste: "veg" },
+} as const satisfies Record<string, { kind: "part" | "forage"; taste: Taste }>;
 
+export type Taste = "meat" | "veg" | "sweet";
 export type ItemId = keyof typeof ITEMS;
 export type Grade = "premium" | "normal";
 
