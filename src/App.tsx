@@ -1,7 +1,6 @@
 import { PhaserGame } from "./game/PhaserGame";
 
-// Local-only prototype for now: the Verse8 game server (GameServerProvider) is wired in once the
-// project is linked to GitLab and has its .env / .agent8.lock.
+// Hunt only until the day flow lands (plan 02 Task 7): the result goes to the console.
 export function App() {
-  return <PhaserGame />;
+  return <PhaserGame onHuntEnd={(result) => console.info("hunt:end", JSON.stringify(result))} />;
 }

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { koPenalty } from "../../../shared/actions";
 import { BALANCE } from "../../../shared/balance";
 import { isVulnerable, newCharger, updateCharger, type ChargerState } from "../../../shared/hunt/charger";
 import { EMPTY_HIT_LOG, computeHit, coneTargets, meatGrade, nextComboStep, recordHit, type HitLog, type WeaponKind } from "../../../shared/hunt/combat";
@@ -6,6 +7,7 @@ import { clampToField, distance, moveByInput, pushOutOfRects, unit, type Rect } 
 import { scatter, seededRandom } from "../../../shared/hunt/scatter";
 import { fireHarpoon, harpoonDone, harpoonHit, reelStep, stepHarpoon, type Harpoon } from "../../../shared/hunt/harpoon";
 import type { Vec } from "../../../shared/hunt/types";
+import { t } from "../../i18n";
 import { artUrl } from "../art";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 import { joystickVector } from "../joystick";
@@ -54,7 +56,13 @@ interface Player {
   down: boolean;
 }
 
-type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K", Phaser.Input.Keyboard.Key>;
+type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "R", Phaser.Input.Keyboard.Key>;
+
+// What the hunt hands to the day flow when it ends (PhaserGame forwards the "hunt:end" event).
+export interface HuntResult {
+  meat: { premium: number; normal: number };
+  ko: boolean;
+}
 
 // Map objects (Codex art, art/test/objects): sprite size comes from the image; `foot` is the solid
 // base around the anchor (bottom centre), so the hunter can walk behind a canopy.
@@ -94,6 +102,10 @@ export class HuntScene extends Phaser.Scene {
   private harpoon: Harpoon | null = null;
   private reelingId: number | null = null;
   private slashQueued = false;
+  private bag = { premium: 0, normal: 0 };
+  private ended = false;
+  private bagText!: Phaser.GameObjects.Text;
+  private returnButton!: Phaser.GameObjects.Text;
   private shotQueued: Vec | null = null;
   private stickPointer: number | null = null;
   private stickVec: Vec = { x: 0, y: 0 };
@@ -125,6 +137,8 @@ export class HuntScene extends Phaser.Scene {
     this.harpoon = null;
     this.reelingId = null;
     this.slashQueued = false;
+    this.bag = { premium: 0, normal: 0 };
+    this.ended = false;
     this.shotQueued = null;
     this.stickPointer = null;
     this.stickVec = { x: 0, y: 0 };
@@ -167,7 +181,7 @@ export class HuntScene extends Phaser.Scene {
 
     const keyboard = this.input.keyboard!;
     this.cursors = keyboard.createCursorKeys();
-    this.keys = keyboard.addKeys("W,A,S,D,Z,J,X,K") as Keys;
+    this.keys = keyboard.addKeys("W,A,S,D,Z,J,X,K,R") as Keys;
 
     // touch controls on touch devices (add ?touch to the URL to try them with a mouse)
     this.touch = this.sys.game.device.input.touch || new URLSearchParams(location.search).has("touch");
@@ -175,14 +189,22 @@ export class HuntScene extends Phaser.Scene {
     else this.createMouseControls();
 
     this.hud = this.add.graphics().setScrollFactor(0).setDepth(10000);
-    this.add
-      .text(6, 4, this.touch ? "" : "WASD 이동 · 마우스 조준 · 좌클릭 작살 · 우클릭 베기", { fontFamily: "monospace", fontSize: "10px", color: "#ffffff", backgroundColor: "#00000088" })
+    const hudStyle = { fontFamily: "monospace", fontSize: "10px", color: "#ffffff", backgroundColor: "#00000088" };
+    if (!this.touch) this.add.text(6, 4, t("hunt.help"), hudStyle).setScrollFactor(0).setDepth(10000);
+    this.bagText = this.add.text(8, 34, "", hudStyle).setScrollFactor(0).setDepth(10000);
+    // placeholder button (UI art comes in plan 08)
+    this.returnButton = this.add
+      .text(GAME_WIDTH - 8, 8, t("hunt.return"), { ...hudStyle, fontSize: "12px", padding: { x: 6, y: 3 } })
+      .setOrigin(1, 0)
       .setScrollFactor(0)
-      .setDepth(10000);
+      .setDepth(10000)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", () => this.endHunt(false));
   }
 
   update(_time: number, rawDt: number) {
     const dt = Math.min(rawDt, MAX_DT_MS);
+    if (this.ended) return;
     if (this.hitStopMs > 0) {
       this.hitStopMs -= dt;
       if (this.hitStopMs <= 0) this.anims.resumeAll();
@@ -198,7 +220,8 @@ export class HuntScene extends Phaser.Scene {
 
   private createMouseControls() {
     this.input.mouse?.disableContextMenu();
-    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
+    this.input.on("pointerdown", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      if (over.includes(this.returnButton)) return;
       if (p.rightButtonDown()) this.slashQueued = true;
       else this.shotQueued = this.toWorld(p.x, p.y);
     });
@@ -212,6 +235,10 @@ export class HuntScene extends Phaser.Scene {
     p.msSinceSwing += dt;
 
     const k = this.keys;
+    if (Phaser.Input.Keyboard.JustDown(k.R)) {
+      this.endHunt(false);
+      return;
+    }
     if (Phaser.Input.Keyboard.JustDown(k.Z) || Phaser.Input.Keyboard.JustDown(k.J)) this.slashQueued = true;
     if (Phaser.Input.Keyboard.JustDown(k.X) || Phaser.Input.Keyboard.JustDown(k.K)) this.shotQueued = { x: p.pos.x + p.aim.x * 100, y: p.pos.y + p.aim.y * 100 - H.harpoon.handHeight };
 
@@ -388,6 +415,8 @@ export class HuntScene extends Phaser.Scene {
     b.dead = true;
     if (this.reelingId === b.id) this.reelingId = null;
     const premium = meatGrade(b.hits, H.premiumMaxRangedHits) === "premium";
+    if (this.bag.premium + this.bag.normal < BALANCE.economy.maxMeatPerHunt) this.bag[premium ? "premium" : "normal"] += 1;
+    else this.popText(this.player.pos.x, this.player.pos.y - 60, t("hunt.bagFull"), "#ffb0b0", 1200);
     this.popText(b.ai.pos.x, b.ai.pos.y - 60, premium ? "삼겹살 ★특급" : "삼겹살 (보통)", premium ? "#ffd166" : "#dddddd", 1400);
     // stop a wind-up blink first, or it fights the fade-out
     this.tweens.killTweensOf(b.sprite);
@@ -474,11 +503,11 @@ export class HuntScene extends Phaser.Scene {
       this.hunter.anims.stop();
       this.hunter.setTint(0x777777).setAngle(-90);
       this.add
-        .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, "쓰러졌다… 2초 뒤 다시", { fontFamily: "monospace", fontSize: "12px", color: "#ffffff", backgroundColor: "#000000aa", padding: { x: 6, y: 3 } })
+        .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, t("hunt.ko"), { fontFamily: "monospace", fontSize: "12px", color: "#ffffff", backgroundColor: "#000000aa", padding: { x: 6, y: 3 } })
         .setOrigin(0.5)
         .setScrollFactor(0)
         .setDepth(10001);
-      this.time.delayedCall(2000, () => this.scene.restart());
+      this.time.delayedCall(1500, () => this.endHunt(true));
     }
   }
 
@@ -509,8 +538,8 @@ export class HuntScene extends Phaser.Scene {
     slash.on("pointerdown", () => (this.slashQueued = true));
 
     const onSlash = (p: Phaser.Input.Pointer) => Phaser.Math.Distance.Between(p.x, p.y, SLASH_BTN.x, SLASH_BTN.y) <= SLASH_BTN.radius + 6;
-    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
-      if (onSlash(p)) return;
+    this.input.on("pointerdown", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      if (onSlash(p) || over.includes(this.returnButton)) return;
       if (p.x < GAME_WIDTH * 0.45) {
         if (this.stickPointer === null) {
           this.stickPointer = p.id;
@@ -647,8 +676,8 @@ export class HuntScene extends Phaser.Scene {
   }
 
   private popText(x: number, y: number, text: string, color: string, ms = 700) {
-    const t = this.add.text(x, y, text, { fontFamily: "monospace", fontSize: "10px", color, stroke: "#000000", strokeThickness: 3 }).setOrigin(0.5).setDepth(9000);
-    this.tweens.add({ targets: t, y: y - 14, alpha: 0, duration: ms, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
+    const label = this.add.text(x, y, text, { fontFamily: "monospace", fontSize: "10px", color, stroke: "#000000", strokeThickness: 3 }).setOrigin(0.5).setDepth(9000);
+    this.tweens.add({ targets: label, y: y - 14, alpha: 0, duration: ms, ease: "Cubic.easeOut", onComplete: () => label.destroy() });
   }
 
   private drawHud() {
@@ -656,5 +685,15 @@ export class HuntScene extends Phaser.Scene {
     this.hud.clear();
     this.hud.fillStyle(0x000000, 0.6).fillRect(8, 20, 122, 10);
     this.hud.fillStyle(0xe04040, 1).fillRect(9, 21, (120 * p.hp) / H.player.maxHp, 8);
+    this.bagText.setText(t("hud.meat", this.bag));
+  }
+
+  // Back to the shop with the bag (half of it after a knockout); the day flow takes over.
+  private endHunt(ko: boolean) {
+    if (this.ended) return;
+    this.ended = true;
+    const result: HuntResult = { meat: ko ? koPenalty(this.bag) : { ...this.bag }, ko };
+    this.game.events.emit("hunt:end", result);
+    this.scene.pause();
   }
 }
