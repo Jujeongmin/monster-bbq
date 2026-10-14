@@ -6,6 +6,33 @@ import type { HitTuning, WeaponKind, WeaponStats } from "./hunt/combat";
 import type { ItemId } from "./content/items";
 import type { Field } from "./hunt/types";
 
+export interface GrillTuning {
+  preheatMs: number; // cold to ready
+  stickBelow: number; // heat under which meat sticks
+  edgeHeat: number; // heat at the rim (centre = 1)
+  sideMs: number; // a belly side from raw to just right at full heat, centre
+  charMs: number; // past burnAt, charred through at this pace
+  cutFaceMs: number; // cut faces from raw to done
+  cutReady: number; // doneness under which cutting loses juice
+  fatPerSec: number; // fat a cooking pork belly piece lets out
+  fatZoneY: number; // below this (grill coordinates, +y down) is where the fat pools
+  fatNeeded: number; // fat pool that makes the fat zone fry garnish
+  friedMs: number; // garnish fried through in the fat
+  sootPerChar: number; // soot left per unit of char
+  sootPerFatSec: number; // soot from fat burning on the plate
+}
+
+export interface PotTuning {
+  heatPerSec: [number, number, number, number]; // degrees per second toward the target by dial
+  coolPerSec: number; // with the fire off
+  lidBoost: number; // lid on: heats this much faster
+  target: [number, number, number, number]; // target temperature by dial (off, low, mid, high)
+  cookFrom: number; // temperature from which things cook
+  boilOverMs: number; // at full boil on high before it spills (half with the lid on)
+  foamPerSec: number; // scum rising while meat boils
+  skimAmount: number; // one pass of the ladle
+}
+
 // Every hunting number lives here. Prototype values from plan 01; tuned in the playtest.
 export const BALANCE: {
   hunt: {
@@ -39,6 +66,13 @@ export const BALANCE: {
   };
   economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
   kitchen: { menuSlots: number; maxIngredients: number };
+  cooking: {
+    grill: GrillTuning;
+    pot: PotTuning;
+    // per item: how fast it cooks on the grill (1 = pork belly) and when it starts to burn, whether it
+    // has only one side worth cooking (a leaf, a honey puddle), and its time in the pot
+    items: Record<ItemId, { grillRate: number; burnAt: number; oneSide?: boolean; potRate: number; soft?: boolean }>;
+  };
 } = {
   hunt: {
     // top-down forest made of the 256 px ground tile, mirrored
@@ -109,4 +143,44 @@ export const BALANCE: {
   },
   // research kitchen and menu (spec 4); menu slots grow with upgrades (plan 06)
   kitchen: { menuSlots: 2, maxIngredients: 3 },
+  // hands-on cooking (cooking-service design 2); first guesses, tuned in play
+  cooking: {
+    grill: {
+      preheatMs: 6000,
+      stickBelow: 0.7,
+      edgeHeat: 0.45,
+      sideMs: 9000,
+      charMs: 4000,
+      cutFaceMs: 2500,
+      cutReady: 0.6,
+      fatPerSec: 0.12,
+      fatZoneY: 0.55,
+      fatNeeded: 0.3,
+      friedMs: 3000,
+      sootPerChar: 0.5,
+      sootPerFatSec: 0.004,
+    },
+    pot: {
+      heatPerSec: [0, 4, 7, 11],
+      coolPerSec: 3,
+      lidBoost: 1.6,
+      target: [20, 96, 100, 100],
+      cookFrom: 90,
+      boilOverMs: 6000,
+      foamPerSec: 0.06,
+      skimAmount: 0.3,
+    },
+    items: {
+      boar_belly: { grillRate: 1, burnAt: 1.35, potRate: 1 / 25 },
+      boar_neck: { grillRate: 0.75, burnAt: 1.4, potRate: 1 / 25 },
+      boar_rib: { grillRate: 0.85, burnAt: 1.3, potRate: 1 / 30 },
+      rabbit_leg: { grillRate: 0.8, burnAt: 1.35, potRate: 1 / 25 },
+      honeycomb: { grillRate: 1.6, burnAt: 1.05, oneSide: true, potRate: 1 / 5, soft: true },
+      chicken_thigh: { grillRate: 0.7, burnAt: 1.35, potRate: 1 / 35 },
+      chicken_breast: { grillRate: 0.85, burnAt: 1.3, potRate: 1 / 20 },
+      shiitake: { grillRate: 1.3, burnAt: 1.5, potRate: 1 / 10, soft: true },
+      wild_garlic: { grillRate: 1.4, burnAt: 1.4, potRate: 1 / 12, soft: true },
+      perilla: { grillRate: 2, burnAt: 1.2, oneSide: true, potRate: 1 / 6, soft: true },
+    },
+  },
 };
