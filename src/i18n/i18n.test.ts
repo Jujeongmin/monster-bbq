@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectLocale, setLocale, t } from "./index";
+import { detectLocale, itemName, setLocale, t } from "./index";
 
 describe("detectLocale", () => {
   it("follows ?lang=, then the browser language, Korean for Korean browsers", () => {
@@ -20,5 +20,19 @@ describe("t", () => {
   it("leaves a missing value visible instead of crashing", () => {
     setLocale("en");
     expect(t("hud.day")).toBe("Day {day}");
+  });
+});
+
+describe("itemName", () => {
+  it("names an item and its grade in the current language", () => {
+    setLocale("ko");
+    expect(itemName("boar_belly:premium")).toBe("삼겹살 ★특급");
+    expect(itemName("shiitake")).toBe("표고버섯");
+    setLocale("en");
+    expect(itemName("boar_belly:normal")).toBe(`${t("item.boar_belly")} ${t("grade.normal")}`);
+    setLocale("ko");
+  });
+  it("shows an unknown key as it is", () => {
+    expect(itemName("junk")).toBe("junk");
   });
 });

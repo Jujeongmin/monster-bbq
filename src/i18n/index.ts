@@ -1,3 +1,4 @@
+import { parseItemKey } from "../../shared/content/items";
 import { en } from "./en";
 import { ko } from "./ko";
 
@@ -20,4 +21,12 @@ export function setLocale(l: Locale) {
 // The string for `key` in the current language with {name} filled from `vars` (left as is if missing).
 export function t(key: StringKey, vars: Record<string, string | number> = {}): string {
   return DICTS[current][key].replace(/\{(\w+)\}/g, (whole, k: string) => (k in vars ? String(vars[k]) : whole));
+}
+
+// An item key ("boar_belly:premium") as players read it: name, then grade for parts.
+export function itemName(key: string): string {
+  const item = parseItemKey(key);
+  if (!item) return key;
+  const name = t(`item.${item.id}` as StringKey);
+  return item.grade ? `${name} ${t(`grade.${item.grade}` as StringKey)}` : name;
 }

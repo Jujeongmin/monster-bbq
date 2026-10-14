@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { Action } from "../../shared/actions";
+import { saleLines, type Action } from "../../shared/actions";
 import type { SaveData } from "../../shared/save";
 import { PhaserGame } from "../game/PhaserGame";
 import type { HuntResult } from "../game/scenes/HuntScene";
-import { t, type StringKey } from "../i18n";
+import { itemName, t, type StringKey } from "../i18n";
 import type { Transport } from "../net/transport";
 import "./dayflow.css";
 
@@ -24,6 +24,8 @@ export function DayFlow({ transport }: { transport: Transport }) {
   const [failed, setFailed] = useState<{ action: Action; next: Phase } | null>(null);
   const [busy, setBusy] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  // what the last sale fetched, shown on the settle screen (temporary until the restaurant, plan 05)
+  const [sold, setSold] = useState<ReturnType<typeof saleLines>>([]);
   // a second click can land before React re-renders with busy=true
   const busyRef = useRef(false);
 
@@ -93,11 +95,29 @@ export function DayFlow({ transport }: { transport: Transport }) {
       )}
       {phase === "service" && (
         <Panel title={t("service.title")} body={t("service.body")}>
-          <button disabled={busy} onClick={() => act({ type: "sellAll" }, "settle")}>{t("service.sell")}</button>
+          <button
+            disabled={busy}
+            onClick={() => {
+              setSold(saleLines(save.items));
+              void act({ type: "sellAll" }, "settle");
+            }}
+          >
+            {t("service.sell")}
+          </button>
         </Panel>
       )}
       {phase === "settle" && (
         <Panel title={t("settle.title")} body={t("settle.body", { day: save.day, gold: save.gold })}>
+          {sold.length > 0 && (
+            <ul className="dayflow-sold">
+              {sold.map((l) => (
+                <li key={l.key}>
+                  <span>{itemName(l.key)} ×{l.n}</span>
+                  <span>+{l.gold}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           <button disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("nextDay")}</button>
         </Panel>
       )}

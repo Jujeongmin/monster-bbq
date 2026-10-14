@@ -21,16 +21,21 @@ export interface ActionContext {
   random: () => number;
 }
 
-// What the items fetch at the temporary shop (BALANCE.economy.itemPrice; premium parts their own price).
-export function saleValue(items: Record<string, number>): number {
-  let gold = 0;
+// What each stack fetches at the temporary shop (BALANCE.economy.itemPrice; premium parts their own
+// price), the best-paying first; unknown keys fetch nothing and are left out.
+export function saleLines(items: Record<string, number>): { key: string; n: number; gold: number }[] {
+  const lines: { key: string; n: number; gold: number }[] = [];
   for (const [key, n] of Object.entries(items)) {
     const item = parseItemKey(key);
     if (!item) continue;
     const price = BALANCE.economy.itemPrice[item.id];
-    gold += n * (item.grade === "premium" ? (price.premium ?? price.normal) : price.normal);
+    lines.push({ key, n, gold: n * (item.grade === "premium" ? (price.premium ?? price.normal) : price.normal) });
   }
-  return gold;
+  return lines.sort((a, b) => b.gold - a.gold);
+}
+
+export function saleValue(items: Record<string, number>): number {
+  return saleLines(items).reduce((sum, l) => sum + l.gold, 0);
 }
 
 // Knocked out on the hunt: half of every stack is lost, rounded down (spec 3).

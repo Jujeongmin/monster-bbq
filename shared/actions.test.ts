@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyAction, koPenalty, type ActionContext } from "./actions";
+import { applyAction, koPenalty, saleLines, type ActionContext } from "./actions";
 import { BALANCE } from "./balance";
 import { itemKey } from "./content/items";
 import { dropFor } from "./hunt/drops";
@@ -109,5 +109,15 @@ describe("sellAll and endDay", () => {
 describe("koPenalty", () => {
   it("keeps half of every stack, rounded down", () => {
     expect(koPenalty({ "boar_belly:premium": 3, shiitake: 4, perilla: 1 })).toEqual({ "boar_belly:premium": 1, shiitake: 2 });
+  });
+});
+
+describe("saleLines", () => {
+  it("lists each stack with what it fetches, the best-paying first, skipping unknown keys", () => {
+    expect(saleLines({ shiitake: 2, "boar_belly:premium": 2, "boar_belly:normal": 3, junk: 5 })).toEqual([
+      { key: "boar_belly:premium", n: 2, gold: 60 },
+      { key: "boar_belly:normal", n: 3, gold: 45 },
+      { key: "shiitake", n: 2, gold: 12 },
+    ]);
   });
 });

@@ -12,7 +12,7 @@ import { HUNT_START, planHunt, type HuntPlan } from "../../../shared/hunt/plan";
 import { shotHits, stepShot, type Shot } from "../../../shared/hunt/shooter";
 import type { Vec } from "../../../shared/hunt/types";
 import type { Zone } from "../../../shared/save";
-import { t, type StringKey } from "../../i18n";
+import { itemName, t } from "../../i18n";
 import { artUrl } from "../art";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 import { createCharacterAnims, loadCharacterArt, lookOf, stepBob } from "../hunt/anims";
@@ -689,7 +689,7 @@ export class HuntScene extends Phaser.Scene {
   private popItem(x: number, y: number, key: string) {
     const item = parseItemKey(key);
     if (!item) return;
-    const name = t(`item.${item.id}` as StringKey) + (item.grade ? ` ${t(`grade.${item.grade}` as StringKey)}` : "");
+    const name = itemName(key);
     const color = item.grade === "premium" ? "#ffd166" : "#ffffff";
     const icon = this.add.image(x - 2, y, `icon_${item.id as ItemId}`).setOrigin(1, 0.5).setDepth(9001);
     const label = this.add.text(x, y, name, { fontFamily: "monospace", fontSize: "10px", color, stroke: "#000000", strokeThickness: 3 }).setOrigin(0, 0.5).setDepth(9001);
