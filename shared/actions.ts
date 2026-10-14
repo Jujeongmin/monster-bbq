@@ -1,7 +1,7 @@
 import { BALANCE } from "./balance";
 import { isMethod, type DishId } from "./content/dishes";
 import { isUpgradeId, TOOL_UPGRADES } from "./content/upgrades";
-import { isLocked, level, nextCost } from "./growth";
+import { bagSlots, isLocked, level, menuSlots, nextCost, seatBonus } from "./growth";
 import { itemKey, parseItemKey, type ItemId } from "./content/items";
 import { addToBag } from "./hunt/bag";
 import { dropFor } from "./hunt/drops";
@@ -84,12 +84,12 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
       if (refill !== undefined && kills < refill + 1) return null;
       taken.add(e.kill);
       kills++;
-      bag = addToBag(bag, itemKey(dropFor(hunt.seed, spawn), e.grade), BALANCE.hunt.bagSlots).bag;
+      bag = addToBag(bag, itemKey(dropFor(hunt.seed, spawn), e.grade), bagSlots(save)).bag;
     } else if (typeof e.gather === "string") {
       const node = nodes.get(e.gather);
       if (!node || taken.has(e.gather)) return null;
       taken.add(e.gather);
-      bag = addToBag(bag, itemKey(node.item), BALANCE.hunt.bagSlots).bag;
+      bag = addToBag(bag, itemKey(node.item), bagSlots(save)).bag;
     } else return null;
   }
   if (now - hunt.startedAt < kills * BALANCE.hunt.minMsPerKill) return null;
@@ -142,7 +142,7 @@ function finishService(save: SaveData, a: Record<string, unknown>, now: number, 
   const svc = save.service;
   const bad = { save, error: "bad_service" };
   if (!svc || a.serviceId !== svc.id || !Array.isArray(a.served) || !Array.isArray(a.left) || a.served.length > MAX_SERVED || a.left.length > MAX_SERVED) return bad;
-  const customers = new Map(planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.menu }).map((c) => [c.id, c]));
+  const customers = new Map(planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.menu, seats: seatBonus(save) }).map((c) => [c.id, c]));
   const elapsed = now - svc.startedAt;
   const seen = new Set<string>();
   const used: Record<string, number> = {};
@@ -226,7 +226,7 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       const d = a.dishes;
       const ok =
         Array.isArray(d) &&
-        d.length <= BALANCE.kitchen.menuSlots &&
+        d.length <= menuSlots(save) &&
         new Set(d).size === d.length &&
         d.every((id) => {
           const r = typeof id === "string" ? save.cookbook[id as DishId] : undefined;

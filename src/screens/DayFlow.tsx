@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
 import type { DishId, Method } from "../../shared/content/dishes";
+import { seatBonus } from "../../shared/growth";
 import { planService } from "../../shared/service/plan";
 import type { SaveData } from "../../shared/save";
 import { PhaserGame } from "../game/PhaserGame";
@@ -162,7 +163,7 @@ function Panel({ title, body, children }: { title: string; body: string; childre
 // stations and ingredients from the cookbook.
 function Night({ save, onEnd }: { save: SaveData; onEnd: (r: { served: { customer: string; keys: string[]; accuracy: number }[]; left: string[] }) => void }) {
   const svc = save.service!;
-  const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.menu });
+  const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.menu, seats: seatBonus(save) });
   const methods: Partial<Record<DishId, Method>> = {};
   const menu = svc.menu.flatMap((dish) => {
     const r = save.cookbook[dish];

@@ -16,10 +16,11 @@ export interface Customer {
   seat: number;
 }
 
-export function planService(seed: number, opts: { day: number; reputation: number; menu: DishId[] }): Customer[] {
+// `seats`: extra guests from the seats upgrade (shared/growth seatBonus), on top of the reputation count.
+export function planService(seed: number, opts: { day: number; reputation: number; menu: DishId[]; seats?: number }): Customer[] {
   if (opts.menu.length === 0) return [];
   const rand = seededRandom(seed);
-  const count = Math.max(SV.minCustomers, Math.min(SV.maxCustomers, SV.baseCustomers + Math.floor(opts.reputation / SV.perReputation)));
+  const count = Math.max(SV.minCustomers, Math.min(SV.maxCustomers, SV.baseCustomers + Math.floor(opts.reputation / SV.perReputation))) + (opts.seats ?? 0);
   const between = (lo: number, hi: number) => Math.round(lo + rand() * (hi - lo));
   const out: Customer[] = [];
   let at = SV.firstArriveMs;

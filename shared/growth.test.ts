@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { applyAction, type ActionContext } from "./actions";
 import { BALANCE } from "./balance";
-import { level, maxLevel, nextCost, UPGRADE_IDS } from "./growth";
+import { bagSlots, huntStats, level, lunchSlots, maxLevel, menuSlots, nextCost, seatBonus, toolQuality, UPGRADE_IDS } from "./growth";
+import { planHunt } from "./hunt/plan";
+import { planService } from "./service/plan";
 import { newSave, readSave } from "./save";
 
 const ctx: ActionContext = { now: 0, random: () => 0.5, recipes: null };
@@ -52,5 +54,37 @@ describe("reading upgrades from a save", () => {
   it("keeps known levels within range and drops the rest", () => {
     const r = readSave({ ...newSave(), upgrades: { melee: 3, bag: 99, armor: -2, rocket: 4, pot: "1" } });
     expect(r.upgrades).toEqual({ melee: 3 });
+  });
+});
+
+describe("upgrade effects", () => {
+  const at = (upgrades: Record<string, number>) => ({ ...newSave(), upgrades });
+  it("gives stronger hunts, a bigger bag, more menu slots, more guests and kinder tools by level", () => {
+    expect(huntStats(newSave())).toEqual({ meleeDamage: 10, rangedDamage: 5, rangedRange: 1, maxHp: 100 });
+    expect(huntStats(at({ melee: 3, ranged: 2, armor: 4 }))).toEqual({ meleeDamage: 19, rangedDamage: 8, rangedRange: 1.1, maxHp: 220 });
+    expect(bagSlots(newSave())).toBe(12);
+    expect(bagSlots(at({ bag: 3 }))).toBe(18);
+    expect(menuSlots(at({ menu: 2 }))).toBe(3);
+    expect(seatBonus(at({ seats: 3 }))).toBe(2);
+    expect(toolQuality(at({ grillQuality: 3 }), "grill")).toBe(1.3);
+    expect(toolQuality(newSave(), "boil")).toBe(1);
+    expect(lunchSlots(at({ lunchbox: 2 }))).toBe(2);
+  });
+  it("lets the server take a 15-item haul once the bag is upgraded", () => {
+    const start = applyAction({ ...newSave(), upgrades: { bag: 2 } }, { type: "startHunt", zone: "forest" }, { ...ctx, now: 1_000_000 }).save;
+    const plan = planHunt(start.hunt!.seed, "forest");
+    const kills = [...plan.spawns.filter((s) => s.wave === 0), ...plan.spawns.filter((s) => s.wave === 1)].slice(0, 15).map((s) => ({ kill: s.id, grade: "normal" }));
+    const r = applyAction(start, { type: "finishHunt", huntId: start.hunt!.id, events: kills, ko: false }, { ...ctx, now: 1_000_000 + 15 * BALANCE.hunt.minMsPerKill });
+    expect(Object.values(r.save.items).reduce((a, b) => a + b, 0)).toBe(15);
+  });
+  it("lets tonight's menu hold more dishes after the menu upgrade", () => {
+    const cookbook = { grilled_belly: { method: "grill" as const, items: ["boar_belly" as const] }, garlic_neck: { method: "grill" as const, items: ["boar_neck" as const] }, shiitake_grill: { method: "grill" as const, items: ["shiitake" as const] } };
+    const three = { type: "setMenu", dishes: ["grilled_belly", "garlic_neck", "shiitake_grill"] };
+    expect(applyAction({ ...newSave(), cookbook }, three, ctx).error).toBe("bad_menu");
+    expect(applyAction({ ...newSave(), cookbook, upgrades: { menu: 2 } }, three, ctx).error).toBeUndefined();
+  });
+  it("brings one more guest a night per seat level, the same way for the server and the page", () => {
+    const opts = { day: 1, reputation: 0, menu: ["grilled_belly" as const] };
+    expect(planService(5, { ...opts, seats: 1 })).toHaveLength(planService(5, opts).length + 1);
   });
 });

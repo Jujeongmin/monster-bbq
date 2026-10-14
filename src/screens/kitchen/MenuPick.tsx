@@ -1,16 +1,16 @@
-import { BALANCE } from "../../../shared/balance";
 import { DISHES, type DishId } from "../../../shared/content/dishes";
+import { menuSlots } from "../../../shared/growth";
 import { servings } from "../../../shared/kitchen/cook";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
 import { DishIcon } from "./DishIcon";
 
-// Tonight's menu (spec 4): pick up to menuSlots found dishes, seeing how many plates the fridge makes.
+// Tonight's menu (spec 4): pick up to the menu slots (upgradable) of found dishes, seeing how many plates the fridge makes.
 // A dish whose tool is not owned yet is shown but cannot be picked. The choice is sent when the shop
 // opens (Kitchen's ready button).
 export function MenuPick({ save, picked, setPicked }: { save: SaveData; picked: DishId[]; setPicked: (d: DishId[]) => void }) {
   const known = (Object.keys(DISHES) as DishId[]).filter((id) => save.cookbook[id]);
-  const slots = BALANCE.kitchen.menuSlots;
+  const slots = menuSlots(save);
 
   function toggle(id: DishId) {
     if (picked.includes(id)) setPicked(picked.filter((d) => d !== id));

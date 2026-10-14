@@ -76,6 +76,18 @@ export const BALANCE: {
   // per upgrade: its starting level, the cost of each next level, and target levels locked until later
   // chapters (boss parts, story)
   upgrades: Record<UpgradeId, { base: 0 | 1; costs: number[]; locked?: number[] }>;
+  // what each upgrade level does (index = level - 1)
+  growth: {
+    meleeDamage: number[];
+    rangedDamage: number[];
+    rangedRange: number[];
+    maxHp: number[];
+    bag: number[];
+    menu: number[];
+    quality: number[];
+    seats: number[];
+    lunch: number[];
+  };
   service: {
     baseCustomers: number;
     perReputation: number; // one more customer per this much reputation
@@ -185,6 +197,17 @@ export const BALANCE: {
     potQuality: { base: 1, costs: [500, 2000] },
     seats: { base: 1, costs: [800, 1600, 3200, 6400] },
     lunchbox: { base: 1, costs: [300, 1500] },
+  },
+  growth: {
+    meleeDamage: [10, 14, 19, 26],
+    rangedDamage: [5, 8, 12],
+    rangedRange: [1, 1.1, 1.1],
+    maxHp: [100, 130, 170, 220],
+    bag: [12, 15, 18, 21, 24],
+    menu: [2, 3, 4, 5],
+    quality: [1, 1.15, 1.3],
+    seats: [0, 1, 2, 3, 4],
+    lunch: [1, 2, 3],
   },
   // the night service (cooking-service design 5); first guesses, tuned in play
   service: {
