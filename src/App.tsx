@@ -1,6 +1,30 @@
-import { PhaserGame } from "./game/PhaserGame";
+import { GameServerProvider, useGameServer } from "@agent8/gameserver";
+import { useMemo } from "react";
+import { wantsOnline } from "./net/connection";
+import { LocalTransport, Verse8Transport } from "./net/transport";
+import { DayFlow } from "./screens/DayFlow";
 
-// Hunt only until the day flow lands (plan 02 Task 7): the result goes to the console.
+// Online once the build has a Verse8 project (.env's VITE_AGENT8_VERSE, after the GitLab link);
+// until then, or with ?local in a development build, the server's rules run in the page.
+const online = wantsOnline(import.meta.env.VITE_AGENT8_VERSE, location.search, import.meta.env.DEV);
+
 export function App() {
-  return <PhaserGame onHuntEnd={(result) => console.info("hunt:end", JSON.stringify(result))} />;
+  if (!online) return <LocalApp />;
+  return (
+    <GameServerProvider>
+      <OnlineApp />
+    </GameServerProvider>
+  );
+}
+
+function LocalApp() {
+  const transport = useMemo(() => new LocalTransport(window.localStorage), []);
+  return <DayFlow transport={transport} />;
+}
+
+function OnlineApp() {
+  const { server, connected } = useGameServer();
+  const transport = useMemo(() => (server ? new Verse8Transport(server) : null), [server]);
+  if (!connected || !transport) return <div className="dayflow-wait">…</div>;
+  return <DayFlow transport={transport} />;
 }

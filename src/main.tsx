@@ -5,7 +5,10 @@ import "./storageFallback";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { detectLocale, setLocale } from "./i18n";
 import "./index.css";
+
+setLocale(detectLocale(location.search, navigator.language));
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
