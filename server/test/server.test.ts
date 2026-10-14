@@ -5,16 +5,23 @@ describe("Server", () => {
     expect(s.day).toBe(1);
   });
 
-  test("keeps a hunt and sells it", async (server) => {
-    await server.act({ type: "huntResult", meat: { premium: 2, normal: 1 } });
-    const s = await server.act({ type: "sellAll" });
-    expect(s.gold).toBe(75);
+  test("opens a hunt with its own seed", async (server) => {
+    const s = await server.act({ type: "startHunt", zone: "forest" });
+    expect(s.hunt.zone).toBe("forest");
+    expect(typeof s.hunt.seed).toBe("number");
+  });
+
+  test("settles an empty hunt", async (server) => {
+    const started = await server.act({ type: "startHunt", zone: "forest" });
+    const s = await server.act({ type: "finishHunt", huntId: started.hunt.id, events: [], ko: false });
+    expect(s.hunt).toBe(null);
   });
 
   test("refuses a forged hunt", async (server) => {
     let refused = false;
     try {
-      await server.act({ type: "huntResult", meat: { premium: 999, normal: 0 } });
+      await server.act({ type: "startHunt", zone: "forest" });
+      await server.act({ type: "finishHunt", huntId: "forged", events: [{ kill: "s0", grade: "premium" }], ko: false });
     } catch {
       refused = true;
     }

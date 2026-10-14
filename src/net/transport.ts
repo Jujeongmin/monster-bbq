@@ -1,4 +1,4 @@
-import { applyAction, type Action } from "../../shared/actions";
+import { applyAction, type Action, type ActionContext } from "../../shared/actions";
 import { readSave, type SaveData } from "../../shared/save";
 
 // How the game reaches "the server": load the save, ask for a change.
@@ -12,6 +12,8 @@ export class LocalTransport implements Transport {
   constructor(
     private readonly storage: Pick<Storage, "getItem" | "setItem">,
     private readonly key = "monster-bbq:save",
+    // the server's clock and dice, played by the page
+    private readonly context: () => ActionContext = () => ({ now: Date.now(), random: Math.random }),
   ) {}
 
   async load(): Promise<SaveData> {
@@ -27,7 +29,7 @@ export class LocalTransport implements Transport {
   }
 
   async act(action: Action): Promise<SaveData> {
-    const result = applyAction(await this.load(), action);
+    const result = applyAction(await this.load(), action, this.context());
     if (result.error) throw new Error(result.error);
     this.storage.setItem(this.key, JSON.stringify(result.save));
     return result.save;

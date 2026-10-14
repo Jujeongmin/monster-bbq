@@ -10,8 +10,8 @@ function memory() {
 describe("LocalTransport", () => {
   it("plays by the shared rules and remembers the save", async () => {
     const store = memory();
-    await new LocalTransport(store).act({ type: "huntResult", meat: { premium: 1, normal: 0 } });
-    expect((await new LocalTransport(store).load()).items["boar_belly:premium"]).toBe(1);
+    await new LocalTransport(store).act({ type: "startHunt", zone: "forest" });
+    expect((await new LocalTransport(store).load()).hunt?.zone).toBe("forest");
   });
   it("starts fresh instead of failing when the stored save is not even JSON", async () => {
     const store = memory();
@@ -20,8 +20,8 @@ describe("LocalTransport", () => {
   });
   it("throws on a rejected action and keeps the save", async () => {
     const t = new LocalTransport(memory());
-    await expect(t.act({ type: "huntResult", meat: { premium: 99, normal: 0 } })).rejects.toThrow("bad_hunt");
-    expect((await t.load()).items).toEqual({});
+    await expect(t.act({ type: "finishHunt", huntId: "nope", events: [], ko: false })).rejects.toThrow("bad_hunt");
+    expect((await t.load()).hunt).toBeNull();
   });
 });
 

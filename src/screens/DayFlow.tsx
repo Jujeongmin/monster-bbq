@@ -34,6 +34,11 @@ export function DayFlow({ transport }: { transport: Transport }) {
   }
   useEffect(load, [transport]);
 
+  // the server opens every hunt (its seed decides the hunting ground): ask whenever a day's hunt starts
+  useEffect(() => {
+    if (save && phase === "hunt" && !save.hunt && !failed) void act({ type: "startHunt", zone: "forest" }, "hunt");
+  }, [save, phase, failed]);
+
   async function act(action: Action, next: Phase) {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -67,8 +72,8 @@ export function DayFlow({ transport }: { transport: Transport }) {
 
   return (
     <div className="dayflow">
-      {phase === "hunt" && (
-        <PhaserGame key={hunt} onHuntEnd={(r: HuntResult) => act({ type: "huntResult", meat: r.meat }, "kitchen")} />
+      {phase === "hunt" && save.hunt && (
+        <PhaserGame key={hunt} onHuntEnd={(r: HuntResult) => act({ type: "finishHunt", huntId: save.hunt!.id, events: [], ko: r.ko }, "kitchen")} />
       )}
 
       <div className="dayflow-bar">

@@ -67,7 +67,7 @@ type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "R", Phaser.I
 
 // What the hunt hands to the day flow when it ends (PhaserGame forwards the "hunt:end" event).
 export interface HuntResult {
-  meat: { premium: number; normal: number };
+  meat: Record<string, number>;
   ko: boolean;
 }
 
