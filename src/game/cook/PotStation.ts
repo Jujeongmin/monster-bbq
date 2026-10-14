@@ -42,7 +42,7 @@ export class PotStation implements Station {
   private bubbles: Phaser.GameObjects.Particles.ParticleEmitter;
   private splash: Phaser.GameObjects.Particles.ParticleEmitter;
   private froth: Phaser.GameObjects.Particles.ParticleEmitter;
-  private status: Phaser.GameObjects.Text;
+  private statusText: Phaser.GameObjects.Text;
   private cx: number;
   private cy: number;
   private stroke: { x: number; y: number; run: number; startedInBroth: boolean } | null = null;
@@ -127,14 +127,14 @@ export class PotStation implements Station {
       lifespan: 900,
       emitting: false,
     });
-    this.status = scene.add.text(this.cx, y - 2, "", { fontFamily: "monospace", fontSize: "10px", color: "#ffd9a0", stroke: "#000", strokeThickness: 3 }).setOrigin(0.5, 0);
+    this.statusText = scene.add.text(this.cx, y - 2, "", { fontFamily: "monospace", fontSize: "10px", color: "#ffd9a0", stroke: "#000", strokeThickness: 3 }).setOrigin(0.5, 0);
     this.lidOn.setDepth(30);
     this.steam.setDepth(40);
     this.bubbles.setDepth(12);
     this.splash.setDepth(41);
     this.froth.setDepth(42);
-    this.status.setDepth(70);
-    this.fx = [this.lidOn, this.steam, this.bubbles, this.splash, this.froth, this.status];
+    this.statusText.setDepth(70);
+    this.fx = [this.lidOn, this.steam, this.bubbles, this.splash, this.froth, this.statusText];
 
     scene.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       if (this.visible && this.host.tool === "ladle") this.stroke = { x: p.x, y: p.y, run: 0, startedInBroth: this.inBroth(p.x, p.y) };
@@ -157,6 +157,12 @@ export class PotStation implements Station {
 
   keysInUse(): string[] {
     return this.pot.items.map((i) => i.key);
+  }
+
+  status() {
+    const level = this.pot.items.reduce((m, i) => Math.max(m, Math.min(1, i.cooked)), 0);
+    const spillAt = this.pot.lid ? P.boilOverMs / 2 : P.boilOverMs;
+    return { level, alarm: this.pot.fullBoilMs > spillAt * 0.6 || this.pot.foam > 0.5 };
   }
 
   private inBroth(x: number, y: number) {
@@ -288,6 +294,6 @@ export class PotStation implements Station {
       it.raw.setY(y);
       it.cooked.setY(y).setAlpha(Math.min(1, c) * 0.95);
     });
-    this.status.setText(pot.dial === 0 && pot.items.length > 0 ? t("cook.fireOff") : "");
+    this.statusText.setText(pot.dial === 0 && pot.items.length > 0 ? t("cook.fireOff") : "");
   }
 }

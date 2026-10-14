@@ -13,3 +13,4 @@
 .dayflow-sold { margin: 0 0 16px; padding: 0; list-style: none; font-size: 13px; color: #ddd8f0; }
 .dayflow-sold li { display: flex; justify-content: space-between; gap: 24px; padding: 2px 0; }
 .dayflow-sold li span:last-child { color: #ffd166; }
+.service-stage { position: absolute; inset: 0 0 40px; background: #2b211c; }

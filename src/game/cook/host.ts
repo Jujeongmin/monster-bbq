@@ -20,4 +20,7 @@ export interface Station {
   dropFromTray(key: string, x: number, y: number): boolean;
   // keys of items currently in the station (still counted out of the tray)
   keysInUse(): string[];
+  // for the station chips in service: how far along the most cooked thing is (0..1), and whether
+  // something is about to burn or boil over
+  status(): { level: number; alarm: boolean };
 }

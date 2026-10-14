@@ -71,7 +71,7 @@ export class GrillStation implements Station {
   private grease: Phaser.GameObjects.Particles.ParticleEmitter;
   private drip: Phaser.GameObjects.Particles.ParticleEmitter;
   private fatGlint: Phaser.GameObjects.Particles.ParticleEmitter;
-  private status: Phaser.GameObjects.Text;
+  private statusText: Phaser.GameObjects.Text;
   private drag: { id: string; startX: number; startY: number; at: number; moved: boolean } | null = null;
   private cutTrail: { x: number; y: number } | null = null;
   private visible = true;
@@ -165,7 +165,7 @@ export class GrillStation implements Station {
       lifespan: 1100,
       emitting: false,
     });
-    this.status = scene.add.text(this.cx, y - 2, "", { fontFamily: "monospace", fontSize: "10px", color: "#ffd9a0", stroke: "#000", strokeThickness: 3 }).setOrigin(0.5, 1);
+    this.statusText = scene.add.text(this.cx, y - 2, "", { fontFamily: "monospace", fontSize: "10px", color: "#ffd9a0", stroke: "#000", strokeThickness: 3 }).setOrigin(0.5, 1);
     // effects above the meat (pieces sit at depth 10, a dragged one at 50)
     this.shimmer.setDepth(30);
     this.smoke.setDepth(40);
@@ -174,8 +174,8 @@ export class GrillStation implements Station {
     this.fatGlint.setDepth(6);
     this.saltFall.setDepth(45);
     this.restSteam.setDepth(39);
-    this.status.setDepth(70);
-    this.fx = [this.shimmer, this.smoke, this.grease, this.drip, this.fatGlint, this.saltFall, this.restSteam, this.status];
+    this.statusText.setDepth(70);
+    this.fx = [this.shimmer, this.smoke, this.grease, this.drip, this.fatGlint, this.saltFall, this.restSteam, this.statusText];
 
     scene.input.on("pointermove", (p: Phaser.Input.Pointer) => this.onMove(p));
     scene.input.on("pointerup", (p: Phaser.Input.Pointer) => this.onUp(p));
@@ -199,6 +199,13 @@ export class GrillStation implements Station {
 
   keysInUse(): string[] {
     return this.grill.pieces.map((p) => p.key);
+  }
+
+  status() {
+    const hot = this.grill.pieces.filter((p) => !p.onBoard);
+    const level = hot.reduce((m, p) => Math.max(m, Math.min(1, p.down / 1.2)), 0);
+    const alarm = hot.some((p) => p.char > 0 || p.down > BALANCE.cooking.items[parseItemKey(p.key)!.id].burnAt - 0.15);
+    return { level, alarm };
   }
 
   private toGrill(x: number, y: number) {
@@ -384,7 +391,7 @@ export class GrillStation implements Station {
     // a plate getting dark with soot and burnt fat
     const soot = Math.round(255 - g.soot * 110);
     this.plateImg.setTint(Phaser.Display.Color.GetColor(soot, soot, soot));
-    this.status.setText(g.heat < G.stickBelow ? t("cook.preheat") : g.soot > 0.3 ? t("cook.sooty") : "");
+    this.statusText.setText(g.heat < G.stickBelow ? t("cook.preheat") : g.soot > 0.3 ? t("cook.sooty") : "");
     // ready: heat shimmers over the empty plate
     this.shimmer.emitting = this.visible && g.heat >= G.stickBelow && g.pieces.length === 0;
     this.drip.emitting = this.visible && g.fat > 0.2;

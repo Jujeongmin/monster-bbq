@@ -1,22 +1,37 @@
 import Phaser from "phaser";
 import { BALANCE } from "../../../shared/balance";
-import type { Method } from "../../../shared/content/dishes";
-import { ITEMS, parseItemKey } from "../../../shared/content/items";
+import { DISHES, type DishId, type Method } from "../../../shared/content/dishes";
+import { ITEMS, parseItemKey, type ItemId } from "../../../shared/content/items";
 import { canPlate } from "../../../shared/cooking/grill";
 import { plateResult, type CookJudgement, type NoteId } from "../../../shared/cooking/notes";
 import { t } from "../../i18n";
+import { artUrl } from "../art";
 import { cookedKey, loadCookArt, makeEffectTextures, rawKey } from "./art";
 import { GrillStation } from "./GrillStation";
 import { PotStation } from "./PotStation";
 import type { CookHost, Station } from "./host";
 
-// The cooking stage (cooking-service design 2 and 4), shared by the research kitchen and (05b) the
-// night service. A station (grill, pot) in the middle, the ingredient tray along the bottom, the
-// serving plate on the right with the tongs and scissors. "Done" sends what is on the plate:
-// game.events "cook:plate" { keys, method, accuracy, note }. The page answers "cook:reset" with the
-// fridge as it is after the try, and the stage starts over.
+// The cooking stage (cooking-service design 2, 4 and 5), shared by the research kitchen and the night
+// service. A station (grill, pot) in the middle, the ingredient tray along the bottom, the serving
+// plate on the right with the tools.
+//  - research: "Done" sends what is on the plate: game.events "cook:plate" { keys, method, accuracy,
+//    note }; the page restarts the stage with the fridge as it is after the try.
+//  - service: the tray holds tonight's menu ingredients, counted down all night; waiting customers'
+//    orders show as chips (game.registry "orders", kept by the shop scene); dragging the plate onto an
+//    order serves it if it is that dish: game.events "service:serve" { customer, keys, accuracy }.
+//    Station chips warn when something is about to burn; "to the shop" emits "service:shop". The stage
+//    keeps cooking while the shop is in front.
 export interface CookStageData {
   items: Record<string, number>;
+  mode?: "research" | "service";
+  menu?: { dish: DishId; items: ItemId[] }[];
+}
+
+export interface Order {
+  customer: string;
+  dish: DishId;
+  // patience left, 1 .. 0
+  patience: number;
 }
 
 export interface CookPlate {
@@ -30,6 +45,8 @@ const MAX_DT_MS = 50;
 const TOOLS = ["tongs", "scissors", "salt", "ladle"] as const;
 const TRAY_Y = 336;
 const PLATE = { x: 520, y: 160, scale: 2 };
+const CHIPS = { x: 452, y: 54, step: 46, max: 4 };
+const STATION_CHIPS = { x: 616, y: [124, 182] };
 const PLATE_HIT = { w: 150, h: 130 };
 const ORDER = Object.keys(ITEMS);
 // a leaf goes on the plate as it is (to wrap with); everything else wants cooking
@@ -51,6 +68,13 @@ export class CookStage extends Phaser.Scene implements CookHost {
   private bowl!: Phaser.GameObjects.Image;
   private serveButton!: Phaser.GameObjects.Text;
   private served = false;
+  private mode: "research" | "service" = "research";
+  private menu: { dish: DishId; items: ItemId[] }[] = [];
+  // ingredients already served tonight (service mode)
+  private usedTotal: Record<string, number> = {};
+  private chips: { customer: string; box: Phaser.GameObjects.Container; bar: Phaser.GameObjects.Graphics }[] = [];
+  private stationChips: { box: Phaser.GameObjects.Container; ring: Phaser.GameObjects.Graphics; station: Station }[] = [];
+  private plateDrag: Phaser.GameObjects.Container | null = null;
 
   constructor() {
     super("cook");
@@ -58,6 +82,12 @@ export class CookStage extends Phaser.Scene implements CookHost {
 
   init(data: CookStageData) {
     this.items = { ...data.items };
+    this.mode = data.mode ?? "research";
+    this.menu = data.menu ?? [];
+    this.usedTotal = {};
+    this.chips = [];
+    this.stationChips = [];
+    this.plateDrag = null;
     this.stations = [];
     this.plated = [];
     this.tray = [];
@@ -70,6 +100,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
 
   preload() {
     loadCookArt(this);
+    for (const id of Object.keys(DISHES)) this.load.image(`dish_${id}`, artUrl(`test/dishes/${id}.png`));
   }
 
   create() {
@@ -84,12 +115,14 @@ export class CookStage extends Phaser.Scene implements CookHost {
     this.add.image(PLATE.x, PLATE.y, "plate").setScale(PLATE.scale);
     // soup goes into a bowl on the plate
     this.bowl = this.add.image(PLATE.x, PLATE.y, "bowl").setScale(1.6).setDepth(19).setVisible(false);
-    this.add.text(PLATE.x, PLATE.y - 70, t("cook.plate"), label).setOrigin(0.5);
+    if (this.mode === "research") this.add.text(PLATE.x, PLATE.y - 70, t("cook.plate"), label).setOrigin(0.5);
     this.serveButton = this.add
       .text(PLATE.x, PLATE.y + 82, t("cook.serve"), { ...label, fontSize: "14px", backgroundColor: "#7a4a1a", padding: { x: 10, y: 4 } })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => this.serve());
+    this.serveButton.setVisible(this.mode === "research");
+    if (this.mode === "service") this.buildService();
 
     // tools: tap to pick one up (tongs and scissors at the grill, the ladle at the pot)
     this.toolIcons = {
@@ -115,9 +148,13 @@ export class CookStage extends Phaser.Scene implements CookHost {
     this.buildTray();
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
       this.ghost?.img.setPosition(p.x, p.y);
+      this.plateDrag?.setPosition(p.x, p.y);
       if (this.tool !== "tongs") this.cursor.setPosition(p.x + 8, p.y - 8);
     });
-    this.input.on("pointerup", (p: Phaser.Input.Pointer) => this.dropGhost(p));
+    this.input.on("pointerup", (p: Phaser.Input.Pointer) => {
+      this.dropGhost(p);
+      this.dropPlate(p);
+    });
     this.game.events.emit("cook:ready");
   }
 
@@ -127,6 +164,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
     // recounted every frame: a piece moving from a station to the plate is briefly in both
     this.refreshTray();
     this.serveButton.setAlpha(this.plated.length > 0 && !this.served ? 1 : 0.4);
+    if (this.mode === "service") this.updateService();
   }
 
   // ------------------------------------------------------------- CookHost
@@ -175,12 +213,14 @@ export class CookStage extends Phaser.Scene implements CookHost {
   }
 
   private left(key: string): number {
-    return (this.items[key] ?? 0) - this.keysInUse().filter((k) => k === key).length;
+    return (this.items[key] ?? 0) - (this.usedTotal[key] ?? 0) - this.keysInUse().filter((k) => k === key).length;
   }
 
   private buildTray() {
+    // in service only what tonight's menu is made of
+    const menuIds = new Set(this.menu.flatMap((m) => m.items));
     const keys = Object.keys(this.items)
-      .filter((k) => parseItemKey(k) && this.items[k] > 0)
+      .filter((k) => parseItemKey(k) && this.items[k] > 0 && (this.mode === "research" || menuIds.has(parseItemKey(k)!.id)))
       .sort((a, b) => ORDER.indexOf(parseItemKey(a)!.id) - ORDER.indexOf(parseItemKey(b)!.id) || (a.endsWith("premium") ? -1 : 1));
     if (keys.length === 0) this.add.text(320, TRAY_Y, t("kitchen.fridgeEmpty"), label).setOrigin(0.5);
     const step = Math.min(56, 600 / Math.max(1, keys.length));
@@ -205,9 +245,10 @@ export class CookStage extends Phaser.Scene implements CookHost {
 
   private pickFromTray(key: string, p: Phaser.Input.Pointer) {
     if (this.served || this.left(key) <= 0) return;
-    // one of each kind of item, three kinds at most (what the server accepts as one try)
+    // research: one of each kind of item, three kinds at most (what the server accepts as one try);
+    // service cooks for several tables at once, so only the fridge limits it
     const inUse = [...new Set(this.keysInUse())];
-    if (!canPlate(inUse, key)) {
+    if (this.mode === "research" && !canPlate(inUse, key)) {
       this.say(t("cook.plateFull"), p.x, p.y - 24, "#ffb0b0");
       return;
     }
@@ -246,6 +287,91 @@ export class CookStage extends Phaser.Scene implements CookHost {
     this.toolIcons.ladle.setVisible(!grill);
     this.tabs.forEach((tab, i) => tab.setBackgroundColor(this.stations[i] === station ? "#ffd166" : "#3a2f5e").setColor(this.stations[i] === station ? "#1b1530" : "#ffffff"));
     this.pickTool(grill ? "tongs" : "ladle");
+  }
+
+  // ------------------------------------------------------------- service
+
+  private buildService() {
+    // dragging the plate onto an order serves it
+    const zone = this.add.zone(PLATE.x, PLATE.y, PLATE_HIT.w * 0.8, PLATE_HIT.h * 0.8).setInteractive({ useHandCursor: true });
+    zone.on("pointerdown", (p: Phaser.Input.Pointer) => {
+      if (this.plated.length === 0 || this.ghost) return;
+      const box = this.add.container(p.x, p.y).setDepth(96).setAlpha(0.9);
+      box.add(this.add.image(0, 0, "plate").setScale(1.2));
+      for (const it of this.plated) box.add(this.add.image((it.sprite.x - PLATE.x) * 0.6, (it.sprite.y - PLATE.y) * 0.6, it.sprite.texture.key).setScale(0.4));
+      this.plateDrag = box;
+    });
+    this.add
+      .text(604, 14, t("service.toShop"), { ...label, fontSize: "12px", backgroundColor: "#7a4a1a", padding: { x: 6, y: 3 } })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", () => this.game.events.emit("service:shop"));
+    this.stations.forEach((station, i) => {
+      const box = this.add.container(STATION_CHIPS.x, STATION_CHIPS.y[i]).setDepth(80);
+      const ring = this.add.graphics();
+      box.add([this.add.image(0, 0, i === 0 ? "grill" : "pot_clear").setScale(0.17), ring]);
+      box.setSize(44, 44).setInteractive({ useHandCursor: true }).on("pointerdown", () => this.show(station));
+      this.stationChips.push({ box, ring, station });
+    });
+  }
+
+  // The station shown in front (the shop scene picks it when an order is tapped).
+  showMethod(method: Method) {
+    const s = this.stations.find((x) => (method === "grill" ? x.method === "grill" : x.method === "boil"));
+    if (s) this.show(s);
+  }
+
+  private updateService() {
+    const orders = (this.registry.get("orders") as Order[] | undefined) ?? [];
+    const shown = orders.slice(0, CHIPS.max);
+    // rebuild the chips when the queue changes, refresh the patience every frame
+    if (shown.map((o) => o.customer).join() !== this.chips.map((c) => c.customer).join()) {
+      for (const c of this.chips) c.box.destroy();
+      this.chips = shown.map((o, i) => {
+        const box = this.add.container(CHIPS.x + i * CHIPS.step, CHIPS.y).setDepth(80);
+        const bar = this.add.graphics();
+        box.add([this.add.image(0, -4, `dish_${o.dish}`).setScale(0.9), bar]);
+        return { customer: o.customer, box, bar };
+      });
+    }
+    for (const c of this.chips) {
+      const o = shown.find((x) => x.customer === c.customer)!;
+      c.bar.clear().fillStyle(0x000000, 0.6).fillRect(-18, 16, 36, 4);
+      c.bar.fillStyle(o.patience > 0.5 ? 0x7fe07f : o.patience > 0.25 ? 0xffd166 : 0xff5050, 1).fillRect(-18, 16, 36 * o.patience, 4);
+    }
+    // station chips: how far along, and a red blink when something is about to burn or boil over
+    const blink = Math.floor(this.time.now / 250) % 2 === 0;
+    for (const sc of this.stationChips) {
+      const st = sc.station.status();
+      sc.ring.clear().lineStyle(3, 0x000000, 0.5).strokeCircle(0, 0, 21);
+      if (st.level > 0) sc.ring.lineStyle(3, 0xffb040, 1).beginPath().arc(0, 0, 21, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * st.level).strokePath();
+      if (st.alarm && blink) sc.ring.lineStyle(3, 0xff3030, 1).strokeCircle(0, 0, 24);
+      sc.box.setScale(sc.station === this.active ? 1.1 : 0.9);
+    }
+  }
+
+  private dropPlate(p: Phaser.Input.Pointer) {
+    const box = this.plateDrag;
+    if (!box) return;
+    this.plateDrag = null;
+    box.destroy();
+    const chip = this.chips.find((c) => Math.abs(c.box.x - p.x) < 22 && Math.abs(c.box.y - p.y) < 26);
+    if (!chip) return;
+    const order = ((this.registry.get("orders") as Order[] | undefined) ?? []).find((o) => o.customer === chip.customer);
+    const recipe = this.menu.find((m) => m.dish === order?.dish)?.items ?? [];
+    const ids = this.plated.map((x) => parseItemKey(x.key)!.id);
+    if (!order || ids.length !== recipe.length || !recipe.every((id) => ids.includes(id))) {
+      this.say(t("service.wrongDish"), chip.box.x, chip.box.y + 30, "#ffb0b0");
+      return;
+    }
+    const r = plateResult(this.plated.map((x) => x.judgement));
+    const keys = this.plated.map((x) => x.key);
+    for (const k of keys) this.usedTotal[k] = (this.usedTotal[k] ?? 0) + 1;
+    for (const x of this.plated) x.sprite.destroy();
+    this.plated = [];
+    this.plateMethod = null;
+    this.bowl.setVisible(false);
+    this.game.events.emit("service:serve", { customer: order.customer, keys, accuracy: r.accuracy });
   }
 
   private serve() {

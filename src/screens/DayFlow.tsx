@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { saleLines, type Action } from "../../shared/actions";
+import type { Action } from "../../shared/actions";
+import type { DishId, Method } from "../../shared/content/dishes";
+import { planService } from "../../shared/service/plan";
 import type { SaveData } from "../../shared/save";
 import { PhaserGame } from "../game/PhaserGame";
+import { ServiceGame } from "../game/service/ServiceGame";
 import type { HuntResult } from "../game/scenes/HuntScene";
-import { itemName, t, type StringKey } from "../i18n";
+import { t, type StringKey } from "../i18n";
 import type { Transport } from "../net/transport";
 import { Kitchen } from "./kitchen/Kitchen";
 import "./dayflow.css";
@@ -22,17 +25,19 @@ const PHASE_NAME: Record<Phase, StringKey> = {
 export function DayFlow({ transport }: { transport: Transport }) {
   const [save, setSave] = useState<SaveData | null>(null);
   const [phase, setPhase] = useState<Phase>("hunt");
-  const [failed, setFailed] = useState<{ action: Action; next: Phase } | null>(null);
+  const [failed, setFailed] = useState<{ action: Action; next: Phase; code: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
-  // what the last sale fetched, shown on the settle screen (temporary until the restaurant, plan 05)
-  const [sold, setSold] = useState<ReturnType<typeof saleLines>>([]);
   // a second click can land before React re-renders with busy=true
   const busyRef = useRef(false);
 
   function load() {
     setLoadFailed(false);
-    transport.load().then(setSave, () => setLoadFailed(true));
+    transport.load().then((s) => {
+      setSave(s);
+      // a service the server opened and never settled (the page was reloaded): back into it
+      if (s.service) setPhase("service");
+    }, () => setLoadFailed(true));
   }
   useEffect(load, [transport]);
 
@@ -41,20 +46,28 @@ export function DayFlow({ transport }: { transport: Transport }) {
     if (save && phase === "hunt" && !save.hunt && !failed) void act({ type: "startHunt", zone: "forest" }, "hunt");
   }, [save, phase, failed]);
 
-  async function act(action: Action, next: Phase) {
-    if (busyRef.current) return;
+  // true once the server saved it; on failure the banner offers a retry (or says what is missing)
+  async function act(action: Action, next: Phase): Promise<boolean> {
+    if (busyRef.current) return false;
     busyRef.current = true;
     setBusy(true);
     setFailed(null);
     try {
       setSave(await transport.act(action));
       setPhase(next);
-    } catch {
-      setFailed({ action, next });
+      return true;
+    } catch (e) {
+      setFailed({ action, next, code: e instanceof Error ? e.message : "" });
+      return false;
     } finally {
       busyRef.current = false;
       setBusy(false);
     }
+  }
+
+  // "Open the shop": tonight's menu, then the server opens the service (its seed brings the customers)
+  async function openShop(menu: DishId[]) {
+    if (await act({ type: "setMenu", dishes: menu }, "kitchen")) await act({ type: "startService" }, "service");
   }
 
   if (!save)
@@ -89,30 +102,16 @@ export function DayFlow({ transport }: { transport: Transport }) {
         <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>
       </div>
 
-      {phase === "kitchen" && <Kitchen save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void act({ type: "setMenu", dishes: menu }, "service")} />}
-      {phase === "service" && (
-        <Panel title={t("service.title")} body={t("service.body")}>
-          <button
-            disabled={busy}
-            onClick={() => {
-              setSold(saleLines(save.items));
-              void act({ type: "sellAll" }, "settle");
-            }}
-          >
-            {t("service.sell")}
-          </button>
-        </Panel>
-      )}
+      {phase === "kitchen" && <Kitchen save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} />}
+      {phase === "service" && save.service && <Night save={save} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
       {phase === "settle" && (
         <Panel title={t("settle.title")} body={t("settle.body", { day: save.day, gold: save.gold })}>
-          {sold.length > 0 && (
+          {save.lastService && (
             <ul className="dayflow-sold">
-              {sold.map((l) => (
-                <li key={l.key}>
-                  <span>{itemName(l.key)} ×{l.n}</span>
-                  <span>+{l.gold}</span>
-                </li>
-              ))}
+              <li>{t("settle.served", { served: save.lastService.served, left: save.lastService.left })}</li>
+              <li>{t("settle.sales", { sales: save.lastService.sales, tips: save.lastService.tips })}</li>
+              <li>{t("settle.happy", { happy: save.lastService.happy })}</li>
+              <li>{t("settle.rep", { rep: save.reputation, delta: (save.lastService.repDelta >= 0 ? "+" : "") + save.lastService.repDelta })}</li>
             </ul>
           )}
           <button disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("nextDay")}</button>
@@ -121,8 +120,10 @@ export function DayFlow({ transport }: { transport: Transport }) {
 
       {failed && (
         <div className="dayflow-error">
-          <span>{t("error.retry")}</span>
-          <button disabled={busy} onClick={() => act(failed.action, failed.next)}>↻</button>
+          <span>{failed.code === "no_menu" || failed.code === "no_ingredients" ? t(`error.${failed.code}`) : t("error.retry")}</span>
+          {failed.code !== "no_menu" && failed.code !== "no_ingredients" && (
+            <button disabled={busy} onClick={() => act(failed.action, failed.next)}>↻</button>
+          )}
         </div>
       )}
     </div>
@@ -139,4 +140,19 @@ function Panel({ title, body, children }: { title: string; body: string; childre
       </div>
     </div>
   );
+}
+
+// Tonight's service: the customers the server's seed brings (same plan as the server checks), the menu's
+// stations and ingredients from the cookbook.
+function Night({ save, onEnd }: { save: SaveData; onEnd: (r: { served: { customer: string; keys: string[]; accuracy: number }[]; left: string[] }) => void }) {
+  const svc = save.service!;
+  const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.menu });
+  const methods: Partial<Record<DishId, Method>> = {};
+  const menu = svc.menu.flatMap((dish) => {
+    const r = save.cookbook[dish];
+    if (!r) return [];
+    methods[dish] = r.method;
+    return [{ dish, items: r.items }];
+  });
+  return <ServiceGame key={svc.id} shop={{ customers, methods }} items={save.items} menu={menu} onEnd={onEnd} />;
 }
