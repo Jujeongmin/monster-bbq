@@ -3,6 +3,7 @@ import type { FleerTuning } from "./hunt/fleer";
 import type { PackTuning } from "./hunt/pack";
 import type { ShooterTuning } from "./hunt/shooter";
 import type { HitTuning, WeaponKind, WeaponStats } from "./hunt/combat";
+import type { DishId } from "./content/dishes";
 import type { ItemId } from "./content/items";
 import type { Field } from "./hunt/types";
 
@@ -71,6 +72,22 @@ export const BALANCE: {
   };
   economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
   kitchen: { menuSlots: number; maxIngredients: number };
+  service: {
+    baseCustomers: number;
+    perReputation: number; // one more customer per this much reputation
+    minCustomers: number;
+    maxCustomers: number;
+    firstArriveMs: number;
+    gapMs: [number, number];
+    patienceMs: [number, number];
+    seats: number;
+    minMsPerServe: number; // no faster than this per plate (server check)
+    dishPrice: Record<DishId, number>;
+    premiumBonus: number; // dish score lift when every part on the plate is premium
+    tipRate: number;
+    happyAt: number;
+    rep: { happy: number; left: number };
+  };
   cooking: {
     grill: GrillTuning;
     pot: PotTuning;
@@ -149,6 +166,32 @@ export const BALANCE: {
   },
   // research kitchen and menu (spec 4); menu slots grow with upgrades (plan 06)
   kitchen: { menuSlots: 2, maxIngredients: 3 },
+  // the night service (cooking-service design 5); first guesses, tuned in play
+  service: {
+    baseCustomers: 4,
+    perReputation: 10,
+    minCustomers: 3,
+    maxCustomers: 10,
+    firstArriveMs: 3000,
+    gapMs: [8000, 14000],
+    patienceMs: [45000, 60000],
+    seats: 4,
+    minMsPerServe: 4000,
+    dishPrice: {
+      grilled_belly: 40,
+      garlic_neck: 50,
+      belly_ssam: 65,
+      honey_rabbit: 70,
+      shiitake_grill: 18,
+      rib_stew: 80,
+      baeksuk: 90,
+      chicken_perilla: 55,
+    },
+    premiumBonus: 0.25,
+    tipRate: 0.3,
+    happyAt: 0.75,
+    rep: { happy: 1, left: -2 },
+  },
   // hands-on cooking (cooking-service design 2); first guesses, tuned in play
   cooking: {
     grill: {
