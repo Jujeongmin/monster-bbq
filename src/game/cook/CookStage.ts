@@ -7,6 +7,7 @@ import { plateResult, type CookJudgement, type NoteId } from "../../../shared/co
 import { t } from "../../i18n";
 import { cookedKey, loadCookArt, makeEffectTextures, rawKey } from "./art";
 import { GrillStation } from "./GrillStation";
+import { PotStation } from "./PotStation";
 import type { CookHost, Station } from "./host";
 
 // The cooking stage (cooking-service design 2 and 4), shared by the research kitchen and (05b) the
@@ -35,15 +36,18 @@ const SERVED_RAW = new Set(Object.keys(ITEMS).filter((id) => BALANCE.cooking.ite
 const label = { fontFamily: "monospace", fontSize: "11px", color: "#ffffff", stroke: "#000000", strokeThickness: 3 };
 
 export class CookStage extends Phaser.Scene implements CookHost {
-  tool: "tongs" | "scissors" = "tongs";
+  tool: "tongs" | "scissors" | "ladle" = "tongs";
   private items: Record<string, number> = {};
   private stations: Station[] = [];
   private active!: Station;
   private plated: { key: string; judgement: CookJudgement; sprite: Phaser.GameObjects.Image }[] = [];
   private tray: { key: string; img: Phaser.GameObjects.Image; count: Phaser.GameObjects.Text }[] = [];
   private ghost: { key: string; img: Phaser.GameObjects.Image } | null = null;
-  private toolIcons!: { tongs: Phaser.GameObjects.Image; scissors: Phaser.GameObjects.Image };
-  private scissorsCursor!: Phaser.GameObjects.Image;
+  private toolIcons!: { tongs: Phaser.GameObjects.Image; scissors: Phaser.GameObjects.Image; ladle: Phaser.GameObjects.Image };
+  private cursor!: Phaser.GameObjects.Image;
+  private tabs: Phaser.GameObjects.Text[] = [];
+  private plateMethod: "grill" | "boil" | null = null;
+  private bowl!: Phaser.GameObjects.Image;
   private serveButton!: Phaser.GameObjects.Text;
   private served = false;
 
@@ -59,6 +63,8 @@ export class CookStage extends Phaser.Scene implements CookHost {
     this.ghost = null;
     this.tool = "tongs";
     this.served = false;
+    this.plateMethod = null;
+    this.tabs = [];
   }
 
   preload() {
@@ -69,11 +75,14 @@ export class CookStage extends Phaser.Scene implements CookHost {
     makeEffectTextures(this);
     this.cameras.main.setBackgroundColor("#2b211c");
     const grill = new GrillStation(this, this, 6, 4);
-    this.stations = [grill];
+    const pot = new PotStation(this, this, 14, 6, 392);
+    this.stations = [grill, pot];
     this.active = grill;
 
     // serving plate
     this.add.image(PLATE.x, PLATE.y, "plate").setScale(PLATE.scale);
+    // soup goes into a bowl on the plate
+    this.bowl = this.add.image(PLATE.x, PLATE.y, "bowl").setScale(1.6).setDepth(19).setVisible(false);
     this.add.text(PLATE.x, PLATE.y - 70, t("cook.plate"), label).setOrigin(0.5);
     this.serveButton = this.add
       .text(PLATE.x, PLATE.y + 82, t("cook.serve"), { ...label, fontSize: "14px", backgroundColor: "#7a4a1a", padding: { x: 10, y: 4 } })
@@ -81,20 +90,30 @@ export class CookStage extends Phaser.Scene implements CookHost {
       .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => this.serve());
 
-    // tongs and scissors: tap to pick one up
+    // tools: tap to pick one up (tongs and scissors at the grill, the ladle at the pot)
     this.toolIcons = {
       tongs: this.add.image(392, 72, "tongs").setInteractive({ useHandCursor: true }),
       scissors: this.add.image(392, 140, "scissors").setInteractive({ useHandCursor: true }),
+      ladle: this.add.image(392, 72, "ladle").setInteractive({ useHandCursor: true }),
     };
-    this.toolIcons.tongs.on("pointerdown", () => this.pickTool("tongs"));
-    this.toolIcons.scissors.on("pointerdown", () => this.pickTool("scissors"));
-    this.scissorsCursor = this.add.image(0, 0, "scissors").setScale(0.7).setAngle(-30).setDepth(90).setVisible(false);
-    this.pickTool("tongs");
+    for (const k of ["tongs", "scissors", "ladle"] as const) this.toolIcons[k].on("pointerdown", () => this.pickTool(k));
+    this.cursor = this.add.image(0, 0, "scissors").setScale(0.7).setAngle(-30).setDepth(90).setVisible(false);
+
+    // which station is in front: the other keeps cooking where it is
+    (["grill", "pot"] as const).forEach((k, i) => {
+      const tab = this.add
+        .text(470 + i * 54, 14, t(`cook.tab.${k}`), { ...label, fontSize: "12px", backgroundColor: "#3a2f5e", padding: { x: 8, y: 3 } })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on("pointerdown", () => this.show(this.stations[i]));
+      this.tabs.push(tab);
+    });
+    this.show(grill);
 
     this.buildTray();
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
       this.ghost?.img.setPosition(p.x, p.y);
-      if (this.tool === "scissors") this.scissorsCursor.setPosition(p.x + 8, p.y - 8);
+      if (this.tool !== "tongs") this.cursor.setPosition(p.x + 8, p.y - 8);
     });
     this.input.on("pointerup", (p: Phaser.Input.Pointer) => this.dropGhost(p));
     this.game.events.emit("cook:ready");
@@ -114,21 +133,31 @@ export class CookStage extends Phaser.Scene implements CookHost {
     return Math.abs(x - PLATE.x) <= PLATE_HIT.w / 2 && Math.abs(y - PLATE.y) <= PLATE_HIT.h / 2;
   }
 
-  tryPlate(key: string, judgement: CookJudgement, raw = false): boolean {
-    if (this.served) return false;
-    const onPlate = this.plated.map((p) => p.key);
-    // already counted out of the tray when it went on the station, so only the plate's own rule matters
-    if (!canPlate(onPlate, key)) {
-      this.say(t("cook.plateFull"), PLATE.x, PLATE.y - 50, "#ffb0b0");
+  tryPlate(entries: { key: string; judgement: CookJudgement }[], from: "grill" | "boil", raw = false): boolean {
+    if (this.served || entries.length === 0) return false;
+    if (this.plateMethod && this.plateMethod !== from) {
+      this.say(t("cook.oneStation"), PLATE.x, PLATE.y - 50, "#ffb0b0");
       return false;
     }
-    const i = this.plated.length;
-    const at = { x: PLATE.x + [-26, 24, 0][i], y: PLATE.y + [-10, -12, 22][i] };
-    const id = parseItemKey(key)!.id;
-    // what was cooked shows cooked; something straight from the tray stays as it is
-    const sprite = this.add.image(at.x, at.y, raw ? rawKey(id) : cookedKey(id)).setScale(0.6).setDepth(20);
-    this.plated.push({ key, judgement, sprite });
-    this.refreshTray();
+    // already counted out of the tray when it went on the station, so only the plate's own rule matters
+    const keys = this.plated.map((p) => p.key);
+    for (const e of entries) {
+      if (!canPlate(keys, e.key)) {
+        this.say(t("cook.plateFull"), PLATE.x, PLATE.y - 50, "#ffb0b0");
+        return false;
+      }
+      keys.push(e.key);
+    }
+    this.plateMethod = from;
+    this.bowl.setVisible(from === "boil");
+    for (const e of entries) {
+      const i = this.plated.length;
+      const at = { x: PLATE.x + [-26, 24, 0][i], y: PLATE.y + [-10, -12, 22][i] };
+      const id = parseItemKey(e.key)!.id;
+      // what was cooked shows cooked; something straight from the tray stays as it is
+      const sprite = this.add.image(at.x, at.y, raw ? rawKey(id) : cookedKey(id)).setScale(from === "boil" ? 0.45 : 0.6).setDepth(20);
+      this.plated.push({ key: e.key, judgement: e.judgement, sprite });
+    }
     return true;
   }
 
@@ -192,25 +221,35 @@ export class CookStage extends Phaser.Scene implements CookHost {
     if (this.overPlate(p.x, p.y)) {
       // straight onto the plate, uncooked: right for a leaf to wrap with, not for meat
       const leaf = SERVED_RAW.has(parseItemKey(g.key)!.id);
-      this.tryPlate(g.key, leaf ? { accuracy: 1, notes: [] } : { accuracy: 0.2, notes: ["raw"] }, true);
+      this.tryPlate([{ key: g.key, judgement: leaf ? { accuracy: 1, notes: [] } : { accuracy: 0.2, notes: ["raw"] } }], this.active.method, true);
     } else this.active.dropFromTray(g.key, p.x, p.y);
     this.refreshTray();
   }
 
   // ------------------------------------------------------------- tools and serving
 
-  private pickTool(tool: "tongs" | "scissors") {
+  private pickTool(tool: "tongs" | "scissors" | "ladle") {
     this.tool = tool;
-    this.toolIcons.tongs.setScale(tool === "tongs" ? 1.15 : 0.9).setAlpha(tool === "tongs" ? 1 : 0.6);
-    this.toolIcons.scissors.setScale(tool === "scissors" ? 1.15 : 0.9).setAlpha(tool === "scissors" ? 1 : 0.6);
-    this.scissorsCursor.setVisible(tool === "scissors");
+    for (const k of ["tongs", "scissors", "ladle"] as const) this.toolIcons[k].setScale(k === tool ? 1.15 : 0.9).setAlpha(k === tool ? 1 : 0.6);
+    this.cursor.setTexture(tool === "ladle" ? "ladle" : "scissors").setVisible(tool !== "tongs");
+  }
+
+  private show(station: Station) {
+    this.active = station;
+    for (const s of this.stations) s.setVisible(s === station);
+    const grill = station.method === "grill";
+    this.toolIcons.tongs.setVisible(grill);
+    this.toolIcons.scissors.setVisible(grill);
+    this.toolIcons.ladle.setVisible(!grill);
+    this.tabs.forEach((tab, i) => tab.setBackgroundColor(this.stations[i] === station ? "#ffd166" : "#3a2f5e").setColor(this.stations[i] === station ? "#1b1530" : "#ffffff"));
+    this.pickTool(grill ? "tongs" : "ladle");
   }
 
   private serve() {
     if (this.served || this.plated.length === 0) return;
     this.served = true;
     const r = plateResult(this.plated.map((p) => p.judgement));
-    const plate: CookPlate = { keys: this.plated.map((p) => p.key), method: this.active.method, accuracy: r.accuracy, note: r.note };
+    const plate: CookPlate = { keys: this.plated.map((p) => p.key), method: this.plateMethod ?? this.active.method, accuracy: r.accuracy, note: r.note };
     this.game.events.emit("cook:plate", plate);
   }
 }

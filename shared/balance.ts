@@ -166,7 +166,7 @@ export const BALANCE: {
       lidBoost: 1.6,
       target: [20, 96, 100, 100],
       cookFrom: 90,
-      boilOverMs: 6000,
+      boilOverMs: 10000,
       foamPerSec: 0.06,
       skimAmount: 0.3,
     },

@@ -234,7 +234,7 @@ export class GrillStation implements Station {
     if (!d.moved && this.scene.time.now - d.at < TAP_MS) return this.flip(d.id);
     const piece = this.grill.pieces.find((x) => x.id === d.id)!;
     if (this.host.overPlate(p.x, p.y)) {
-      if (this.host.tryPlate(piece.key, judgePiece(piece))) {
+      if (this.host.tryPlate([{ key: piece.key, judgement: judgePiece(piece) }], "grill")) {
         this.grill = removePiece(this.grill, d.id);
         v.box.destroy();
         this.views.delete(d.id);
