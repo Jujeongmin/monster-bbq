@@ -195,6 +195,8 @@ export class CookStage extends Phaser.Scene implements CookHost {
       if (e.judgement.notes.includes("burnt")) sprite.setTint(0x6a5246);
       this.plated.push({ key: e.key, judgement: e.judgement, sprite });
     }
+    // ready to serve at once (not on the next frame), so a quick tap on Done is not lost
+    this.serveButton.setEnabled(!this.served);
     return true;
   }
 

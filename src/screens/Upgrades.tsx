@@ -15,9 +15,9 @@ const GROUPS: { title: StringKey; ids: UpgradeId[] }[] = [
   { title: "upgrade.group.shop", ids: ["seats"] },
 ];
 const ICON: Record<UpgradeId, string> = {
-  melee: "test/hunter/slash_1.png",
-  ranged: "test/hunter/throw_1.png",
-  armor: "test/hunter/down_0.png",
+  melee: "test/ui/upg_melee.png",
+  ranged: "test/ui/upg_ranged.png",
+  armor: "test/ui/upg_armor.png",
   bag: "test/items/icon_honeycomb.png",
   lunchbox: "test/ui/icon_pot.png",
   menu: "test/ui/icon_notebook.png",

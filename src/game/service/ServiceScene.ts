@@ -15,6 +15,8 @@ import { addButton, addGauge, loadUiArt, TEXT, type UiButton, type UiGauge } fro
 // Art: until the shop and customer pictures are approved (plan 05b Task 4), the approved hunt monsters
 // stand in for customers and the grill for tables.
 export interface ServiceData {
+  // the service's id: the shop clock is kept per service so a reload resumes the night where it was
+  serviceId: string;
   customers: Customer[];
   // dish -> its station
   methods: Partial<Record<DishId, Method>>;
@@ -49,6 +51,8 @@ interface Guest {
 
 export class ServiceScene extends Phaser.Scene {
   private customers: Customer[] = [];
+  private serviceId = "";
+  private savedAt = 0;
   private methods: Partial<Record<DishId, Method>> = {};
   private guests: Guest[] = [];
   private clock = 0;
@@ -67,9 +71,11 @@ export class ServiceScene extends Phaser.Scene {
 
   init(data: ServiceData) {
     this.customers = data.customers;
+    this.serviceId = data.serviceId;
+    this.savedAt = 0;
     this.methods = data.methods;
     this.guests = [];
-    this.clock = 0;
+    this.clock = this.resumedClock();
     this.paused = false;
     this.served = [];
     this.left = [];
@@ -115,6 +121,15 @@ export class ServiceScene extends Phaser.Scene {
     if (this.paused || this.ended) return;
     const dt = Math.min(rawDt, MAX_DT_MS);
     this.clock += dt;
+    // remember how far into the night we are (a reload resumes there instead of starting over)
+    if (this.clock - this.savedAt > 1000) {
+      this.savedAt = this.clock;
+      try {
+        sessionStorage.setItem(`monster-bbq:service:${this.serviceId}`, String(Math.round(this.clock)));
+      } catch {
+        // private mode: a reload starts the night over, as before
+      }
+    }
     // arrivals: to their table, or queue at the door while it is taken
     for (const c of this.customers) {
       if (c.arriveMs <= this.clock && !this.guests.some((g) => g.c.id === c.id)) this.guests.push(this.makeGuest(c));
@@ -132,13 +147,30 @@ export class ServiceScene extends Phaser.Scene {
     }
   }
 
+  private resumedClock(): number {
+    try {
+      const v = Number(sessionStorage.getItem(`monster-bbq:service:${this.serviceId}`));
+      return Number.isFinite(v) && v > 0 ? v : 0;
+    } catch {
+      return 0;
+    }
+  }
+
   private makeGuest(c: Customer): Guest {
     const who = STAND_IN[c.kind];
     const sprite = this.add.sprite(DOOR_X, SEAT_Y, `${who}_side_0`).setOrigin(0.5, 0.9).setScale(1.3);
     sprite.play(`${who}_walk_side`);
     const bubble = this.add.container(0, 0).setVisible(false).setDepth(900);
-    const g: Guest = { c, phase: "waiting", sprite, bubble, gauge: null, waitedMs: 0, targetX: SEATS_X[c.seat], angry: false };
+    // after a reload, guests who came in meanwhile have already been waiting; those out of patience are gone
+    const waited = Math.max(0, this.clock - c.arriveMs);
+    const g: Guest = { c, phase: "waiting", sprite, bubble, gauge: null, waitedMs: waited, targetX: SEATS_X[c.seat], angry: false };
     this.makeBubble(g);
+    if (waited >= c.patienceMs) {
+      g.phase = "gone";
+      sprite.destroy();
+      bubble.destroy();
+      this.left.push(c.id);
+    }
     return g;
   }
 

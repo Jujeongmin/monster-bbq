@@ -101,19 +101,22 @@ export function DayFlow({ transport }: { transport: Transport }) {
         />
       )}
 
-      <div className="dayflow-bar ui-bar">
-        <span>
-          <img className="ui-icon" src={artUrl("test/ui/icon_day.png")} alt="" />
-          {t("hud.day", { day: save.day })}
-        </span>
-        <span>
-          <img className="ui-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />
-          {t("hud.gold", { gold: save.gold })}
-        </span>
-        {/* during the hunt the scene shows the live bag; the stored meat would read as a second count */}
-        {phase !== "hunt" && <span>{t("hud.items", { count: Object.values(save.items).reduce((a, b) => a + b, 0) })}</span>}
-        <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>
-      </div>
+      {/* the kitchen carries day and gold in its own bottom row */}
+      {phase !== "kitchen" && (
+        <div className="dayflow-bar ui-bar">
+          <span>
+            <img className="ui-icon" src={artUrl("test/ui/icon_day.png")} alt="" />
+            {t("hud.day", { day: save.day })}
+          </span>
+          <span>
+            <img className="ui-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />
+            {t("hud.gold", { gold: save.gold })}
+          </span>
+          {/* during the hunt the scene shows the live bag; the stored meat would read as a second count */}
+          {phase !== "hunt" && <span>{t("hud.items", { count: Object.values(save.items).reduce((a, b) => a + b, 0) })}</span>}
+          <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>
+        </div>
+      )}
 
       {phase === "kitchen" && <Kitchen save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} />}
       {phase === "service" && save.service && <Night save={save} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
@@ -178,5 +181,5 @@ function Night({ save, onEnd }: { save: SaveData; onEnd: (r: { served: { custome
     return [{ dish, items: r.items }];
   });
   const quality = { grill: toolQuality(save, "grill"), boil: toolQuality(save, "boil") };
-  return <ServiceGame key={svc.id} shop={{ customers, methods }} items={save.items} menu={menu} quality={quality} onEnd={onEnd} />;
+  return <ServiceGame key={svc.id} shop={{ serviceId: svc.id, customers, methods }} items={save.items} menu={menu} quality={quality} onEnd={onEnd} />;
 }

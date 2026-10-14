@@ -171,6 +171,14 @@ def grid_objects(sheet: Image.Image, cols: int, rows: int) -> list[Image.Image]:
     return out
 
 
+# icons made from finished game frames by trimming their empty margins: (folder, name, source in art/test)
+TRIMS = [
+    ("ui", "upg_melee", "hunter/slash_1.png"),
+    ("ui", "upg_ranged", "hunter/throw_1.png"),
+    ("ui", "upg_armor", "hunter/down_0.png"),
+]
+
+
 def main():
     for name, file, rows, scale in SHEETS:
         if not (RAW / file).exists():
@@ -218,6 +226,11 @@ def main():
         rr, gg, bb, aa = small.split()
         Image.merge("RGBA", (rr, gg, bb, aa.point(lambda v: 255 if v >= 110 else 0))).save(ROOT / "art/test" / name / f"{piece}.png")
         print(name, piece, size)
+    for name, piece, src in TRIMS:
+        im = Image.open(ROOT / "art/test" / src).convert("RGBA")
+        box = im.getbbox()
+        (im.crop(box) if box else im).save(ROOT / "art/test" / name / f"{piece}.png")
+        print(name, piece, "trimmed from", src)
 
 
 if __name__ == "__main__":

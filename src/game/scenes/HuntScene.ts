@@ -220,6 +220,13 @@ export class HuntScene extends Phaser.Scene {
       button.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.eat(i));
       this.lunch.push({ dish, button, eaten: false });
     });
+    // lunches already eaten on this hunt before a reload stay eaten
+    for (const i of this.eatenBefore()) {
+      const l = this.lunch[i];
+      if (!l) continue;
+      l.eaten = true;
+      l.button.setAlpha(0.3).disableInteractive();
+    }
   }
 
   update(_time: number, rawDt: number) {
@@ -408,6 +415,27 @@ export class HuntScene extends Phaser.Scene {
     this.hunter.setPosition(p.pos.x, p.pos.y + (moving ? stepBob(this.hunter) : 0)).setDepth(p.pos.y + 0.5);
   }
 
+  // Which lunches were eaten, kept per hunt in the page's session storage (the box itself only empties
+  // when the hunt is settled, so a reload must not serve them again).
+  private eatenKey() {
+    return `monster-bbq:lunch:${this.huntData.huntId}`;
+  }
+  private eatenBefore(): number[] {
+    try {
+      const v = JSON.parse(sessionStorage.getItem(this.eatenKey()) ?? "[]");
+      return Array.isArray(v) ? v.filter((n) => Number.isInteger(n)) : [];
+    } catch {
+      return [];
+    }
+  }
+  private rememberEaten() {
+    try {
+      sessionStorage.setItem(this.eatenKey(), JSON.stringify(this.lunch.flatMap((l, i) => (l.eaten ? [i] : []))));
+    } catch {
+      // private mode: a reload may offer the lunch again, nothing worse
+    }
+  }
+
   // A press on the HUD (the way home, a lunch) is not a shot or a slash.
   private overHud(over: Phaser.GameObjects.GameObject[]) {
     return over.includes(this.returnButton) || this.lunch.some((l) => over.includes(l.button));
@@ -420,6 +448,7 @@ export class HuntScene extends Phaser.Scene {
     if (!l || l.eaten || p.down || this.ended) return;
     l.eaten = true;
     l.button.setAlpha(0.3).disableInteractive();
+    this.rememberEaten();
     const heal = Math.round(BALANCE.service.dishPrice[l.dish] * BALANCE.lunch.healPerGold);
     p.hp = Math.min(this.maxHp, p.hp + heal);
     this.popText(p.pos.x, p.pos.y - 44, `+${heal}`, "#7fe07f");

@@ -456,7 +456,7 @@ export class GrillStation implements Station {
     }
   }
 
-  // Scissors: three bite-size pieces with a little gap between them.
+  // Scissors: three bite-size pieces with a little gap between them, cut across the piece's long side.
   private showCut(v: PieceView, p: GrillPiece) {
     const scene = this.scene;
     const id = parseItemKey(p.key)!.id;
@@ -467,12 +467,15 @@ export class GrillStation implements Station {
     v.layers = [];
     const w = scene.textures.get(rawKey(id)).getSourceImage().width;
     const h = scene.textures.get(rawKey(id)).getSourceImage().height;
+    const tall = h >= w;
     for (let i = 0; i < 3; i++) {
-      const y0 = Math.round((h * i) / 3);
-      const y1 = Math.round((h * (i + 1)) / 3);
+      const len = tall ? h : w;
+      const a0 = Math.round((len * i) / 3);
+      const a1 = Math.round((len * (i + 1)) / 3);
       const off = (i - 1) * 3;
-      const raw = scene.add.image(0, off, rawKey(id)).setCrop(0, y0, w, y1 - y0);
-      const cooked = scene.add.image(0, off, cookedKey(id)).setCrop(0, y0, w, y1 - y0);
+      const crop = (img: Phaser.GameObjects.Image) => (tall ? img.setCrop(0, a0, w, a1 - a0) : img.setCrop(a0, 0, a1 - a0, h));
+      const raw = crop(scene.add.image(tall ? 0 : off, tall ? off : 0, rawKey(id)));
+      const cooked = crop(scene.add.image(tall ? 0 : off, tall ? off : 0, cookedKey(id)));
       v.box.addAt(raw, 1 + i * 2);
       v.box.addAt(cooked, 2 + i * 2);
       v.layers.push({ raw, cooked });
