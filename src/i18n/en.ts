@@ -122,6 +122,7 @@ export const en: Record<keyof typeof ko, string> = {
   "cook.note.rested": "Rested, so it is evenly done all the way through.",
   "cook.note.saltFirst": "Salted first, so the outside browned beautifully.",
   "cook.note.salty": "Too salty…",
+  "cook.rested": "Rested",
   "service.title": "Service (placeholder)",
   "service.body": "For now the haul sells as it is.",
   "service.sell": "Sell everything",

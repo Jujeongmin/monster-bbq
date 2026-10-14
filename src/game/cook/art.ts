@@ -3,7 +3,7 @@ import { ITEMS } from "../../../shared/content/items";
 import { artUrl } from "../art";
 
 // The cooking station pictures (Codex, approved 2026-10-14, cut by hand: art-src/codex/slice_characters.py).
-const TOOLS = ["grill", "tongs", "scissors", "ladle", "plate", "bowl", "pot_clear", "pot_foam", "pot_lid", "dial", "crumb"];
+const TOOLS = ["grill", "tongs", "scissors", "ladle", "plate", "bowl", "pot_clear", "pot_foam", "pot_lid", "dial", "crumb", "salt_shaker", "salt_bowl", "rest_board", "salt_flakes"];
 
 export const rawKey = (id: string) => `raw_${id}`;
 export const cookedKey = (id: string) => `cooked_${id}`;

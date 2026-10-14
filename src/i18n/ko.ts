@@ -121,6 +121,7 @@ export const ko = {
   "cook.note.rested": "레스팅으로 속까지 고르게 익었다.",
   "cook.note.saltFirst": "미리 소금을 쳐서 겉이 노릇하게 잘 구워졌다.",
   "cook.note.salty": "너무 짜다…",
+  "cook.rested": "레스팅 완료",
   "service.title": "장사 (임시 화면)",
   "service.body": "지금은 가져온 재료를 그대로 판다.",
   "service.sell": "재료 모두 팔기",

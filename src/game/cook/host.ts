@@ -2,8 +2,9 @@ import type { CookJudgement } from "../../../shared/cooking/notes";
 
 // What a cooking station needs from the stage around it.
 export interface CookHost {
-  // what the hand holds: tongs (move, flip), scissors (cut by dragging across), ladle (skim, serve soup)
-  tool: "tongs" | "scissors" | "ladle";
+  // what the hand holds: tongs (move, flip), scissors (cut by dragging across), salt (tap or shake over
+  // meat), ladle (skim, serve soup)
+  tool: "tongs" | "scissors" | "salt" | "ladle";
   overPlate(x: number, y: number): boolean;
   // puts finished food on the serving plate, all of it or none (false, with a message, if the plate
   // cannot take it); `from` is the station's method, a plate holds one station's food

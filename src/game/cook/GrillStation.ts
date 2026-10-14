@@ -12,6 +12,8 @@ import {
   placePiece,
   removePiece,
   replaceGrill,
+  restPiece,
+  saltPiece,
   stepGrill,
   type Grill,
   type GrillPiece,
@@ -26,6 +28,8 @@ import type { CookHost, Station } from "./host";
 //  - tap a piece: flip it with the tongs; drag it: move it (rim = cooler); drag it onto the plate: serve
 //  - holding the scissors, drag across a piece: cut it
 //  - tap the left handle: swap in a clean plate (it has to heat up again)
+//  - holding the salt shaker, tap or shake over a piece: a pinch of salt (best before it cooks)
+//  - drag a piece onto the wooden board: it rests off the heat and the inside catches up
 // What you see is the top. The side on the plate shows as browning creeping out around the rim, and
 // juice beads on top when it is time to flip.
 const S = 1.45; // grill sprite scale
@@ -36,7 +40,11 @@ const RY = 60;
 const PIECE_SCALE = 1.25;
 const TAP_MS = 280;
 const TAP_PX = 8;
+const BOARD_SLOTS = [-22, 22];
+const BOARD_SCALE = 0.85; // pieces resting on the board, a little smaller so two fit
+const PINCH_GAP_MS = 140;
 const G = BALANCE.cooking.grill;
+const ITEM_THICK = (p: GrillPiece) => BALANCE.cooking.items[parseItemKey(p.key)!.id].thick;
 
 interface PieceView {
   box: Phaser.GameObjects.Container;
@@ -45,6 +53,8 @@ interface PieceView {
   cutShown: boolean;
   beads: Phaser.GameObjects.Graphics;
   nextBeads: number;
+  flakes: Phaser.GameObjects.Image;
+  restedSaid: boolean;
 }
 
 export class GrillStation implements Station {
@@ -66,12 +76,18 @@ export class GrillStation implements Station {
   private cutTrail: { x: number; y: number } | null = null;
   private visible = true;
   private fx: Phaser.GameObjects.GameObject[] = [];
+  private board: Phaser.GameObjects.Image;
+  private saltFall: Phaser.GameObjects.Particles.ParticleEmitter;
+  private restSteam: Phaser.GameObjects.Particles.ParticleEmitter;
+  private shake: { lastX: number; dir: number; at: number } | null = null;
 
   constructor(
     private scene: Phaser.Scene,
     private host: CookHost,
     x: number,
     y: number,
+    boardX: number,
+    boardY: number,
   ) {
     this.root = scene.add.container(0, 0);
     this.plateImg = scene.add.image(x, y, "grill").setOrigin(0).setScale(S);
@@ -82,6 +98,9 @@ export class GrillStation implements Station {
     const handle = scene.add.zone(x + 4 * S, y + 50 * S, 26 * S, 45 * S).setOrigin(0).setInteractive({ useHandCursor: true });
     handle.on("pointerdown", () => this.swapPlate());
     this.root.add(handle);
+    // the wooden board for resting meat
+    this.board = scene.add.image(boardX, boardY, "rest_board").setScale(0.9);
+    this.root.add(this.board);
 
     this.shimmer = scene.add.particles(this.cx, this.cy, "fx_puff", {
       x: { min: -RX * 0.7, max: RX * 0.7 },
@@ -130,6 +149,22 @@ export class GrillStation implements Station {
       frequency: 90,
       emitting: false,
     });
+    this.saltFall = scene.add.particles(0, 0, "salt_flakes", {
+      speedY: { min: 30, max: 70 },
+      speedX: { min: -15, max: 15 },
+      gravityY: 160,
+      scale: { start: 0.45, end: 0.3 },
+      alpha: { start: 1, end: 0.6 },
+      lifespan: 260,
+      emitting: false,
+    });
+    this.restSteam = scene.add.particles(0, 0, "fx_puff", {
+      speedY: { min: -18, max: -8 },
+      scale: { start: 0.5, end: 1.6 },
+      alpha: { start: 0.3, end: 0 },
+      lifespan: 1100,
+      emitting: false,
+    });
     this.status = scene.add.text(this.cx, y - 2, "", { fontFamily: "monospace", fontSize: "10px", color: "#ffd9a0", stroke: "#000", strokeThickness: 3 }).setOrigin(0.5, 1);
     // effects above the meat (pieces sit at depth 10, a dragged one at 50)
     this.shimmer.setDepth(30);
@@ -137,13 +172,21 @@ export class GrillStation implements Station {
     this.grease.setDepth(41);
     this.drip.setDepth(5);
     this.fatGlint.setDepth(6);
+    this.saltFall.setDepth(45);
+    this.restSteam.setDepth(39);
     this.status.setDepth(70);
-    this.fx = [this.shimmer, this.smoke, this.grease, this.drip, this.fatGlint, this.status];
+    this.fx = [this.shimmer, this.smoke, this.grease, this.drip, this.fatGlint, this.saltFall, this.restSteam, this.status];
 
     scene.input.on("pointermove", (p: Phaser.Input.Pointer) => this.onMove(p));
     scene.input.on("pointerup", (p: Phaser.Input.Pointer) => this.onUp(p));
     scene.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
-      if (this.visible && this.host.tool === "scissors") this.cutTrail = { x: p.x, y: p.y };
+      if (!this.visible) return;
+      if (this.host.tool === "scissors") this.cutTrail = { x: p.x, y: p.y };
+      if (this.host.tool === "salt") {
+        this.shake = { lastX: p.x, dir: 0, at: 0 };
+        const under = this.pieceAt(p.x, p.y);
+        if (under) this.pinch(under.id);
+      }
     });
   }
 
@@ -164,6 +207,22 @@ export class GrillStation implements Station {
   private toScreen(gx: number, gy: number) {
     return { x: this.cx + gx * RX * S, y: this.cy + gy * RY * S };
   }
+  // where a piece is drawn: on the plate, or in its slot on the board
+  private posOf(p: GrillPiece) {
+    if (!p.onBoard) return this.toScreen(p.x, p.y);
+    const i = this.grill.pieces.filter((q) => q.onBoard).indexOf(p);
+    return { x: this.board.x - 6 + BOARD_SLOTS[Math.max(0, i)], y: this.board.y - 2 };
+  }
+  private onBoardSurface(x: number, y: number) {
+    return this.board.getBounds().contains(x, y);
+  }
+  private pieceAt(x: number, y: number): GrillPiece | undefined {
+    return this.grill.pieces.find((q) => {
+      const at = this.posOf(q);
+      return Math.hypot(at.x - x, at.y - y) < 26;
+    });
+  }
+
   private onPlateSurface(x: number, y: number) {
     const g = this.toGrill(x, y);
     return g.x * g.x + g.y * g.y <= 1.15;
@@ -194,14 +253,16 @@ export class GrillStation implements Station {
     const raw = scene.add.image(0, 0, rawKey(id));
     const cooked = scene.add.image(0, 0, cookedKey(id)).setAlpha(0);
     const beads = scene.add.graphics();
-    box.add([rim, raw, cooked, beads]);
+    // salt left on the surface
+    const flakes = scene.add.image(0, -4, "salt_flakes").setScale(1.2).setAlpha(0);
+    box.add([rim, raw, cooked, flakes, beads]);
     box.setSize(raw.width, raw.height).setInteractive({ useHandCursor: true, draggable: false });
     box.on("pointerdown", (ptr: Phaser.Input.Pointer) => {
       if (this.host.tool !== "tongs") return;
       this.drag = { id: p.id, startX: ptr.x, startY: ptr.y, at: scene.time.now, moved: false };
       box.setDepth(50);
     });
-    return { box, rim, layers: [{ raw, cooked }], cutShown: false, beads, nextBeads: 0 };
+    return { box, rim, layers: [{ raw, cooked }], cutShown: false, beads, nextBeads: 0, flakes, restedSaid: false };
   }
 
   private onMove(p: Phaser.Input.Pointer) {
@@ -212,11 +273,25 @@ export class GrillStation implements Station {
       if (Math.hypot(p.x - this.drag.startX, p.y - this.drag.startY) > TAP_PX) this.drag.moved = true;
       if (this.drag.moved) v.box.setPosition(p.x, p.y);
     }
+    // shaking the salt: every change of direction over a piece is a pinch
+    if (this.shake && p.isDown && this.host.tool === "salt") {
+      const dx = p.x - this.shake.lastX;
+      if (Math.abs(dx) >= 4) {
+        const dir = Math.sign(dx);
+        const under = this.pieceAt(p.x, p.y + 16);
+        if (this.shake.dir !== 0 && dir !== this.shake.dir && under && this.scene.time.now - this.shake.at > PINCH_GAP_MS) {
+          this.pinch(under.id);
+          this.shake.at = this.scene.time.now;
+        }
+        this.shake.dir = dir;
+        this.shake.lastX = p.x;
+      }
+    }
     if (this.cutTrail && p.isDown && this.host.tool === "scissors") {
       const from = this.cutTrail;
       for (const piece of this.grill.pieces) {
         if (piece.cut) continue;
-        const at = this.toScreen(piece.x, piece.y);
+        const at = this.posOf(piece);
         if (distToSegment(at, from, p) < 14) this.cut(piece.id, at);
       }
       this.cutTrail = { x: p.x, y: p.y };
@@ -225,14 +300,19 @@ export class GrillStation implements Station {
 
   private onUp(p: Phaser.Input.Pointer) {
     this.cutTrail = null;
+    this.shake = null;
     const d = this.drag;
     this.drag = null;
     if (!d || !this.visible) return;
     const v = this.views.get(d.id);
     if (!v) return;
     v.box.setDepth(10);
-    if (!d.moved && this.scene.time.now - d.at < TAP_MS) return this.flip(d.id);
     const piece = this.grill.pieces.find((x) => x.id === d.id)!;
+    // a tap flips it on the grill; on the board it just rests
+    if (!d.moved && this.scene.time.now - d.at < TAP_MS) {
+      if (!piece.onBoard) this.flip(d.id);
+      return;
+    }
     if (this.host.overPlate(p.x, p.y)) {
       if (this.host.tryPlate([{ key: piece.key, judgement: judgePiece(piece) }], "grill")) {
         this.grill = removePiece(this.grill, d.id);
@@ -240,6 +320,8 @@ export class GrillStation implements Station {
         this.views.delete(d.id);
         return;
       }
+    } else if (this.onBoardSurface(p.x, p.y)) {
+      if (piece.onBoard || this.grill.pieces.filter((q) => q.onBoard).length < BOARD_SLOTS.length) this.grill = restPiece(this.grill, d.id);
     } else if (this.onPlateSurface(p.x, p.y)) {
       const g = this.toGrill(p.x, p.y);
       this.grill = movePiece(this.grill, d.id, g.x, g.y);
@@ -248,8 +330,16 @@ export class GrillStation implements Station {
     }
     // back to where the rules say it is
     const now = this.grill.pieces.find((x) => x.id === d.id)!;
-    const at = this.toScreen(now.x, now.y);
+    const at = this.posOf(now);
     v.box.setPosition(at.x, at.y);
+  }
+
+  // One pinch of salt from the shaker, falling onto the piece.
+  private pinch(id: string) {
+    this.grill = saltPiece(this.grill, id);
+    const piece = this.grill.pieces.find((q) => q.id === id)!;
+    const at = this.posOf(piece);
+    this.saltFall.explode(7, at.x, at.y - 20);
   }
 
   // The tongs pick it up and turn it over: a quick squash, then the other side shows.
@@ -308,7 +398,9 @@ export class GrillStation implements Station {
     if (p.cut && !v.cutShown) this.showCut(v, p);
     const top = Math.min(1, p.up);
     const darken = Math.round(255 - Math.min(1, p.char) * 190);
-    const tint = Phaser.Display.Color.GetColor(darken, Math.round(darken * 0.92), Math.round(darken * 0.85));
+    // salted first, the surface browns deeper (better Maillard)
+    const brown = p.saltEarly ? 0.86 : 1;
+    const tint = Phaser.Display.Color.GetColor(Math.round(darken * brown), Math.round(darken * 0.92 * brown), Math.round(darken * 0.85 * brown));
     // heat climbing through from below turns the raw top opaque and pale before it is ever flipped
     const through = Math.min(1, p.down) * 0.55;
     const rawTint = Phaser.Display.Color.GetColor(
@@ -323,7 +415,21 @@ export class GrillStation implements Station {
     }
     v.rim.setVisible(!p.cut).setAlpha(Math.min(1, p.down) * 0.9).setTint(tint);
     // sizzling: smoke in proportion to the heat under it; more once it starts to burn
-    const at = this.toScreen(p.x, p.y);
+    v.flakes.setAlpha(Math.min(1, p.salt * 0.3));
+    const at = this.posOf(p);
+    const dragging = !!this.drag && this.drag.id === p.id && this.drag.moved;
+    if (!dragging) v.box.setPosition(at.x, at.y);
+    if (!this.scene.tweens.isTweening(v.box)) v.box.setScale(p.onBoard && !dragging ? BOARD_SCALE : PIECE_SCALE);
+    if (p.onBoard) {
+      // resting: a little steam, then a word once it has rested enough
+      if (this.visible && p.restMs < G.restNeededMs && Math.random() < 0.05) this.restSteam.emitParticleAt(at.x + (Math.random() - 0.5) * 14, at.y - 10);
+      if (!v.restedSaid && p.restMs >= G.restNeededMs && ITEM_THICK(p) > 0) {
+        v.restedSaid = true;
+        this.host.say(t("cook.rested"), at.x, at.y - 26, "#c8f0c8");
+      }
+      v.beads.clear();
+      return;
+    }
     const heat = heatAt(p.x, p.y) * this.grill.heat;
     // smoke rises off the meat (starting above it, so the piece stays visible); burning, it billows
     if (this.visible && Math.random() < heat * 0.06 + p.char * 0.12) this.smoke.emitParticleAt(at.x + (Math.random() - 0.5) * 16, at.y - 18);

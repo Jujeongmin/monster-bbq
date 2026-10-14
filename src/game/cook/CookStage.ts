@@ -27,6 +27,7 @@ export interface CookPlate {
 }
 
 const MAX_DT_MS = 50;
+const TOOLS = ["tongs", "scissors", "salt", "ladle"] as const;
 const TRAY_Y = 336;
 const PLATE = { x: 520, y: 160, scale: 2 };
 const PLATE_HIT = { w: 150, h: 130 };
@@ -36,14 +37,14 @@ const SERVED_RAW = new Set(Object.keys(ITEMS).filter((id) => BALANCE.cooking.ite
 const label = { fontFamily: "monospace", fontSize: "11px", color: "#ffffff", stroke: "#000000", strokeThickness: 3 };
 
 export class CookStage extends Phaser.Scene implements CookHost {
-  tool: "tongs" | "scissors" | "ladle" = "tongs";
+  tool: "tongs" | "scissors" | "salt" | "ladle" = "tongs";
   private items: Record<string, number> = {};
   private stations: Station[] = [];
   private active!: Station;
   private plated: { key: string; judgement: CookJudgement; sprite: Phaser.GameObjects.Image }[] = [];
   private tray: { key: string; img: Phaser.GameObjects.Image; count: Phaser.GameObjects.Text }[] = [];
   private ghost: { key: string; img: Phaser.GameObjects.Image } | null = null;
-  private toolIcons!: { tongs: Phaser.GameObjects.Image; scissors: Phaser.GameObjects.Image; ladle: Phaser.GameObjects.Image };
+  private toolIcons!: Record<"tongs" | "scissors" | "salt" | "ladle", Phaser.GameObjects.Image>;
   private cursor!: Phaser.GameObjects.Image;
   private tabs: Phaser.GameObjects.Text[] = [];
   private plateMethod: "grill" | "boil" | null = null;
@@ -74,7 +75,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
   create() {
     makeEffectTextures(this);
     this.cameras.main.setBackgroundColor("#2b211c");
-    const grill = new GrillStation(this, this, 6, 4);
+    const grill = new GrillStation(this, this, 6, 4, 404, 262);
     const pot = new PotStation(this, this, 14, 6, 392);
     this.stations = [grill, pot];
     this.active = grill;
@@ -92,11 +93,12 @@ export class CookStage extends Phaser.Scene implements CookHost {
 
     // tools: tap to pick one up (tongs and scissors at the grill, the ladle at the pot)
     this.toolIcons = {
-      tongs: this.add.image(392, 72, "tongs").setInteractive({ useHandCursor: true }),
-      scissors: this.add.image(392, 140, "scissors").setInteractive({ useHandCursor: true }),
+      tongs: this.add.image(392, 62, "tongs").setInteractive({ useHandCursor: true }),
+      scissors: this.add.image(392, 124, "scissors").setInteractive({ useHandCursor: true }),
+      salt: this.add.image(392, 184, "salt_shaker").setInteractive({ useHandCursor: true }),
       ladle: this.add.image(392, 72, "ladle").setInteractive({ useHandCursor: true }),
     };
-    for (const k of ["tongs", "scissors", "ladle"] as const) this.toolIcons[k].on("pointerdown", () => this.pickTool(k));
+    for (const k of TOOLS) this.toolIcons[k].on("pointerdown", () => this.pickTool(k));
     this.cursor = this.add.image(0, 0, "scissors").setScale(0.7).setAngle(-30).setDepth(90).setVisible(false);
 
     // which station is in front: the other keeps cooking where it is
@@ -228,10 +230,10 @@ export class CookStage extends Phaser.Scene implements CookHost {
 
   // ------------------------------------------------------------- tools and serving
 
-  private pickTool(tool: "tongs" | "scissors" | "ladle") {
+  private pickTool(tool: "tongs" | "scissors" | "salt" | "ladle") {
     this.tool = tool;
-    for (const k of ["tongs", "scissors", "ladle"] as const) this.toolIcons[k].setScale(k === tool ? 1.15 : 0.9).setAlpha(k === tool ? 1 : 0.6);
-    this.cursor.setTexture(tool === "ladle" ? "ladle" : "scissors").setVisible(tool !== "tongs");
+    for (const k of TOOLS) this.toolIcons[k].setScale(k === tool ? 1.15 : 0.9).setAlpha(k === tool ? 1 : 0.6);
+    this.cursor.setTexture(tool === "salt" ? "salt_shaker" : tool).setAngle(tool === "salt" ? 160 : -30).setVisible(tool !== "tongs");
   }
 
   private show(station: Station) {
@@ -240,6 +242,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
     const grill = station.method === "grill";
     this.toolIcons.tongs.setVisible(grill);
     this.toolIcons.scissors.setVisible(grill);
+    this.toolIcons.salt.setVisible(grill);
     this.toolIcons.ladle.setVisible(!grill);
     this.tabs.forEach((tab, i) => tab.setBackgroundColor(this.stations[i] === station ? "#ffd166" : "#3a2f5e").setColor(this.stations[i] === station ? "#1b1530" : "#ffffff"));
     this.pickTool(grill ? "tongs" : "ladle");
