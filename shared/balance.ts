@@ -1,5 +1,9 @@
 import type { ChargerTuning } from "./hunt/charger";
+import type { FleerTuning } from "./hunt/fleer";
+import type { PackTuning } from "./hunt/pack";
+import type { ShooterTuning } from "./hunt/shooter";
 import type { HitTuning, WeaponKind, WeaponStats } from "./hunt/combat";
+import type { ItemId } from "./content/items";
 import type { Field } from "./hunt/types";
 
 // Every hunting number lives here. Prototype values from plan 01; tuned in the playtest.
@@ -15,9 +19,6 @@ export const BALANCE: {
     hit: HitTuning;
     harpoon: {
       speed: number;
-      range: number;
-      cooldownMs: number;
-      throwLockMs: number;
       // where the rope leaves the hunter, above the feet
       handHeight: number;
       bodyOffsetY: number;
@@ -28,9 +29,15 @@ export const BALANCE: {
     };
     hitStopMs: number;
     boar: ChargerTuning & { maxHp: number; contactDamage: number; radius: number };
+    rabbit: FleerTuning;
+    bee: ShooterTuning & { shotDamage: number; shotRadius: number };
+    chicken: PackTuning & { peckDamage: number };
+    // a hunt report needs at least this long per kill (server check, spec 7)
+    minMsPerKill: number;
     boarCount: number;
+    bagSlots: number;
   };
-  economy: { meatPrice: { premium: number; normal: number }; maxMeatPerHunt: number };
+  economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
 } = {
   hunt: {
     // top-down forest made of the 256 px ground tile, mirrored
@@ -52,12 +59,10 @@ export const BALANCE: {
       knockback: 4,
       finisherKnockback: 18,
     },
-    // ranged damage comes from weapons.ranged; a harpooned boar is reeled in and left dazed (counter)
+    // range, damage, cooldown and throw lock come from weapons.ranged; a harpooned boar is reeled in
+    // and left dazed (counter)
     harpoon: {
       speed: 340,
-      range: 170,
-      cooldownMs: 600,
-      throwLockMs: 220,
       handHeight: 22,
       bodyOffsetY: 16,
       hitRadius: 18,
@@ -78,8 +83,27 @@ export const BALANCE: {
       hitRadius: 18,
       radius: 12,
     },
+    rabbit: { wanderSpeed: 22, fleeSpeed: 115, fleeRange: 95, fleeMs: 1300, restMs: 1600 },
+    bee: { speed: 55, keepDistance: 120, range: 160, aimMs: 650, cooldownMs: 1400, shotSpeed: 210, shotLifeMs: 1100, shotDamage: 12, shotRadius: 9 },
+    chicken: { wanderSpeed: 16, wanderRadius: 40, chaseSpeed: 72, peckRange: 18, windupMs: 380, peckMs: 160, recoverMs: 750, hitRadius: 18, peckDamage: 8 },
+    minMsPerKill: 1500,
     boarCount: 8,
+    bagSlots: 12,
   },
-  // temporary shop until plan 05 (cooking): meat sells raw at these prices
-  economy: { meatPrice: { premium: 30, normal: 15 }, maxMeatPerHunt: 20 },
+  // temporary shop until plan 05 (cooking): items sell raw at these prices (premium parts pay double)
+  economy: {
+    itemPrice: {
+      boar_belly: { normal: 15, premium: 30 },
+      boar_neck: { normal: 14, premium: 28 },
+      boar_rib: { normal: 18, premium: 36 },
+      rabbit_leg: { normal: 12, premium: 24 },
+      honeycomb: { normal: 16, premium: 32 },
+      chicken_thigh: { normal: 13, premium: 26 },
+      chicken_breast: { normal: 11, premium: 22 },
+      shiitake: { normal: 6 },
+      wild_garlic: { normal: 5 },
+      perilla: { normal: 4 },
+    },
+    maxMeatPerHunt: 20,
+  },
 };

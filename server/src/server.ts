@@ -16,7 +16,8 @@ export class Server {
   async act(action: unknown): Promise<SaveData> {
     return $lock(`save:${$sender.account}`, async () => {
       const state = await $global.getMyState();
-      const result = applyAction(readSave(state?.[SAVE_KEY]), action);
+      // the server alone decides the clock and the dice (hunt seeds, timing checks)
+      const result = applyAction(readSave(state?.[SAVE_KEY]), action, { now: Date.now(), random: Math.random });
       if (result.error) throw new Error(result.error);
       await $global.updateMyState({ [SAVE_KEY]: result.save });
       return result.save;

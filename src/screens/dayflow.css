@@ -10,3 +10,6 @@
 .dayflow button { font: inherit; font-size: 15px; padding: 8px 18px; color: #1b1530; background: #ffd166; border: 0; border-radius: 4px; cursor: pointer; }
 .dayflow button:disabled { opacity: 0.5; cursor: default; }
 .dayflow-error { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; padding: 6px 12px; background: #7a1420; border-radius: 4px; font-size: 13px; }
+.dayflow-sold { margin: 0 0 16px; padding: 0; list-style: none; font-size: 13px; color: #ddd8f0; }
+.dayflow-sold li { display: flex; justify-content: space-between; gap: 24px; padding: 2px 0; }
+.dayflow-sold li span:last-child { color: #ffd166; }

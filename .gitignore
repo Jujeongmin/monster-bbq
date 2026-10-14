@@ -2,3 +2,4 @@
 node_modules/
 dist/
 server/dist/
+art-src/codex/log*.txt

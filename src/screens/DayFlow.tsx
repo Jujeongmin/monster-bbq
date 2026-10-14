@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { Action } from "../../shared/actions";
+import { saleLines, type Action } from "../../shared/actions";
 import type { SaveData } from "../../shared/save";
 import { PhaserGame } from "../game/PhaserGame";
 import type { HuntResult } from "../game/scenes/HuntScene";
-import { t, type StringKey } from "../i18n";
+import { itemName, t, type StringKey } from "../i18n";
 import type { Transport } from "../net/transport";
 import "./dayflow.css";
 
@@ -21,10 +21,11 @@ const PHASE_NAME: Record<Phase, StringKey> = {
 export function DayFlow({ transport }: { transport: Transport }) {
   const [save, setSave] = useState<SaveData | null>(null);
   const [phase, setPhase] = useState<Phase>("hunt");
-  const [hunt, setHunt] = useState(0);
   const [failed, setFailed] = useState<{ action: Action; next: Phase } | null>(null);
   const [busy, setBusy] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  // what the last sale fetched, shown on the settle screen (temporary until the restaurant, plan 05)
+  const [sold, setSold] = useState<ReturnType<typeof saleLines>>([]);
   // a second click can land before React re-renders with busy=true
   const busyRef = useRef(false);
 
@@ -34,6 +35,11 @@ export function DayFlow({ transport }: { transport: Transport }) {
   }
   useEffect(load, [transport]);
 
+  // the server opens every hunt (its seed decides the hunting ground): ask whenever a day's hunt starts
+  useEffect(() => {
+    if (save && phase === "hunt" && !save.hunt && !failed) void act({ type: "startHunt", zone: "forest" }, "hunt");
+  }, [save, phase, failed]);
+
   async function act(action: Action, next: Phase) {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -42,7 +48,6 @@ export function DayFlow({ transport }: { transport: Transport }) {
     try {
       setSave(await transport.act(action));
       setPhase(next);
-      if (next === "hunt") setHunt((n) => n + 1);
     } catch {
       setFailed({ action, next });
     } finally {
@@ -67,14 +72,19 @@ export function DayFlow({ transport }: { transport: Transport }) {
 
   return (
     <div className="dayflow">
-      {phase === "hunt" && (
-        <PhaserGame key={hunt} onHuntEnd={(r: HuntResult) => act({ type: "huntResult", meat: r.meat }, "kitchen")} />
+      {phase === "hunt" && save.hunt && (
+        <PhaserGame
+          key={save.hunt.id}
+          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone }}
+          onHuntEnd={(r: HuntResult) => act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, ko: r.ko }, "kitchen")}
+        />
       )}
 
       <div className="dayflow-bar">
         <span>{t("hud.day", { day: save.day })}</span>
         <span>{t("hud.gold", { gold: save.gold })}</span>
-        <span>{t("hud.meat", save.meat)}</span>
+        {/* during the hunt the scene shows the live bag; the stored meat would read as a second count */}
+        {phase !== "hunt" && <span>{t("hud.items", { count: Object.values(save.items).reduce((a, b) => a + b, 0) })}</span>}
         <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>
       </div>
 
@@ -85,11 +95,29 @@ export function DayFlow({ transport }: { transport: Transport }) {
       )}
       {phase === "service" && (
         <Panel title={t("service.title")} body={t("service.body")}>
-          <button disabled={busy} onClick={() => act({ type: "sellAll" }, "settle")}>{t("service.sell")}</button>
+          <button
+            disabled={busy}
+            onClick={() => {
+              setSold(saleLines(save.items));
+              void act({ type: "sellAll" }, "settle");
+            }}
+          >
+            {t("service.sell")}
+          </button>
         </Panel>
       )}
       {phase === "settle" && (
         <Panel title={t("settle.title")} body={t("settle.body", { day: save.day, gold: save.gold })}>
+          {sold.length > 0 && (
+            <ul className="dayflow-sold">
+              {sold.map((l) => (
+                <li key={l.key}>
+                  <span>{itemName(l.key)} ×{l.n}</span>
+                  <span>+{l.gold}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           <button disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("nextDay")}</button>
         </Panel>
       )}
