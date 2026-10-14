@@ -19,10 +19,15 @@ const H = BALANCE.hunt;
 // A frame gap after the tab was hidden must not teleport anything (rules are also clamped).
 const MAX_DT_MS = 50;
 // Where the feet are inside each sprite's canvas (transparent padding underneath). Tune by eye.
-const FEET = { hunter: 0.9, boar: 0.75 };
-const FRAMES = { idle: 4, walk: 6, attack: 7, throw: 7, boarWalk: 6 };
-// rotation image per 45° step, starting east and turning clockwise (y points down)
-const DIR8 = ["east", "south-east", "south", "south-west", "west", "north-west", "north", "north-east"] as const;
+const FEET = { hunter: 0.9, boar: 0.9 };
+// Codex sprite sheets (art-src/codex), 4 frames per row: art/test/<who>/<row>_<n>.png
+const HUNTER_ROWS = ["down", "up", "side", "slash", "throw"] as const;
+const BOAR_ROWS = ["side", "down", "up", "windup", "charge"] as const;
+// Quarter-view sprites face down, up, or sideways (the side picture is flipped for left).
+type Look = "down" | "up" | "side";
+function lookOf(v: Vec): Look {
+  return Math.abs(v.y) > Math.abs(v.x) ? (v.y > 0 ? "down" : "up") : "side";
+}
 // Touch controls, in screen pixels of the game, placed relative to its size.
 const STICK = { x: GAME_WIDTH * 0.12, y: GAME_HEIGHT * 0.78, radius: 36, deadZone: 0.2 };
 const SLASH_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.8, radius: 28 };
@@ -130,13 +135,8 @@ export class HuntScene extends Phaser.Scene {
   preload() {
     this.load.image("grass", artUrl("test/bg/grass.png"));
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
-    this.load.image("boar_idle", artUrl("test/boar/idle.png"));
-    this.load.image("boar_attack_0", artUrl("test/boar/attack_0.png"));
-    for (let i = 0; i < FRAMES.boarWalk; i++) this.load.image(`boar_walk_${i}`, artUrl(`test/boar/walk_${i}.png`));
-    for (const [name, n] of [["idle", FRAMES.idle], ["walk", FRAMES.walk], ["attack", FRAMES.attack], ["throw", FRAMES.throw]] as const) {
-      for (let i = 0; i < n; i++) this.load.image(`hunter_${name}_${i}`, artUrl(`test/hunter/${name}_${i}.png`));
-    }
-    for (const d of DIR8) this.load.image(`hunter_rot_${d}`, artUrl(`test/hunter/rot_${d}.png`));
+    for (const row of HUNTER_ROWS) for (let i = 0; i < 4; i++) this.load.image(`hunter_${row}_${i}`, artUrl(`test/hunter/${row}_${i}.png`));
+    for (const row of BOAR_ROWS) for (let i = 0; i < 4; i++) this.load.image(`boar_${row}_${i}`, artUrl(`test/boar/${row}_${i}.png`));
   }
 
   create() {
@@ -144,15 +144,19 @@ export class HuntScene extends Phaser.Scene {
     this.placeObjects();
 
     const frames = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => ({ key: `${prefix}_${i}` }));
-    if (!this.anims.exists("hunter_walk")) {
-      this.anims.create({ key: "hunter_walk", frames: frames("hunter_walk", FRAMES.walk), frameRate: 10, repeat: -1 });
-      this.anims.create({ key: "hunter_attack", frames: frames("hunter_attack", FRAMES.attack), frameRate: Math.round((FRAMES.attack * 1000) / H.weapons.melee.swingMs) });
-      this.anims.create({ key: "hunter_throw", frames: frames("hunter_throw", FRAMES.throw), frameRate: 28 });
-      this.anims.create({ key: "boar_walk", frames: frames("boar_walk", FRAMES.boarWalk), frameRate: 8, repeat: -1 });
-      this.anims.create({ key: "boar_charge", frames: frames("boar_walk", FRAMES.boarWalk), frameRate: 20, repeat: -1 });
+    if (!this.anims.exists("hunter_slash")) {
+      for (const look of ["down", "up", "side"] as const) {
+        this.anims.create({ key: `hunter_walk_${look}`, frames: frames(`hunter_${look}`, 4), frameRate: 8, repeat: -1 });
+        this.anims.create({ key: `boar_walk_${look}`, frames: frames(`boar_${look}`, 4), frameRate: 7, repeat: -1 });
+        this.anims.create({ key: `boar_run_${look}`, frames: frames(`boar_${look}`, 4), frameRate: 16, repeat: -1 });
+      }
+      this.anims.create({ key: "hunter_slash", frames: frames("hunter_slash", 4), frameRate: Math.round(4000 / H.weapons.melee.swingMs) });
+      this.anims.create({ key: "hunter_throw", frames: frames("hunter_throw", 4), frameRate: 18 });
+      this.anims.create({ key: "boar_windup", frames: frames("boar_windup", 4), frameRate: Math.round(4000 / H.boar.telegraphMs) });
+      this.anims.create({ key: "boar_charge", frames: frames("boar_charge", 4), frameRate: 14, repeat: -1 });
     }
 
-    this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_rot_east").setOrigin(0.5, FEET.hunter);
+    this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_down_0").setOrigin(0.5, FEET.hunter);
     this.fx = this.add.graphics().setDepth(5000);
 
     const cam = this.cameras.main;
@@ -177,14 +181,14 @@ export class HuntScene extends Phaser.Scene {
       .setDepth(10000);
   }
 
-  update(time: number, rawDt: number) {
+  update(_time: number, rawDt: number) {
     const dt = Math.min(rawDt, MAX_DT_MS);
     if (this.hitStopMs > 0) {
       this.hitStopMs -= dt;
       if (this.hitStopMs <= 0) this.anims.resumeAll();
       return;
     }
-    if (!this.player.down) this.updatePlayer(dt, time);
+    if (!this.player.down) this.updatePlayer(dt);
     this.updateHarpoon(dt);
     for (const b of this.boars) this.updateBoar(b, dt);
     this.fadeCanopies();
@@ -200,7 +204,7 @@ export class HuntScene extends Phaser.Scene {
     });
   }
 
-  private updatePlayer(dt: number, time: number) {
+  private updatePlayer(dt: number) {
     const p = this.player;
     p.cooldownMs = Math.max(0, p.cooldownMs - dt);
     p.harpoonCooldownMs = Math.max(0, p.harpoonCooldownMs - dt);
@@ -241,25 +245,22 @@ export class HuntScene extends Phaser.Scene {
       p.pos = clampToField(pushOutOfRects(next, this.obstacles, H.player.radius), H.field);
       if (this.touch && this.aimPointer === null) p.aim = unit(move, p.aim);
     }
-    this.showHunter(moving, time);
+    this.showHunter(moving);
   }
 
-  // 8-way look: the walk cycle only exists sideways, so walking up or down shows the facing
-  // picture with a small bob; standing still shows the facing picture.
-  private showHunter(moving: boolean, time: number) {
+  // Walk cycle toward the aim (down, up or sideways); standing still shows its first frame.
+  private showHunter(moving: boolean) {
     const p = this.player;
-    const dir = DIR8[(Math.round(Math.atan2(p.aim.y, p.aim.x) / (Math.PI / 4)) + 8) % 8];
-    const sideways = Math.abs(p.aim.x) >= 0.5;
-    let bob = 0;
-    if (moving && sideways) {
-      this.hunter.setFlipX(p.aim.x < 0);
-      if (this.hunter.anims.currentAnim?.key !== "hunter_walk" || !this.hunter.anims.isPlaying) this.hunter.play("hunter_walk");
+    const look = lookOf(p.aim);
+    this.hunter.setFlipX(look === "side" && p.aim.x < 0);
+    if (moving) {
+      const key = `hunter_walk_${look}`;
+      if (this.hunter.anims.currentAnim?.key !== key || !this.hunter.anims.isPlaying) this.hunter.play(key);
     } else {
       this.hunter.anims.stop();
-      this.hunter.setFlipX(false).setTexture(`hunter_rot_${dir}`);
-      if (moving) bob = Math.abs(Math.sin(time / 90)) * -1.5;
+      this.hunter.setTexture(`hunter_${look}_0`);
     }
-    this.hunter.setPosition(p.pos.x, p.pos.y + bob).setDepth(p.pos.y);
+    this.hunter.setPosition(p.pos.x, p.pos.y).setDepth(p.pos.y);
   }
 
   // Keys and the stick add up; the rules cap the length at 1.
@@ -329,7 +330,7 @@ export class HuntScene extends Phaser.Scene {
       this.tweens.killTweensOf(b.sprite);
       b.sprite.setAlpha(1).clearTint();
       b.sprite.anims.stop();
-      b.sprite.setTexture("boar_idle");
+      b.sprite.setTexture(`boar_${lookOf(b.ai.facing)}_0`);
     }
   }
 
@@ -342,7 +343,7 @@ export class HuntScene extends Phaser.Scene {
     p.swingMs = weapon.swingMs;
     // step into each slash so the knockback never pushes the target out of reach mid-combo
     p.pos = clampToField(pushOutOfRects({ x: p.pos.x + p.aim.x * H.hit.knockback, y: p.pos.y + p.aim.y * H.hit.knockback }, this.obstacles, H.player.radius), H.field);
-    this.hunter.setFlipX(p.aim.x < 0).setPosition(p.pos.x, p.pos.y).setDepth(p.pos.y).play("hunter_attack");
+    this.hunter.setFlipX(p.aim.x < 0).setPosition(p.pos.x, p.pos.y).setDepth(p.pos.y).play("hunter_slash");
     const comboStep = p.comboStep;
     const aim = p.aim;
     this.time.delayedCall(weapon.swingMs * 0.5, () => this.landSlash(comboStep, aim));
@@ -414,32 +415,46 @@ export class HuntScene extends Phaser.Scene {
     const blocked = pos.x !== r.state.pos.x || pos.y !== r.state.pos.y;
     b.ai = { ...r.state, pos, wanderTarget: blocked ? null : r.state.wanderTarget };
     if (r.hit) this.hurtPlayer(H.boar.contactDamage, b.ai.chargeDir);
-    b.sprite.setPosition(b.ai.pos.x, b.ai.pos.y).setDepth(b.ai.pos.y).setFlipX(b.ai.facing.x < 0);
+    b.sprite.setPosition(b.ai.pos.x, b.ai.pos.y).setDepth(b.ai.pos.y);
     if (b.ai.phase !== before) this.showPhase(b);
+    this.showBoar(b, b.ai.phase !== before);
   }
 
+  // Effects when a boar changes phase: the wind-up blinks red and shouts "!".
   private showPhase(b: Boar) {
     const s = b.sprite;
     this.tweens.killTweensOf(s);
     s.setAlpha(1).clearTint();
+    if (b.ai.phase === "telegraph") {
+      s.setTint(0xff6060);
+      this.tweens.add({ targets: s, alpha: 0.45, yoyo: true, repeat: 3, duration: H.boar.telegraphMs / 8 });
+      this.popText(b.ai.pos.x, b.ai.pos.y - 52, "!", "#ff5050", H.boar.telegraphMs);
+    }
+  }
+
+  // The boar's picture for its phase and heading: walk / gallop toward where it goes, the wind-up
+  // once when it starts, a still frame while it catches its breath.
+  private showBoar(b: Boar, phaseChanged: boolean) {
+    const s = b.sprite;
+    const dir = b.ai.phase === "charge" ? b.ai.chargeDir : b.ai.facing;
+    const look = lookOf(dir);
+    s.setFlipX(dir.x < 0 && (look === "side" || b.ai.phase === "telegraph"));
+    let key: string;
     switch (b.ai.phase) {
       case "telegraph":
-        s.anims.stop();
-        s.setTexture("boar_attack_0").setTint(0xff6060);
-        this.tweens.add({ targets: s, alpha: 0.45, yoyo: true, repeat: 3, duration: H.boar.telegraphMs / 8 });
-        this.popText(b.ai.pos.x, b.ai.pos.y - 52, "!", "#ff5050", H.boar.telegraphMs);
-        break;
-      case "charge":
-        s.play("boar_charge");
-        break;
+        if (phaseChanged) s.play("boar_windup");
+        return;
       case "recover":
         s.anims.stop();
-        s.setTexture("boar_idle");
+        s.setTexture(`boar_${look}_0`);
+        return;
+      case "charge":
+        key = look === "side" ? "boar_charge" : `boar_run_${look}`;
         break;
-      case "wander":
-        s.play("boar_walk");
-        break;
+      default:
+        key = `boar_walk_${look}`;
     }
+    if (s.anims.currentAnim?.key !== key || !s.anims.isPlaying) s.play(key);
   }
 
   private hurtPlayer(damage: number, dir: Vec) {
@@ -476,8 +491,8 @@ export class HuntScene extends Phaser.Scene {
       const clear = pushOutOfRects(pos, this.obstacles, H.boar.radius);
       if (distance(pos, this.player.pos) > 180 && clear.x === pos.x && clear.y === pos.y) break;
     }
-    const sprite = this.add.sprite(pos.x, pos.y, "boar_idle").setOrigin(0.5, FEET.boar);
-    sprite.play("boar_walk");
+    const sprite = this.add.sprite(pos.x, pos.y, "boar_side_0").setOrigin(0.5, FEET.boar);
+    sprite.play("boar_walk_side");
     this.boars.push({ id: this.nextBoarId++, sprite, ai: newCharger(pos), hp: H.boar.maxHp, hits: EMPTY_HIT_LOG, dead: false });
   }
 
