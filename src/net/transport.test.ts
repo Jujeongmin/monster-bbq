@@ -19,6 +19,22 @@ describe("LocalTransport", () => {
     store.setItem("monster-bbq:save", "{broken");
     expect((await new LocalTransport(store).load()).day).toBe(1);
   });
+  it("waits for a context that arrives later (the dev-only recipe table) and cooks with it", async () => {
+    const store = memory();
+    store.setItem("monster-bbq:save", JSON.stringify({ ...newSave(), items: { shiitake: 1 } }));
+    const recipes = Promise.resolve({ shiitake_grill: { method: "grill", items: ["shiitake"] } } as never);
+    const t = new LocalTransport(store, undefined, async () => ({ now: 0, random: Math.random, recipes: await recipes }));
+    const s = await t.act({ type: "cook", attemptId: "a1", items: ["shiitake"], method: "grill" });
+    expect(s.lastCook?.outcome).toEqual({ kind: "new", dish: "shiitake_grill" });
+    expect((await t.load()).cookbook).toHaveProperty("shiitake_grill");
+  });
+  it("refuses cooking without the recipe table and keeps the ingredients", async () => {
+    const store = memory();
+    store.setItem("monster-bbq:save", JSON.stringify({ ...newSave(), items: { shiitake: 1 } }));
+    const t = new LocalTransport(store);
+    await expect(t.act({ type: "cook", attemptId: "a1", items: ["shiitake"], method: "grill" })).rejects.toThrow("unavailable");
+    expect((await t.load()).items).toEqual({ shiitake: 1 });
+  });
   it("throws on a rejected action and keeps the save", async () => {
     const t = new LocalTransport(memory());
     await expect(t.act({ type: "finishHunt", huntId: "nope", events: [], ko: false })).rejects.toThrow("bad_hunt");

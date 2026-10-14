@@ -12,8 +12,9 @@ export class LocalTransport implements Transport {
   constructor(
     private readonly storage: Pick<Storage, "getItem" | "setItem">,
     private readonly key = "monster-bbq:save",
-    // the server's clock and dice, played by the page
-    private readonly context: () => ActionContext = () => ({ now: Date.now(), random: Math.random, recipes: null }),
+    // the server's clock, dice and recipe table, played by the page (the table may arrive later: it is
+    // a dev-only dynamic import, see App)
+    private readonly context: () => ActionContext | Promise<ActionContext> = () => ({ now: Date.now(), random: Math.random, recipes: null }),
   ) {}
 
   async load(): Promise<SaveData> {
@@ -29,7 +30,7 @@ export class LocalTransport implements Transport {
   }
 
   async act(action: Action): Promise<SaveData> {
-    const result = applyAction(await this.load(), action, this.context());
+    const result = applyAction(await this.load(), action, await this.context());
     if (result.error) throw new Error(result.error);
     this.storage.setItem(this.key, JSON.stringify(result.save));
     return result.save;

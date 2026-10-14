@@ -35,4 +35,32 @@ describe("Server", () => {
     const s = await server.load();
     expect(s.day).toBe(1);
   });
+
+  test("starts with only the grill", async (server) => {
+    server.connect({ account: "cook-a" });
+    const s = await server.load();
+    expect(s.tools).toEqual(["grill"]);
+  });
+
+  test("refuses cooking with ingredients the player does not have", async (server) => {
+    server.connect({ account: "cook-b" });
+    let refused = false;
+    try {
+      await server.act({ type: "cook", attemptId: "a1", items: ["boar_belly:premium"], method: "grill" });
+    } catch {
+      refused = true;
+    }
+    expect(refused).toBe(true);
+  });
+
+  test("refuses a menu of dishes not found yet", async (server) => {
+    server.connect({ account: "cook-c" });
+    let refused = false;
+    try {
+      await server.act({ type: "setMenu", dishes: ["grilled_belly"] });
+    } catch {
+      refused = true;
+    }
+    expect(refused).toBe(true);
+  });
 });
