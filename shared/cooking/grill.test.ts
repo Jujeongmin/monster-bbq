@@ -12,6 +12,8 @@ import {
   placePiece,
   removePiece,
   replaceGrill,
+  restPiece,
+  saltPiece,
   stepGrill,
   type Grill,
 } from "./grill";
@@ -161,5 +163,72 @@ describe("big frames", () => {
     expect(piece(big).down).toBeCloseTo(piece(small).down, 1);
     expect(Number.isFinite(piece(big).char)).toBe(true);
     expect(stepGrill(big, -5)).toEqual(big);
+  });
+});
+
+describe("salt", () => {
+  it("counts salt shaken on before cooking as salting first", () => {
+    let g = saltPiece(placePiece(hot(), "a", "boar_neck:normal", 0, 0), "a");
+    expect(piece(g).salt).toBe(1);
+    expect(piece(g).saltEarly).toBe(true);
+    g = run(g, G.sideMs);
+    expect(piece(saltPiece(g, "a")).saltEarly).toBe(true);
+    const late = saltPiece(run(placePiece(hot(), "b", "boar_neck:normal", 0, 0), G.sideMs), "b");
+    expect(piece(late, "b").saltEarly).toBe(false);
+  });
+  it("praises salting first and calls too much salt salty", () => {
+    const done = (g: Grill) => {
+      g = run(g, G.sideMs * 1.3);
+      g = run(flipPiece(g, "a"), G.sideMs * 1.3);
+      return run(restPiece(g, "a"), G.restNeededMs);
+    };
+    const salted = judgePiece(piece(done(saltPiece(placePiece(hot(), "a", "boar_neck:normal", 0, 0), "a"))));
+    const plain = judgePiece(piece(done(placePiece(hot(), "a", "boar_neck:normal", 0, 0))));
+    expect(salted.notes).toContain("saltFirst");
+    expect(salted.accuracy).toBeGreaterThanOrEqual(plain.accuracy);
+    let heavy = placePiece(hot(), "a", "boar_neck:normal", 0, 0);
+    for (let i = 0; i < G.saltMax + 2; i++) heavy = saltPiece(heavy, "a");
+    expect(judgePiece(piece(done(heavy))).notes).toContain("salty");
+  });
+});
+
+describe("resting", () => {
+  // a thick pork neck, both sides just done, straight off the grill
+  function offTheGrill() {
+    let g = run(placePiece(hot(), "a", "boar_neck:normal", 0, 0), G.sideMs * 1.33);
+    return run(flipPiece(g, "a"), G.sideMs * 1.33);
+  }
+  it("leaves the inside behind the outside while it cooks", () => {
+    const p = piece(offTheGrill());
+    expect(p.core).toBeLessThan((p.up + p.down) / 2);
+  });
+  it("calls a thick piece served without resting undercooked inside", () => {
+    expect(judgePiece(piece(offTheGrill())).notes).toContain("insideRaw");
+  });
+  it("brings the inside up on the board, off the heat, and praises the rest", () => {
+    let g = restPiece(offTheGrill(), "a");
+    const surface = piece(g).down;
+    g = run(g, G.restNeededMs);
+    expect(piece(g).onBoard).toBe(true);
+    expect(piece(g).down).toBe(surface); // no more heat from below
+    const r = judgePiece(piece(g));
+    expect(r.notes).not.toContain("insideRaw");
+    expect(r.notes).toContain("rested");
+    expect(r.accuracy).toBeGreaterThan(judgePiece(piece(offTheGrill())).accuracy);
+  });
+  it("matters little for thin pork belly", () => {
+    let g = run(placePiece(hot(), "a", "boar_belly:normal", 0, 0), G.sideMs);
+    g = run(flipPiece(g, "a"), G.sideMs);
+    expect(judgePiece(piece(g)).notes).not.toContain("insideRaw");
+  });
+  it("goes back on the heat when moved from the board to the grill", () => {
+    const g = movePiece(restPiece(offTheGrill(), "a"), "a", 0, 0);
+    expect(piece(g).onBoard).toBe(false);
+    expect(piece(run(g, 1000)).down).toBeGreaterThan(piece(g).down);
+  });
+  it("cooks the inside faster once cut on the grill (the cut faces sear)", () => {
+    const whole = run(placePiece(hot(), "a", "boar_neck:normal", 0, 0), 6000);
+    const cut = run(cutPiece(placePiece(hot(), "a", "boar_neck:normal", 0, 0), "a"), 6000);
+    expect(piece(cut).core).toBeGreaterThan(piece(whole).core);
   });
 });

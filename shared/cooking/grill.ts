@@ -24,6 +24,15 @@ export interface GrillPiece {
   char: number;
   fried: number;
   sootSeen: number;
+  // doneness of the inside: follows the outside with a lag (thick cuts lag more), catches up on the board
+  core: number;
+  // pinches of salt, and whether any went on before cooking (salting first draws moisture out, so the
+  // surface browns better)
+  salt: number;
+  saltEarly: boolean;
+  // resting on the wooden board, off the heat
+  onBoard: boolean;
+  restMs: number;
 }
 
 export interface Grill {
@@ -49,6 +58,10 @@ function onPlate(x: number, y: number): { x: number; y: number } {
   return r <= 1 ? { x, y } : { x: (x / r) * 0.98, y: (y / r) * 0.98 };
 }
 
+// the inside closing in on the outside over `ms` with time constant `tau`
+const follow = (core: number, surface: number, ms: number, tau: number) => (tau <= 0 ? surface : core + (surface - core) * (1 - Math.exp(-ms / tau)));
+const surfaceOf = (p: GrillPiece) => (p.up + p.down) / 2;
+
 function step(g: Grill, ms: number): Grill {
   const heat = Math.min(1, g.heat + ms / T.preheatMs);
   let soot = g.soot;
@@ -56,6 +69,8 @@ function step(g: Grill, ms: number): Grill {
   const pieces = g.pieces.map((p) => {
     const id = idOf(p);
     const it = ITEM[id];
+    // on the board: no heat from below; the rest carries the heat inward
+    if (p.onBoard) return { ...p, core: follow(p.core, surfaceOf(p), ms, T.restLagMs * it.thick), restMs: p.restMs + ms };
     const h = heatAt(p.x, p.y) * heat;
     const down = p.down + (it.grillRate * h * ms) / T.sideMs;
     let char = p.char;
@@ -68,7 +83,9 @@ function step(g: Grill, ms: number): Grill {
     const garnish = id === "wild_garlic" || id === "shiitake";
     const fried = garnish && p.y > T.fatZoneY && fat >= T.fatNeeded ? Math.min(1, p.fried + (h * ms) / T.friedMs) : p.fried;
     const cutFace = p.cut ? Math.min(1, p.cutFace + (h * ms) / T.cutFaceMs) : p.cutFace;
-    return { ...p, down, char, fried, cutFace };
+    // cut on the grill, the faces sear and the inside cooks much sooner
+    const core = follow(p.core, (p.up + down) / 2, ms, T.coreLagMs * it.thick * (p.cut ? 0.3 : 1));
+    return { ...p, down, char, fried, cutFace, core };
   });
   soot = Math.min(1, soot + (fat * T.sootPerFatSec * ms) / 1000);
   fat = Math.min(1, fat);
@@ -88,12 +105,17 @@ const update = (g: Grill, id: string, f: (p: GrillPiece) => GrillPiece): Grill =
 // Laid on the plate (pulled back onto it if dropped past the rim). A plate not hot enough yet grabs it.
 export function placePiece(g: Grill, id: string, key: string, x: number, y: number): Grill {
   const at = onPlate(x, y);
-  const p: GrillPiece = { id, key, ...at, down: 0, up: 0, flips: 0, cut: false, cutFace: 0, cutEarly: false, stuck: g.heat < T.stickBelow, char: 0, fried: 0, sootSeen: g.soot };
+  const p: GrillPiece = { id, key, ...at, down: 0, up: 0, flips: 0, cut: false, cutFace: 0, cutEarly: false, stuck: g.heat < T.stickBelow, char: 0, fried: 0, sootSeen: g.soot, core: 0, salt: 0, saltEarly: false, onBoard: false, restMs: 0 };
   return { ...g, pieces: [...g.pieces, p] };
 }
 
 export const flipPiece = (g: Grill, id: string): Grill => update(g, id, (p) => ({ ...p, up: p.down, down: p.up, flips: p.flips + 1 }));
-export const movePiece = (g: Grill, id: string, x: number, y: number): Grill => update(g, id, (p) => ({ ...p, ...onPlate(x, y) }));
+export const movePiece = (g: Grill, id: string, x: number, y: number): Grill => update(g, id, (p) => ({ ...p, ...onPlate(x, y), onBoard: false }));
+// Onto the wooden board beside the grill to rest.
+export const restPiece = (g: Grill, id: string): Grill => update(g, id, (p) => ({ ...p, onBoard: true }));
+// One pinch from the shaker; counts as salting first while it is still raw.
+export const saltPiece = (g: Grill, id: string): Grill =>
+  update(g, id, (p) => ({ ...p, salt: p.salt + 1, saltEarly: p.saltEarly || Math.max(p.up, p.down) < T.saltEarlyBelow }));
 // Scissors: bite-size pieces. Cut while either side is still half raw and the juice runs out.
 export const cutPiece = (g: Grill, id: string): Grill =>
   update(g, id, (p) => (p.cut ? p : { ...p, cut: true, cutEarly: Math.min(p.up, p.down) < T.cutReady && !ITEM[idOf(p)].oneSide }));
@@ -133,9 +155,14 @@ export function judgePiece(p: GrillPiece): CookJudgement {
   if (p.cut && p.cutFace < T.cutReady) mark("raw", -0.1);
   if (meat && !p.cut) mark("uncut", -0.05);
   if (p.sootSeen > 0.3) mark("soot", -0.2 * p.sootSeen);
+  if (it.thick > 0 && p.core < 0.85 && Math.min(...sides) >= 0.6) mark("insideRaw", -0.15);
+  if (p.salt > T.saltMax) mark("salty", -0.15);
+  if (p.saltEarly && p.salt <= T.saltMax) mark("saltFirst", 0.08);
+  if (it.thick > 0 && p.restMs >= T.restNeededMs) mark("rested", 0.05);
   if (!it.oneSide && p.flips === 1) mark("onceFlip", 0.05);
   if (p.fried >= 1) mark("fatFried", 0.1);
-  const flawless = sides.every((d) => sideScore(d) >= 0.9) && !notes.some((n) => n !== "onceFlip" && n !== "fatFried");
+  const praise: NoteId[] = ["onceFlip", "fatFried", "rested", "saltFirst"];
+  const flawless = sides.every((d) => sideScore(d) >= 0.9) && notes.every((n) => praise.includes(n));
   if (flawless) notes.unshift("perfect");
   return { accuracy: Math.max(0, Math.min(1, acc)), notes };
 }

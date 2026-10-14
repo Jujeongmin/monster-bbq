@@ -14,7 +14,11 @@ export type NoteId =
   | "foamy"
   | "boilOver"
   | "mushy"
-  | "undercooked";
+  | "undercooked"
+  | "insideRaw"
+  | "rested"
+  | "saltFirst"
+  | "salty";
 
 export interface CookJudgement {
   accuracy: number;
@@ -22,9 +26,9 @@ export interface CookJudgement {
 }
 
 // Worst first: the one a cook would hear about.
-const FLAWS: NoteId[] = ["burnt", "raw", "undercooked", "stuck", "boilOver", "soot", "foamy", "mushy", "cutEarly", "manyFlips", "uncut"];
+const FLAWS: NoteId[] = ["burnt", "raw", "undercooked", "insideRaw", "salty", "stuck", "boilOver", "soot", "foamy", "mushy", "cutEarly", "manyFlips", "uncut"];
 // Best first.
-const PRAISE: NoteId[] = ["perfect", "clear", "fatFried", "onceFlip"];
+const PRAISE: NoteId[] = ["perfect", "rested", "saltFirst", "clear", "fatFried", "onceFlip"];
 
 // A whole plate: the pieces' average accuracy and the one note worth saying (the worst mistake, or
 // failing that the best praise).

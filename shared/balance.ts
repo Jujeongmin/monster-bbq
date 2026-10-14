@@ -20,6 +20,11 @@ export interface GrillTuning {
   friedMs: number; // garnish fried through in the fat
   sootPerChar: number; // soot left per unit of char
   sootPerFatSec: number; // soot from fat burning on the plate
+  coreLagMs: number; // the inside follows the outside with this lag (times the item's thickness)
+  restLagMs: number; // ... and on the resting board, off the heat, with this one
+  restNeededMs: number; // a proper rest
+  saltEarlyBelow: number; // salt shaken on before either side reaches this doneness counts as salting first
+  saltMax: number; // pinches past this are too salty
 }
 
 export interface PotTuning {
@@ -71,7 +76,8 @@ export const BALANCE: {
     pot: PotTuning;
     // per item: how fast it cooks on the grill (1 = pork belly) and when it starts to burn, whether it
     // has only one side worth cooking (a leaf, a honey puddle), and its time in the pot
-    items: Record<ItemId, { grillRate: number; burnAt: number; oneSide?: boolean; potRate: number; soft?: boolean }>;
+    // thick: how far the inside lags behind the outside (0 = nothing to rest: leaves, garlic, mushrooms)
+    items: Record<ItemId, { grillRate: number; burnAt: number; oneSide?: boolean; potRate: number; soft?: boolean; thick: number }>;
   };
 } = {
   hunt: {
@@ -159,6 +165,11 @@ export const BALANCE: {
       friedMs: 3000,
       sootPerChar: 0.5,
       sootPerFatSec: 0.004,
+      coreLagMs: 4000,
+      restLagMs: 1000,
+      restNeededMs: 2500,
+      saltEarlyBelow: 0.2,
+      saltMax: 3,
     },
     pot: {
       heatPerSec: [0, 4, 7, 11],
@@ -171,16 +182,16 @@ export const BALANCE: {
       skimAmount: 0.3,
     },
     items: {
-      boar_belly: { grillRate: 1, burnAt: 1.5, potRate: 1 / 25 },
-      boar_neck: { grillRate: 0.75, burnAt: 1.4, potRate: 1 / 25 },
-      boar_rib: { grillRate: 0.85, burnAt: 1.3, potRate: 1 / 30 },
-      rabbit_leg: { grillRate: 0.8, burnAt: 1.35, potRate: 1 / 25 },
-      honeycomb: { grillRate: 1.6, burnAt: 1.05, oneSide: true, potRate: 1 / 5, soft: true },
-      chicken_thigh: { grillRate: 0.7, burnAt: 1.35, potRate: 1 / 35 },
-      chicken_breast: { grillRate: 0.85, burnAt: 1.3, potRate: 1 / 20 },
-      shiitake: { grillRate: 1.3, burnAt: 1.5, potRate: 1 / 10, soft: true },
-      wild_garlic: { grillRate: 1.4, burnAt: 1.4, potRate: 1 / 12, soft: true },
-      perilla: { grillRate: 2, burnAt: 1.2, oneSide: true, potRate: 1 / 6, soft: true },
+      boar_belly: { grillRate: 1, burnAt: 1.5, potRate: 1 / 25, thick: 0.4 },
+      boar_neck: { grillRate: 0.75, burnAt: 1.4, potRate: 1 / 25, thick: 1.2 },
+      boar_rib: { grillRate: 0.85, burnAt: 1.3, potRate: 1 / 30, thick: 1 },
+      rabbit_leg: { grillRate: 0.8, burnAt: 1.35, potRate: 1 / 25, thick: 1 },
+      honeycomb: { grillRate: 1.6, burnAt: 1.05, oneSide: true, potRate: 1 / 5, soft: true, thick: 0 },
+      chicken_thigh: { grillRate: 0.7, burnAt: 1.35, potRate: 1 / 35, thick: 1.2 },
+      chicken_breast: { grillRate: 0.85, burnAt: 1.3, potRate: 1 / 20, thick: 0.9 },
+      shiitake: { grillRate: 1.3, burnAt: 1.5, potRate: 1 / 10, soft: true, thick: 0 },
+      wild_garlic: { grillRate: 1.4, burnAt: 1.4, potRate: 1 / 12, soft: true, thick: 0 },
+      perilla: { grillRate: 2, burnAt: 1.2, oneSide: true, potRate: 1 / 6, soft: true, thick: 0 },
     },
   },
 };
