@@ -23,9 +23,9 @@ const FRAMES = { idle: 4, walk: 6, attack: 7, throw: 7, boarWalk: 6 };
 const TILE = 256;
 // rotation image per 45° step, starting east and turning clockwise (y points down)
 const DIR8 = ["east", "south-east", "south", "south-west", "west", "north-west", "north", "north-east"] as const;
-// Touch controls, in screen pixels of the 400x224 game.
-const STICK = { x: 52, y: 176, radius: 26, deadZone: 0.2 };
-const SLASH_BTN = { x: 362, y: 186, radius: 20 };
+// Touch controls, in screen pixels of the game, placed relative to its size.
+const STICK = { x: GAME_WIDTH * 0.12, y: GAME_HEIGHT * 0.78, radius: 36, deadZone: 0.2 };
+const SLASH_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.8, radius: 28 };
 
 interface Boar {
   id: number;
@@ -154,7 +154,7 @@ export class HuntScene extends Phaser.Scene {
 
     this.hud = this.add.graphics().setScrollFactor(0).setDepth(10000);
     this.add
-      .text(6, 4, this.touch ? "" : "WASD 이동 · 마우스 조준 · 좌클릭 작살 · 우클릭 베기", { fontFamily: "monospace", fontSize: "8px", color: "#ffffff", backgroundColor: "#00000088" })
+      .text(6, 4, this.touch ? "" : "WASD 이동 · 마우스 조준 · 좌클릭 작살 · 우클릭 베기", { fontFamily: "monospace", fontSize: "10px", color: "#ffffff", backgroundColor: "#00000088" })
       .setScrollFactor(0)
       .setDepth(10000);
   }
@@ -462,9 +462,9 @@ export class HuntScene extends Phaser.Scene {
     this.input.addPointer(2);
     const ui = (o: Phaser.GameObjects.Arc) => o.setScrollFactor(0).setDepth(10000);
     ui(this.add.circle(STICK.x, STICK.y, STICK.radius, 0x000000, 0.35).setStrokeStyle(1, 0xffffff, 0.6));
-    this.stickKnob = ui(this.add.circle(STICK.x, STICK.y, 10, 0xffffff, 0.6));
+    this.stickKnob = ui(this.add.circle(STICK.x, STICK.y, 14, 0xffffff, 0.6));
     const slash = ui(this.add.circle(SLASH_BTN.x, SLASH_BTN.y, SLASH_BTN.radius, 0xc03030, 0.6).setStrokeStyle(1, 0xffffff, 0.8));
-    this.add.text(SLASH_BTN.x, SLASH_BTN.y, "베기", { fontFamily: "monospace", fontSize: "8px", color: "#ffffff" }).setOrigin(0.5).setScrollFactor(0).setDepth(10001);
+    this.add.text(SLASH_BTN.x, SLASH_BTN.y, "베기", { fontFamily: "monospace", fontSize: "10px", color: "#ffffff" }).setOrigin(0.5).setScrollFactor(0).setDepth(10001);
     slash.setInteractive(new Phaser.Geom.Circle(SLASH_BTN.radius, SLASH_BTN.radius, SLASH_BTN.radius + 6), Phaser.Geom.Circle.Contains);
     slash.on("pointerdown", () => (this.slashQueued = true));
 
@@ -605,7 +605,7 @@ export class HuntScene extends Phaser.Scene {
   private drawHud() {
     const p = this.player;
     this.hud.clear();
-    this.hud.fillStyle(0x000000, 0.6).fillRect(6, 16, 82, 8);
-    this.hud.fillStyle(0xe04040, 1).fillRect(7, 17, (80 * p.hp) / H.player.maxHp, 6);
+    this.hud.fillStyle(0x000000, 0.6).fillRect(8, 20, 122, 10);
+    this.hud.fillStyle(0xe04040, 1).fillRect(9, 21, (120 * p.hp) / H.player.maxHp, 8);
   }
 }

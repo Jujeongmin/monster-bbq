@@ -33,8 +33,8 @@ export const BALANCE: {
 } = {
   hunt: {
     // top-down forest made of the 256 px ground tile, mirrored
-    world: { w: 1024, h: 768 },
-    field: { minX: 16, maxX: 1008, minY: 24, maxY: 752 },
+    world: { w: 1536, h: 1024 },
+    field: { minX: 16, maxX: 1520, minY: 24, maxY: 1008 },
     premiumMaxRangedHits: 2,
     player: { maxHp: 100, speed: 85, depthSpeedRatio: 0.9, radius: 6 },
     weapons: {
@@ -77,6 +77,6 @@ export const BALANCE: {
       hitRadius: 18,
       radius: 12,
     },
-    boarCount: 5,
+    boarCount: 8,
   },
 };
