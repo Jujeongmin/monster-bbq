@@ -54,6 +54,15 @@ function SkillLine({ plate }: { plate: CookPlate }) {
   );
 }
 
+// A word from the lid under a result.
+function LidLine({ line }: { line: string }) {
+  return (
+    <p className="lid-line">
+      <span className="lid-name">{t("kitchen.lid")}</span> {line}
+    </p>
+  );
+}
+
 function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookPlate }) {
   if (outcome.kind === "new" || outcome.kind === "known")
     return outcome.kind === "new" ? (
@@ -61,6 +70,7 @@ function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookP
         <div className="cook-banner">{t("kitchen.new")}</div>
         <DishIcon dish={outcome.dish} size={96} />
         <div className="cook-dish">{t(`dish.${outcome.dish}` as StringKey)}</div>
+        <LidLine line={t("kitchen.newLine")} />
         <SkillLine plate={plate} />
       </div>
     ) : (
@@ -85,7 +95,7 @@ function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookP
     <div className="cook-result fail">
       <DishIcon dish="fail" size={64} />
       <div className="cook-dish">{t(`kitchen.fail.${outcome.method}` as StringKey)}</div>
-      <p>{t("kitchen.failLine")}</p>
+      <LidLine line={t("kitchen.failLine")} />
     </div>
   );
 }
