@@ -13,7 +13,7 @@ export class LocalTransport implements Transport {
     private readonly storage: Pick<Storage, "getItem" | "setItem">,
     private readonly key = "monster-bbq:save",
     // the server's clock and dice, played by the page
-    private readonly context: () => ActionContext = () => ({ now: Date.now(), random: Math.random }),
+    private readonly context: () => ActionContext = () => ({ now: Date.now(), random: Math.random, recipes: null }),
   ) {}
 
   async load(): Promise<SaveData> {
