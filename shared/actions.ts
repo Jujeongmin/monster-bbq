@@ -1,5 +1,7 @@
 import { BALANCE } from "./balance";
 import { isMethod, type DishId } from "./content/dishes";
+import { isUpgradeId, TOOL_UPGRADES } from "./content/upgrades";
+import { isLocked, level, nextCost } from "./growth";
 import { itemKey, parseItemKey, type ItemId } from "./content/items";
 import { addToBag } from "./hunt/bag";
 import { dropFor } from "./hunt/drops";
@@ -20,6 +22,7 @@ export type Action =
   | { type: "setMenu"; dishes: string[] }
   | { type: "startService" }
   | { type: "finishService"; serviceId: string; served: { customer: string; keys: string[]; accuracy: number }[]; left: string[] }
+  | { type: "buyUpgrade"; id: string }
   | { type: "sellAll" }
   | { type: "endDay" };
 
@@ -242,6 +245,16 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
     }
     case "finishService":
       return finishService(save, a, ctx.now, ctx.recipes);
+    case "buyUpgrade": {
+      if (!isUpgradeId(a.id)) return { save, error: "bad_action" };
+      const cost = nextCost(save, a.id);
+      if (cost === null) return { save, error: "max_level" };
+      if (isLocked(save, a.id)) return { save, error: "locked" };
+      if (save.gold < cost) return { save, error: "no_gold" };
+      const method = TOOL_UPGRADES[a.id];
+      const tools = method && !save.tools.includes(method) ? [...save.tools, method] : save.tools;
+      return { save: { ...save, gold: save.gold - cost, upgrades: { ...save.upgrades, [a.id]: level(save, a.id) + 1 }, tools } };
+    }
     case "sellAll":
       return { save: { ...save, gold: save.gold + saleValue(save.items), items: {} } };
     case "endDay":

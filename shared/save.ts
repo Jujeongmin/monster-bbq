@@ -1,6 +1,8 @@
 import { isDishId, isMethod, type DishId, type Method } from "./content/dishes";
 import { isItemId, parseItemKey, type ItemId } from "./content/items";
 import type { CookOutcome, CookResult, Recipe } from "./kitchen/cook";
+import { BALANCE } from "./balance";
+import { isUpgradeId, type UpgradeId } from "./content/upgrades";
 
 export type Zone = "forest";
 
@@ -54,6 +56,8 @@ export interface SaveData {
   tools: Method[];
   lastCook: CookResult | null;
   reputation: number;
+  // upgrade levels bought (missing = the starting level, see shared/growth)
+  upgrades: Partial<Record<UpgradeId, number>>;
   service: PendingService | null;
   lastService: ServiceSummary | null;
 }
@@ -72,6 +76,7 @@ export function newSave(): SaveData {
     tools: ["grill"],
     lastCook: null,
     reputation: 0,
+    upgrades: {},
     service: null,
     lastService: null,
   };
@@ -138,6 +143,17 @@ function readService(raw: unknown): PendingService | null {
   return { id: r.id, seed: r.seed, startedAt: r.startedAt, menu: readList(r.menu, isDishId) };
 }
 
+function readUpgrades(raw: unknown): Partial<Record<UpgradeId, number>> {
+  const out: Partial<Record<UpgradeId, number>> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [id, lv] of Object.entries(raw)) {
+    if (!isUpgradeId(id) || typeof lv !== "number" || !Number.isInteger(lv)) continue;
+    const u = BALANCE.upgrades[id];
+    if (lv >= u.base && lv <= u.base + u.costs.length) out[id] = lv;
+  }
+  return out;
+}
+
 function readSummary(raw: unknown): ServiceSummary | null {
   const r = raw as Record<string, unknown> | null;
   if (!r || typeof r !== "object" || typeof r.id !== "string") return null;
@@ -180,6 +196,7 @@ export function readSave(raw: unknown): SaveData {
     tools: tools.length > 0 ? tools : ["grill"],
     lastCook: readLastCook(r.lastCook),
     reputation: count(r.reputation),
+    upgrades: readUpgrades(r.upgrades),
     service,
     lastService: readSummary(r.lastService),
   };

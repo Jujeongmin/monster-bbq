@@ -5,6 +5,7 @@ import type { ShooterTuning } from "./hunt/shooter";
 import type { HitTuning, WeaponKind, WeaponStats } from "./hunt/combat";
 import type { DishId } from "./content/dishes";
 import type { ItemId } from "./content/items";
+import type { UpgradeId } from "./content/upgrades";
 import type { Field } from "./hunt/types";
 
 export interface GrillTuning {
@@ -72,6 +73,9 @@ export const BALANCE: {
   };
   economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
   kitchen: { menuSlots: number; maxIngredients: number };
+  // per upgrade: its starting level, the cost of each next level, and target levels locked until later
+  // chapters (boss parts, story)
+  upgrades: Record<UpgradeId, { base: 0 | 1; costs: number[]; locked?: number[] }>;
   service: {
     baseCustomers: number;
     perReputation: number; // one more customer per this much reputation
@@ -166,6 +170,22 @@ export const BALANCE: {
   },
   // research kitchen and menu (spec 4); menu slots grow with upgrades (plan 06)
   kitchen: { menuSlots: 2, maxIngredients: 3 },
+  // gold growth (growth design 2, user-approved draft numbers 2026-10-14)
+  upgrades: {
+    melee: { base: 1, costs: [300, 900, 2400], locked: [4] },
+    ranged: { base: 1, costs: [400, 1500] },
+    armor: { base: 1, costs: [300, 1000, 2800] },
+    bag: { base: 1, costs: [200, 500, 1000, 2000] },
+    menu: { base: 1, costs: [400, 1200, 3000] },
+    pot: { base: 0, costs: [600] },
+    wok: { base: 0, costs: [1500], locked: [1] },
+    fryer: { base: 0, costs: [3000], locked: [1] },
+    board: { base: 0, costs: [5000], locked: [1] },
+    grillQuality: { base: 1, costs: [500, 2000] },
+    potQuality: { base: 1, costs: [500, 2000] },
+    seats: { base: 1, costs: [800, 1600, 3200, 6400] },
+    lunchbox: { base: 1, costs: [300, 1500] },
+  },
   // the night service (cooking-service design 5); first guesses, tuned in play
   service: {
     baseCustomers: 4,

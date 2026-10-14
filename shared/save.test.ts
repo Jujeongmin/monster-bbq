@@ -18,7 +18,7 @@ describe("itemKey / parseItemKey", () => {
 });
 
 const EMPTY_KITCHEN = { cookbook: {}, hints: [], menu: [], tools: ["grill"], lastCook: null };
-const NO_SERVICE = { stage: "hunt", reputation: 0, service: null, lastService: null };
+const NO_SERVICE = { stage: "hunt", reputation: 0, upgrades: {}, service: null, lastService: null };
 
 describe("newSave", () => {
   it("starts on day 1 with nothing, no hunt going on and only the grill", () => {
@@ -40,6 +40,7 @@ describe("readSave", () => {
     tools: ["grill", "boil"],
     lastCook: { attemptId: "a1", outcome: { kind: "near", hint: "missing", taste: "veg" } },
     reputation: 12,
+    upgrades: { melee: 2 },
     service: { id: "s1", seed: 9, startedAt: 2000, menu: ["grilled_belly"] },
     lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 15, happy: 2, repDelta: 0 },
   };
@@ -72,7 +73,7 @@ describe("readSave", () => {
     ).toEqual({ version: 4, day: 1, gold: 0, items: { "boar_belly:normal": 2 }, hunt: null, ...EMPTY_KITCHEN, ...NO_SERVICE });
   });
   it("moves a version 3 save to version 4 with no reputation and no service", () => {
-    const v3 = { ...valid, version: 3, stage: undefined, reputation: undefined, service: undefined, lastService: undefined };
+    const v3 = { ...valid, version: 3, stage: undefined, reputation: undefined, upgrades: undefined, service: undefined, lastService: undefined };
     expect(readSave(v3)).toEqual({ ...valid, ...NO_SERVICE });
   });
   it("drops a broken service, summary or reputation instead of failing", () => {
