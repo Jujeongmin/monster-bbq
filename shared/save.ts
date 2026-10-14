@@ -13,8 +13,27 @@ export interface PendingHunt {
 }
 
 // The whole save of one account, kept in its Global User State under "save" (spec 7).
+// Tonight's service as the server opened it: its seed decides the customers.
+export interface PendingService {
+  id: string;
+  seed: number;
+  startedAt: number;
+  menu: DishId[];
+}
+
+// The last settled service, for the settle screen (and to ignore a resent report).
+export interface ServiceSummary {
+  id: string;
+  served: number;
+  left: number;
+  sales: number;
+  tips: number;
+  happy: number;
+  repDelta: number;
+}
+
 export interface SaveData {
-  version: 3;
+  version: 4;
   day: number;
   gold: number;
   // item key (see itemKey) -> count
@@ -29,10 +48,27 @@ export interface SaveData {
   // cooking tools owned; a dish goes on the menu only if its method's tool is here
   tools: Method[];
   lastCook: CookResult | null;
+  reputation: number;
+  service: PendingService | null;
+  lastService: ServiceSummary | null;
 }
 
 export function newSave(): SaveData {
-  return { version: 3, day: 1, gold: 0, items: {}, hunt: null, cookbook: {}, hints: [], menu: [], tools: ["grill"], lastCook: null };
+  return {
+    version: 4,
+    day: 1,
+    gold: 0,
+    items: {},
+    hunt: null,
+    cookbook: {},
+    hints: [],
+    menu: [],
+    tools: ["grill"],
+    lastCook: null,
+    reputation: 0,
+    service: null,
+    lastService: null,
+  };
 }
 
 function count(v: unknown, min = 0): number {
@@ -90,8 +126,22 @@ function readLastCook(raw: unknown): CookResult | null {
   return outcome ? { attemptId: r.attemptId, outcome } : null;
 }
 
+function readService(raw: unknown): PendingService | null {
+  const r = raw as Partial<PendingService> | null;
+  if (!r || typeof r !== "object" || typeof r.id !== "string" || typeof r.seed !== "number" || typeof r.startedAt !== "number") return null;
+  return { id: r.id, seed: r.seed, startedAt: r.startedAt, menu: readList(r.menu, isDishId) };
+}
+
+function readSummary(raw: unknown): ServiceSummary | null {
+  const r = raw as Record<string, unknown> | null;
+  if (!r || typeof r !== "object" || typeof r.id !== "string") return null;
+  const nums = ["served", "left", "sales", "tips", "happy", "repDelta"] as const;
+  if (!nums.every((k) => typeof r[k] === "number" && Number.isFinite(r[k]))) return null;
+  return { id: r.id, served: r.served as number, left: r.left as number, sales: r.sales as number, tips: r.tips as number, happy: r.happy as number, repDelta: r.repDelta as number };
+}
+
 // Whatever is stored (or nothing): a usable save. Version 1 (meat counted by grade only) moves into
-// items as pork belly, version 2 gets an empty kitchen; unknown versions and garbage start over; broken
+// items as pork belly, version 2 gets an empty kitchen, version 3 no reputation or service yet; unknown versions and garbage start over; broken
 // fields are repaired, so a bad save never stops the game.
 export function readSave(raw: unknown): SaveData {
   const r = raw as Record<string, unknown> | null;
@@ -106,10 +156,10 @@ export function readSave(raw: unknown): SaveData {
       hunt: null,
     });
   }
-  if (r.version !== 2 && r.version !== 3) return newSave();
+  if (r.version !== 2 && r.version !== 3 && r.version !== 4) return newSave();
   const tools = readList(r.tools, isMethod);
   return {
-    version: 3,
+    version: 4,
     day: count(r.day, 1),
     gold: count(r.gold),
     items: readItems(r.items),
@@ -119,5 +169,8 @@ export function readSave(raw: unknown): SaveData {
     menu: readList(r.menu, isDishId),
     tools: tools.length > 0 ? tools : ["grill"],
     lastCook: readLastCook(r.lastCook),
+    reputation: count(r.reputation),
+    service: readService(r.service),
+    lastService: readSummary(r.lastService),
   };
 }

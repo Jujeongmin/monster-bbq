@@ -48,8 +48,8 @@ describe("Verse8Transport", () => {
     expect((await t.load()).day).toBe(3);
     await expect(t.act({ type: "endDay" })).rejects.toThrow("bad_reply");
   });
-  it("refuses a reply from a server still on the old save version", async () => {
-    const t = new Verse8Transport({ remoteFunction: async () => ({ version: 2, day: 3, gold: 5, items: {}, hunt: null }) });
+  it("refuses a reply from a server still on an old save version", async () => {
+    const t = new Verse8Transport({ remoteFunction: async () => ({ ...newSave(), version: 3 }) });
     await expect(t.load()).rejects.toThrow("bad_reply");
   });
   it("gives up on a server that never answers", async () => {
