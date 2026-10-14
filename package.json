@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 5191 --strictPort",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:server": "npm --prefix server test",
+    "server:typecheck": "npm --prefix server run typecheck"
   },
   "dependencies": {
     "@agent8/gameserver": "^2.0.1",

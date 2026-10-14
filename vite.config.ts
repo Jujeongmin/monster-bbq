@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { configDefaults, defineConfig } from "vitest/config";
 import { artVersions } from "./vite-plugins/artVersions.ts";
 import { cssCacheBust } from "./vite-plugins/cssCacheBust.ts";
 
@@ -17,4 +17,6 @@ export default defineConfig({
     watch: { ignored: ["**/.git/**", "**/node_modules/**", "**/dist/**", "**/.superpowers/**", "**/art-src/**"] },
   },
   build: { outDir: "dist", reportCompressedSize: false, chunkSizeWarningLimit: 5000 },
+  // server/test runs in the Agent8 harness (npm run test:server), not in vitest
+  test: { exclude: [...configDefaults.exclude, "server/**"] },
 });
