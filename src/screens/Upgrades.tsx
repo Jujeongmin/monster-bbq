@@ -74,11 +74,11 @@ export function Upgrades({ save, busy, act, onClose }: { save: SaveData; busy: b
                 return (
                   <div key={id} className="ui-box upgrade-row">
                     <img className="upgrade-icon" src={artUrl(ICON[id])} alt="" />
-                    <span className="upgrade-name">
-                      {t(`upgrade.${id}` as StringKey)}
-                      <small> {t("upgrade.level", { lv, max: maxLevel(id) })}</small>
+                    <span className="upgrade-name">{t(`upgrade.${id}` as StringKey)}</span>
+                    <span className="upgrade-fx">
+                      {t("upgrade.level", { lv, max: maxLevel(id) })}
+                      {cost === null ? "" : ` · ${effect(id, Math.max(1, lv))}`}
                     </span>
-                    <span className="upgrade-fx">{cost === null ? "" : effect(id, Math.max(1, lv))}</span>
                     <button className="ui-btn" disabled={busy || why !== null} onClick={() => act({ type: "buyUpgrade", id })}>
                       {why ?? t("upgrade.buy", { cost: cost! })}
                     </button>
