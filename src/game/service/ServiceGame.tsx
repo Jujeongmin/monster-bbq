@@ -12,17 +12,19 @@ export function ServiceGame({
   shop,
   items,
   menu,
+  quality,
   onEnd,
 }: {
   shop: ServiceData;
   items: Record<string, number>;
   menu: { dish: DishId; items: ItemId[] }[];
+  quality: { grill: number; boil: number };
   onEnd: (r: { served: ServedReport[]; left: string[] }) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const onEndRef = useRef(onEnd);
   onEndRef.current = onEnd;
-  const start = useRef({ shop, items, menu });
+  const start = useRef({ shop, items, menu, quality });
 
   useEffect(() => {
     const g = new Phaser.Game({
@@ -42,7 +44,7 @@ export function ServiceGame({
       cook.input.enabled = false;
       g.scene.add("shop", ServiceScene, true, start.current.shop);
     });
-    g.scene.add("cook", CookStage, true, { items: start.current.items, mode: "service", menu: start.current.menu });
+    g.scene.add("cook", CookStage, true, { items: start.current.items, mode: "service", menu: start.current.menu, quality: start.current.quality });
     g.events.on("service:end", (r: { served: ServedReport[]; left: string[] }) => onEndRef.current(r));
     return () => g.destroy(true);
   }, []);

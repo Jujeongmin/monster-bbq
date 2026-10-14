@@ -89,6 +89,7 @@ export class GrillStation implements Station {
     y: number,
     boardX: number,
     boardY: number,
+    private quality = 1,
   ) {
     this.root = scene.add.container(0, 0);
     this.plateImg = scene.add.image(x, y, "grill").setOrigin(0).setScale(S);
@@ -205,7 +206,7 @@ export class GrillStation implements Station {
   status() {
     const hot = this.grill.pieces.filter((p) => !p.onBoard);
     const level = hot.reduce((m, p) => Math.max(m, Math.min(1, p.down / 1.2)), 0);
-    const alarm = hot.some((p) => p.char > 0 || p.down > BALANCE.cooking.items[parseItemKey(p.key)!.id].burnAt - 0.15);
+    const alarm = hot.some((p) => p.char > 0 || p.down > 1 + (BALANCE.cooking.items[parseItemKey(p.key)!.id].burnAt - 1) * this.quality - 0.15);
     return { level, alarm };
   }
 
@@ -387,7 +388,7 @@ export class GrillStation implements Station {
   }
 
   update(dt: number) {
-    this.grill = stepGrill(this.grill, dt);
+    this.grill = stepGrill(this.grill, dt, this.quality);
     const g = this.grill;
     // a plate getting dark with soot and burnt fat
     const soot = Math.round(255 - g.soot * 110);

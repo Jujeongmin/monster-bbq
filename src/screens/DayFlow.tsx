@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
 import type { DishId, Method } from "../../shared/content/dishes";
-import { seatBonus } from "../../shared/growth";
+import { bagSlots, huntStats, seatBonus, toolQuality } from "../../shared/growth";
 import { planService } from "../../shared/service/plan";
 import type { SaveData } from "../../shared/save";
 import { PhaserGame } from "../game/PhaserGame";
@@ -96,7 +96,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
       {phase === "hunt" && save.hunt && (
         <PhaserGame
           key={save.hunt.id}
-          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone }}
+          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, stats: huntStats(save), bagSlots: bagSlots(save) }}
           onHuntEnd={(r: HuntResult) => act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, ko: r.ko }, "kitchen")}
         />
       )}
@@ -177,5 +177,6 @@ function Night({ save, onEnd }: { save: SaveData; onEnd: (r: { served: { custome
     methods[dish] = r.method;
     return [{ dish, items: r.items }];
   });
-  return <ServiceGame key={svc.id} shop={{ customers, methods }} items={save.items} menu={menu} onEnd={onEnd} />;
+  const quality = { grill: toolQuality(save, "grill"), boil: toolQuality(save, "boil") };
+  return <ServiceGame key={svc.id} shop={{ customers, methods }} items={save.items} menu={menu} quality={quality} onEnd={onEnd} />;
 }

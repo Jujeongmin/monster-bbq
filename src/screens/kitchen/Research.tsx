@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Action } from "../../../shared/actions";
+import { toolQuality } from "../../../shared/growth";
 import type { CookOutcome } from "../../../shared/kitchen/cook";
 import type { SaveData } from "../../../shared/save";
 import type { CookPlate } from "../../game/cook/CookStage";
@@ -29,7 +30,7 @@ export function Research({ save, act }: { save: SaveData; busy: boolean; act: (a
 
   return (
     <div className="research">
-      <CookStageGame items={save.items} round={round} onPlate={onPlate} />
+      <CookStageGame items={save.items} quality={{ grill: toolQuality(save, "grill"), boil: toolQuality(save, "boil") }} round={round} onPlate={onPlate} />
       {attempt && (
         <div className="cook-result-wrap ui-panel">
           {result ? <CookResultView key={attempt.id} outcome={result} plate={attempt.plate} /> : <div className="cook-result">…</div>}

@@ -62,6 +62,7 @@ export class PotStation implements Station {
     x: number,
     y: number,
     rightX: number,
+    private quality = 1,
   ) {
     this.root = scene.add.container(0, 0);
     this.clear = scene.add.image(x, y, "pot_clear").setOrigin(0).setScale(S);
@@ -162,7 +163,7 @@ export class PotStation implements Station {
 
   status() {
     const level = this.pot.items.reduce((m, i) => Math.max(m, Math.min(1, i.cooked)), 0);
-    const spillAt = this.pot.lid ? P.boilOverMs / 2 : P.boilOverMs;
+    const spillAt = (this.pot.lid ? P.boilOverMs / 2 : P.boilOverMs) * this.quality;
     return { level, alarm: this.pot.fullBoilMs > spillAt * 0.6 || this.pot.foam > 0.5 };
   }
 
@@ -267,7 +268,7 @@ export class PotStation implements Station {
   }
 
   update(dt: number) {
-    this.pot = stepPot(this.pot, dt);
+    this.pot = stepPot(this.pot, dt, this.quality);
     const pot = this.pot;
     const boiling = pot.temp >= 99.5;
     const warm = Math.max(0, (pot.temp - 60) / 40);

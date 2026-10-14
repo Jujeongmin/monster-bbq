@@ -26,6 +26,8 @@ export interface CookStageData {
   items: Record<string, number>;
   mode?: "research" | "service";
   menu?: { dish: DishId; items: ItemId[] }[];
+  // tool quality from the upgrades (shared/growth toolQuality): more room before burning / boiling over
+  quality?: { grill: number; boil: number };
 }
 
 export interface Order {
@@ -71,6 +73,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
   private served = false;
   private mode: "research" | "service" = "research";
   private menu: { dish: DishId; items: ItemId[] }[] = [];
+  private quality = { grill: 1, boil: 1 };
   // ingredients already served tonight (service mode)
   private usedTotal: Record<string, number> = {};
   private chips: { customer: string; box: Phaser.GameObjects.Container; bar: Phaser.GameObjects.Graphics }[] = [];
@@ -85,6 +88,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
     this.items = { ...data.items };
     this.mode = data.mode ?? "research";
     this.menu = data.menu ?? [];
+    this.quality = data.quality ?? { grill: 1, boil: 1 };
     this.usedTotal = {};
     this.chips = [];
     this.stationChips = [];
@@ -108,8 +112,8 @@ export class CookStage extends Phaser.Scene implements CookHost {
   create() {
     makeEffectTextures(this);
     this.cameras.main.setBackgroundColor("#2b211c");
-    const grill = new GrillStation(this, this, 6, 4, 404, 262);
-    const pot = new PotStation(this, this, 14, 6, 392);
+    const grill = new GrillStation(this, this, 6, 4, 404, 262, this.quality.grill);
+    const pot = new PotStation(this, this, 14, 6, 392, this.quality.boil);
     this.stations = [grill, pot];
     this.active = grill;
 

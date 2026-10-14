@@ -42,6 +42,10 @@ export interface HuntData {
   huntId: string;
   seed: number;
   zone: Zone;
+  // from the upgrades (shared/growth): what the hunter hits for, how far the harpoon flies, how much
+  // health, how big the bag
+  stats: { meleeDamage: number; rangedDamage: number; rangedRange: number; maxHp: number };
+  bagSlots: number;
 }
 
 // What the hunt hands to the day flow when it ends (PhaserGame forwards the "hunt:end" event).
@@ -73,6 +77,10 @@ type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "R" | "E", Ph
 
 export class HuntScene extends Phaser.Scene {
   private huntData!: HuntData;
+  private melee = H.weapons.melee;
+  private ranged = H.weapons.ranged;
+  private maxHp: number = H.player.maxHp;
+  private bagSlots: number = H.bagSlots;
   private plan!: HuntPlan;
   private player!: Player;
   private hunter!: Phaser.GameObjects.Sprite;
@@ -117,8 +125,12 @@ export class HuntScene extends Phaser.Scene {
   // Runs on every start: one hunt, one seed.
   init(data: HuntData) {
     this.huntData = data;
+    this.melee = { ...H.weapons.melee, damage: data.stats.meleeDamage };
+    this.ranged = { ...H.weapons.ranged, damage: data.stats.rangedDamage, range: H.weapons.ranged.range * data.stats.rangedRange };
+    this.maxHp = data.stats.maxHp;
+    this.bagSlots = data.bagSlots;
     this.plan = planHunt(data.seed, data.zone);
-    this.player = { pos: { ...HUNT_START }, aim: { x: 1, y: 0 }, hp: H.player.maxHp, cooldownMs: 0, harpoonCooldownMs: 0, swingMs: 0, comboStep: 0, msSinceSwing: Infinity, down: false };
+    this.player = { pos: { ...HUNT_START }, aim: { x: 1, y: 0 }, hp: this.maxHp, cooldownMs: 0, harpoonCooldownMs: 0, swingMs: 0, comboStep: 0, msSinceSwing: Infinity, down: false };
     this.mobs = [];
     this.refills = this.plan.spawns.filter((s) => s.wave > 0);
     this.nextRefill = 0;
@@ -427,7 +439,7 @@ export class HuntScene extends Phaser.Scene {
     if (g.ms < GATHER_MS) return;
     this.gathering = null;
     const key = itemKey(g.node.node.item);
-    const r = addToBag(this.bag, key, H.bagSlots);
+    const r = addToBag(this.bag, key, this.bagSlots);
     if (!r.added) {
       this.popText(this.player.pos.x, this.player.pos.y - 56, t("hunt.bagFull"), "#ffb0b0", 1200);
       return;
@@ -444,8 +456,8 @@ export class HuntScene extends Phaser.Scene {
   private throwHarpoon(at: Vec) {
     const p = this.player;
     p.aim = unit({ x: at.x - p.pos.x, y: at.y - this.hand().y }, p.aim);
-    p.harpoonCooldownMs = H.weapons.ranged.cooldownMs;
-    p.swingMs = H.weapons.ranged.swingMs;
+    p.harpoonCooldownMs = this.ranged.cooldownMs;
+    p.swingMs = this.ranged.swingMs;
     this.hunter.setFlipX(p.aim.x < 0).play("hunter_throw");
     this.harpoon = fireHarpoon(this.hand(), at, p.aim.x < 0 ? -1 : 1);
   }
@@ -458,7 +470,7 @@ export class HuntScene extends Phaser.Scene {
       if (struck) {
         this.harpoon = null;
         this.harpoonStrike(struck);
-      } else this.harpoon = harpoonDone(h, H.weapons.ranged.range) ? null : h;
+      } else this.harpoon = harpoonDone(h, this.ranged.range) ? null : h;
     }
     const m = this.reeling;
     if (!m) return;
@@ -479,7 +491,7 @@ export class HuntScene extends Phaser.Scene {
 
   private harpoonStrike(m: Mob) {
     const p = this.player;
-    const hit = computeHit({ weapon: H.weapons.ranged, comboStep: 1, targetVulnerable: isMobVulnerable(m), attackerPos: p.pos, targetPos: mobPos(m), targetFacing: mobFacing(m) }, H.hit);
+    const hit = computeHit({ weapon: this.ranged, comboStep: 1, targetVulnerable: isMobVulnerable(m), attackerPos: p.pos, targetPos: mobPos(m), targetFacing: mobFacing(m) }, H.hit);
     this.applyHit(m, "ranged", hit.damage, [hit.counter && "카운터!", hit.backAttack && "백어택!"]);
     this.hitStop(H.hitStopMs);
     if (!m.dead) {
@@ -492,7 +504,7 @@ export class HuntScene extends Phaser.Scene {
 
   private slash() {
     const p = this.player;
-    const weapon = H.weapons.melee;
+    const weapon = this.melee;
     p.comboStep = nextComboStep(p.comboStep, p.msSinceSwing, true, "melee", H.hit);
     p.msSinceSwing = 0;
     p.cooldownMs = weapon.cooldownMs;
@@ -509,12 +521,12 @@ export class HuntScene extends Phaser.Scene {
     const p = this.player;
     if (p.down || this.ended) return;
     const live = this.mobs.filter((m) => !m.dead && m !== this.reeling).map((m) => ({ pos: mobPos(m), mob: m }));
-    const struck = coneTargets(p.pos, aim, live, H.weapons.melee.range, H.slashHalfAngle).map((x) => x.mob);
+    const struck = coneTargets(p.pos, aim, live, this.melee.range, H.slashHalfAngle).map((x) => x.mob);
     this.slashArc = { at: p.pos, aim, ms: 120 };
     if (struck.length === 0) return;
     let big = false;
     for (const m of struck) {
-      const hit = computeHit({ weapon: H.weapons.melee, comboStep, targetVulnerable: isMobVulnerable(m), attackerPos: p.pos, targetPos: mobPos(m), targetFacing: mobFacing(m) }, H.hit);
+      const hit = computeHit({ weapon: this.melee, comboStep, targetVulnerable: isMobVulnerable(m), attackerPos: p.pos, targetPos: mobPos(m), targetFacing: mobFacing(m) }, H.hit);
       big ||= hit.finisher || hit.counter;
       const at = mobPos(m);
       const away = unit({ x: at.x - p.pos.x, y: at.y - p.pos.y }, aim);
@@ -547,7 +559,7 @@ export class HuntScene extends Phaser.Scene {
     const grade = meatGrade(m.hits, H.premiumMaxRangedHits);
     const key = itemKey(dropFor(this.huntData.seed, m.spawn), grade);
     this.report.push({ kill: m.spawn.id, grade });
-    const r = addToBag(this.bag, key, H.bagSlots);
+    const r = addToBag(this.bag, key, this.bagSlots);
     const at = mobPos(m);
     if (r.added) {
       this.bag = r.bag;
@@ -614,7 +626,7 @@ export class HuntScene extends Phaser.Scene {
     if (this.slashArc) {
       const { at, aim } = this.slashArc;
       const a = Math.atan2(aim.y, aim.x);
-      g.lineStyle(2, 0xffffff, 0.8).beginPath().arc(at.x, at.y - 10, H.weapons.melee.range * 0.8, a - H.slashHalfAngle, a + H.slashHalfAngle).strokePath();
+      g.lineStyle(2, 0xffffff, 0.8).beginPath().arc(at.x, at.y - 10, this.melee.range * 0.8, a - H.slashHalfAngle, a + H.slashHalfAngle).strokePath();
       this.slashArc.ms -= dt;
       if (this.slashArc.ms <= 0) this.slashArc = null;
     }
@@ -696,8 +708,8 @@ export class HuntScene extends Phaser.Scene {
 
   private drawHud() {
     const p = this.player;
-    this.hpGauge.set(p.hp / H.player.maxHp);
-    this.bagText.setText(t("hud.bag", { n: bagCount(this.bag), max: H.bagSlots }));
+    this.hpGauge.set(p.hp / this.maxHp);
+    this.bagText.setText(t("hud.bag", { n: bagCount(this.bag), max: this.bagSlots }));
   }
 
   // Back to the shop: the report goes to the day flow (half the bag is lost after a knockout, the
