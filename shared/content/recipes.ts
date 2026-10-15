@@ -2,7 +2,7 @@ import type { DishId, Method } from "./dishes";
 import type { ItemId } from "./items";
 
 // What every dish is made of (restaurant v2 design 3). Public now that nothing is guessed: the cookbook
-// shows each dish as a silhouette with its ingredient count. `method` is for show ("3 ingredients ¡¤
+// shows each dish as a silhouette with its ingredient count. `method` is for show ("3 ingredients Â·
 // grill"), `price` the level 1 price, `cookMs` how long Bandal takes at night (stage 2).
 export interface Recipe {
   method: Method;
