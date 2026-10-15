@@ -13,7 +13,6 @@ export const en: Record<keyof typeof ko, string> = {
   "lunch.goHunt": "Afternoon hunt",
   "lunch.skip": "Rest this afternoon",
   "lunch.upgrades": "Upgrades",
-  "hunt.help": "WASD move · mouse aim · left click harpoon · right click slash · E pick up / go down / leave",
   "hunt.stamina": "Stamina",
   "hunt.useExit": "E Leave by Bandal's cart",
   "hunt.useDown": "E Go down",

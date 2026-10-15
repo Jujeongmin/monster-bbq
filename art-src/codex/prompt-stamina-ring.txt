@@ -1,0 +1,12 @@
+Use your image generation tool (do not write code to draw) to create ONE image, 1536x512: four pieces side by side in four equal 384x512 cells on a perfectly flat solid magenta #FF00FF background (no glow, no shadow), each centred in its cell, nothing touching the cell edges. No text, no numbers, no letters.
+
+STYLE (most important): real low-resolution pixel art matching the attached game UI kit and hunter sprite — every art pixel a solid 8x8 block of one flat colour, a 1-art-pixel dark outline, flat shading with 2-3 tones, no gradients, no glow, no anti-aliasing, the same warm palette (walnut brown, brass gold, cream, a little red).
+
+This is the hunter's stamina gauge for the hunt HUD, like the round oxygen gauge in Dave the Diver.
+
+cell 1 "ring, empty": a round gauge 40 art pixels across: a thick brass-and-walnut outer rim (like the UI kit's frames, little brass studs at top, left, right and bottom), and inside the rim a ring-shaped track 5 art pixels thick that is EMPTY (dark walnut brown), and a round dark cream-brown face in the middle 22 art pixels across, empty.
+cell 2 "ring, full": exactly the same gauge pixel for pixel, but the ring-shaped track is completely FILLED with a bright warm stamina colour (orange-gold with a lighter highlight band), the middle face still empty.
+cell 3 "face, fine": the hunter's face only (from the attached sprite: spiky black hair, red bandana, big brown eyes), front view, chibi, determined little smile, 20 art pixels across, fits inside the middle face of the gauge.
+cell 4 "face, tired": the same face, worn out: half-closed eyes, a sweat drop, mouth open panting, 20 art pixels across.
+
+Save as art-src/codex/raw/stamina_ring.png. Reply only with the saved file path.

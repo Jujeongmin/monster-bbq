@@ -236,7 +236,7 @@ export class HuntScene extends Phaser.Scene {
     else this.createMouseControls();
 
     const hudStyle = TEXT_SMALL;
-    if (!this.touch) this.add.text(6, 4, t("hunt.help"), hudStyle).setScrollFactor(0).setDepth(10000);
+    // no key list on screen: the controls come with the tutorial (user, 2026-10-15)
     // stamina big and plain at the top left — its name, a long brass gauge and what is left in numbers
     // (user, 2026-10-15: it was hard to see) — the floor and the bag under it; no way home but the carts
     const row = 30;
