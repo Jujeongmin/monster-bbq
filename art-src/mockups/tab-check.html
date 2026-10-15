@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>탭 확인</title>
+<!-- Check page only: the game's own .ui-tab style (src/index.css) at --s 2, selected and not. -->
+<link rel="stylesheet" href="/src/index.css">
+<style>
+  :root { --s: 2; }
+  body { margin: 0; background: #2b211c; }
+  .row { display: flex; gap: 8px; padding: 24px; }
+</style>
+</head>
+<body>
+<div class="row">
+  <button class="ui-tab on">도감</button>
+  <button class="ui-tab">메뉴판</button>
+  <button class="ui-tab">강화</button>
+  <button class="ui-tab">도시락</button>
+</div>
+</body>
+</html>

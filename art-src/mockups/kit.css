@@ -25,7 +25,7 @@ html, body { margin: 0; background: #0b0b12; }
 
 .tabs { position: absolute; left: 40px; top: 88px; display: flex; gap: 8px; z-index: 2; }
 .tab { width: 152px; height: 56px; display: flex; align-items: center; justify-content: center; border-width: calc(4 * var(--k)); font-weight: 700; }
-.tab span { margin: -10px -16px -6px; }
+.tab span { margin: 0 -16px; line-height: 24px; }
 .tab.on { border-image: url("../ui-kit-pixel/out/tab_on.png") 4 fill / calc(4 * var(--k)) stretch; color: var(--ink); }
 .tab.off { border-image: url("../ui-kit-pixel/out/tab_off.png") 4 fill / calc(4 * var(--k)) stretch; color: #d8c4a4; }
 

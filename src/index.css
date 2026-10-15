@@ -77,19 +77,22 @@ canvas { image-rendering: pixelated; display: block; }
 button { -webkit-tap-highlight-color: transparent; }
 button:focus:not(:focus-visible) { outline: none; }
 button:focus-visible { outline: calc(2px * var(--s)) solid var(--brass); outline-offset: calc(1px * var(--s)); }
-/* tabs keep their own size (the brass knob on top must not stretch) */
+/* tabs from the pixel UI kit (art/test/ui2, approved 2026-10-15): a 36x12 piece with 4-pixel edges, each
+   art pixel two game pixels, so the brass rim stays crisp at any width */
 .ui-tab {
-  font: 700 var(--fs) "Galmuri11", monospace;
-  width: calc(49px * var(--s));
-  height: calc(40px * var(--s));
-  padding: calc(8px * var(--s)) 0 0;
-  border: 0;
-  color: var(--cream);
-  background: url("../art/test/ui/tab_off.png") center / 100% 100% no-repeat;
+  font: 700 var(--fs) / 1 "Galmuri11", monospace;
+  width: calc(72px * var(--s));
+  height: calc(28px * var(--s));
+  padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: calc(8px * var(--s)) solid transparent;
+  border-image: url("../art/test/ui2/tab_off.png") 4 fill / calc(8px * var(--s)) stretch;
+  background: none;
+  color: #d8c4a4;
   image-rendering: pixelated;
   cursor: pointer;
 }
-.ui-tab.on { background-image: url("../art/test/ui/tab_on.png"); color: var(--ink); }
+.ui-tab.on { border-image-source: url("../art/test/ui2/tab_on.png"); color: var(--ink); }
 .ui-bubble {
   border-style: solid;
   border-color: transparent;

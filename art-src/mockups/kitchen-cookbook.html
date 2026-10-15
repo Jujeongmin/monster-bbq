@@ -29,7 +29,7 @@
   .tabs { position: absolute; left: 40px; top: 88px; display: flex; gap: 8px; z-index: 2; }
   .tab { width: 152px; height: 56px; display: flex; align-items: center; justify-content: center;
     border-width: calc(4 * var(--k)); font-weight: 700; }
-  .tab span { margin: -10px -16px -6px; }
+  .tab span { margin: 0 -16px; line-height: 24px; }
   .tab.on { border-image: url("../ui-kit-pixel/out/tab_on.png") 4 fill / calc(4 * var(--k)) stretch; color: var(--ink); }
   .tab.off { border-image: url("../ui-kit-pixel/out/tab_off.png") 4 fill / calc(4 * var(--k)) stretch; color: #d8c4a4; }
   .panel { position: absolute; left: 24px; top: 136px; width: 1232px; height: 500px; padding: 8px;
@@ -57,7 +57,10 @@
     border-width: calc(3 * var(--k)) calc(4 * var(--k)); border-image: url("../ui-kit-pixel/out/btn_normal.png") 3 4 fill / calc(3 * var(--k)) calc(4 * var(--k)) stretch;
     text-shadow: 2px 2px 0 #4a1408; }
   .btn span { margin: -12px -8px; }
-  .card .btn { width: 220px; margin-top: 6px; }
+  .card.can { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(4px 0 0 #ffd65a) drop-shadow(-4px 0 0 #ffd65a) drop-shadow(0 4px 0 #ffd65a) drop-shadow(0 -4px 0 #ffd65a); }
+  .ready-tag { position: absolute; right: -10px; top: -10px; height: 44px; padding: 0 26px; display: flex; align-items: center; margin: 0; z-index: 1;
+    border-width: calc(4 * var(--k)); border-image: url("../ui-kit-pixel/out/plate.png") 4 fill / calc(4 * var(--k)) stretch; color: #4a2a12; font-weight: 700; font-size: 20px; }
+  .ready-tag span { margin: -12px -10px; white-space: nowrap; }
   .ready { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: 320px; height: 52px; font-size: 24px; }
   .lid { position: absolute; left: 6px; bottom: -6px; width: 240px; z-index: 3; }
   .say { position: absolute; left: 230px; bottom: 96px; width: 500px; min-height: 84px; padding: 6px 20px 2px 12px; z-index: 3;
@@ -99,13 +102,14 @@
         <div class="name">표고구이</div>
         <div class="slots"><div class="slot slice"><img src="../../art/test/items/icon_shiitake.png" alt=""></div></div>
       </div>
-      <div class="card slice">
+      <div class="card slice can">
+        <div class="ready-tag slice"><span>연구 가능!</span></div>
         <img class="dish sil" src="../../art/test/dishes/garlic_neck.png" alt="">
+        <div class="shape">재료 2개 · 굽기</div>
         <div class="slots">
           <div class="slot slice"><img src="../../art/test/items/icon_boar_neck.png" alt=""></div>
           <div class="slot slice"><img src="../../art/test/items/icon_wild_garlic.png" alt=""></div>
         </div>
-        <div class="btn slice"><span>연구 · 250골드</span></div>
       </div>
       <div class="card slice">
         <img class="dish sil" src="../../art/test/dishes/belly_ssam.png" alt="">
@@ -139,8 +143,6 @@
     </div>
   </div>
 
-  <img class="lid" src="../../art/test/lid/smug.png" alt="">
-  <div class="say slice"><span>깻잎은 숲에서 줍껑. 잘 안 보이면 E를 눌러 보껑.</span></div>
 
   <div class="btn ready slice"><span>장사 시작</span></div>
 </div>

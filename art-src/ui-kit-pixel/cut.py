@@ -25,6 +25,10 @@ NAMES = [
     "bubble", "plate", "ribbon",
 ]
 
+# Colours swapped inside one piece, nothing else touched (user, 2026-10-15: the selected tab showed a grey
+# line under its brass rim; it becomes the same dark brown as the tab's other inner edges)
+RECOLOUR = {"tab_on": {(0x9D, 0xA0, 0xA3): (0x2B, 0x12, 0x0A)}}
+
 
 def is_key(p) -> bool:
     r, g, b = p[:3]
@@ -146,6 +150,12 @@ def main():
     cut = []
     for name, box in zip(NAMES, boxes):
         piece = small.crop(box)
+        for a, b in RECOLOUR.get(name, {}).items():
+            px = piece.load()
+            for y in range(piece.height):
+                for x in range(piece.width):
+                    if px[x, y][3] and px[x, y][:3] == a:
+                        px[x, y] = (*b, 255)
         piece.save(OUT / f"{name}.png")
         cut.append((name, piece))
         print(name, piece.size, len(piece.getcolors(1 << 16) or []), "colours")
