@@ -6,7 +6,7 @@
 @font-face { font-family: "Galmuri9"; src: url("/fonts/Galmuri9.woff2") format("woff2"); }
 :root { --k: 4px; --ink: #3a2414; --ink-soft: #7a5a3e; --cream: #fff3d8; --brass: #ffd166; --good: #3f8a3a; --red: #b8402a; }
 html, body { margin: 0; background: #0b0b12; }
-* { box-sizing: border-box; image-rendering: pixelated; -webkit-font-smoothing: none; }
+* { box-sizing: border-box; image-rendering: pixelated; -webkit-font-smoothing: none; -webkit-tap-highlight-color: transparent; user-select: none; }
 .frame { position: relative; width: 1280px; height: 720px; overflow: hidden; font-family: "Galmuri11", monospace; font-size: 24px; color: var(--ink); }
 .bg { position: absolute; inset: 0; width: 1280px; height: 720px; }
 .dim { position: absolute; inset: 0; background: rgb(14 8 5 / 0.55); }

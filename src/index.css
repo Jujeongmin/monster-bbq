@@ -72,6 +72,11 @@ canvas { image-rendering: pixelated; display: block; }
 }
 .ui-btn:active:not(:disabled) { border-image-source: url("../art/test/ui/btn_pressed.png"); transform: translateY(var(--s)); }
 .ui-btn:disabled { border-image-source: url("../art/test/ui/btn_disabled.png"); color: #d8d0c4; cursor: default; }
+/* no grey flash or focus box when a button or tab is tapped or clicked (user, 2026-10-15); a keyboard
+   user still sees where they are */
+button { -webkit-tap-highlight-color: transparent; }
+button:focus:not(:focus-visible) { outline: none; }
+button:focus-visible { outline: calc(2px * var(--s)) solid var(--brass); outline-offset: calc(1px * var(--s)); }
 /* tabs keep their own size (the brass knob on top must not stretch) */
 .ui-tab {
   font: 700 var(--fs) "Galmuri11", monospace;

@@ -12,7 +12,7 @@
   @font-face { font-family: "Galmuri9"; src: url("/fonts/Galmuri9.woff2") format("woff2"); }
   :root { --k: 4px; --ink: #3a2414; --ink-soft: #7a5a3e; --cream: #fff3d8; --brass: #ffd166; }
   html, body { margin: 0; background: #0b0b12; }
-  * { box-sizing: border-box; image-rendering: pixelated; -webkit-font-smoothing: none; }
+  * { box-sizing: border-box; image-rendering: pixelated; -webkit-font-smoothing: none; -webkit-tap-highlight-color: transparent; user-select: none; }
   .frame { position: relative; width: 1280px; height: 720px; overflow: hidden; font-family: "Galmuri11", monospace; font-size: 24px; color: var(--ink); }
   .bg { position: absolute; inset: 0; width: 1280px; height: 720px; }
   .dim { position: absolute; inset: 0; background: rgb(14 8 5 / 0.55); }
@@ -57,7 +57,7 @@
     border-width: calc(3 * var(--k)) calc(4 * var(--k)); border-image: url("../ui-kit-pixel/out/btn_normal.png") 3 4 fill / calc(3 * var(--k)) calc(4 * var(--k)) stretch;
     text-shadow: 2px 2px 0 #4a1408; }
   .btn span { margin: -12px -8px; }
-  .card .btn { width: 220px; margin-top: 2px; }
+  .card .btn { width: 220px; margin-top: 6px; }
   .ready { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: 320px; height: 52px; font-size: 24px; }
   .lid { position: absolute; left: 6px; bottom: -6px; width: 240px; z-index: 3; }
   .say { position: absolute; left: 230px; bottom: 96px; width: 500px; min-height: 84px; padding: 6px 20px 2px 12px; z-index: 3;
@@ -101,11 +101,11 @@
       </div>
       <div class="card slice">
         <img class="dish sil" src="../../art/test/dishes/garlic_neck.png" alt="">
-        <div class="btn slice"><span>연구 · 250골드</span></div>
         <div class="slots">
           <div class="slot slice"><img src="../../art/test/items/icon_boar_neck.png" alt=""></div>
           <div class="slot slice"><img src="../../art/test/items/icon_wild_garlic.png" alt=""></div>
         </div>
+        <div class="btn slice"><span>연구 · 250골드</span></div>
       </div>
       <div class="card slice">
         <img class="dish sil" src="../../art/test/dishes/belly_ssam.png" alt="">
