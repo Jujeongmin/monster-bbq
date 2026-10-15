@@ -48,6 +48,13 @@ export const BALANCE: {
     netBindMs: number;
     sling: { damage: number; stunMs: number; range: number; speed: number };
     firecracker: { radius: number; stunMs: number; range: number };
+    // the deep floors' monsters (plan 08c): frog general, water snake, cave bats, glow-shroom crab
+    deep: {
+      frog: { speed: number; reach: number; width: number; restMs: number; puffMs: number; lashMs: number; retractMs: number; damage: number; pull: number };
+      snake: { speed: number; sense: number; rippleMs: number; biteRange: number; damage: number; exposedMs: number; openMs: number };
+      bat: { speed: number; sense: number; foldMs: number; diveSpeed: number; diveMs: number; hitRadius: number; damage: number; dazedMs: number };
+      crab: { speed: number; reach: number; clawMs: number; recoverMs: number; damage: number; frontMul: number; flippedMul: number; flippedMs: number };
+    };
     // the tusk boss (hunt v3 design 4.7): how often it is on floor 2, how it moves, its three patterns
     tusk: {
       chance: number;
@@ -171,6 +178,12 @@ export const BALANCE: {
     netBindMs: 3000,
     sling: { damage: 3, stunMs: 1200, range: 200, speed: 320 },
     firecracker: { radius: 60, stunMs: 1500, range: 150 },
+    deep: {
+      frog: { speed: 20, reach: 110, width: 12, restMs: 800, puffMs: 600, lashMs: 400, retractMs: 500, damage: 10, pull: 40 },
+      snake: { speed: 30, sense: 70, rippleMs: 500, biteRange: 30, damage: 14, exposedMs: 2000, openMs: 900 },
+      bat: { speed: 60, sense: 140, foldMs: 400, diveSpeed: 220, diveMs: 500, hitRadius: 10, damage: 8, dazedMs: 900 },
+      crab: { speed: 14, reach: 26, clawMs: 500, recoverMs: 600, damage: 12, frontMul: 0.3, flippedMul: 2, flippedMs: 3000 },
+    },
     tusk: {
       chance: 0.6,
       wanderSpeed: 22,
