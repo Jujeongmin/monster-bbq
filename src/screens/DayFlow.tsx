@@ -49,6 +49,8 @@ export function DayFlow({ transport }: { transport: Transport }) {
     }, () => setLoadFailed(true));
   }
   useEffect(load, [transport]);
+  // the upgrade shop belongs to the screen it was opened from: a new stage closes it
+  useEffect(() => setShopping(false), [phase]);
 
   // the server opens every hunt (its seed decides the hunting ground): ask whenever a day's hunt starts
   useEffect(() => {

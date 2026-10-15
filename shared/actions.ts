@@ -175,7 +175,9 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
     case "startHunt": {
       if (a.zone !== "forest") return { save, error: "bad_action" };
       // the morning hunt from the day's start, the afternoon hunt from lunch (hunt v3 design 3)
-      if ((save.stage !== "hunt" && save.stage !== "lunch") || save.hunt) return { save, error: "wrong_stage" };
+      if (save.stage !== "hunt" && save.stage !== "lunch") return { save, error: "wrong_stage" };
+      // already out (a retry after a lost reply): the same hunt stands, never a second seed
+      if (save.hunt) return { save };
       const period = save.stage === "hunt" ? "morning" : "afternoon";
       const seed = Math.floor(ctx.random() * 2 ** 31);
       const id = `h${ctx.now.toString(36)}${Math.floor(ctx.random() * 1e9).toString(36)}`;
@@ -195,6 +197,8 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
     }
     case "skipHunt":
       // staying home this afternoon: straight on to the evening kitchen
+      // a retry after a lost reply finds the evening kitchen already reached and changes nothing
+      if (save.stage === "kitchen" && !save.hunt) return { save };
       if (save.stage !== "lunch" || save.hunt) return { save, error: "wrong_stage" };
       return { save: { ...save, stage: "kitchen" } };
     case "research":

@@ -99,7 +99,7 @@ export const ko = {
   "upgrade.menu": "메뉴판",
   "upgrade.seats": "좌석",
   "upgrade.fx.damage": "피해 {a} → {b}",
-  "upgrade.fx.hp": "체력 {a} → {b}",
+  "upgrade.fx.hp": "기력 {a} → {b}",
   "upgrade.fx.slots": "{a}칸 → {b}칸",
   "upgrade.fx.menu": "메뉴 {a}개 → {b}개",
   "upgrade.fx.guests": "손님 +{a} → +{b}",

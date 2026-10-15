@@ -107,3 +107,22 @@ describe("two hunts a day", () => {
     expect(applyAction(lunch, { type: "packLunch", dishes: ["grilled_belly"] }, ctx()).save.lunchbox).toEqual(["grilled_belly"]);
   });
 });
+
+describe("retries after a lost reply", () => {
+  it("answers a second startHunt with the hunt already open, not a new seed", () => {
+    const s = started();
+    const again = applyAction(s, { type: "startHunt", zone: "forest" }, ctx(T0 + 5000));
+    expect(again.error).toBeUndefined();
+    expect(again.save).toEqual(s);
+  });
+  it("answers a second skipHunt with the evening kitchen it already moved to", () => {
+    const evening = applyAction(finish(started(), [], "1-e0").save, { type: "skipHunt" }, ctx()).save;
+    const again = applyAction(evening, { type: "skipHunt" }, ctx());
+    expect(again.error).toBeUndefined();
+    expect(again.save).toEqual(evening);
+  });
+  it("still refuses a hunt from the evening kitchen", () => {
+    const evening = applyAction(finish(started(), [], "1-e0").save, { type: "skipHunt" }, ctx()).save;
+    expect(applyAction(evening, { type: "startHunt", zone: "forest" }, ctx()).error).toBe("wrong_stage");
+  });
+});

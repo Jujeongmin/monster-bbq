@@ -100,7 +100,7 @@ export const en: Record<keyof typeof ko, string> = {
   "upgrade.menu": "Menu board",
   "upgrade.seats": "Seats",
   "upgrade.fx.damage": "Damage {a} → {b}",
-  "upgrade.fx.hp": "Health {a} → {b}",
+  "upgrade.fx.hp": "Stamina {a} → {b}",
   "upgrade.fx.slots": "{a} → {b} slots",
   "upgrade.fx.menu": "Menu {a} → {b} dishes",
   "upgrade.fx.guests": "Guests +{a} → +{b}",
