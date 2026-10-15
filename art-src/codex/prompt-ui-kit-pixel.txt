@@ -1,0 +1,28 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a UI kit for a cozy Korean BBQ restaurant game, drawn as REAL low-resolution pixel art.
+
+Style: match the colours and materials of the attached images (the first is the approved shop background in real pixel art: warm walnut wood, brass fittings, hanji paper glowing cream, charcoal; the second is an older UI kit showing the kinds of pieces). But draw it the way a hand pixel artist would at very low resolution:
+- every art pixel is an exact, crisp square block of 8x8 image pixels, aligned to an 8-pixel grid (so the image can be shrunk 8 times with no loss);
+- FLAT colours only: each material uses 2 or 3 shades at most (wood: dark, mid, light; brass: dark, mid, highlight; paper: cream, shadow), a 1-art-pixel dark outline, NO gradients, NO soft shading, NO glow, NO texture noise, NO anti-aliasing;
+- about 24 colours in the whole image.
+
+A first try came out on a dark glowing background, which cannot be cut out: this time the background MUST be one perfectly flat solid magenta #FF00FF everywhere, with NO glow, NO halo, NO vignette, NO shadow around the pieces, and the pieces themselves must not glow.
+
+Save as art-src/codex/raw/ui_kit_pixel.png — a WIDE image (for example 1536x1024), flat solid magenta (#FF00FF) background, every piece separate with wide empty magenta space around it, nothing touching another piece or the image edge, no text anywhere. Frames must have even borders with distinct corners so they can be stretched as 9-slice; their middles are plain.
+
+Pieces (sizes in ART pixels; multiply by 8 for image pixels):
+ 1. big window panel, 48 x 40: dark walnut frame 5 art px thick with small brass corner caps, plain dark wood middle
+ 2. paper card, 32 x 32: cream hanji paper, 3 art px brown border, tiny brass corner studs, plain middle
+ 3. button normal, 32 x 14: red-brown lacquered wood, 1 px light top edge, 2 px darker bottom edge, brass end caps
+ 4. button pressed, 32 x 14: same button pushed in (no bottom edge, darker)
+ 5. button disabled, 32 x 14: same button greyed and flat
+ 6. tab selected, 28 x 14: cream paper tab with brass rim, open at the bottom
+ 7. tab unselected, 28 x 14: darker wood tab, open at the bottom
+ 8. top bar strip, 40 x 10: thin dark wood strip with brass end caps
+ 9. item slot, 18 x 18: sunken dark wood square, 2 px border
+10. small square button, 12 x 12: brass, for + and - (no symbol drawn)
+11. gauge empty, 32 x 6: dark sunken track with brass ends; and gauge fill, 32 x 6: warm ember orange fill with one highlight row
+12. speech bubble, 24 x 20: cream paper bubble with a small tail at the bottom left, 1 px dark outline
+13. title plate, 48 x 12: brass name plate, plain middle
+14. ribbon tag, 24 x 10: red cloth ribbon with notched ends
+
+Reply only with the saved file path.
