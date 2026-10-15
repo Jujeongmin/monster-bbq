@@ -16,7 +16,7 @@
 - 숫자는 `BALANCE` 한 곳. 요리 숫자 초안(승인됨): 레벨 1~5 가격 ×1 / 1.15 / 1.3 / 1.5 / 1.75, 세트당 그릇 3 / 4 / 4 / 5 / 6, 그 레벨로 올리는 비용 = 기본가 × 5 / 15 / 30 / 60 / 100 골드 + 재료 1 / 1 / 2 / 3 / 4세트(레벨 1 = 연구). 특급 재료 세트 가격 +20%.
 - 서버 행동은 public endpoint: 인자를 믿지 않고 `shared/actions.ts` 규칙이 전부 검사한다. 거부된 행동은 세이브를 바꾸지 않는다.
 - 재료는 일반 등급부터 쓴다(특급 고기는 손님용으로 남김).
-- UI는 키트 A(`ui-panel`, `ui-box`, `ui-btn`, `ui-tab`) + 갈무리. CSS 색 박스로 새 창·버튼을 만들지 않는다.
+- UI는 새 픽셀 키트(`art/test/ui2`, 사용자 승인 2026-10-15, Task 5b) + 갈무리. 그림 1픽셀 = 게임 2픽셀(`--k`). 주방 화면은 승인된 시안(`art-src/mockups/kitchen-*.html`, 그림 `art-src/preview/mock_kitchen_*.png`)대로. CSS 색 박스로 새 창·버튼을 만들지 않는다.
 - 그림은 승인된 것만 `art/`에 넣는다(반달이 변환본 승인됨). 코드로 그리지 않는다(자르기·배경 지우기만).
 - 서버 하네스 테스트(`npm run test:server`)는 실행 전에 사용자에게 알린다(Windows에서 isolated-vm 오류 창).
 - 작업 7까지는 중간에 `npm run typecheck`가 깨져 있을 수 있다(한 번에 바뀌는 타입이 많다). 각 작업은 **자기 테스트 파일**이 통과하면 커밋한다. 작업 7 끝부터 `npm test`와 `npm run typecheck`가 모두 통과해야 한다.
@@ -1453,13 +1453,191 @@ git commit -m "chore: the recipe table is public; no server-only answers, no bun
 
 ---
 
+### Task 5b: 픽셀 UI 키트로 바꾸기
+
+사용자 결정(2026-10-15): 옛 UI 키트 그림(`art/test/ui`의 창·버튼·탭·게이지·말풍선·막대·대화 막대)은 없애고, React 화면과 Phaser 화면(사냥 HUD, 장사) 모두 새 픽셀 키트로 바꾼다.
+
+**Files:**
+- Modify: `src/index.css` (키트 부분 — `ui-panel`부터 `ui-bar`까지, 스크롤바)
+- Modify: `src/game/ui.ts`, `src/game/scenes/HuntScene.ts:219`, `src/game/service/ServiceScene.ts:105,216`
+- Modify: `src/screens/dialogue/dialogue.css` (대화 막대)
+- Modify: `art-src/pixel-pass/convert.py` (UI 아이콘 묶음 추가)
+- Delete: `art/test/ui/{panel,btn_normal,btn_pressed,btn_disabled,tab_on,tab_off,gauge_empty,gauge_full,bubble,topbar,ribbon,dialogue_bar}.png`
+- 그림: `art/test/ui2/*.png` (이미 들어가 있음, 2026-10-15 사용자 승인. 원본 `art-src/codex/raw/ui_kit_pixel.png`, 자르기 `art-src/ui-kit-pixel/cut.py`)
+
+**Interfaces:**
+- Produces: CSS 클래스 `ui-panel`(종이 창·카드), `ui-box`(작은 종이 칸, 같은 그림), `ui-frame`(진한 나무 창, 글자 크림색), `ui-btn`(+ `:active`, `:disabled`), `ui-tab`(이미 바뀜), `ui-bar`(위쪽 막대), `ui-bubble`(꼬리 없는 말풍선), `ui-slot`(아이템 칸), `ui-plate`(놋쇠 이름판), `ui-ribbon`(빨간 리본), `ui-sq`(작은 놋쇠 버튼). 길이 단위 `--k` = 그림 1픽셀 = 게임 2픽셀.
+
+- [ ] **Step 1: 키트 CSS 바꾸기**
+
+`src/index.css`에서 `/* ---- UI kit A pieces ...` 주석부터 `.ui-bar { ... }` 끝까지(`.ui-tab` 블록과 그 위 버튼 포커스 규칙은 그대로 둔다)를 아래로 바꾼다. `.ui-tab` 블록은 이 묶음 안의 `ui-btn` 뒤로 옮겨도 된다.
+
+```css
+/* ---- pixel UI kit (art/test/ui2, approved 2026-10-15; cut to real size by art-src/ui-kit-pixel/cut.py).
+   One art pixel is two game pixels (--k), and the edge widths are whole art pixels, so every pixel stays
+   square. Frames whose edges have grain repeat them (round); flat ones stretch. ---- */
+:root { --k: calc(2px * var(--s)); }
+/* paper: windows, cards, popups (ink text) */
+.ui-panel, .ui-box {
+  border: calc(5 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/card.png") 5 fill / calc(5 * var(--k)) round;
+  image-rendering: pixelated;
+  color: var(--ink);
+}
+/* dark walnut: the big frame a screen sits in (cream text) */
+.ui-frame {
+  border: calc(5 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/panel.png") 5 fill / calc(5 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: var(--cream);
+}
+.ui-btn {
+  font: 700 var(--fs) / 1 "Galmuri11", monospace;
+  color: var(--cream);
+  text-shadow: var(--s) var(--s) 0 #4a1408;
+  padding: 0 var(--k);
+  min-height: calc(10 * var(--k));
+  background: none;
+  border: calc(3 * var(--k)) calc(4 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/btn_normal.png") 3 4 fill / calc(3 * var(--k)) calc(4 * var(--k)) stretch;
+  image-rendering: pixelated;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ui-btn:active:not(:disabled) { border-image-source: url("../art/test/ui2/btn_pressed.png"); transform: translateY(var(--s)); }
+.ui-btn:disabled { border-image-source: url("../art/test/ui2/btn_disabled.png"); color: #e0dcd4; text-shadow: var(--s) var(--s) 0 #3a3a3a; cursor: default; }
+/* small square brass button (+, -, x) */
+.ui-sq {
+  font: 700 var(--fs) / 1 "Galmuri11", monospace;
+  color: #4a2a12;
+  width: calc(11 * var(--k)); height: calc(11 * var(--k)); padding: 0;
+  background: none;
+  border: calc(3 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/btn_small.png") 3 fill / calc(3 * var(--k)) stretch;
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+.ui-sq:disabled { filter: grayscale(1) brightness(0.8); cursor: default; }
+.ui-bubble {
+  border: calc(3 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/bubble_plain.png") 3 fill / calc(3 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: var(--ink);
+}
+.ui-bar {
+  border: calc(3 * var(--k)) calc(5 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/topbar.png") 3 5 fill / calc(3 * var(--k)) calc(5 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: var(--cream);
+}
+.ui-slot {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: calc(3 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/slot.png") 3 fill / calc(3 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: #b89a74; font-weight: 700;
+}
+.ui-plate {
+  border: calc(4 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/plate.png") 4 fill / calc(4 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: #4a2a12; font-weight: 700;
+}
+.ui-ribbon {
+  border: calc(3 * var(--k)) calc(6 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/ribbon.png") 3 6 fill / calc(3 * var(--k)) calc(6 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: var(--cream); font-weight: 700;
+}
+```
+
+스크롤바(`::-webkit-scrollbar-thumb`, `:active`)의 `art/test/ui/btn_normal.png` 13 → `art/test/ui2/btn_normal.png` `3 4 fill / calc(3 * var(--k)) calc(4 * var(--k)) stretch`, `btn_pressed.png`도 `ui2`로. 위쪽 `.ui-bar` 말고 스크롤바 트랙의 `topbar.png`도 `ui2`의 `3 5` 조각으로.
+
+대화 막대(`src/screens/dialogue/dialogue.css`의 `.dialogue-box::before`)를 진한 나무 창 조각으로:
+
+```css
+  border: calc(5 * var(--k)) solid transparent;
+  border-image: url("../../../art/test/ui2/panel.png") 5 fill / calc(5 * var(--k)) stretch;
+```
+
+- [ ] **Step 2: Phaser 화면도 새 키트로**
+
+`src/game/ui.ts`의 `PIECES`/`loadUiArt`를 바꾸고 조각을 2배로 그리는 도우미를 둔다:
+
+```ts
+// the pixel UI kit (art/test/ui2) inside Phaser scenes; each art pixel is KIT game pixels
+const PIECES = ["btn_normal", "btn_pressed", "btn_disabled", "tab_on", "tab_off", "gauge_empty", "gauge_full", "bubble_plain", "topbar", "btn_small"];
+const ICONS = ["icon_gold", "icon_day", "icon_charcoal"];
+export const KIT = 2;
+
+export function loadUiArt(scene: Phaser.Scene) {
+  for (const p of PIECES) if (!scene.textures.exists(`ui_${p}`)) scene.load.image(`ui_${p}`, artUrl(`test/ui2/${p}.png`));
+  for (const p of ICONS) if (!scene.textures.exists(`ui_${p}`)) scene.load.image(`ui_${p}`, artUrl(`test/ui/${p}.png`));
+}
+
+// A kit piece as a 9-slice `w` x `h` game pixels big: built at art size, drawn KIT times bigger, so its
+// edges stay whole art pixels. l/r/t/b are the piece's edge widths in art pixels.
+export function kitSlice(scene: Phaser.Scene, x: number, y: number, piece: string, w: number, h: number, l: number, r: number, t: number, b: number) {
+  return scene.add.nineslice(x, y, `ui_${piece}`, undefined, Math.round(w / KIT), Math.round(h / KIT), l, r, t, b).setScale(KIT);
+}
+```
+
+- `addButton`: `const bg = kitSlice(scene, 0, 0, "btn_normal", w, 24, 4, 4, 3, 3);`, `setSize(w, 24)` (`26` 두 군데를 `24`로). 나머지(`setTexture`로 눌림·꺼짐)는 그대로.
+- `addTab`: `const bg = kitSlice(scene, 0, 0, "tab_off", 72, 28, 4, 4, 4, 4);`, `label` y를 `0`으로, `setSize(72, 28)`.
+- `addGauge`: `empty`/`full`에 `.setScale(KIT)`, 위치는 `x - empty.displayWidth / 2`, `set`의 놋쇠 끝은 3 그림픽셀: `const inner = Math.round(3 + (w - 6) * Math.max(0, Math.min(1, f)));` (`w`는 `full.width`, 그림 픽셀).
+- `HuntScene.ts:219` 도시락 말풍선: `const bubble = kitSlice(this, 0, 0, "bubble_plain", 50, 48, 3, 3, 3, 3);` (`kitSlice`를 `../ui`에서 import)
+- `ServiceScene.ts:105` 위쪽 막대: `kitSlice(this, 112, 16, "topbar", 212, 20, 5, 5, 3, 3).setDepth(999);`
+- `ServiceScene.ts:216` 주문 말풍선: `const bubble = kitSlice(this, 0, 0, "bubble_plain", 56, 50, 3, 3, 3, 3);`
+
+머리 주석 `// UI kit A inside Phaser scenes (walnut, hanji, brass; chosen 2026-10-14)` → `// The pixel UI kit inside Phaser scenes (approved 2026-10-15)`.
+
+- [ ] **Step 3: UI 아이콘 픽셀 변환 (사용자 승인 필요)**
+
+`art-src/pixel-pass/convert.py`의 `GROUPS`에 넣는다(원본은 먼저 `cp art/test/ui/icon_*.png art/test/ui/upg_*.png art-src/pixel-pass/src/ui/`):
+
+```python
+    "ui": ([f"ui/{f}.png" for f in ["icon_gold", "icon_day", "icon_charcoal", "icon_notebook", "icon_pot", "upg_melee", "upg_ranged", "upg_armor"]], 1, 16, None),
+```
+
+Run: `python -I art-src/pixel-pass/convert.py`
+비교 그림(`art-src/preview/pixel_pass_compare.png`의 마지막 줄)을 사용자에게 보여 주고 **승인받은 뒤에만** `cp art-src/pixel-pass/out/ui/*.png art/test/ui/`. 승인 전에는 다음 단계로 가되 아이콘은 옛것 그대로 둔다.
+
+- [ ] **Step 4: 옛 키트 그림 지우기**
+
+```bash
+grep -rn "test/ui/\(panel\|btn_\|tab_\|gauge_\|bubble\|topbar\|ribbon\|dialogue_bar\)" src
+```
+
+Expected: 결과 없음. 그다음:
+
+```bash
+cd art/test/ui && git rm panel.png btn_normal.png btn_pressed.png btn_disabled.png tab_on.png tab_off.png gauge_empty.png gauge_full.png bubble.png topbar.png ribbon.png dialogue_bar.png
+```
+
+- [ ] **Step 5: 화면 확인**
+
+Run: `npm run typecheck` (CSS만 바뀌므로 그대로 통과해야 한다)
+브라우저(`?local`, 1280×720)에서 정산 화면·업그레이드 창·주방이 새 키트로 보이고 글자가 틀 밖으로 나가지 않는지 본다. 버튼 높이가 40 → 20 게임 픽셀로 줄어서 글자가 잘리면 `.ui-btn`의 `min-height`를 `calc(12 * var(--k))`로 올린다.
+
+사냥 화면(돌아가기 버튼, 도시락 말풍선, 가방 표시)과 장사 화면(위쪽 막대, 주문 말풍선, 인내심 게이지, 마감 버튼)도 새 키트로 보이는지 본다. 대화창(뚜껑이 힌트)이 진한 나무 막대로 보이는지 본다.
+
+- [ ] **Step 6: 커밋**
+
+```bash
+git add -A src/index.css src/game src/screens/dialogue art art-src/pixel-pass
+git commit -m "feat(ui): every screen wears the pixel UI kit; the old kit pictures are gone"
+```
+
+---
+
 ### Task 6: 주방 화면 (도감·메뉴판·강화·도시락)
 
 **Files:**
 - Modify: `src/screens/kitchen/Kitchen.tsx` (전체 재작성)
 - Modify: `src/screens/kitchen/Cookbook.tsx` (전체 재작성)
 - Modify: `src/screens/kitchen/MenuPick.tsx` (전체 재작성)
-- Create: `src/screens/kitchen/DishUpgrade.tsx`
+- Create: `src/screens/kitchen/DishUpgrade.tsx`, `src/screens/kitchen/ResearchWindow.tsx`
+- Create: `art/test/shop/bg.png` (승인된 가게 배경 복사)
 - Modify: `src/screens/kitchen/LunchPick.tsx`
 - Modify: `src/screens/kitchen/kitchen.css`
 - Modify: `src/screens/Upgrades.tsx`
@@ -1468,7 +1646,7 @@ git commit -m "chore: the recipe table is public; no server-only answers, no bun
 - Delete: `src/screens/kitchen/Research.tsx`
 
 **Interfaces:**
-- Consumes: `RECIPES`, `dishPrice`, `platesPerSet`, `levelCost`, `setsAvailable`, `planShop`, `fitMenu`, `MAX_DISH_LEVEL`, `MAX_SETS`, `MenuLine` (Task 1); actions `research`, `upgradeDish`, `openShop` (Task 3)
+- Consumes: Task 5b의 키트 클래스(`ui-frame`, `ui-box`, `ui-slot`, `ui-plate`, `ui-ribbon`, `ui-sq`, `ui-btn`, `ui-bar`, `ui-bubble`); `RECIPES`, `dishPrice`, `platesPerSet`, `levelCost`, `setsAvailable`, `planShop`, `fitMenu`, `MAX_DISH_LEVEL`, `MAX_SETS`, `MenuLine` (Task 1); actions `research`, `upgradeDish`, `openShop` (Task 3)
 - Produces: `Kitchen({ save, busy, act, onReady: (menu: MenuLine[]) => void })`; `ResearchCutIn`은 Task 8에서 `Cookbook`이 쓴다(이 작업에서는 `Cookbook`이 연구 성공 시 `onResearched(dish)`만 부른다).
 
 - [ ] **Step 1: 문구**
@@ -1479,24 +1657,43 @@ git commit -m "chore: the recipe table is public; no server-only answers, no bun
 
 ```ts
   "kitchen.tab.upgrade": "강화",                       // "Upgrade"
+  "kitchen.title": "할매 돌판집 · 저녁 주방",          // "Granny's Grill · Evening Kitchen"
   "kitchen.shape": "재료 {n}개 · {method}",            // "{n} ingredients · {method}"
-  "kitchen.research": "연구 · {gold}골드",             // "Research · {gold}g"
+  "kitchen.lv": "Lv {lv}",                              // "Lv {lv}"
+  "kitchen.canResearch": "연구 가능!",                  // "Ready!"
+  "kitchen.basePrice": "기본 가격 {price}골드",         // "Base price {price}g"
+  "kitchen.have": "가진 것 {n}",                        // "{n} in the fridge"
+  "kitchen.unseen": "아직 못 본 재료",                  // "Not found yet"
+  "kitchen.needAll": "재료를 다 보면 연구할 수 있어요", // "Find every ingredient to research it"
+  "kitchen.researchCost": "{gold}골드 + 재료 1세트",    // "{gold}g + 1 set"
+  "kitchen.doResearch": "연구하기",                     // "Research"
   "kitchen.needSet": "재료 1세트 필요",                // "Needs 1 set of ingredients"
-  "kitchen.level": "Lv {lv}/{max}",                     // "Lv {lv}/{max}"
+  "kitchen.close": "닫기",                              // "Close"
+  "kitchen.nameLv": "{name} · Lv {lv}",                 // "{name} · Lv {lv}"
+  "kitchen.rowInfo": "{price}골드 · {plates}그릇 · 재료 {sets}세트", // "{price}g · {plates} plates · {sets} set(s)"
+  "kitchen.put": "올리기",                              // "Add"
+  "kitchen.putDone": "올림",                            // "On"
+  "kitchen.take": "빼기",                               // "Remove"
+  "kitchen.board": "오늘 메뉴판 {n}/{max}",            // "Tonight's menu {n}/{max}"
+  "kitchen.lineMade": "그릇 {plates}개 · {price}골드",  // "{plates} plates · {price}g"
+  "kitchen.lineMore": "{n}세트 더 가능",                // "{n} more set(s)"
+  "kitchen.premiumMix": "특급 섞임 +{pct}%",            // "premium +{pct}%"
+  "kitchen.emptySlot": "빈 칸 · 왼쪽에서 요리를 올려 주세요", // "Empty · add a dish from the left"
+  "kitchen.lockedSlot": "잠김 · 메뉴판 업그레이드로 열림",   // "Locked · upgrade the menu board"
+  "kitchen.total": "오늘 밤 그릇 {plates}개",           // "{plates} plates tonight"
+  "kitchen.totalGold": "다 팔면 {gold}골드",            // "{gold}g if all sell"
   "kitchen.priceUp": "가격 {a} → {b}",                  // "Price {a} → {b}"
   "kitchen.platesUp": "세트당 {a} → {b}그릇",           // "{a} → {b} plates a set"
-  "kitchen.upgradeCost": "{gold}골드 + 재료 {sets}세트", // "{gold}g + {sets} set(s)"
+  "kitchen.costGold": "{gold}골드 +",                   // "{gold}g +"
   "kitchen.upgradeBuy": "강화",                          // "Upgrade"
   "kitchen.noSets": "재료 부족",                         // "Not enough"
-  "kitchen.setsLeft": "재료 {n}세트",                    // "{n} set(s) in the fridge"
-  "kitchen.line": "그릇 {plates}개 · {price}골드 · 재료 {more}세트 더", // "{plates} plates · {price}g · {more} more set(s)"
   "kitchen.noDishes": "아직 연구한 요리가 없다. 도감에서 연구해 보자.", // "No dishes researched yet. Research one in the cookbook."
   "service.platesLeft": "남은 그릇 {n}",                 // "{n} plates left"
 ```
 
 `kitchen.menuEmpty`의 ko 값을 `"아직 연구한 요리가 없다. 도감에서 연구해 보자."`로(en: `"No dishes researched yet. Research one in the cookbook."`), `kitchen.found`는 `"연 요리 {n}/{max}"`(en `"Dishes {n}/{max}"`), `kitchen.ready`는 `"장사 시작"`(en `"Open the shop"`).
 
-**뚜껑이 힌트(재료를 어디서 구하나) — 후보, 계획 검토 때 사용자 승인 필요.** 키 `where.<item>`:
+**뚜껑이 힌트(재료를 어디서 구하나) — 사용자 확인 2026-10-15(깻잎 줄은 모바일에도 맞게 고침).** 키 `where.<item>`:
 
 | 키 | ko (후보) | en |
 |---|---|---|
@@ -1511,7 +1708,9 @@ git commit -m "chore: the recipe table is public; no server-only answers, no bun
 | `where.wild_garlic` | 산마늘은 풀숲에 숨어 있껑. 냄새로 찾껑. | Wild garlic hides in the grass. Follow your nose. |
 | `where.perilla` | 깻잎은 숲 가장자리에서 줍껑. 반짝이는 풀을 잘 보껑. | Perilla grows at the forest's edge. Look for the shining leaves. |
 
-- [ ] **Step 2: 도감**
+- [ ] **Step 2: 도감과 연구 창 (시안 `art-src/mockups/kitchen-cookbook*.html`, 사용자 승인 2026-10-15)**
+
+카드에는 버튼을 넣지 않는다. 모든 카드가 같은 모양(실루엣, "재료 N개 · 조리법", 재료 칸)이고, 재료를 다 본 카드는 금색으로 빛나며 모서리에 "연구 가능!" 이름판이 붙는다. 못 연 카드를 누르면 연구 창이 열린다: 재료를 다 봤으면 비용과 [연구하기], 아니면 "재료를 다 보면 연구할 수 있어요"와 뚜껑이의 재료 힌트(꼬리 없는 말풍선).
 
 `src/screens/kitchen/Cookbook.tsx` 전체:
 
@@ -1520,159 +1719,262 @@ import { useState } from "react";
 import type { Action } from "../../../shared/actions";
 import { DISHES, type DishId } from "../../../shared/content/dishes";
 import { RECIPES } from "../../../shared/content/recipes";
-import { levelCost, MAX_DISH_LEVEL, setsAvailable } from "../../../shared/kitchen/dish";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
-import { Dialogue, type DialogueLine } from "../dialogue/Dialogue";
 import { DishIcon } from "./DishIcon";
 import { ItemIcon } from "./ItemIcon";
+import { ResearchWindow } from "./ResearchWindow";
 
-// The cookbook (restaurant v2 design 5): every dish as a card. Not researched yet: its silhouette, how
-// many ingredients and how it is cooked, the icons of the ingredients already brought home and "?" for
-// the rest. Once every one has been seen, a research button (gold and one set); before that, tapping the
-// card lets the lid say where the first missing one is found. A researched dish shows its level and
-// recipe. `onResearch` is called when research is asked for (Kitchen shows the cut-in once it lands).
+// The cookbook (restaurant v2 design 5, mock-up approved 2026-10-15): every dish as a card. Researched:
+// its level ribbon, picture, name and ingredients. Not yet: its silhouette, "N ingredients · method" and
+// the ingredients already brought home ("?" for the rest); a card whose ingredients have all been seen
+// glows and carries a "ready to research" plate. Tapping a card not researched opens the research window.
 export function Cookbook({ save, busy, act, onResearch }: { save: SaveData; busy: boolean; act: (a: Action) => void; onResearch: (dish: DishId) => void }) {
   const ids = Object.keys(DISHES) as DishId[];
   const opened = ids.filter((id) => save.dishes[id]).length;
-  const [talk, setTalk] = useState<DialogueLine[] | null>(null);
+  const [open, setOpen] = useState<DishId | null>(null);
 
-  function where(dish: DishId) {
-    const missing = RECIPES[dish].items.find((id) => !save.seenItems.includes(id));
-    if (missing) setTalk([{ who: "lid", face: "smug", text: t(`where.${missing}` as StringKey) }]);
-  }
+  const slots = (id: DishId, showAll: boolean) => (
+    <div className="dish-slots">
+      {RECIPES[id].items.map((item) => (
+        <span key={item} className="ui-slot dish-slot">
+          {showAll || save.seenItems.includes(item) ? <ItemIcon itemKey={item} /> : "?"}
+        </span>
+      ))}
+    </div>
+  );
 
   return (
     <div className="cookbook">
       <h3 className="cookbook-count">{t("kitchen.found", { n: opened, max: ids.length })}</h3>
       <div className="cookbook-grid">
         {ids.map((id) => {
-          const r = RECIPES[id];
           const lv = save.dishes[id];
           if (lv)
             return (
-              <div key={id} className="ui-box dish-card found">
+              <div key={id} className="ui-box dish-card">
+                <span className="ui-ribbon dish-lv">{t("kitchen.lv", { lv })}</span>
                 <DishIcon dish={id} />
                 <div className="dish-name">{t(`dish.${id}` as StringKey)}</div>
-                <div className="dish-level">{t("kitchen.level", { lv, max: MAX_DISH_LEVEL })}</div>
-                <div className="dish-recipe">
-                  {r.items.map((item) => (
-                    <ItemIcon key={item} itemKey={item} />
-                  ))}
-                </div>
+                {slots(id, true)}
               </div>
             );
-          const allSeen = r.items.every((item) => save.seenItems.includes(item));
-          const cost = levelCost(id, 1)!;
-          const why = save.gold < cost.gold ? t("upgrade.noGold") : setsAvailable(save.items, id) < cost.sets ? t("kitchen.needSet") : null;
+          const r = RECIPES[id];
+          const can = r.items.every((item) => save.seenItems.includes(item));
           return (
-            <div key={id} className={`ui-box dish-card${allSeen ? "" : " hidden"}`} onClick={allSeen ? undefined : () => where(id)}>
+            <button key={id} className={`ui-box dish-card closed${can ? " can" : ""}`} onClick={() => setOpen(id)}>
+              {can && <span className="ui-plate dish-can">{t("kitchen.canResearch")}</span>}
               <DishIcon dish={id} silhouette />
-              <div className="dish-name unknown">{t("kitchen.unknown")}</div>
               <div className="dish-shape">{t("kitchen.shape", { n: r.items.length, method: t(`method.${r.method}` as StringKey) })}</div>
-              <div className="dish-recipe">
-                {r.items.map((item) =>
-                  save.seenItems.includes(item) ? <ItemIcon key={item} itemKey={item} /> : <span key={item} className="item-icon unknown">?</span>,
-                )}
-              </div>
-              {allSeen && (
-                <button
-                  className="ui-btn dish-research"
-                  disabled={busy || why !== null}
-                  onClick={() => {
-                    onResearch(id);
-                    act({ type: "research", dish: id });
-                  }}
-                >
-                  {why ?? t("kitchen.research", { gold: cost.gold })}
-                </button>
-              )}
-            </div>
+              {slots(id, false)}
+            </button>
           );
         })}
       </div>
-      {talk && <Dialogue lines={talk} onDone={() => setTalk(null)} />}
+      {open && (
+        <ResearchWindow
+          dish={open}
+          save={save}
+          busy={busy}
+          onClose={() => setOpen(null)}
+          onResearch={() => {
+            onResearch(open);
+            act({ type: "research", dish: open });
+            setOpen(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 ```
 
-- [ ] **Step 3: 메뉴판**
+`src/screens/kitchen/ResearchWindow.tsx`:
+
+```tsx
+import type { DishId } from "../../../shared/content/dishes";
+import { parseItemKey, type ItemId } from "../../../shared/content/items";
+import { RECIPES } from "../../../shared/content/recipes";
+import { levelCost, setsAvailable } from "../../../shared/kitchen/dish";
+import type { SaveData } from "../../../shared/save";
+import { artUrl } from "../../game/art";
+import { t, type StringKey } from "../../i18n";
+import { DishIcon } from "./DishIcon";
+import { ItemIcon } from "./ItemIcon";
+
+// The research window over the cookbook (mock-up approved 2026-10-15): the dish's silhouette, how it is
+// made and its base price, each ingredient with how many the fridge holds. Every ingredient seen: the cost
+// (gold and one set) and the research button. Not yet: the lid says where the first missing one is found.
+export function ResearchWindow({ dish, save, busy, onClose, onResearch }: { dish: DishId; save: SaveData; busy: boolean; onClose: () => void; onResearch: () => void }) {
+  const r = RECIPES[dish];
+  const missing = r.items.find((id) => !save.seenItems.includes(id));
+  const cost = levelCost(dish, 1)!;
+  const why = save.gold < cost.gold ? t("upgrade.noGold") : setsAvailable(save.items, dish) < cost.sets ? t("kitchen.needSet") : null;
+  const have = (id: ItemId) => Object.entries(save.items).reduce((n, [k, c]) => (parseItemKey(k)?.id === id ? n + c : n), 0);
+  return (
+    <>
+      <div className="research-shade" onClick={onClose} />
+      <div className="ui-panel research-win" role="dialog">
+        <button className="ui-sq research-x" onClick={onClose} aria-label={t("kitchen.close")}>
+          ×
+        </button>
+        <div className="research-head">
+          <DishIcon dish={dish} silhouette scale={2} />
+          <div>
+            <h2 className="research-name">???</h2>
+            <p className="dish-shape">
+              {t("kitchen.shape", { n: r.items.length, method: t(`method.${r.method}` as StringKey) })} · {t("kitchen.basePrice", { price: r.price })}
+            </p>
+          </div>
+        </div>
+        <ul className="research-need">
+          {r.items.map((id) => {
+            const seen = save.seenItems.includes(id);
+            return (
+              <li key={id}>
+                <span className="ui-slot research-slot">{seen ? <ItemIcon itemKey={id} /> : "?"}</span>
+                {seen ? (
+                  <span>
+                    {t(`item.${id}` as StringKey)} <span className="soft">· {t("kitchen.have", { n: have(id) })}</span>
+                  </span>
+                ) : (
+                  <span className="soft">{t("kitchen.unseen")}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <div className="research-foot">
+          {missing ? (
+            <span className="research-cost soft">{t("kitchen.needAll")}</span>
+          ) : (
+            <>
+              <span className="research-cost">{t("kitchen.researchCost", { gold: cost.gold })}</span>
+              <button className="ui-btn research-go" disabled={busy || why !== null} onClick={onResearch}>
+                {why ?? t("kitchen.doResearch")}
+              </button>
+            </>
+          )}
+        </div>
+        {missing && (
+          <div className="research-lid">
+            <p className="ui-bubble research-say">{t(`where.${missing}` as StringKey)}</p>
+            <img src={artUrl("test/lid/smug.png")} alt="" />
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+```
+
+- [ ] **Step 3: 메뉴판 (시안 `art-src/mockups/kitchen-menu.html`)**
+
+왼쪽은 연 요리 목록(올리기), 오른쪽은 오늘 메뉴판(칸마다 −/+ 세트, 그릇 수·가격, 특급 섞임, 더 넣을 수 있는 세트), 빈 칸, 아직 못 연 칸 하나, 아래에 오늘 밤 합계.
 
 `src/screens/kitchen/MenuPick.tsx` 전체:
 
 ```tsx
 import { DISHES, type DishId } from "../../../shared/content/dishes";
-import { menuSlots } from "../../../shared/growth";
-import { MAX_SETS, planShop, setsAvailable, type MenuLine } from "../../../shared/kitchen/dish";
+import { level, maxLevel, menuSlots } from "../../../shared/growth";
+import { dishPrice, MAX_SETS, planShop, platesPerSet, setsAvailable, type MenuLine } from "../../../shared/kitchen/dish";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
 import { DishIcon } from "./DishIcon";
 
-// Tonight's menu board (restaurant v2 design 5): researched dishes onto the menu slots, each with a
-// number of ingredient sets. Each line shows the plates and price it makes and how many more sets the
-// fridge still has for it after the whole menu. The server takes the sets when the shop opens.
+// Tonight's menu board (restaurant v2 design 5, mock-up approved 2026-10-15). Left: researched dishes to
+// put on the board. Right: the board's slots, each line with its sets (-/+), the plates and price it
+// makes (a premium part in a set raises the price) and how many more sets the fridge still has for it;
+// empty slots, one locked slot while the menu-slot upgrade has more to give, and tonight's totals. The
+// server takes the sets when the shop opens.
 export function MenuPick({ save, menu, setMenu }: { save: SaveData; menu: MenuLine[]; setMenu: (m: MenuLine[]) => void }) {
   const known = (Object.keys(DISHES) as DishId[]).filter((id) => save.dishes[id]);
   const slots = menuSlots(save);
   const plan = planShop(save.items, save.dishes, menu);
   const left = plan?.items ?? {};
-
-  const line = (id: DishId) => menu.find((l) => l.dish === id);
+  const on = (id: DishId) => menu.some((l) => l.dish === id);
   const setSets = (id: DishId, sets: number) => setMenu(menu.map((l) => (l.dish === id ? { ...l, sets } : l)));
-  function toggle(id: DishId) {
-    if (line(id)) setMenu(menu.filter((l) => l.dish !== id));
-    else if (menu.length < slots && setsAvailable(left, id) > 0) setMenu([...menu, { dish: id, sets: 1 }]);
-  }
+  const plates = plan?.dishes.reduce((n, d) => n + d.plates, 0) ?? 0;
+  const gold = plan?.dishes.reduce((n, d) => n + d.plates * d.price, 0) ?? 0;
 
   return (
     <div className="menu-pick">
-      <h3 className="cookbook-count">{t("kitchen.menuSlots", { n: menu.length, max: slots })}</h3>
-      {known.length === 0 && <p className="kitchen-empty">{t("kitchen.menuEmpty")}</p>}
-      {known.map((id) => {
-        const l = line(id);
-        const tonight = plan?.dishes.find((d) => d.dish === id);
-        const more = setsAvailable(left, id);
-        return (
-          <div key={id} className={`ui-box menu-row${l ? " on" : ""}`}>
-            <button className="menu-dish" disabled={!l && (menu.length >= slots || more < 1)} onClick={() => toggle(id)}>
+      <div className="menu-list">
+        {known.length === 0 && <p className="kitchen-empty">{t("kitchen.menuEmpty")}</p>}
+        {known.map((id) => {
+          const lv = save.dishes[id]!;
+          const can = !on(id) && menu.length < slots && setsAvailable(left, id) > 0;
+          return (
+            <div key={id} className={`ui-box menu-row${on(id) ? " on" : ""}`}>
               <DishIcon dish={id} />
-              <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>
-            </button>
-            {l && (
-              <span className="menu-sets">
-                <button className="ui-btn menu-step" disabled={l.sets <= 1} onClick={() => setSets(id, l.sets - 1)}>−</button>
-                <span className="menu-count">{l.sets}</span>
-                <button className="ui-btn menu-step" disabled={more < 1 || l.sets >= MAX_SETS} onClick={() => setSets(id, l.sets + 1)}>+</button>
+              <span className="menu-info">
+                <span className="dish-name">{t("kitchen.nameLv", { name: t(`dish.${id}` as StringKey), lv })}</span>
+                <span className="dish-shape">{t("kitchen.rowInfo", { price: dishPrice(id, lv), plates: platesPerSet(lv), sets: setsAvailable(save.items, id) })}</span>
               </span>
-            )}
-            <span className="menu-info">
-              {tonight ? t("kitchen.line", { plates: tonight.plates, price: tonight.price, more }) : more > 0 ? t("kitchen.setsLeft", { n: more }) : t("kitchen.noSets")}
-            </span>
-          </div>
-        );
-      })}
+              <button className="ui-btn menu-put" disabled={!can} onClick={() => setMenu([...menu, { dish: id, sets: 1 }])}>
+                {on(id) ? t("kitchen.putDone") : t("kitchen.put")}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <div className="menu-board">
+        <h3 className="menu-title">{t("kitchen.board", { n: menu.length, max: slots })}</h3>
+        {menu.map((l) => {
+          const d = plan?.dishes.find((x) => x.dish === l.dish);
+          const base = dishPrice(l.dish, save.dishes[l.dish] ?? 1);
+          const more = setsAvailable(left, l.dish);
+          return (
+            <div key={l.dish} className="ui-box menu-line">
+              <DishIcon dish={l.dish} />
+              <span className="menu-info">
+                <span className="dish-name">{t(`dish.${l.dish}` as StringKey)}</span>
+                {d && <span className="menu-made">{t("kitchen.lineMade", { plates: d.plates, price: d.price })}</span>}
+                <span className="dish-shape">
+                  {t("kitchen.lineMore", { n: more })}
+                  {d && d.price > base ? ` · ${t("kitchen.premiumMix", { pct: Math.round((d.price / base - 1) * 100) })}` : ""}
+                </span>
+              </span>
+              <span className="menu-sets">
+                <button className="ui-sq" disabled={l.sets <= 1} onClick={() => setSets(l.dish, l.sets - 1)}>−</button>
+                <span className="menu-count">{l.sets}</span>
+                <button className="ui-sq" disabled={more < 1 || l.sets >= MAX_SETS} onClick={() => setSets(l.dish, l.sets + 1)}>+</button>
+                <button className="ui-sq" onClick={() => setMenu(menu.filter((x) => x.dish !== l.dish))} aria-label={t("kitchen.take")}>×</button>
+              </span>
+            </div>
+          );
+        })}
+        {Array.from({ length: slots - menu.length }, (_, i) => (
+          <div key={`e${i}`} className="ui-box menu-empty">{t("kitchen.emptySlot")}</div>
+        ))}
+        {level(save, "menu") < maxLevel("menu") && <div className="ui-box menu-empty">{t("kitchen.lockedSlot")}</div>}
+        <div className="menu-sum">
+          <span>{t("kitchen.total", { plates })}</span>
+          <span>{t("kitchen.totalGold", { gold })}</span>
+        </div>
+      </div>
     </div>
   );
 }
 ```
 
-`left`는 메뉴 전체를 뺀 뒤의 재료이므로 `more`는 "이 요리에 더 넣을 수 있는 세트"다. 메뉴에 없는 요리 줄은 냉장고에 남은 세트를 보여 준다.
-
-- [ ] **Step 4: 강화 탭**
+- [ ] **Step 4: 강화 탭 (시안 `art-src/mockups/kitchen-upgrade.html`)**
 
 `src/screens/kitchen/DishUpgrade.tsx`:
 
 ```tsx
 import type { Action } from "../../../shared/actions";
 import { DISHES, type DishId } from "../../../shared/content/dishes";
+import { RECIPES } from "../../../shared/content/recipes";
 import { dishPrice, levelCost, MAX_DISH_LEVEL, platesPerSet, setsAvailable } from "../../../shared/kitchen/dish";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
 import { DishIcon } from "./DishIcon";
+import { ItemIcon } from "./ItemIcon";
 
-// Dish upgrades (restaurant v2 design 3, Q6): gold and sets of the dish's own ingredients for a higher
-// price and more plates a set. The server checks and charges (upgradeDish).
+// Dish upgrades (restaurant v2 design 3, Q6; mock-up approved 2026-10-15): one row a researched dish —
+// its level as brass pips, what the next level brings, what it costs (gold and sets of its own
+// ingredients, shown as their icons) and the button. The server checks and charges (upgradeDish).
 export function DishUpgrade({ save, busy, act }: { save: SaveData; busy: boolean; act: (a: Action) => void }) {
   const known = (Object.keys(DISHES) as DishId[]).filter((id) => save.dishes[id]);
   return (
@@ -1683,16 +1985,35 @@ export function DishUpgrade({ save, busy, act }: { save: SaveData; busy: boolean
         const cost = levelCost(id, lv + 1);
         const why = !cost ? t("upgrade.max") : save.gold < cost.gold ? t("upgrade.noGold") : setsAvailable(save.items, id) < cost.sets ? t("kitchen.noSets") : null;
         return (
-          <div key={id} className="ui-box upgrade-row">
+          <div key={id} className="ui-box upgrade-dish">
             <DishIcon dish={id} />
-            <span className="upgrade-name">
-              {t(`dish.${id}` as StringKey)} {t("kitchen.level", { lv, max: MAX_DISH_LEVEL })}
+            <span className="upgrade-who">
+              <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>
+              <span className="pips">
+                {Array.from({ length: MAX_DISH_LEVEL }, (_, i) => (
+                  <i key={i} className={i < lv ? "on" : ""} />
+                ))}
+              </span>
             </span>
-            <span className="upgrade-fx">
-              {cost
-                ? `${t("kitchen.priceUp", { a: dishPrice(id, lv), b: dishPrice(id, lv + 1) })} · ${t("kitchen.platesUp", { a: platesPerSet(lv), b: platesPerSet(lv + 1) })} · ${t("kitchen.upgradeCost", { gold: cost.gold, sets: cost.sets })}`
-                : ""}
-            </span>
+            {cost ? (
+              <>
+                <span className="upgrade-next">
+                  <span>{t("kitchen.priceUp", { a: dishPrice(id, lv), b: dishPrice(id, lv + 1) })}</span>
+                  <span>{t("kitchen.platesUp", { a: platesPerSet(lv), b: platesPerSet(lv + 1) })}</span>
+                </span>
+                <span className="upgrade-cost">
+                  {t("kitchen.costGold", { gold: cost.gold })}
+                  {RECIPES[id].items.map((item) => (
+                    <span key={item} className="ui-slot cost-slot">
+                      <ItemIcon itemKey={item} />
+                    </span>
+                  ))}
+                  ×{cost.sets}
+                </span>
+              </>
+            ) : (
+              <span className="upgrade-max">{t("upgrade.max")}</span>
+            )}
             <button className="ui-btn" disabled={busy || why !== null} onClick={() => act({ type: "upgradeDish", dish: id })}>
               {why ?? t("kitchen.upgradeBuy")}
             </button>
@@ -1713,7 +2034,13 @@ export function DishUpgrade({ save, busy, act }: { save: SaveData; busy: boolean
 - `BALANCE.service.dishPrice[id]` → `dishPrice(id, save.dishes[id]!)`
 - 맨 위 주석 "found dishes" → "researched dishes", "for health" 앞에 "(by the dish's level price)"를 넣는다.
 
-- [ ] **Step 6: 주방 틀과 하루 흐름**
+- [ ] **Step 6: 주방 틀, 하루 흐름, 스타일**
+
+가게 배경(승인됨)을 주방 뒤에 깐다:
+
+```bash
+mkdir -p art/test/shop && cp art-src/pixellab/shop2/bg_320_faithful.png art/test/shop/bg.png
+```
 
 `src/screens/kitchen/Kitchen.tsx` 전체:
 
@@ -1731,10 +2058,10 @@ import { LunchPick } from "./LunchPick";
 import { MenuPick } from "./MenuPick";
 import "./kitchen.css";
 
-// The evening kitchen (restaurant v2 design 5): the cookbook (silhouettes, research), tonight's menu board
-// (dishes and sets), dish upgrades and the lunchbox. Every change goes through `act` (the server's rules);
-// the screen shows what the save says. Day and gold with the tabs in one row at the top right, the open
-// button at the bottom centre: it sends the menu board and opens the shop.
+// The evening kitchen (restaurant v2 design 5, mock-ups approved 2026-10-15): the shop behind, dimmed; the
+// shop's name plate at the top left, day and gold at the top right, four tabs, the walnut frame with the
+// cookbook / menu board / dish upgrades / lunchbox, and the open button at the bottom centre. Every change
+// goes through `act` (the server's rules); the screen shows what the save says.
 type Tab = "cookbook" | "menu" | "upgrade" | "lunch";
 const TABS: Tab[] = ["cookbook", "menu", "upgrade", "lunch"];
 
@@ -1756,31 +2083,31 @@ export function Kitchen({
   const [asked, setAsked] = useState<DishId | null>(null);
   void asked;
   return (
-    <div className="kitchen">
-      <div className="kitchen-body">
+    <div className="kitchen" style={{ backgroundImage: `url(${artUrl("test/shop/bg.png")})` }}>
+      <div className="kitchen-dim" />
+      <div className="ui-plate kitchen-title">{t("kitchen.title")}</div>
+      <div className="ui-bar kitchen-res">
+        <span>
+          <img className="ui-icon" src={artUrl("test/ui/icon_day.png")} alt="" />
+          {t("hud.day", { day: save.day })}
+        </span>
+        <span>
+          <img className="ui-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />
+          {t("hud.gold", { gold: save.gold })}
+        </span>
+      </div>
+      <div className="kitchen-tabs">
+        {TABS.map((k) => (
+          <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
+            {t(`kitchen.tab.${k}` as StringKey)}
+          </button>
+        ))}
+      </div>
+      <div className="ui-frame kitchen-body">
         {tab === "cookbook" && <Cookbook save={save} busy={busy} act={act} onResearch={setAsked} />}
         {tab === "menu" && <MenuPick save={save} menu={menu} setMenu={setMenu} />}
         {tab === "upgrade" && <DishUpgrade save={save} busy={busy} act={act} />}
         {tab === "lunch" && <LunchPick save={save} busy={busy} act={act} />}
-      </div>
-      <div className="kitchen-top">
-        <div className="ui-bar kitchen-res">
-          <span>
-            <img className="ui-icon" src={artUrl("test/ui/icon_day.png")} alt="" />
-            {t("hud.day", { day: save.day })}
-          </span>
-          <span>
-            <img className="ui-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />
-            {t("hud.gold", { gold: save.gold })}
-          </span>
-        </div>
-        <div className="kitchen-tabs">
-          {TABS.map((k) => (
-            <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
-              {t(`kitchen.tab.${k}` as StringKey)}
-            </button>
-          ))}
-        </div>
       </div>
       <button className="ui-btn kitchen-ready" disabled={busy || menu.length === 0} onClick={() => onReady(menu)}>
         {t("kitchen.ready")}
@@ -1808,26 +2135,106 @@ export function Kitchen({
 - `ICON`에서 `pot`, `grillQuality`, `potQuality`, `wok`, `fryer`, `board` 줄을 지운다.
 - `effect`의 `case "grillQuality": case "potQuality": return pair(G.quality, ...)` 세 줄을 지운다.
 
-`src/screens/kitchen/kitchen.css`:
-- `/* research: ... */`부터 `.cook-stars { ... }`까지(연구 주방·결과 패널 스타일), `.kitchen-body.full` 줄, `.cook-result .dish-icon`, `.cook-result.new .dish-icon` 줄을 지운다(`@keyframes cook-bounce`, `cook-pop`도 쓰는 곳이 없어지면 지운다: `grep -n "cook-" src/screens/kitchen/kitchen.css`).
-- 넣는다:
+`src/screens/kitchen/kitchen.css` 전체(크기는 게임 픽셀, `--s`배; 시안 `art-src/mockups`의 CSS 픽셀 ÷ 2):
 
 ```css
-.dish-card.hidden { cursor: pointer; }
-.dish-level, .dish-shape { font-size: var(--fs-small); font-family: "Galmuri9", monospace; color: var(--paper-ink-soft); }
-.dish-research { margin-top: calc(2px * var(--s)); }
-.item-icon.unknown { display: inline-flex; align-items: center; justify-content: center; width: calc(16px * var(--s)); height: calc(16px * var(--s)); color: var(--paper-ink-soft); font-weight: 700; }
-.menu-row .menu-dish { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
-.menu-row .menu-dish:disabled { cursor: default; opacity: 0.55; }
-.menu-sets { display: inline-flex; align-items: center; gap: calc(2px * var(--s)); }
-.menu-step { min-width: calc(16px * var(--s)); padding: 0 calc(3px * var(--s)); }
-.menu-count { min-width: calc(12px * var(--s)); text-align: center; font-weight: 700; color: var(--ink); }
-.dish-upgrade { display: flex; flex-direction: column; gap: calc(3px * var(--s)); }
+/* The evening kitchen (restaurant v2 design 5, mock-ups approved 2026-10-15). Sizes in game pixels times
+   --s; the kit frames come from index.css (ui-frame, ui-box, ui-btn, ui-slot, ui-plate, ui-ribbon, ui-sq). */
+.kitchen { position: absolute; inset: 0; background: center / 100% 100% no-repeat; image-rendering: pixelated; font-size: var(--fs); color: var(--cream); }
+.kitchen-dim { position: absolute; inset: 0; background: rgb(14 8 5 / 0.55); }
+.kitchen-title { position: absolute; left: calc(12px * var(--s)); top: calc(10px * var(--s)); padding: 0 calc(6px * var(--s)); line-height: calc(10px * var(--s)); }
+.kitchen-res { position: absolute; right: calc(12px * var(--s)); top: calc(13px * var(--s)); display: flex; gap: calc(12px * var(--s)); align-items: center; white-space: nowrap; }
+.kitchen-res span { display: inline-flex; align-items: center; gap: calc(4px * var(--s)); }
+.kitchen-tabs { position: absolute; left: calc(20px * var(--s)); top: calc(44px * var(--s)); display: flex; gap: calc(4px * var(--s)); z-index: 2; }
+.kitchen-body { position: absolute; left: calc(12px * var(--s)); right: calc(12px * var(--s)); top: calc(68px * var(--s)); bottom: calc(42px * var(--s)); overflow: auto; padding: calc(4px * var(--s)); }
+.kitchen-ready { position: absolute; left: 50%; bottom: calc(7px * var(--s)); transform: translateX(-50%); width: calc(160px * var(--s)); z-index: 2; }
+.kitchen-ready:active:not(:disabled) { transform: translate(-50%, var(--s)); }
+.kitchen-empty { margin: calc(4px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; color: #d8c4a4; }
+.soft { color: var(--paper-ink-soft); }
+
+/* pictures */
+.dish-icon { display: block; height: auto; image-rendering: pixelated; }
+.dish-icon.silhouette { filter: brightness(0); opacity: 0.32; }
+.item-icon { position: relative; display: inline-flex; }
+.item-icon img { width: calc(21px * var(--s)); height: auto; image-rendering: pixelated; }
+.item-star { position: absolute; right: calc(-2px * var(--s)); top: calc(-4px * var(--s)); font-size: var(--fs-small); color: var(--brass); }
+
+/* cookbook */
+.cookbook-count { position: absolute; right: calc(14px * var(--s)); top: calc(-1px * var(--s)); margin: 0; font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); }
+.cookbook-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(8px * var(--s)); margin-top: calc(10px * var(--s)); }
+.dish-card { position: relative; height: calc(101px * var(--s)); display: flex; flex-direction: column; align-items: center; padding: 0; font: inherit; background: none; color: var(--ink); }
+.dish-card.closed { cursor: pointer; }
+.dish-card.can { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(var(--k) 0 0 #ffd65a) drop-shadow(calc(-1 * var(--k)) 0 0 #ffd65a) drop-shadow(0 var(--k) 0 #ffd65a) drop-shadow(0 calc(-1 * var(--k)) 0 #ffd65a); }
+.dish-card .dish-icon { margin-top: calc(-2px * var(--s)); }
+.dish-name { font-weight: 700; color: var(--ink); }
+.dish-shape { font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); margin: 0; }
+.dish-slots { display: flex; gap: calc(3px * var(--s)); margin-top: calc(2px * var(--s)); }
+.dish-slot { width: calc(28px * var(--s)); height: calc(28px * var(--s)); }
+.dish-slot .item-icon img { margin: calc(-6px * var(--s)); }
+.dish-lv { position: absolute; right: calc(-4px * var(--s)); top: calc(-4px * var(--s)); padding: 0 calc(4px * var(--s)); line-height: calc(10px * var(--s)); }
+.dish-can { position: absolute; right: calc(-5px * var(--s)); top: calc(-5px * var(--s)); padding: 0 calc(5px * var(--s)); line-height: calc(10px * var(--s)); font-size: var(--fs-small); white-space: nowrap; }
+
+/* research window */
+.research-shade { position: fixed; inset: 0; z-index: 20; background: rgb(10 6 4 / 0.7); }
+.research-win { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: calc(400px * var(--s)); height: calc(250px * var(--s)); z-index: 21; padding: calc(4px * var(--s)) calc(8px * var(--s)); }
+.research-x { position: absolute; right: calc(-4px * var(--s)); top: calc(-4px * var(--s)); }
+.research-head { display: flex; gap: calc(12px * var(--s)); align-items: center; }
+.research-name { margin: 0; font: 700 calc(18px * var(--s)) "Galmuri11", monospace; }
+.research-need { list-style: none; margin: calc(9px * var(--s)) 0 0; padding: 0; display: flex; flex-direction: column; gap: calc(5px * var(--s)); }
+.research-need li { display: flex; align-items: center; gap: calc(8px * var(--s)); }
+.research-slot { width: calc(32px * var(--s)); height: calc(32px * var(--s)); }
+.research-slot .item-icon img { margin: calc(-6px * var(--s)); }
+.research-foot { position: absolute; left: calc(12px * var(--s)); right: calc(12px * var(--s)); bottom: calc(10px * var(--s)); display: flex; align-items: center; justify-content: space-between; }
+.research-cost { font-weight: 700; }
+.research-go { width: calc(130px * var(--s)); }
+.research-lid { position: absolute; right: calc(-20px * var(--s)); bottom: calc(10px * var(--s)); width: calc(220px * var(--s)); display: flex; flex-direction: column; align-items: flex-end; }
+.research-say { margin: 0 0 calc(4px * var(--s)); padding: calc(2px * var(--s)) calc(8px * var(--s)); line-height: 1.6; }
+.research-lid img { width: calc(100px * var(--s)); image-rendering: pixelated; }
+
+/* menu board */
+.menu-pick { display: grid; grid-template-columns: calc(260px * var(--s)) 1fr; gap: calc(10px * var(--s)); margin-top: calc(10px * var(--s)); }
+.menu-list { display: flex; flex-direction: column; gap: calc(5px * var(--s)); }
+.menu-row, .menu-line { display: flex; align-items: center; gap: calc(6px * var(--s)); color: var(--ink); }
+.menu-row { height: calc(52px * var(--s)); }
+.menu-row.on { opacity: 0.45; }
+.menu-info { flex: 1; display: flex; flex-direction: column; gap: var(--s); min-width: 0; }
+.menu-put { width: calc(54px * var(--s)); }
+.menu-title { margin: 0 0 calc(4px * var(--s)) calc(4px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); }
+.menu-board { display: flex; flex-direction: column; gap: calc(6px * var(--s)); }
+.menu-line { height: calc(66px * var(--s)); }
+.menu-made { color: var(--good); font-weight: 700; }
+.menu-sets { display: flex; align-items: center; gap: calc(4px * var(--s)); }
+.menu-count { min-width: calc(16px * var(--s)); text-align: center; font-weight: 700; }
+.menu-empty { height: calc(36px * var(--s)); display: flex; align-items: center; justify-content: center; color: var(--paper-ink-soft); }
+.menu-sum { display: flex; justify-content: space-between; margin: 0 calc(4px * var(--s)); }
+
+/* dish upgrades */
+.dish-upgrade { display: flex; flex-direction: column; gap: calc(6px * var(--s)); margin-top: calc(10px * var(--s)); }
+.upgrade-dish { height: calc(66px * var(--s)); display: grid; grid-template-columns: calc(48px * var(--s)) calc(140px * var(--s)) 1fr calc(150px * var(--s)) calc(84px * var(--s)); align-items: center; gap: calc(6px * var(--s)); color: var(--ink); }
+.upgrade-who, .upgrade-next { display: flex; flex-direction: column; gap: calc(2px * var(--s)); }
+.upgrade-next { color: var(--good); font-weight: 700; }
+.upgrade-cost { display: flex; align-items: center; gap: calc(3px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; }
+.cost-slot { width: calc(26px * var(--s)); height: calc(26px * var(--s)); }
+.cost-slot .item-icon img { margin: calc(-6px * var(--s)); }
+.upgrade-max { color: var(--brass); font-weight: 700; text-align: center; grid-column: 3 / 5; }
+.pips { display: flex; gap: calc(2px * var(--s)); }
+.pips i { width: calc(10px * var(--s)); height: calc(10px * var(--s)); border: calc(3px * var(--s)) solid transparent; border-image: url("../../../art/test/ui2/btn_small.png") 3 fill / calc(3px * var(--s)) stretch; image-rendering: pixelated; filter: grayscale(1) brightness(0.55); }
+.pips i.on { filter: none; }
+
+/* lunchbox (kept from before, on the new frame) */
+.lunch-pick { display: flex; flex-direction: column; gap: calc(4px * var(--s)); height: 100%; margin-top: calc(10px * var(--s)); }
+.lunch-box { display: flex; gap: calc(4px * var(--s)); min-height: calc(50px * var(--s)); }
+.lunch-slot { display: inline-flex; padding: 0; background: none; cursor: pointer; }
+.lunch-slot.packed { cursor: default; filter: saturate(0.6); }
+.lunch-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: calc(4px * var(--s)); flex: 1; min-height: 0; overflow: auto; align-content: start; }
+.lunch-pick > .ui-btn { align-self: flex-start; }
 ```
 
-(`.upgrade-row`, `.upgrade-name`, `.upgrade-fx`는 업그레이드 화면 CSS에 이미 있다 — `grep -rn "upgrade-row" src`로 어느 파일인지 보고, 그 파일이 `Kitchen`에서 import되지 않으면 `Kitchen.tsx`에 그 CSS import를 추가한다.)
+(`.upgrade-row`, `.upgrade-name`, `.upgrade-fx`는 업그레이드 창에서 계속 쓰므로 그 파일의 CSS는 그대로 둔다.)
 
 `git rm src/screens/kitchen/Research.tsx`
+
+화면 확인: 브라우저 `?local` 1280×720에서 네 탭이 시안(`art-src/preview/mock_kitchen_*.png`)과 같은 배치인지, 글자가 틀 밖으로 나가지 않는지 본다. 어긋나면 이 CSS의 크기만 고친다.
 
 - [ ] **Step 7: 커밋**
 
@@ -2041,6 +2448,16 @@ git rm -r src/game/cook
 ```
 
 `grep -rn "game/cook\|CookStage\|cook:ready" src` 결과가 없어야 한다.
+
+직접 조리 그림도 지운다(사용자 결정 2026-10-15: 옛 화면은 모두 없앤다). 임시 장사 식탁과 업그레이드 창의 좌석 아이콘이 쓰는 `grill.png` 하나만 남긴다:
+
+```bash
+cd art/test/cooking && git rm $(ls | grep -v '^grill\.png$') && cd ../../..
+git rm art-src/codex/raw/cook_grill.png art-src/codex/raw/cook_pieces.png art-src/codex/raw/cook_pieces2.png art-src/codex/raw/cook_salt_rest.png art-src/codex/raw/cook_tools.png
+grep -rn "test/cooking/" src
+```
+
+Expected: 마지막 grep에 `grill.png`만 나온다.
 
 - [ ] **Step 4: 전체 테스트와 타입 검사**
 
@@ -2297,9 +2714,9 @@ Expected: PASS
 - [ ] **Step 3: 브라우저로 하루 돌려 보기 (개발 서버 5190, `?local`)**
 
 미리보기(`.claude/launch.json`의 `dev-running` 또는 `dev`)로 연다. 개발자 도구 콘솔에서 `localStorage.removeItem("monster-bbq:save")` 후 새로고침하고 확인한다:
-1. 사냥에서 멧돼지를 잡고 돌아오면 도감의 삼겹살 구이 카드에 삼겹살 아이콘이 보이고 [연구 · 200골드] 버튼이 생긴다(골드가 모자라면 "골드 부족").
+1. 사냥에서 멧돼지를 잡고 돌아오면 도감의 삼겹살 구이 카드에 삼겹살 아이콘이 보이고 카드가 금색으로 빛나며 "연구 가능!"이 붙는다. 누르면 연구 창에 비용(200골드 + 재료 1세트)과 [연구하기](골드가 모자라면 "골드 부족").
 2. 골드가 있는 세이브로(콘솔에서 세이브의 `gold`를 올려 저장) 연구 → 반달이 컷인 → 카드가 Lv 1/5로 바뀐다. 컷인은 클릭으로 건너뛰어진다.
-3. 아직 못 본 재료가 있는 카드를 누르면 뚜껑이가 그 재료를 어디서 구하는지 말한다.
+3. 아직 못 본 재료가 있는 카드를 누르면 연구 창에 "재료를 다 보면 연구할 수 있어요"와 뚜껑이의 힌트(꼬리 없는 말풍선)가 나온다.
 4. 메뉴판에서 요리를 넣고 세트 −/+ → 그릇 수·가격·"재료 N세트 더"가 바뀐다. 재료보다 더 올릴 수 없다.
 5. 강화 탭에서 강화 → 가격·세트당 그릇이 오른다.
 6. 장사 시작 → 손님 말풍선을 누르면 바로 먹고 돈을 낸다. 상단에 남은 그릇. 그릇이 다 떨어지면 주문 마감.

@@ -9,7 +9,7 @@
 ## 변환 방법
 
 - **PixelLab `image_to_pixelart`**(faithful, init_image_strength 150): 가게 배경에서 사용자가 고른 방식. 가장 깨끗하다. 생성 횟수 0(2026-10-28 충전), 시트 한 장에 1회.
-- **우리 컴퓨터에서 줄이기**(크기 박스 축소 + 색 20~32개로 줄이기 + 투명도 0/1로): 생성 횟수가 들지 않는다. 그리지 않고 줄이기만 한다. PixelLab보다 잔무늬가 조금 남는다. 시험: `art-src/preview/local_vs_pixellab.png`, `local_sprite_test.png`, `local_halfres_test.png`.
+- **우리 컴퓨터에서 줄이기**(크기 박스 축소 + 색 20~32개로 줄이기 + 투명도 0/1로): 생성 횟수가 들지 않는다. 그리지 않고 줄이기만 한다. PixelLab보다 잔무늬가 조금 남는다. (시험 그림은 2026-10-15 정리로 지움, git 기록에 있음.)
 
 ## 목록
 

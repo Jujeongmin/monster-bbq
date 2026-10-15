@@ -126,5 +126,5 @@ UI 요소는 지금 키트(키트 A + 갈무리)를 쓴다. 새 UI 그림이 필
 - 소품 `art-src/pixellab/shop2/props_196_faithful.png` — 더러운 불판 연기가 초록으로 변한 것만 고치면 됨.
 - 요괴 손님 — 같은 방식으로 변환 예정(PixelLab 생성 횟수 소진으로 멈춤).
 - 손주 장사 복장, 반달이 컷인 그림 — 아직 없음.
-- 원본: `art-src/codex/raw/shop_bg2.png`, `shop_props.png`, `bandal_sheet.png`. 예전 `shop_bg.png`는 폐기.
+- 원본: `art-src/codex/raw/shop_bg2.png`, `shop_props.png`, `bandal_sheet.png`. 예전 `shop_bg.png`는 폐기(파일 삭제).
 - 따로 기다리는 승인: 사냥꾼 8방향 걷기(`art-src/sprite-gen/hunter8/`, 뒤45 서 있기 다시 뽑기), 새 대화창 패널(`art-src/codex/raw/dialogue_panel.png` — 새 그림 방식으로 다시 맞춘 뒤 승인).
