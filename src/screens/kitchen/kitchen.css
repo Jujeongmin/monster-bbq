@@ -32,9 +32,10 @@
 .dish-slots { display: flex; gap: calc(3px * var(--s)); margin-top: calc(2px * var(--s)); }
 .dish-slot { width: calc(28px * var(--s)); height: calc(28px * var(--s)); }
 .dish-slot .item-icon img { margin: calc(-6px * var(--s)); }
+/* the plate and the ribbon sit over the picture (user, 2026-10-15), not under it */
 /* the ribbon at its own height (11 art pixels), wide enough that the notched ends clear the words */
-.dish-lv { position: absolute; right: calc(-4px * var(--s)); top: calc(-4px * var(--s)); height: calc(22px * var(--s)); min-width: calc(60px * var(--s)); padding: 0 calc(2px * var(--s)); display: flex; align-items: center; justify-content: center; font-size: var(--fs-small); line-height: 1; white-space: nowrap; }
-.dish-can { position: absolute; right: calc(-5px * var(--s)); top: calc(-5px * var(--s)); padding: 0 calc(5px * var(--s)); line-height: calc(10px * var(--s)); font-size: var(--fs-small); white-space: nowrap; }
+.dish-lv { position: absolute; z-index: 1; right: calc(-4px * var(--s)); top: calc(-4px * var(--s)); height: calc(22px * var(--s)); min-width: calc(60px * var(--s)); padding: 0 calc(2px * var(--s)); display: flex; align-items: center; justify-content: center; font-size: var(--fs-small); line-height: 1; white-space: nowrap; }
+.dish-can { position: absolute; z-index: 1; right: calc(-5px * var(--s)); top: calc(-5px * var(--s)); padding: 0 calc(5px * var(--s)); line-height: calc(10px * var(--s)); font-size: var(--fs-small); white-space: nowrap; }
 
 /* research window */
 .research-shade { position: fixed; inset: 0; z-index: 20; background: rgb(10 6 4 / 0.7); }

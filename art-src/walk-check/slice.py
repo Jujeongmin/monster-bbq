@@ -4,8 +4,8 @@
 
 Nothing is drawn: each cell is keyed (magenta out), cropped, shrunk by one factor per strip so the
 character is as tall as today's standing hunter frame of that facing (art/test/hunter/<facing>_0.png), its alpha snapped to
-on/off, and placed on the same 105x105 canvas with the feet on one baseline and the feet's centre on the
-canvas centre (so the walk does not slide). Output: art-src/walk-check/out/<facing>_<n>.png, a contact
+on/off, and placed on the same 105x105 canvas with the feet on one baseline and the head-and-torso centre
+on the canvas centre (so the body does not sway while the legs move). Output: art-src/walk-check/out/<facing>_<n>.png, a contact
 sheet art-src/preview/walk4_frames.png and one GIF per facing in art-src/preview/walk4_<facing>.gif.
 """
 from pathlib import Path
@@ -49,10 +49,12 @@ def target_height(facing: str) -> int:
     return box[3] - box[1]
 
 
-def feet_centre(c: Image.Image) -> float:
+def body_centre(c: Image.Image) -> float:
+    # the head and torso (upper 55%) decide where the frame sits, so the body stays put between frames
+    # and only the legs move; centring on the feet made the body sway (user, 2026-10-15)
     px = c.load()
-    top = int(c.height * 0.88)
-    xs = [x for y in range(top, c.height) for x in range(c.width) if px[x, y][3] > 0]
+    bottom = int(c.height * 0.55)
+    xs = [x for y in range(bottom) for x in range(c.width) if px[x, y][3] > 0]
     return sum(xs) / len(xs) if xs else c.width / 2
 
 
@@ -74,7 +76,7 @@ def main():
             s = c.resize((max(1, round(c.width * scale)), max(1, round(c.height * scale))), Image.LANCZOS)
             s = snap(s)
             canvas = Image.new("RGBA", (CANVAS, CANVAS), (0, 0, 0, 0))
-            x = round(CANVAS / 2 - feet_centre(s))
+            x = round(CANVAS / 2 - body_centre(s))
             y = BASELINE - s.height
             canvas.alpha_composite(s, (x, y))
             canvas.save(OUT / f"{facing}_{i}.png")
