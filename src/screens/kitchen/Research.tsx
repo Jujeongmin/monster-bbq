@@ -6,6 +6,7 @@ import type { SaveData } from "../../../shared/save";
 import type { CookPlate } from "../../game/cook/CookStage";
 import { CookStageGame } from "../../game/cook/CookStageGame";
 import { t, type StringKey } from "../../i18n";
+import { Dialogue, type DialogueLine, type Face } from "../dialogue/Dialogue";
 import { DishIcon } from "./DishIcon";
 
 // The research kitchen (cooking-service design 4): cook for real on the stage, put it on the plate,
@@ -16,6 +17,9 @@ export function Research({ save, act }: { save: SaveData; busy: boolean; act: (a
   const [attempt, setAttempt] = useState<{ id: string; plate: CookPlate } | null>(null);
   const [round, setRound] = useState(0);
   const result = attempt && save.lastCook?.attemptId === attempt.id ? save.lastCook.outcome : null;
+  // the lid has its say about the try first (the NPC box), then the verdict panel shows
+  const [heard, setHeard] = useState<string | null>(null);
+  const talk = result && attempt && heard !== attempt.id ? lidLines(result) : null;
 
   function onPlate(plate: CookPlate) {
     const id = crypto.randomUUID();
@@ -31,7 +35,8 @@ export function Research({ save, act }: { save: SaveData; busy: boolean; act: (a
   return (
     <div className="research">
       <CookStageGame items={save.items} quality={{ grill: toolQuality(save, "grill"), boil: toolQuality(save, "boil") }} round={round} onPlate={onPlate} />
-      {attempt && (
+      {talk && <Dialogue key={attempt!.id} lines={talk} onDone={() => setHeard(attempt!.id)} />}
+      {attempt && !talk && (
         <div className="cook-result-wrap ui-panel">
           {result ? <CookResultView key={attempt.id} outcome={result} plate={attempt.plate} /> : <div className="cook-result">…</div>}
           <button className="ui-btn cook-again" disabled={!result} onClick={again}>
@@ -54,13 +59,16 @@ function SkillLine({ plate }: { plate: CookPlate }) {
   );
 }
 
-// A word from the lid under a result.
-function LidLine({ line }: { line: string }) {
-  return (
-    <p className="lid-line">
-      <span className="lid-name">{t("kitchen.lid")}</span> {line}
-    </p>
-  );
+// What the lid says about a try, and with which face (none for a dish already in the cookbook).
+const HINT_FACE: Record<string, Face> = { method: "angry", extra: "surprised", "missing.meat": "normal", "missing.veg": "normal", "missing.sweet": "angry" };
+function lidLines(outcome: CookOutcome): DialogueLine[] | null {
+  if (outcome.kind === "new") return [{ who: "lid", face: "smug", text: t("kitchen.newLine") }];
+  if (outcome.kind === "near") {
+    const hint = outcome.hint === "missing" ? `missing.${outcome.taste}` : outcome.hint;
+    return [{ who: "lid", face: HINT_FACE[hint] ?? "normal", text: t(`kitchen.hint.${hint}` as StringKey) }];
+  }
+  if (outcome.kind === "fail") return [{ who: "lid", face: "angry", text: t("kitchen.failLine") }];
+  return null;
 }
 
 function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookPlate }) {
@@ -70,7 +78,6 @@ function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookP
         <div className="cook-banner">{t("kitchen.new")}</div>
         <DishIcon dish={outcome.dish} size={96} />
         <div className="cook-dish">{t(`dish.${outcome.dish}` as StringKey)}</div>
-        <LidLine line={t("kitchen.newLine")} />
         <SkillLine plate={plate} />
       </div>
     ) : (
@@ -95,7 +102,7 @@ function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookP
     <div className="cook-result fail">
       <DishIcon dish="fail" size={64} />
       <div className="cook-dish">{t(`kitchen.fail.${outcome.method}` as StringKey)}</div>
-      <LidLine line={t("kitchen.failLine")} />
+
     </div>
   );
 }

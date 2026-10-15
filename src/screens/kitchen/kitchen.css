@@ -5,7 +5,7 @@
 .kitchen-tabs { display: flex; align-items: flex-end; gap: calc(3px * var(--s)); }
 .kitchen-res { display: flex; gap: calc(8px * var(--s)); align-items: center; white-space: nowrap; }
 .kitchen-res span { display: inline-flex; align-items: center; gap: calc(3px * var(--s)); }
-.kitchen-foot .kitchen-ready { margin-left: auto; }
+.kitchen-foot .kitchen-ready { margin-left: auto; white-space: nowrap; }
 .kitchen-body { flex: 1; min-height: 0; overflow: auto; padding: calc(4px * var(--s)) calc(6px * var(--s)); }
 .kitchen-body.full { padding: 0; overflow: hidden; }
 .kitchen-empty { margin: calc(2px * var(--s)) 0; font-size: var(--fs-small); font-family: "Galmuri9", monospace; color: var(--paper-ink-soft); }
@@ -22,7 +22,6 @@
 .cook-result.near { text-align: left; }
 .lid-name { font-weight: 700; color: var(--red); }
 .lid-bubble { margin: calc(2px * var(--s)) 0 0; }
-.lid-line { margin: calc(2px * var(--s)) 0 0; }
 .cook-skill { margin: calc(4px * var(--s)) 0 0; color: var(--ink); }
 .cook-stars { color: #d08a10; }
 .cook-again { margin-top: calc(4px * var(--s)); }

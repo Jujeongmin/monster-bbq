@@ -1,0 +1,19 @@
+Use your image generation tool (do not write code to draw) to create ONE image.
+
+The first attempt looked "AI-made": smooth gradients, glossy shiny highlights, painterly texture noise, too much detail, high-resolution rendering. Avoid ALL of that. This must look like hand-placed, genuine retro pixel art by a human pixel artist, exactly like the attached approved game sprites (the rabbit sheet and the dishes): the same chunky pixel size, the same simple dark outline, the same small number of flat colours.
+
+Strict pixel-art rules:
+- Each character is drawn on a tiny grid of about 48 x 48 logical pixels, then shown enlarged with hard square pixels (every pixel a clearly visible square block, no smoothing, no anti-aliasing, no blur).
+- At most 10-12 flat colours per character. Cel shading with only 2-3 tones per material. NO gradients, NO glossy specular shine, NO noise or grain texture, NO soft glow, NO airbrush.
+- A clean 1-pixel dark outline all the way round.
+- Simple, readable shapes. Charm comes from the expression, not from detail.
+
+Save as art-src/codex/raw/lid_portraits2.png — a WIDE image (for example 1536x640), flat solid magenta (#FF00FF) background, THREE candidate designs side by side in three equal columns, each one an RPG dialogue portrait (head-and-shoulders style crop, like the NPC portrait beside a dialogue box in an old Korean MMORPG), facing slightly right, with wide empty magenta space around it, nowhere near another figure or the image edge. No text anywhere.
+
+The character is "Ttukkeong-i": a living Korean cast-iron cauldron lid (sotttukkeong), the grumpy, nagging but secretly caring kitchen partner of a grandmother. Its body IS the lid: a wide, low, dark grey-black iron dome with a flat rim and a round knob on top. Iron is matte, drawn with flat dark greys and one warm brown edge tone.
+
+ column 1: the simplest one — two small black bead eyes and one thick slanted eyebrow line each, a tiny wavy frowning mouth, the knob on top; a little puff of steam (2-3 white pixel blobs) coming out of the knob as if fuming.
+ column 2: the old veteran — the iron has a few rivet dots and one patched crack, one eye squinting, one eyebrow raised, a short grumpy line mouth, a small folded white kitchen towel draped over the knob.
+ column 3: the round little one — a shorter, rounder dome, big simple black eyes with one white highlight pixel each, two pink blush pixels per cheek, a pouting mouth, two tiny stubby iron hands on the rim, one of them pointing like it is about to nag.
+
+Reply only with the saved file path.

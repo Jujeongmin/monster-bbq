@@ -1,0 +1,11 @@
+Use your image generation tool (do not write code to draw) to create TWO images for a cozy Korean BBQ restaurant game, in the art style of the attached UI kit (comic, cute cartoon pixel art, chunky pixels, dark outline, warm walnut wood, hanji paper, brass, charcoal-ember glow).
+
+1) Save as art-src/codex/raw/shop_bg.png — a WIDE 16:9 image (for example 1536x864), the inside of a small, warm, old-fashioned Korean BBQ restaurant seen from the SIDE as a cross-section (like a dollhouse cut open, camera level with the room). Fills the whole image, no magenta here. Back wall of dark walnut wood planks and hanji paper sliding-window panels glowing softly; a few warm paper lanterns hanging from the ceiling beam; a small menu board on the wall WITHOUT any readable text (just blank wooden plaques); a little counter with a cash box at the far right; an entrance with a split noren curtain at the far left. Along the floor, four low wooden tables evenly spaced across the room, each with a round charcoal grill set into its middle and a short wooden stool behind it; the tables and stools sit on the lower third of the image so customers can stand behind the tables. Leave the area above the tables fairly calm so speech bubbles stay readable. No people, no text anywhere.
+
+2) Save as art-src/codex/raw/customers.png — a SQUARE image, flat solid magenta (#FF00FF) background, a 4 columns x 4 rows grid. Each ROW is one cute comic forest-resident monster customer (no text, no names), all facing RIGHT, seen from the side, same size class (about as tall as a small child next to the tables), each drawn COMPLETELY with its dark outline closed all the way round, small enough to leave wide empty magenta space on every side, nowhere near another figure or the image edge. Columns: walking (left foot forward), walking (right foot forward), sitting and waiting politely (holding chopsticks), happily eating with a little heart above its head.
+ row 1: a round green moss sprite with a leaf on its head
+ row 2: a chubby mushroom-cap villager with a red spotted cap
+ row 3: a small grey stone golem with pebbles on its shoulders
+ row 4: a fluffy cream-coloured tanuki-like forest critter with a striped tail
+
+Reply only with the two saved file paths.

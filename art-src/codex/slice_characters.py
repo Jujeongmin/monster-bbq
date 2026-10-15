@@ -178,6 +178,17 @@ TRIMS = [
     ("ui", "upg_armor", "hunter/down_0.png"),
 ]
 
+# the lid's dialogue portraits (lid_faces.png, approved 2026-10-15): each face cut by hand by its own box,
+# then set on one window around its knob so the lid stays put while the face changes
+LID_FACES = [
+    ("normal", (30, 255, 552, 535), 271),
+    ("angry", (548, 160, 1086, 535), 804),
+    ("smug", (1118, 240, 1600, 535), 1357),
+    ("surprised", (1650, 255, 2150, 575), 1906),
+]
+LID_WINDOW = (300, 150, 590)  # half width around the knob, top, bottom (raw pixels)
+LID_SCALE = 0.2
+
 
 def main():
     for name, file, rows, scale in SHEETS:
@@ -226,6 +237,18 @@ def main():
         rr, gg, bb, aa = small.split()
         Image.merge("RGBA", (rr, gg, bb, aa.point(lambda v: 255 if v >= 110 else 0))).save(ROOT / "art/test" / name / f"{piece}.png")
         print(name, piece, size)
+    if (RAW / "lid_faces.png").exists():
+        sheet = Image.open(RAW / "lid_faces.png")
+        half, top, bottom = LID_WINDOW
+        (ROOT / "art/test/lid").mkdir(parents=True, exist_ok=True)
+        for face, box, knob in LID_FACES:
+            canvas = Image.new("RGBA", (2 * half, bottom - top), (0, 0, 0, 0))
+            canvas.paste(key_magenta(sheet.crop(box)), (box[0] - (knob - half), box[1] - top))
+            size = (round(canvas.width * LID_SCALE), round(canvas.height * LID_SCALE))
+            small = canvas.convert("RGBa").resize(size, Image.BOX).convert("RGBA")
+            rr, gg, bb, aa = small.split()
+            Image.merge("RGBA", (rr, gg, bb, aa.point(lambda v: 255 if v >= 110 else 0))).save(ROOT / "art/test/lid" / f"{face}.png")
+            print("lid", face, size)
     for name, piece, src in TRIMS:
         im = Image.open(ROOT / "art/test" / src).convert("RGBA")
         box = im.getbbox()

@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create ONE image.
+
+The attached lid_portraits3.png shows three candidates; the APPROVED character is the RIGHT one (column 3): the low, wide Korean gamasot cauldron lid with a round knob, a simple face (small black bead eyes with one white highlight pixel, thick slanted eyebrows, tiny wavy mouth), two tiny stubby iron hands sticking out from under the rim (one on its "hip", one pointing), and a puff of steam from the knob.
+
+Redraw THAT EXACT character — same body shape, same size, same colours, same outline, same flat hand-placed retro pixel-art style (chunky visible square pixels, about 48x48 logical pixels per figure, at most 10-12 flat colours, 2-3 tone cel shading, 1-pixel dark outline, NO gradients, NO glossy shine, NO texture noise, NO glow) — with FOUR different expressions. Only the face, the hands and the steam change; the lid itself stays identical.
+
+Save as art-src/codex/raw/lid_faces.png — a WIDE image (for example 1792x512), flat solid magenta (#FF00FF) background, FOUR figures side by side in four equal columns, all facing slightly right, all the same size, each with wide empty magenta space around it, nowhere near another figure or the image edge. No text anywhere.
+
+ column 1 — normal: calm but grumpy, eyebrows flat, small straight mouth, one hand on its hip, the other resting; no steam.
+ column 2 — angry (nagging): eyebrows sharply slanted, mouth open shouting, one hand pointing forward, a big puff of steam from the knob, a small anger mark (4 short red pixel lines) beside the knob.
+ column 3 — smug (tsundere): eyes closed in two smug curved lines, a small proud smirk, tiny pink blush pixels on both cheeks, both hands on its hips, a little sparkle beside it.
+ column 4 — surprised: eyes wide round with big white highlights, eyebrows raised high, small round "o" mouth, both hands thrown up, the lid hopping slightly with 2-3 short motion lines under the rim.
+
+Reply only with the saved file path.

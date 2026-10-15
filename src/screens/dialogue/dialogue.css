@@ -1,0 +1,36 @@
+/* The NPC dialogue box: kit A panel, the ribbon as the name plate, the portrait leaning out over the top. */
+.dialogue {
+  position: absolute; inset: 0; z-index: 50;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: calc(6px * var(--s));
+  cursor: pointer;
+}
+.dialogue-box {
+  position: relative;
+  width: min(calc(560px * var(--s)), 96%);
+  min-height: calc(70px * var(--s));
+  padding-left: calc(104px * var(--s));
+}
+.dialogue-face {
+  position: absolute; left: calc(-14px * var(--s)); bottom: calc(-8px * var(--s));
+  width: calc(120px * var(--s)); height: calc(88px * var(--s));
+  image-rendering: pixelated; pointer-events: none;
+}
+.dialogue-name {
+  position: absolute; left: calc(98px * var(--s)); top: calc(-44px * var(--s));
+  width: calc(66px * var(--s)); height: calc(32px * var(--s));
+  padding-top: calc(7px * var(--s));
+  text-align: center;
+  font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink);
+  background: url("../../../art/test/ui/ribbon.png") center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+.dialogue-text { margin: 0; font: var(--fs) / 1.6 "Galmuri11", monospace; color: var(--ink); white-space: pre-wrap; word-break: keep-all; }
+.dialogue-rest { visibility: hidden; }
+.dialogue-more {
+  position: absolute; right: 0; bottom: calc(-4px * var(--s));
+  font: var(--fs) "Galmuri11", monospace; color: var(--red);
+  animation: dialogue-blink 0.8s steps(2, jump-none) infinite;
+}
+@keyframes dialogue-blink { 50% { opacity: 0; } }
+.dialogue-preload { position: absolute; width: 0; height: 0; overflow: hidden; }

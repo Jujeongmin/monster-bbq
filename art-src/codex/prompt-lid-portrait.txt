@@ -1,0 +1,11 @@
+Use your image generation tool (do not write code to draw) to create ONE image for a cozy Korean BBQ restaurant game, in the art style of the attached UI kit (comic, cute cartoon pixel art, chunky pixels, dark outline, warm walnut wood, hanji paper, brass, charcoal-ember glow).
+
+Save as art-src/codex/raw/lid_portraits.png — a WIDE image (for example 1536x640), flat solid magenta (#FF00FF) background, THREE candidate character designs side by side in three equal columns, each one a large RPG dialogue PORTRAIT (bust shot, like the NPC portrait next to a dialogue box in a Korean MMORPG), facing slightly to the right, drawn COMPLETELY with its dark outline closed all the way round, with wide empty magenta space around it, nowhere near another figure or the image edge. No text anywhere.
+
+The character is "Ttukkeong-i": a living Korean cast-iron cauldron lid (sotttukkeong), the grumpy, nagging but secretly caring kitchen partner of a very strong grandmother. Tsundere. Its body IS the lid: a wide, shallow, dark cast-iron dome with a flat rim, a round knob handle on top. Show the iron texture with warm brass and ember-orange highlights.
+
+ column 1: the classic one — big round eyes on the dome with thick frowning eyebrows, small pouting mouth, the knob handle like a little topknot, a tiny wisp of steam rising from it.
+ column 2: the old master — narrower squinting eyes, a bushy white moustache made of steam, little stubby iron arms crossed in front, a small red kitchen headband (no text on it).
+ column 3: the cute mascot — very round chunky lid, huge shiny eyes, rosy cheeks, a tiny pair of iron feet peeking under the rim, cheeks puffed as if sulking, a little ember glow on the rim.
+
+Reply only with the saved file path.
