@@ -8,3 +8,10 @@ art-src/codex/log*.txt
 .ref/
 art-src/sprite-gen/**/.run.sg-rwlock
 __pycache__/
+
+# big generation sources and intermediates stay on this computer only (user, 2026-10-15): the kept
+# outputs are frames/<dir>/<state>/frame-N.png, previews/ and references/
+art-src/sprite-gen/**/raw/
+art-src/sprite-gen/**/orig/
+art-src/sprite-gen/**/*.plain.png
+art-src/sprite-gen/**/sprite-sheet-alpha.png
