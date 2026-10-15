@@ -20,13 +20,16 @@ export interface FloorPlan {
 // spots kept open for walking in and out: the arrival, the exits, the way down
 const KEEP_OPEN = 60;
 const START_KEEP_AWAY = 170;
+const TREE_COUNT = 18;
+const SMALL_COUNT = 12;
 
 export function planFloor(seed: number, floor: FloorId, period: Period): FloorPlan {
   const f = FLOORS[floor];
   const area = { minX: 30, maxX: f.world.w - 30, minY: 60, maxY: f.world.h - 10 };
   const open = [f.start, ...f.exits, ...(f.down ? [f.down] : [])].map((p) => ({ x: p.x, y: p.y, r: KEEP_OPEN }));
 
-  // the fixed ground: trees spread out, then bushes and rocks in the gaps
+  // the fixed ground: trees spread out, then bushes and rocks in the gaps — few and far apart, so the
+  // forest stays open to walk and aim in (user, 2026-10-15: it was too crowded)
   const ground = f.layoutSeed;
   const pick = seededRandom(ground ^ 0x5bd1e995);
   const objects: FloorPlan["objects"] = [];
@@ -34,9 +37,9 @@ export function planFloor(seed: number, floor: FloorId, period: Period): FloorPl
     const { foot } = OBJECT_KINDS[kind];
     objects.push({ kind, x: p.x, y: p.y, foot: { x0: p.x - foot.w / 2, x1: p.x + foot.w / 2, y0: p.y - foot.h, y1: p.y } });
   };
-  const treeSpots = scatter(ground, area, 46, 78, open);
+  const treeSpots = scatter(ground, area, TREE_COUNT, 170, open);
   for (const p of treeSpots) place(p, TREES[Math.floor(pick() * TREES.length)]);
-  for (const p of scatter(ground + 2, area, 34, 60, [...open, ...treeSpots.map((t) => ({ x: t.x, y: t.y, r: 46 }))]))
+  for (const p of scatter(ground + 2, area, SMALL_COUNT, 130, [...open, ...treeSpots.map((t) => ({ x: t.x, y: t.y, r: 70 }))]))
     place(p, SMALL_OBJECTS[Math.floor(pick() * SMALL_OBJECTS.length)]);
 
   // who and what: from the hunt's seed, mixed with the floor so each floor differs

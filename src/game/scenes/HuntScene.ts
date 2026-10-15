@@ -36,6 +36,8 @@ const HUNTER_FEET = 0.92;
 const GATHER_RANGE = 26;
 // how close the hunter must stand to a cart or the way down to use it with E
 const USE_RANGE = 28;
+// the stamina gauge's width in game pixels
+const STAMINA_W = 180;
 const GATHER_MS = 1000;
 const REFILL_DELAY_MS = 2500;
 // Touch controls, in screen pixels of the game, placed relative to its size.
@@ -132,6 +134,7 @@ export class HuntScene extends Phaser.Scene {
   private fx!: Phaser.GameObjects.Graphics;
   private bagText!: Phaser.GameObjects.Text;
   private gatherHint!: Phaser.GameObjects.Text;
+  private staminaText!: Phaser.GameObjects.Text;
   private exitArrow!: Phaser.GameObjects.Text;
   private lowGlow!: Phaser.GameObjects.Rectangle;
   private gatherButton: Phaser.GameObjects.Arc | null = null;
@@ -234,10 +237,14 @@ export class HuntScene extends Phaser.Scene {
 
     const hudStyle = TEXT_SMALL;
     if (!this.touch) this.add.text(6, 4, t("hunt.help"), hudStyle).setScrollFactor(0).setDepth(10000);
-    // stamina in a brass gauge, the floor and the bag count under it (UI kit A); no way home but the carts
-    this.hpGauge = addGauge(this, 56, 26);
+    // stamina big and plain at the top left — its name, a long brass gauge and what is left in numbers
+    // (user, 2026-10-15: it was hard to see) — the floor and the bag under it; no way home but the carts
+    const row = 30;
+    this.add.text(8, row, t("hunt.stamina"), { ...TEXT, fontStyle: "bold" }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(10000);
+    this.hpGauge = addGauge(this, 46 + STAMINA_W / 2, row, STAMINA_W);
     this.hpGauge.box.setScrollFactor(0).setDepth(10000);
-    this.bagText = this.add.text(8, 40, "", hudStyle).setScrollFactor(0).setDepth(10000);
+    this.staminaText = this.add.text(52 + STAMINA_W, row, "", { ...TEXT, fontStyle: "bold" }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(10000);
+    this.bagText = this.add.text(8, row + 18, "", hudStyle).setScrollFactor(0).setDepth(10000);
     this.gatherHint = this.add.text(0, 0, "", hudStyle).setOrigin(0.5).setDepth(9500).setVisible(false);
     // which way the nearest cart is, at the screen's edge when it is out of sight (or always, when the bag
     // is full or stamina runs low)
@@ -860,6 +867,7 @@ export class HuntScene extends Phaser.Scene {
   private drawHud() {
     const frac = this.run.stamina / this.maxStamina;
     this.hpGauge.set(frac);
+    this.staminaText.setText(`${Math.ceil(this.run.stamina)}/${this.maxStamina}`).setColor(frac < LOW_STAMINA ? "#ff7070" : "#fff3d8");
     this.bagText.setText(`${t("hunt.floorShort", { n: this.run.floor })} · ${t("hud.bag", { n: bagCount(this.run.bag), max: this.bagSlots })}`);
     const low = frac < LOW_STAMINA && !this.player.down;
     this.lowGlow.setVisible(low);

@@ -13,6 +13,7 @@ export const ko = {
   "lunch.skip": "오후는 쉬기",
   "lunch.upgrades": "업그레이드",
   "hunt.help": "WASD 이동 · 마우스 조준 · 좌클릭 작살 · 우클릭 베기 · E 줍기·내려가기·나가기",
+  "hunt.stamina": "기력",
   "hunt.useExit": "E 반달이 수레로 나가기",
   "hunt.useDown": "E 아래층으로",
   "hunt.useButton": "쓰기",

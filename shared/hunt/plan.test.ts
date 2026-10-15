@@ -17,6 +17,15 @@ describe("planFloor", () => {
     expect(a.spawns).not.toEqual(b.spawns);
     expect(a.nodes).not.toEqual(b.nodes);
   });
+  it("keeps the forest open: about 18 trees and 12 bushes or rocks a floor (user, 2026-10-15: too crowded)", () => {
+    for (const floor of [1, 2] as const) {
+      const objects = planFloor(1, floor, "morning").objects;
+      const trees = objects.filter((o) => o.kind.startsWith("tree")).length;
+      expect(trees).toBeLessThanOrEqual(18);
+      expect(objects.length - trees).toBeLessThanOrEqual(12);
+      expect(objects.length).toBeGreaterThanOrEqual(15);
+    }
+  });
   it("gives each floor its own ground", () => {
     expect(planFloor(42, 1, "morning").objects).not.toEqual(planFloor(42, 2, "morning").objects);
   });
