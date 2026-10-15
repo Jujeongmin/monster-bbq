@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
-import type { DishId, Method } from "../../shared/content/dishes";
-import { bagSlots, huntStats, seatBonus, toolQuality } from "../../shared/growth";
+import { bagSlots, huntStats, seatBonus } from "../../shared/growth";
+import type { MenuLine } from "../../shared/kitchen/dish";
 import { planService } from "../../shared/service/plan";
 import type { SaveData } from "../../shared/save";
 import { PhaserGame } from "../game/PhaserGame";
@@ -72,10 +72,11 @@ export function DayFlow({ transport }: { transport: Transport }) {
     }
   }
 
-  // "Open the shop": tonight's menu, then the server opens the service (its seed brings the customers)
-  async function openShop(menu: DishId[]) {
-    if (await act({ type: "setMenu", dishes: menu }, "kitchen")) await act({ type: "startService" }, "service");
+  // "Open the shop": the menu board goes to the server, which takes the sets and opens the service
+  async function openShop(menu: MenuLine[]) {
+    await act({ type: "openShop", menu }, "service");
   }
+
 
   if (!save)
     return (

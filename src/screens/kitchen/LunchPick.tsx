@@ -3,17 +3,17 @@ import type { Action } from "../../../shared/actions";
 import { BALANCE } from "../../../shared/balance";
 import { DISHES, type DishId } from "../../../shared/content/dishes";
 import { lunchSlots } from "../../../shared/growth";
-import { servings } from "../../../shared/kitchen/cook";
+import { dishPrice, setsAvailable } from "../../../shared/kitchen/dish";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
 import { DishIcon } from "./DishIcon";
 
-// Packing tomorrow's lunchbox (growth design 2): found dishes, up to the box's free slots, made from real
-// ingredients by the server (packLunch). Eaten on the hunt for health (and a quick step for some).
+// Packing tomorrow's lunchbox (growth design 2): researched dishes, up to the box's free slots, made from real
+// ingredients by the server (packLunch). Eaten on the hunt for health (by the dish's level price) (and a quick step for some).
 export function LunchPick({ save, busy, act }: { save: SaveData; busy: boolean; act: (a: Action) => void }) {
   const [picked, setPicked] = useState<DishId[]>([]);
   const free = lunchSlots(save) - save.lunchbox.length;
-  const known = (Object.keys(DISHES) as DishId[]).filter((id) => save.cookbook[id]);
+  const known = (Object.keys(DISHES) as DishId[]).filter((id) => save.dishes[id]);
 
   function add(id: DishId) {
     if (picked.length < free) setPicked([...picked, id]);
@@ -37,7 +37,7 @@ export function LunchPick({ save, busy, act }: { save: SaveData; busy: boolean; 
       {known.length === 0 && <p className="kitchen-empty">{t("kitchen.menuEmpty")}</p>}
       <div className="lunch-list">
         {known.map((id) => {
-          const left = servings(save.cookbook[id]!, save.items) - picked.filter((p) => p === id).length;
+          const left = setsAvailable(save.items, id) - picked.filter((p) => p === id).length;
           return (
             <button key={id} className="ui-box menu-row" disabled={left <= 0 || picked.length >= free} onClick={() => add(id)}>
               <span className="menu-dish">
@@ -45,7 +45,7 @@ export function LunchPick({ save, busy, act }: { save: SaveData; busy: boolean; 
                 <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>
               </span>
               <span className="menu-info">
-                {t("lunch.heal", { hp: Math.round(BALANCE.service.dishPrice[id] * BALANCE.lunch.healPerGold) })}
+                {t("lunch.heal", { hp: Math.round(dishPrice(id, save.dishes[id]!) * BALANCE.lunch.healPerGold) })}
                 {BALANCE.lunch.speedDishes.includes(id) ? ` · ${t("lunch.speed")}` : ""}
               </span>
             </button>

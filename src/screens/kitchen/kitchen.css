@@ -1,73 +1,90 @@
-/* The evening kitchen on UI kit A: wooden tabs, hanji panels, lacquered buttons. Sizes in multiples of
-   the Galmuri pixel grid (see src/index.css). */
-.kitchen { position: absolute; inset: 0; background: var(--wood-dark); overflow: hidden; }
-/* day and gold, then the four tabs, in one row at the top right */
-.kitchen-top { position: absolute; top: calc(2px * var(--s)); right: calc(4px * var(--s)); z-index: 5; display: flex; align-items: center; gap: calc(4px * var(--s)); }
-.kitchen-tabs { display: flex; align-items: flex-end; gap: calc(3px * var(--s)); }
-.kitchen-res { display: flex; gap: calc(8px * var(--s)); align-items: center; white-space: nowrap; }
-.kitchen-res span { display: inline-flex; align-items: center; gap: calc(3px * var(--s)); }
-/* the ready button at the bottom centre */
-.kitchen-ready { position: absolute; left: 50%; bottom: calc(4px * var(--s)); transform: translateX(-50%); z-index: 5; white-space: nowrap; }
+/* The evening kitchen (restaurant v2 design 5, mock-ups approved 2026-10-15). Sizes in game pixels times
+   --s; the kit frames come from index.css (ui-frame, ui-box, ui-btn, ui-slot, ui-plate, ui-ribbon, ui-sq). */
+.kitchen { position: absolute; inset: 0; background: center / 100% 100% no-repeat; image-rendering: pixelated; font-size: var(--fs); color: var(--cream); }
+.kitchen-dim { position: absolute; inset: 0; background: rgb(14 8 5 / 0.55); }
+.kitchen-title { position: absolute; left: calc(12px * var(--s)); top: calc(10px * var(--s)); padding: 0 calc(6px * var(--s)); line-height: calc(10px * var(--s)); }
+.kitchen-res { position: absolute; right: calc(12px * var(--s)); top: calc(13px * var(--s)); display: flex; gap: calc(12px * var(--s)); align-items: center; white-space: nowrap; }
+.kitchen-res span { display: inline-flex; align-items: center; gap: calc(4px * var(--s)); }
+.kitchen-tabs { position: absolute; left: calc(20px * var(--s)); top: calc(44px * var(--s)); display: flex; gap: calc(4px * var(--s)); z-index: 2; }
+.kitchen-body { position: absolute; left: calc(12px * var(--s)); right: calc(12px * var(--s)); top: calc(68px * var(--s)); bottom: calc(42px * var(--s)); overflow: auto; padding: calc(4px * var(--s)); }
+.kitchen-ready { position: absolute; left: 50%; bottom: calc(7px * var(--s)); transform: translateX(-50%); width: calc(160px * var(--s)); z-index: 2; }
 .kitchen-ready:active:not(:disabled) { transform: translate(-50%, var(--s)); }
-/* the other tabs' pages sit between the top row and the ready button */
-.kitchen-body { position: absolute; inset: calc(44px * var(--s)) 0 calc(48px * var(--s)); overflow: auto; padding: calc(4px * var(--s)) calc(6px * var(--s)); }
-.kitchen-body.full { inset: 0; padding: 0; overflow: hidden; }
-.kitchen-empty { margin: calc(2px * var(--s)) 0; font-size: var(--fs-small); font-family: "Galmuri9", monospace; color: var(--paper-ink-soft); }
+.kitchen-empty { margin: calc(4px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; color: #d8c4a4; }
+.soft { color: var(--paper-ink-soft); }
 
-/* research: the cooking stage, with the verdict over it */
-.research { position: relative; display: block; }
-.research { height: 100%; }
-.cook-stage { width: 100%; height: 100%; margin: 0 auto; background: var(--wood-dark); }
-/* in the research kitchen the stage is drawn at 70%, in the top left just under the top row */
-.research > .cook-stage { position: absolute; left: 0; top: calc(36px * var(--s)); width: 70%; height: 70%; margin: 0; }
-.cook-result-wrap { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); min-width: calc(180px * var(--s)); max-width: 90%; text-align: center; animation: cook-pop 0.35s ease-out; }
-.cook-result p { margin: calc(2px * var(--s)) 0 0; color: var(--paper-ink-soft); }
-.cook-banner { font-weight: 700; color: var(--good); }
-.cook-dish { font-weight: 700; color: var(--ink); }
-.cook-result.fail .cook-dish { color: var(--paper-ink-soft); }
-.cook-result.near { text-align: left; }
-.cook-skill { margin: calc(4px * var(--s)) 0 0; color: var(--ink); }
-.cook-stars { color: #d08a10; }
-.cook-again { margin-top: calc(4px * var(--s)); }
-@keyframes cook-pop { from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
-@keyframes cook-bounce { 0% { transform: translateY(8px) scale(0.6); } 60% { transform: translateY(-6px) scale(1.15); } 100% { transform: none; } }
-
-/* item and dish pictures, at whole pixel multiples */
+/* pictures */
+.dish-icon { display: block; height: auto; image-rendering: pixelated; }
+.dish-icon.silhouette { filter: brightness(0); opacity: 0.32; }
 .item-icon { position: relative; display: inline-flex; }
 .item-icon img { width: calc(21px * var(--s)); height: auto; image-rendering: pixelated; }
-.item-star { position: absolute; left: calc(-2px * var(--s)); top: calc(-4px * var(--s)); font-size: var(--fs-small); color: var(--brass); text-shadow: 0 0 2px #000; }
-.dish-icon { display: block; height: auto; image-rendering: pixelated; }
-.dish-icon.silhouette { filter: brightness(0); opacity: 0.3; }
-.cook-result .dish-icon { margin: calc(2px * var(--s)) auto; }
-.cook-result.new .dish-icon { animation: cook-bounce 0.6s ease-out; }
+.item-star { position: absolute; right: calc(-2px * var(--s)); top: calc(-4px * var(--s)); font-size: var(--fs-small); color: var(--brass); }
 
 /* cookbook */
-.cookbook-count { margin: 0 0 calc(4px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); }
-.cookbook-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(4px * var(--s)); }
-.dish-card { min-height: calc(60px * var(--s)); text-align: center; }
-.dish-card .dish-icon { margin: 0 auto calc(2px * var(--s)); }
-.dish-card .dish-name { font-weight: 700; color: var(--ink); }
-.dish-card .dish-name.unknown { color: var(--paper-ink-soft); }
-.dish-recipe { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: calc(2px * var(--s)); margin-top: calc(2px * var(--s)); }
-.dish-method { font-size: var(--fs-small); font-family: "Galmuri9", monospace; color: var(--red); }
-.dish-hint { margin: calc(2px * var(--s)) 0 0; font-size: var(--fs-small); font-family: "Galmuri9", monospace; color: var(--paper-ink-soft); }
+.cookbook-count { position: absolute; right: calc(14px * var(--s)); top: calc(-1px * var(--s)); margin: 0; font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); }
+.cookbook-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(8px * var(--s)); margin-top: calc(10px * var(--s)); }
+.dish-card { position: relative; height: calc(101px * var(--s)); display: flex; flex-direction: column; align-items: center; padding: 0; font: inherit; background: none; color: var(--ink); }
+.dish-card.closed { cursor: pointer; }
+.dish-card.can { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(var(--k) 0 0 #ffd65a) drop-shadow(calc(-1 * var(--k)) 0 0 #ffd65a) drop-shadow(0 var(--k) 0 #ffd65a) drop-shadow(0 calc(-1 * var(--k)) 0 #ffd65a); }
+.dish-card .dish-icon { margin-top: calc(-2px * var(--s)); }
+.dish-name { font-weight: 700; color: var(--ink); }
+.dish-shape { font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); margin: 0; }
+.dish-slots { display: flex; gap: calc(3px * var(--s)); margin-top: calc(2px * var(--s)); }
+.dish-slot { width: calc(28px * var(--s)); height: calc(28px * var(--s)); }
+.dish-slot .item-icon img { margin: calc(-6px * var(--s)); }
+.dish-lv { position: absolute; right: calc(-4px * var(--s)); top: calc(-4px * var(--s)); padding: 0 calc(4px * var(--s)); line-height: calc(10px * var(--s)); }
+.dish-can { position: absolute; right: calc(-5px * var(--s)); top: calc(-5px * var(--s)); padding: 0 calc(5px * var(--s)); line-height: calc(10px * var(--s)); font-size: var(--fs-small); white-space: nowrap; }
 
-/* menu */
-.menu-pick { display: grid; grid-template-columns: repeat(2, 1fr); gap: calc(3px * var(--s)); align-content: start; }
-.menu-pick .cookbook-count, .menu-pick .kitchen-empty { grid-column: 1 / -1; }
-.menu-row { display: flex; justify-content: space-between; align-items: center; font: inherit; text-align: left; cursor: pointer; background: none; }
-.menu-row:disabled { cursor: default; opacity: 0.55; }
-.menu-row.on { filter: drop-shadow(0 0 calc(2px * var(--s)) var(--brass)); }
-.menu-row .dish-name { font-weight: 700; color: var(--ink); }
-.menu-row.on .dish-name::before { content: "✔ "; color: var(--good); }
-.menu-info { color: var(--paper-ink-soft); }
-.menu-dish { display: flex; align-items: center; gap: calc(4px * var(--s)); }
+/* research window */
+.research-shade { position: fixed; inset: 0; z-index: 20; background: rgb(10 6 4 / 0.7); }
+.research-win { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: calc(400px * var(--s)); height: calc(250px * var(--s)); z-index: 21; padding: calc(4px * var(--s)) calc(8px * var(--s)); }
+.research-x { position: absolute; right: calc(-4px * var(--s)); top: calc(-4px * var(--s)); }
+.research-head { display: flex; gap: calc(12px * var(--s)); align-items: center; }
+.research-name { margin: 0; font: 700 calc(18px * var(--s)) "Galmuri11", monospace; }
+.research-need { list-style: none; margin: calc(9px * var(--s)) 0 0; padding: 0; display: flex; flex-direction: column; gap: calc(5px * var(--s)); }
+.research-need li { display: flex; align-items: center; gap: calc(8px * var(--s)); }
+.research-slot { width: calc(32px * var(--s)); height: calc(32px * var(--s)); }
+.research-slot .item-icon img { margin: calc(-6px * var(--s)); }
+.research-foot { position: absolute; left: calc(12px * var(--s)); right: calc(12px * var(--s)); bottom: calc(10px * var(--s)); display: flex; align-items: center; justify-content: space-between; }
+.research-cost { font-weight: 700; }
+.research-go { width: calc(130px * var(--s)); }
+.research-lid { position: absolute; right: calc(-20px * var(--s)); bottom: calc(10px * var(--s)); width: calc(220px * var(--s)); display: flex; flex-direction: column; align-items: flex-end; }
+.research-say { margin: 0 0 calc(4px * var(--s)); padding: calc(2px * var(--s)) calc(8px * var(--s)); line-height: 1.6; }
+.research-lid img { width: calc(100px * var(--s)); image-rendering: pixelated; }
 
-/* lunchbox */
-.lunch-pick { display: flex; flex-direction: column; gap: calc(3px * var(--s)); height: 100%; }
-/* keeps its height when empty, so the list below never jumps under a finger */
-.lunch-box { display: flex; gap: calc(3px * var(--s)); min-height: calc(50px * var(--s)); }
+/* menu board */
+.menu-pick { display: grid; grid-template-columns: calc(260px * var(--s)) 1fr; gap: calc(10px * var(--s)); margin-top: calc(10px * var(--s)); }
+.menu-list { display: flex; flex-direction: column; gap: calc(5px * var(--s)); }
+.menu-row, .menu-line { display: flex; align-items: center; gap: calc(6px * var(--s)); color: var(--ink); }
+.menu-row { height: calc(52px * var(--s)); }
+.menu-row.on { opacity: 0.45; }
+.menu-info { flex: 1; display: flex; flex-direction: column; gap: var(--s); min-width: 0; }
+.menu-put { width: calc(54px * var(--s)); }
+.menu-title { margin: 0 0 calc(4px * var(--s)) calc(4px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); }
+.menu-board { display: flex; flex-direction: column; gap: calc(6px * var(--s)); }
+.menu-line { height: calc(66px * var(--s)); }
+.menu-made { color: var(--good); font-weight: 700; }
+.menu-sets { display: flex; align-items: center; gap: calc(4px * var(--s)); }
+.menu-count { min-width: calc(16px * var(--s)); text-align: center; font-weight: 700; }
+.menu-empty { height: calc(36px * var(--s)); display: flex; align-items: center; justify-content: center; color: var(--paper-ink-soft); }
+.menu-sum { display: flex; justify-content: space-between; margin: 0 calc(4px * var(--s)); }
+
+/* dish upgrades */
+.dish-upgrade { display: flex; flex-direction: column; gap: calc(6px * var(--s)); margin-top: calc(10px * var(--s)); }
+.upgrade-dish { height: calc(66px * var(--s)); display: grid; grid-template-columns: calc(48px * var(--s)) calc(140px * var(--s)) 1fr calc(150px * var(--s)) calc(84px * var(--s)); align-items: center; gap: calc(6px * var(--s)); color: var(--ink); }
+.upgrade-who, .upgrade-next { display: flex; flex-direction: column; gap: calc(2px * var(--s)); }
+.upgrade-next { color: var(--good); font-weight: 700; }
+.upgrade-cost { display: flex; align-items: center; gap: calc(3px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; }
+.cost-slot { width: calc(26px * var(--s)); height: calc(26px * var(--s)); }
+.cost-slot .item-icon img { margin: calc(-6px * var(--s)); }
+.upgrade-max { color: var(--brass); font-weight: 700; text-align: center; grid-column: 3 / 5; }
+.pips { display: flex; gap: calc(2px * var(--s)); }
+.pips i { width: calc(10px * var(--s)); height: calc(10px * var(--s)); border: calc(3px * var(--s)) solid transparent; border-image: url("../../../art/test/ui2/btn_small.png") 3 fill / calc(3px * var(--s)) stretch; image-rendering: pixelated; filter: grayscale(1) brightness(0.55); }
+.pips i.on { filter: none; }
+
+/* lunchbox (kept from before, on the new frame) */
+.lunch-pick { display: flex; flex-direction: column; gap: calc(4px * var(--s)); height: 100%; margin-top: calc(10px * var(--s)); }
+.lunch-box { display: flex; gap: calc(4px * var(--s)); min-height: calc(50px * var(--s)); }
 .lunch-slot { display: inline-flex; padding: 0; background: none; cursor: pointer; }
 .lunch-slot.packed { cursor: default; filter: saturate(0.6); }
-.lunch-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: calc(3px * var(--s)); flex: 1; min-height: 0; overflow: auto; align-content: start; }
+.lunch-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: calc(4px * var(--s)); flex: 1; min-height: 0; overflow: auto; align-content: start; }
 .lunch-pick > .ui-btn { align-self: flex-start; }

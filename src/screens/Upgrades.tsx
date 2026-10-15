@@ -11,7 +11,7 @@ import { t, type StringKey } from "../i18n";
 const G = BALANCE.growth;
 const GROUPS: { title: StringKey; ids: UpgradeId[] }[] = [
   { title: "upgrade.group.hunt", ids: ["melee", "ranged", "armor", "bag", "lunchbox"] },
-  { title: "upgrade.group.kitchen", ids: ["menu", "pot", "grillQuality", "potQuality", "wok", "fryer", "board"] },
+  { title: "upgrade.group.kitchen", ids: ["menu"] },
   { title: "upgrade.group.shop", ids: ["seats"] },
 ];
 const ICON: Record<UpgradeId, string> = {
@@ -21,12 +21,6 @@ const ICON: Record<UpgradeId, string> = {
   bag: "test/items/icon_honeycomb.png",
   lunchbox: "test/ui/icon_pot.png",
   menu: "test/ui/icon_notebook.png",
-  pot: "test/cooking/pot_clear.png",
-  grillQuality: "test/cooking/grill.png",
-  potQuality: "test/cooking/pot_lid.png",
-  wok: "test/ui/icon_pot.png",
-  fryer: "test/ui/icon_pot.png",
-  board: "test/cooking/rest_board.png",
   seats: "test/cooking/grill.png",
 };
 
@@ -49,9 +43,6 @@ function effect(id: UpgradeId, lv: number): string {
       return pair(G.menu, "upgrade.fx.menu");
     case "seats":
       return pair(G.seats, "upgrade.fx.guests");
-    case "grillQuality":
-    case "potQuality":
-      return pair(G.quality, "upgrade.fx.quality", (n) => n.toFixed(2));
     default:
       return t(`upgrade.fx.${id}` as StringKey);
   }

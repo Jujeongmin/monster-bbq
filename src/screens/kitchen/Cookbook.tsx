@@ -1,42 +1,72 @@
+import { useState } from "react";
+import type { Action } from "../../../shared/actions";
 import { DISHES, type DishId } from "../../../shared/content/dishes";
+import { RECIPES } from "../../../shared/content/recipes";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
 import { DishIcon } from "./DishIcon";
 import { ItemIcon } from "./ItemIcon";
+import { ResearchWindow } from "./ResearchWindow";
 
-// The cookbook (spec 4): every dish as a card. Found ones show how they are made; the rest stay "???",
-// with a one-line hint once a related ingredient has been gained.
-export function Cookbook({ save }: { save: SaveData }) {
+// The cookbook (restaurant v2 design 5, mock-up approved 2026-10-15): every dish as a card. Researched:
+// its level ribbon, picture, name and ingredients. Not yet: its silhouette, "N ingredients · method" and
+// the ingredients already brought home ("?" for the rest); a card whose ingredients have all been seen
+// glows and carries a "ready to research" plate. Tapping a card not researched opens the research window.
+export function Cookbook({ save, busy, act, onResearch }: { save: SaveData; busy: boolean; act: (a: Action) => void; onResearch: (dish: DishId) => void }) {
   const ids = Object.keys(DISHES) as DishId[];
-  const found = ids.filter((id) => save.cookbook[id]).length;
+  const opened = ids.filter((id) => save.dishes[id]).length;
+  const [open, setOpen] = useState<DishId | null>(null);
+
+  const slots = (id: DishId, showAll: boolean) => (
+    <div className="dish-slots">
+      {RECIPES[id].items.map((item) => (
+        <span key={item} className="ui-slot dish-slot">
+          {showAll || save.seenItems.includes(item) ? <ItemIcon itemKey={item} /> : "?"}
+        </span>
+      ))}
+    </div>
+  );
+
   return (
     <div className="cookbook">
-      <h3 className="cookbook-count">{t("kitchen.found", { n: found, max: ids.length })}</h3>
+      <h3 className="cookbook-count">{t("kitchen.found", { n: opened, max: ids.length })}</h3>
       <div className="cookbook-grid">
         {ids.map((id) => {
-          const recipe = save.cookbook[id];
-          if (recipe)
+          const lv = save.dishes[id];
+          if (lv)
             return (
-              <div key={id} className="ui-box dish-card found">
+              <div key={id} className="ui-box dish-card">
+                <span className="ui-ribbon dish-lv">{t("kitchen.lv", { lv })}</span>
                 <DishIcon dish={id} />
                 <div className="dish-name">{t(`dish.${id}` as StringKey)}</div>
-                <div className="dish-recipe">
-                  {recipe.items.map((item) => (
-                    <ItemIcon key={item} itemKey={item} />
-                  ))}
-                  <span className="dish-method">{t(`method.${recipe.method}` as StringKey)}</span>
-                </div>
+                {slots(id, true)}
               </div>
             );
+          const r = RECIPES[id];
+          const can = r.items.every((item) => save.seenItems.includes(item));
           return (
-            <div key={id} className="ui-box dish-card">
+            <button key={id} className={`ui-box dish-card closed${can ? " can" : ""}`} onClick={() => setOpen(id)}>
+              {can && <span className="ui-plate dish-can">{t("kitchen.canResearch")}</span>}
               <DishIcon dish={id} silhouette />
-              <div className="dish-name unknown">{t("kitchen.unknown")}</div>
-              {save.hints.includes(id) && <p className="dish-hint">{t(`dish.${id}.hint` as StringKey)}</p>}
-            </div>
+              <div className="dish-shape">{t("kitchen.shape", { n: r.items.length, method: t(`method.${r.method}` as StringKey) })}</div>
+              {slots(id, false)}
+            </button>
           );
         })}
       </div>
+      {open && (
+        <ResearchWindow
+          dish={open}
+          save={save}
+          busy={busy}
+          onClose={() => setOpen(null)}
+          onResearch={() => {
+            onResearch(open);
+            act({ type: "research", dish: open });
+            setOpen(null);
+          }}
+        />
+      )}
     </div>
   );
 }
