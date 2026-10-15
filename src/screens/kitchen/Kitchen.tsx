@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Action } from "../../../shared/actions";
 import type { DishId } from "../../../shared/content/dishes";
-import { fitMenu, type MenuLine } from "../../../shared/kitchen/dish";
+import { canOpen, fitMenu, type MenuLine } from "../../../shared/kitchen/dish";
 import type { SaveData } from "../../../shared/save";
 import { artUrl } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
@@ -33,6 +33,8 @@ export function Kitchen({
   const [tab, setTab] = useState<Tab>("cookbook");
   // starts from last night's menu, cut to what the fridge makes now
   const [menu, setMenu] = useState<MenuLine[]>(() => fitMenu(save.items, save.dishes, save.menu));
+  // research, upgrades and lunches use ingredients: the board shrinks to what the fridge still makes
+  useEffect(() => setMenu((m) => fitMenu(save.items, save.dishes, m)), [save.items, save.dishes]);
   // the dish whose research was just asked for: the cut-in plays once the save has it (Task 8)
   const [asked, setAsked] = useState<DishId | null>(null);
   // the cut-in plays once the server has opened the dish that was asked for
@@ -64,7 +66,7 @@ export function Kitchen({
         {tab === "upgrade" && <DishUpgrade save={save} busy={busy} act={act} />}
         {tab === "lunch" && <LunchPick save={save} busy={busy} act={act} />}
       </div>
-      <button className="ui-btn kitchen-ready" disabled={busy || menu.length === 0} onClick={() => onReady(menu)}>
+      <button className="ui-btn kitchen-ready" disabled={busy || !canOpen(save.items, save.dishes, menu)} onClick={() => onReady(menu)}>
         {t("kitchen.ready")}
       </button>
       {landed && <ResearchCutIn key={landed} dish={landed} onDone={() => setAsked(null)} />}

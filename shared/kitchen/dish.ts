@@ -98,3 +98,8 @@ export function fitMenu(items: Record<string, number>, levels: Partial<Record<Di
   }
   return out;
 }
+
+// Whether the shop can open with this menu: at least one line, and the fridge still covers all of it.
+export function canOpen(items: Record<string, number>, levels: Partial<Record<DishId, number>>, menu: MenuLine[]): boolean {
+  return menu.length > 0 && planShop(items, levels, menu) !== null;
+}
