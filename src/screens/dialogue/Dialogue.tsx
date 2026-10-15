@@ -59,6 +59,7 @@ export function Dialogue({ lines, onDone }: { lines: DialogueLine[]; onDone: () 
   return createPortal(
     <div className="dialogue" role="dialog" aria-live="polite" onPointerDown={advance}>
       <div className="dialogue-box">
+        <img className="dialogue-face" src={artUrl(`test/lid/${line.face}.png`)} alt="" />
         <span className={`dialogue-name ${line.who}`}>{t(NAME[line.who])}</span>
         <p className="dialogue-text">
           {line.text.slice(0, state.shown)}
@@ -67,7 +68,6 @@ export function Dialogue({ lines, onDone }: { lines: DialogueLine[]; onDone: () 
         </p>
         {out && <span className="dialogue-more">▼</span>}
       </div>
-      <img className="dialogue-face" src={artUrl(`test/lid/${line.face}.png`)} alt="" />
       {/* every face loaded up front, so a change of face does not blink */}
       <div className="dialogue-preload" aria-hidden>
         {FACES.map((f) => (

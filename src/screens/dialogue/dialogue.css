@@ -23,11 +23,11 @@
   image-rendering: pixelated;
   opacity: 0.9;
 }
-/* the portrait standing at the left over the top of the box, sized by the screen: the lid about a fifth
-   of its width (the picture has a little empty room round the lid) */
+/* the portrait at the left of the bar, a fifth of the screen wide; every face picture is centred on the
+   lid's body (art-src/codex/slice_characters.py), so centring the picture centres the lid in the bar */
 .dialogue-face {
-  position: absolute; left: calc(2px * var(--s)); bottom: calc(18px * var(--s));
-  width: 23%; height: auto;
+  position: absolute; left: calc(4px * var(--s)); top: 50%; transform: translateY(-50%);
+  width: 21%; height: auto;
   image-rendering: pixelated; pointer-events: none;
 }
 /* the speaker's name as plain lettering, no plate */

@@ -2,13 +2,27 @@
 
 공식 문서: https://docs.verse8.io/ko/docs (서버 SDK, 광고, VXShop, Local Cache)
 
-## 현재 상태 (2026-10-14)
+## 저장소 (2026-10-15 연동)
 
-- 로컬 전용 프로토타입이다. GitLab(Verse8 배포) 연동과 `.env` / `.agent8.lock`은 아직 없다.
-- 연동할 때는 Verse8 에디터에서 프로젝트를 만들고 받은 `.env`, `.agent8.lock`을 그대로 넣는다. 주소와 토큰은 `.git/config`에만 둔다. 그 뒤 이 문서에 원격·브랜치·점검표를 적는다(myeongtoe-hero의 docs/VERSE8.md 참고).
-- 서버(`server/src/server.ts`, `export class Server`)도 아직 없다. 만들 때는 `npx -y @agent8/gameserver-node init`으로 뼈대를 받는다. 핸들러 파일은 `server/src/` 바로 아래에 둔다(하위 폴더는 빌드가 안 읽는다).
+| 원격 | 브랜치 | 용도 |
+|---|---|---|
+| `gitlab` (gitlab.verse8.io/anjshdkdl99/game-yzrr) | `develop` | Verse8 배포용이자 지금의 작업 브랜치. **푸시하면 자동 배포된다** |
+
+- `develop`은 Verse8 템플릿(에디터 첫 커밋)에서 시작해 우리 기록(`feat/service`까지)을 `--allow-unrelated-histories`로 합쳤다. 템플릿의 `.env`, `.agent8.lock`, `PROJECT/`, `committedAt`은 그대로 두고 Tailwind/PostCSS와 자리표시 앱은 뺐다.
+- 사용자 지시(2026-10-15): 작업이 하나 끝날 때마다 점검표를 돌리고 `develop`에 자동 푸시한다.
+- 원격 주소의 토큰은 `.git/config`에만 둔다. 새 컴퓨터에서는 `git remote add gitlab https://oauth2:<GitLab 토큰>@gitlab.verse8.io/anjshdkdl99/game-yzrr.git`.
+- Git Bash에서 `git show <브랜치>:<경로>`는 `MSYS_NO_PATHCONV=1`을 붙인다.
+
+## 푸시 전 점검표
+
+1. `npm test`, `npm run typecheck`, `npm --prefix server run typecheck`
+2. `npm run check:bundle` (레시피 정답이 번들에 없는지), `dist/index.html`에 `GAME_SIZE_RESPONSE`가 있는지
+3. 서버 코드를 바꿨으면 `npm run test:server` (Windows에서 isolated-vm 오류 창이 뜰 수 있어 사용자에게 미리 알린다)
+4. `git push gitlab develop`, 에디터 미리보기에서 콘솔 오류와 서버 저장(새로고침 후 유지)을 확인
 
 ## 지우면 안 되는 것
+
+- `.agent8.lock`, `.env`: Verse8 프로젝트 ID. 바꾸면 배포된 게임과 서버 데이터에서 끊긴다.
 
 - `index.html`의 `GAME_SIZE_RESPONSE` 응답 스크립트: Verse8 iframe이 게임 크기를 묻는다.
 - `src/main.tsx` 맨 위의 `import "./storageFallback"`: 에디터 iframe에서 localStorage가 막히면 SDK가 import 시점에 죽는다.

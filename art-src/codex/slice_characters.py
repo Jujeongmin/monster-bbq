@@ -181,14 +181,16 @@ TRIMS = [
 ]
 
 # the lid's dialogue portraits (lid_faces.png, approved 2026-10-15): each face cut by hand by its own box,
-# then set on one window around its knob so the lid stays put while the face changes
+# then set on one window centred on the lid's body (knob x; middle of knob top to rim bottom, measured by
+# eye per face: the steam, the sparkle and the hop lines lie outside it), so the lid sits in the same spot
+# in every face and the dialogue box can centre it
 LID_FACES = [
-    ("normal", (30, 255, 552, 535), 271),
-    ("angry", (548, 160, 1086, 535), 804),
-    ("smug", (1118, 240, 1600, 535), 1357),
-    ("surprised", (1650, 255, 2150, 575), 1906),
+    ("normal", (30, 255, 552, 535), 271, 391),
+    ("angry", (548, 160, 1086, 535), 804, 391),
+    ("smug", (1118, 240, 1600, 535), 1357, 391),
+    ("surprised", (1650, 255, 2150, 575), 1906, 382),
 ]
-LID_WINDOW = (300, 150, 590)  # half width around the knob, top, bottom (raw pixels)
+LID_WINDOW = (300, 240)  # half width, half height around the body's middle (raw pixels)
 LID_SCALE = 0.4
 
 
@@ -241,11 +243,11 @@ def main():
         print(name, piece, size)
     if (RAW / "lid_faces.png").exists():
         sheet = Image.open(RAW / "lid_faces.png")
-        half, top, bottom = LID_WINDOW
+        half_w, half_h = LID_WINDOW
         (ROOT / "art/test/lid").mkdir(parents=True, exist_ok=True)
-        for face, box, knob in LID_FACES:
-            canvas = Image.new("RGBA", (2 * half, bottom - top), (0, 0, 0, 0))
-            canvas.paste(key_magenta(sheet.crop(box)), (box[0] - (knob - half), box[1] - top))
+        for face, box, knob, middle in LID_FACES:
+            canvas = Image.new("RGBA", (2 * half_w, 2 * half_h), (0, 0, 0, 0))
+            canvas.paste(key_magenta(sheet.crop(box)), (box[0] - (knob - half_w), box[1] - (middle - half_h)))
             size = (round(canvas.width * LID_SCALE), round(canvas.height * LID_SCALE))
             small = canvas.convert("RGBa").resize(size, Image.BOX).convert("RGBA")
             rr, gg, bb, aa = small.split()
