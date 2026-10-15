@@ -30,48 +30,96 @@ html, body, #root { width: 100%; height: 100%; }
 ::-webkit-scrollbar { width: calc(12px * var(--s)); height: calc(12px * var(--s)); }
 ::-webkit-scrollbar-track {
   border: calc(4px * var(--s)) solid transparent;
-  border-image: url("../art/test/ui/topbar.png") 6 12 fill / calc(4px * var(--s)) stretch;
+  border-image: url("../art/test/ui2/topbar.png") 3 5 fill / calc(2px * var(--s)) calc(4px * var(--s)) stretch;
   image-rendering: pixelated;
 }
 ::-webkit-scrollbar-thumb {
   border: calc(6px * var(--s)) solid transparent;
-  border-image: url("../art/test/ui/btn_normal.png") 13 fill / calc(6px * var(--s)) stretch;
+  border-image: url("../art/test/ui2/btn_normal.png") 3 4 fill / calc(2px * var(--s)) calc(4px * var(--s)) stretch;
   image-rendering: pixelated;
 }
-::-webkit-scrollbar-thumb:active { border-image-source: url("../art/test/ui/btn_pressed.png"); }
+::-webkit-scrollbar-thumb:active { border-image-source: url("../art/test/ui2/btn_pressed.png"); }
 ::-webkit-scrollbar-button { display: none; }
 ::-webkit-scrollbar-corner { background: transparent; }
 body { touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: "Galmuri11", monospace; -webkit-font-smoothing: none; font-smooth: never; }
 canvas { image-rendering: pixelated; display: block; }
 
-/* ---- UI kit A pieces (art/test/ui, cut by hand from the approved Codex sheet), stretched as 9-slices ---- */
-.ui-panel {
-  border: calc(18px * var(--s)) solid transparent;
-  border-image: url("../art/test/ui/panel.png") 18 fill / calc(18px * var(--s)) stretch;
+/* ---- pixel UI kit (art/test/ui2, approved 2026-10-15; cut to real size by art-src/ui-kit-pixel/cut.py).
+   One art pixel is two game pixels (--k), and the edge widths are whole art pixels, so every pixel stays
+   square. Frames whose edges have grain repeat them (round); flat ones stretch. ---- */
+:root { --k: calc(2px * var(--s)); }
+/* paper: windows, cards, popups (ink text) */
+.ui-panel, .ui-box {
+  border: calc(5 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/card.png") 5 fill / calc(5 * var(--k)) round;
   image-rendering: pixelated;
   color: var(--ink);
 }
-/* small boxes: the same frame at half size */
-.ui-box {
-  border: calc(9px * var(--s)) solid transparent;
-  border-image: url("../art/test/ui/panel.png") 18 fill / calc(9px * var(--s)) stretch;
+/* dark walnut: the big frame a screen sits in (cream text) */
+.ui-frame {
+  border: calc(5 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/panel.png") 5 fill / calc(5 * var(--k)) stretch;
   image-rendering: pixelated;
-  color: var(--ink);
+  color: var(--cream);
 }
 .ui-btn {
-  font: 700 var(--fs) "Galmuri11", monospace;
+  font: 700 var(--fs) / 1 "Galmuri11", monospace;
   color: var(--cream);
-  text-shadow: 0 var(--s) 0 #3a1408;
-  padding: 0 calc(4px * var(--s));
-  min-height: calc(40px * var(--s));
+  text-shadow: var(--s) var(--s) 0 #4a1408;
+  padding: 0 var(--k);
+  min-height: calc(10 * var(--k));
   background: none;
-  border: calc(13px * var(--s)) solid transparent;
-  border-image: url("../art/test/ui/btn_normal.png") 13 fill / calc(13px * var(--s)) stretch;
+  border: calc(3 * var(--k)) calc(4 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/btn_normal.png") 3 4 fill / calc(3 * var(--k)) calc(4 * var(--k)) stretch;
+  image-rendering: pixelated;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ui-btn:active:not(:disabled) { border-image-source: url("../art/test/ui2/btn_pressed.png"); transform: translateY(var(--s)); }
+.ui-btn:disabled { border-image-source: url("../art/test/ui2/btn_disabled.png"); color: #e0dcd4; text-shadow: var(--s) var(--s) 0 #3a3a3a; cursor: default; }
+/* small square brass button (+, -, x) */
+.ui-sq {
+  font: 700 var(--fs) / 1 "Galmuri11", monospace;
+  color: #4a2a12;
+  width: calc(11 * var(--k)); height: calc(11 * var(--k)); padding: 0;
+  background: none;
+  border: calc(3 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/btn_small.png") 3 fill / calc(3 * var(--k)) stretch;
   image-rendering: pixelated;
   cursor: pointer;
 }
-.ui-btn:active:not(:disabled) { border-image-source: url("../art/test/ui/btn_pressed.png"); transform: translateY(var(--s)); }
-.ui-btn:disabled { border-image-source: url("../art/test/ui/btn_disabled.png"); color: #d8d0c4; cursor: default; }
+.ui-sq:disabled { filter: grayscale(1) brightness(0.8); cursor: default; }
+.ui-bubble {
+  border: calc(3 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/bubble_plain.png") 3 fill / calc(3 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: var(--ink);
+}
+.ui-bar {
+  border: calc(3 * var(--k)) calc(5 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/topbar.png") 3 5 fill / calc(3 * var(--k)) calc(5 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: var(--cream);
+}
+.ui-slot {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: calc(3 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/slot.png") 3 fill / calc(3 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: #b89a74; font-weight: 700;
+}
+.ui-plate {
+  border: calc(4 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/plate.png") 4 fill / calc(4 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: #4a2a12; font-weight: 700;
+}
+.ui-ribbon {
+  border: calc(3 * var(--k)) calc(6 * var(--k)) solid transparent;
+  border-image: url("../art/test/ui2/ribbon.png") 3 6 fill / calc(3 * var(--k)) calc(6 * var(--k)) stretch;
+  image-rendering: pixelated;
+  color: var(--cream); font-weight: 700;
+}
 /* no grey flash or focus box when a button or tab is tapped or clicked (user, 2026-10-15); a keyboard
    user still sees where they are */
 button { -webkit-tap-highlight-color: transparent; }
@@ -93,20 +141,4 @@ button:focus-visible { outline: calc(2px * var(--s)) solid var(--brass); outline
   cursor: pointer;
 }
 .ui-tab.on { border-image-source: url("../art/test/ui2/tab_on.png"); color: var(--ink); }
-.ui-bubble {
-  border-style: solid;
-  border-color: transparent;
-  border-width: calc(8px * var(--s)) calc(8px * var(--s)) calc(14px * var(--s)) calc(22px * var(--s));
-  border-image: url("../art/test/ui/bubble.png") 8 8 14 22 fill / calc(8px * var(--s)) calc(8px * var(--s)) calc(14px * var(--s)) calc(22px * var(--s)) stretch;
-  image-rendering: pixelated;
-  color: var(--ink);
-}
-.ui-bar {
-  border-style: solid;
-  border-color: transparent;
-  border-width: calc(6px * var(--s)) calc(12px * var(--s));
-  border-image: url("../art/test/ui/topbar.png") 6 12 fill / calc(6px * var(--s)) calc(12px * var(--s)) stretch;
-  image-rendering: pixelated;
-  color: var(--cream);
-}
 .ui-icon { width: auto; height: calc(16px * var(--s)); image-rendering: pixelated; vertical-align: middle; }

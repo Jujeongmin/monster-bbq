@@ -26,6 +26,7 @@ GROUPS = {
         for who in ["dokkaebi", "gumiho", "reaper", "ghost"]
     },
     "dishes": ([f"dishes/{d}.png" for d in ["grilled_belly", "garlic_neck", "belly_ssam", "honey_rabbit", "shiitake_grill", "rib_stew", "baeksuk", "chicken_perilla", "fail"]], 1, 24, (42, 40)),
+    "ui": ([f"ui/{f}.png" for f in ["icon_gold", "icon_day", "icon_charcoal", "icon_notebook", "icon_pot", "upg_melee", "upg_ranged", "upg_armor"]], 1, 16, None),
     "items": (
         [f"items/icon_{i}.png" for i in ["boar_belly", "boar_neck", "boar_rib", "rabbit_leg", "honeycomb", "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla"]],
         1,

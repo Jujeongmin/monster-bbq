@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { artUrl } from "./art";
 
-// UI kit A inside Phaser scenes (walnut, hanji, brass; chosen 2026-10-14), with the Galmuri pixel fonts
+// The pixel UI kit inside Phaser scenes (approved 2026-10-15), with the Galmuri pixel fonts
 // loaded by src/main.tsx. Text sizes stay at the fonts' design sizes (12 / 10 px) so the canvas scales
 // them with clean pixels.
 export const FONT = "Galmuri11";
@@ -10,10 +10,20 @@ export const TEXT = { fontFamily: FONT, fontSize: "12px", color: "#fff3d8", stro
 export const TEXT_SMALL = { fontFamily: FONT_SMALL, fontSize: "10px", color: "#fff3d8", stroke: "#2b1408", strokeThickness: 3 } as const;
 export const TEXT_INK = { fontFamily: FONT, fontSize: "12px", color: "#3a2414" } as const;
 
-const PIECES = ["panel", "btn_normal", "btn_pressed", "btn_disabled", "tab_on", "tab_off", "gauge_empty", "gauge_full", "bubble", "topbar", "icon_gold", "icon_day", "icon_charcoal"];
+// the pixel UI kit (art/test/ui2) inside Phaser scenes; each art pixel is KIT game pixels
+const PIECES = ["btn_normal", "btn_pressed", "btn_disabled", "tab_on", "tab_off", "gauge_empty", "gauge_full", "bubble_plain", "topbar", "btn_small"];
+const ICONS = ["icon_gold", "icon_day", "icon_charcoal"];
+export const KIT = 2;
 
 export function loadUiArt(scene: Phaser.Scene) {
-  for (const p of PIECES) if (!scene.textures.exists(`ui_${p}`)) scene.load.image(`ui_${p}`, artUrl(`test/ui/${p}.png`));
+  for (const p of PIECES) if (!scene.textures.exists(`ui_${p}`)) scene.load.image(`ui_${p}`, artUrl(`test/ui2/${p}.png`));
+  for (const p of ICONS) if (!scene.textures.exists(`ui_${p}`)) scene.load.image(`ui_${p}`, artUrl(`test/ui/${p}.png`));
+}
+
+// A kit piece as a 9-slice `w` x `h` game pixels big: built at art size, drawn KIT times bigger, so its
+// edges stay whole art pixels. l/r/t/b are the piece's edge widths in art pixels.
+export function kitSlice(scene: Phaser.Scene, x: number, y: number, piece: string, w: number, h: number, l: number, r: number, t: number, b: number) {
+  return scene.add.nineslice(x, y, `ui_${piece}`, undefined, Math.round(w / KIT), Math.round(h / KIT), l, r, t, b).setScale(KIT);
 }
 
 export interface UiButton {
@@ -27,8 +37,8 @@ export interface UiButton {
 export function addButton(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void, minWidth = 56): UiButton {
   const label = scene.add.text(0, -1, text, { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
   const w = Math.max(minWidth, Math.ceil(label.width) + 22);
-  const bg = scene.add.nineslice(0, 0, "ui_btn_normal", undefined, w, 26, 13, 13, 13, 13);
-  const box = scene.add.container(x, y, [bg, label]).setSize(w, 26);
+  const bg = kitSlice(scene, 0, 0, "btn_normal", w, 24, 4, 4, 3, 3);
+  const box = scene.add.container(x, y, [bg, label]).setSize(w, 24);
   let enabled = true;
   box.setInteractive({ useHandCursor: true });
   box.on("pointerdown", () => {
@@ -66,11 +76,11 @@ export interface UiTab {
   setOn(on: boolean): void;
 }
 
-// A wooden tab with a brass knob, at its own size (the knob must not stretch).
+// A kit tab, 72x28 game pixels.
 export function addTab(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void): UiTab {
-  const bg = scene.add.image(0, 0, "ui_tab_off");
-  const label = scene.add.text(0, 3, text, { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
-  const box = scene.add.container(x, y, [bg, label]).setSize(bg.width, bg.height);
+  const bg = kitSlice(scene, 0, 0, "tab_off", 72, 28, 4, 4, 4, 4);
+  const label = scene.add.text(0, 0, text, { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
+  const box = scene.add.container(x, y, [bg, label]).setSize(72, 28);
   box.setInteractive({ useHandCursor: true }).on("pointerdown", onClick);
   return {
     box,
@@ -88,16 +98,16 @@ export interface UiGauge {
 
 // A brass-capped bar; the warm fill is the full picture cropped to the fraction.
 export function addGauge(scene: Phaser.Scene, x: number, y: number): UiGauge {
-  const empty = scene.add.image(0, 0, "ui_gauge_empty").setOrigin(0, 0.5);
-  const full = scene.add.image(0, 0, "ui_gauge_full").setOrigin(0, 0.5);
-  const box = scene.add.container(x - empty.width / 2, y, [empty, full]);
+  const empty = scene.add.image(0, 0, "ui_gauge_empty").setOrigin(0, 0.5).setScale(KIT);
+  const full = scene.add.image(0, 0, "ui_gauge_full").setOrigin(0, 0.5).setScale(KIT);
+  const box = scene.add.container(x - empty.displayWidth / 2, y, [empty, full]);
   const w = full.width;
   const h = full.height;
   return {
     box,
     set(f: number) {
-      // the brass caps (10 px each side) stay; only the inside fills
-      const inner = Math.round(10 + (w - 20) * Math.max(0, Math.min(1, f)));
+      // the brass caps (3 art pixels each side) stay; only the inside fills
+      const inner = Math.round(3 + (w - 6) * Math.max(0, Math.min(1, f)));
       full.setCrop(0, 0, f <= 0 ? 0 : inner, h);
     },
   };

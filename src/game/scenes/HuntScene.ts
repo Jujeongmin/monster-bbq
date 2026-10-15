@@ -19,7 +19,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 import { createCharacterAnims, loadCharacterArt, lookOf, stepBob } from "../hunt/anims";
 import { angerFlock, CHAR_SCALE, createMob, dazeMob, drawMob, isMobVulnerable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { joystickVector } from "../joystick";
-import { addButton, addGauge, loadUiArt, TEXT, TEXT_SMALL, type UiGauge } from "../ui";
+import { addButton, addGauge, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiGauge } from "../ui";
 
 // The forest hunt (plan 03), quarter view, Dave-the-Diver controls.
 // PC: WASD / arrows move, aim with the mouse, left click = harpoon, right click = slash, E = gather,
@@ -216,7 +216,7 @@ export class HuntScene extends Phaser.Scene {
     this.returnButton = back.box.setScrollFactor(0).setDepth(10000);
     // the lunchbox: one button per packed dish under the way home (the dish at one game pixel per art pixel)
     this.huntData.lunchbox.forEach((dish, i) => {
-      const bubble = this.add.nineslice(0, 0, "ui_bubble", undefined, 50, 48, 22, 8, 8, 14);
+      const bubble = kitSlice(this, 0, 0, "bubble_plain", 50, 48, 3, 3, 3, 3);
       const pic = this.add.image(1, -3, `dish_${dish}`);
       const key = this.add.text(18, 12, `${i + 1}`, TEXT_SMALL).setOrigin(0.5);
       const button = this.add.container(GAME_WIDTH - 28, 56 + i * 52, [bubble, pic, key]).setSize(50, 48).setScrollFactor(0).setDepth(10000);

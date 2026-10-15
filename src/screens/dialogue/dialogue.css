@@ -18,8 +18,8 @@
 /* the dark bar, a little see-through so the scene shows behind it (the words stay solid) */
 .dialogue-box::before {
   content: ""; position: absolute; inset: 0; z-index: -1;
-  border: calc(16px * var(--s)) solid transparent;
-  border-image: url("../../../art/test/ui/dialogue_bar.png") 16 fill / calc(16px * var(--s)) stretch;
+  border: calc(5 * var(--k)) solid transparent;
+  border-image: url("../../../art/test/ui2/panel.png") 5 fill / calc(5 * var(--k)) stretch;
   image-rendering: pixelated;
   opacity: 0.9;
 }

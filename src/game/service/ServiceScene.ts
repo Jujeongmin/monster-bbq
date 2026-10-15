@@ -5,7 +5,7 @@ import { dishScore, serveValue } from "../../../shared/service/settle";
 import { t } from "../../i18n";
 import type { CookStage, Order } from "../cook/CookStage";
 import { createCharacterAnims, loadCharacterArt } from "../hunt/anims";
-import { addButton, addGauge, loadUiArt, TEXT, type UiButton, type UiGauge } from "../ui";
+import { addButton, addGauge, kitSlice, loadUiArt, TEXT, type UiButton, type UiGauge } from "../ui";
 
 // The shop at night (cooking-service design 5), seen from the side. Customers (the server's seed, see
 // shared/service/plan) come in at their time, sit at their table and show their order with a patience
@@ -102,7 +102,7 @@ export class ServiceScene extends Phaser.Scene {
     // tables: the grill stands in until the shop picture is approved
     for (const x of SEATS_X) this.add.image(x, SEAT_Y + 34, "grill").setScale(0.3).setDepth(SEAT_Y + 40);
     // tonight's tally on a wooden strip, and the pause button
-    this.add.nineslice(112, 16, "ui_topbar", undefined, 212, 19, 12, 12, 6, 6).setDepth(999);
+    kitSlice(this, 112, 16, "topbar", 212, 20, 5, 5, 3, 3).setDepth(999);
     this.add.image(18, 16, "ui_icon_gold").setDepth(1000);
     this.tally = this.add.text(34, 16, "", label).setOrigin(0, 0.5).setDepth(1000);
     this.pauseButton = addButton(this, 596, 18, t("service.pause"), () => this.togglePause(), 64);
@@ -213,7 +213,7 @@ export class ServiceScene extends Phaser.Scene {
   // The order above the customer: the dish in a speech bubble, patience in a gauge below it. Tap to cook.
   private makeBubble(g: Guest) {
     g.bubble.removeAll(true);
-    const bubble = this.add.nineslice(0, 0, "ui_bubble", undefined, 56, 50, 22, 8, 8, 14);
+    const bubble = kitSlice(this, 0, 0, "bubble_plain", 56, 50, 3, 3, 3, 3);
     const dish = this.add.image(1, -4, `dish_${g.c.dish}`);
     g.gauge = addGauge(this, 0, 32);
     g.bubble.add([bubble, dish, g.gauge.box]);
