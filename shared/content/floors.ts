@@ -1,7 +1,7 @@
 import type { Field, Vec } from "../hunt/types";
 import type { ItemId } from "./items";
 import type { MonsterId } from "./monsters";
-import { SMALL_OBJECTS, TREES, type ObjectKind } from "./objects";
+import { CAVE_OBJECTS, SMALL_OBJECTS, SWAMP_OBJECTS, TREES, type ObjectKind } from "./objects";
 
 // The forest's floors (hunt v3 design 3): each a fixed ground (its layout comes from layoutSeed until the
 // floor's own picture replaces it, stage 4), its exits (Bandal's carts: the only way home), the way down,
@@ -101,7 +101,7 @@ export const FLOORS: Record<FloorId, FloorDef> = {
     down: { x: 1380, y: 200 },
     needs: "boots",
     ground: "swamp",
-    objects: { trees: TREES, smalls: SMALL_OBJECTS },
+    objects: SWAMP_OBJECTS,
     drainPerSec: 0.55,
     layoutSeed: 0x3a5f11,
     roster: {
@@ -119,7 +119,7 @@ export const FLOORS: Record<FloorId, FloorDef> = {
     down: null,
     needs: "lantern",
     ground: "cave",
-    objects: { trees: TREES, smalls: SMALL_OBJECTS },
+    objects: CAVE_OBJECTS,
     drainPerSec: 0.7,
     layoutSeed: 0x4c0a7e,
     roster: {

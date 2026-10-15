@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import type { HuntEvent } from "../../../shared/actions";
 import { BALANCE } from "../../../shared/balance";
 import type { DishId } from "../../../shared/content/dishes";
-import { itemKey, parseItemKey, type ItemId } from "../../../shared/content/items";
+import { ITEMS, itemKey, parseItemKey, type ItemId } from "../../../shared/content/items";
 import { OBJECT_KINDS } from "../../../shared/content/objects";
 import { addToBag, bagCount } from "../../../shared/hunt/bag";
 import { computeHit, coneTargets, nextComboStep, recordHit, type WeaponKind } from "../../../shared/hunt/combat";
@@ -288,9 +288,11 @@ export class HuntScene extends Phaser.Scene {
     loadCharacterArt(this);
     loadUiArt(this);
     for (const id of new Set(this.huntData.lunchbox.map((l) => l.dish))) this.load.image(`dish_${id}`, artUrl(`test/dishes/${id}.png`));
-    for (const id of ["shiitake", "wild_garlic", "perilla"]) this.load.image(`node_${id}`, artUrl(`test/items/node_${id}.png`));
-    for (const id of ["boar_belly", "boar_neck", "boar_rib", "rabbit_leg", "honeycomb", "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla"])
+    // every item's icon, and the gathering spot of each forage
+    for (const id of Object.keys(ITEMS)) {
       this.load.image(`icon_${id}`, artUrl(`test/items/icon_${id}.png`));
+      if (hasArt(`test/items/node_${id}.png`)) this.load.image(`node_${id}`, artUrl(`test/items/node_${id}.png`));
+    }
   }
 
   create() {
@@ -1144,8 +1146,6 @@ export class HuntScene extends Phaser.Scene {
     const cam = this.cameras.main;
     const target = { x: cam.worldView.x + RING.x + RING.r + 30, y: cam.worldView.y + RING.y - 6 };
     for (let i = 0; i < count; i++) {
-      // the deep floors' item icons come once their art is approved
-      if (!this.textures.exists(`icon_${item.id}`)) break;
       const icon = this.add.image(at.x, at.y - 30, `icon_${item.id as ItemId}`).setDepth(9800);
       this.tweens.add({ targets: icon, x: target.x, y: target.y, scale: 0.6, delay: 120 * i, duration: 600, ease: "Cubic.easeIn", onComplete: () => icon.destroy() });
     }
@@ -1398,7 +1398,7 @@ export class HuntScene extends Phaser.Scene {
     if (!item) return;
     const name = itemName(key);
     const color = item.grade === "premium" ? "#ffd166" : "#ffffff";
-    const icon = this.add.image(x - 2, y, this.textures.exists(`icon_${item.id}`) ? `icon_${item.id as ItemId}` : "__DEFAULT").setOrigin(1, 0.5).setDepth(9001);
+    const icon = this.add.image(x - 2, y, `icon_${item.id as ItemId}`).setOrigin(1, 0.5).setDepth(9001);
     const label = this.add.text(x, y, name, { ...TEXT_SMALL, color }).setOrigin(0, 0.5).setDepth(9001);
     this.tweens.add({ targets: [icon, label], y: y - 16, alpha: 0, delay: 500, duration: 900, ease: "Cubic.easeOut", onComplete: () => (icon.destroy(), label.destroy()) });
   }
