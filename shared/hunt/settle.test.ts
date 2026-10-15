@@ -10,7 +10,7 @@ const ctx = (now = T0): ActionContext => ({ now, random: () => 0.4 });
 const H = BALANCE.hunt;
 
 function started(save: SaveData = newSave()): SaveData {
-  const r = applyAction(save, { type: "startHunt", zone: "forest" }, ctx());
+  const r = applyAction(save, { type: "startHunt", zone: "forest", side: "sling" }, ctx());
   if (r.error) throw new Error(r.error);
   return r.save;
 }
@@ -82,7 +82,7 @@ describe("two hunts a day", () => {
     expect(afternoon.hunt!.period).toBe("afternoon");
     const evening = finish(afternoon, [], "1-e2").save;
     expect(evening.stage).toBe("kitchen");
-    expect(applyAction(evening, { type: "startHunt", zone: "forest" }, ctx()).error).toBe("wrong_stage");
+    expect(applyAction(evening, { type: "startHunt", zone: "forest", side: "sling" }, ctx()).error).toBe("wrong_stage");
   });
   it("brings the afternoon roster on the afternoon hunt", () => {
     const afternoon = started(finish(started(), [], "1-e0").save);
@@ -111,7 +111,7 @@ describe("two hunts a day", () => {
 describe("retries after a lost reply", () => {
   it("answers a second startHunt with the hunt already open, not a new seed", () => {
     const s = started();
-    const again = applyAction(s, { type: "startHunt", zone: "forest" }, ctx(T0 + 5000));
+    const again = applyAction(s, { type: "startHunt", zone: "forest", side: "sling" }, ctx(T0 + 5000));
     expect(again.error).toBeUndefined();
     expect(again.save).toEqual(s);
   });
@@ -123,6 +123,18 @@ describe("retries after a lost reply", () => {
   });
   it("still refuses a hunt from the evening kitchen", () => {
     const evening = applyAction(finish(started(), [], "1-e0").save, { type: "skipHunt" }, ctx()).save;
-    expect(applyAction(evening, { type: "startHunt", zone: "forest" }, ctx()).error).toBe("wrong_stage");
+    expect(applyAction(evening, { type: "startHunt", zone: "forest", side: "sling" }, ctx()).error).toBe("wrong_stage");
+  });
+});
+
+describe("the side weapon taken out", () => {
+  it("starts a hunt with a side weapon the hunter owns, and keeps it on the hunt", () => {
+    const s = applyAction(newSave(), { type: "startHunt", zone: "forest", side: "sling" }, ctx()).save;
+    expect(s.hunt!.side).toBe("sling");
+  });
+  it("refuses a side weapon not bought yet, or no side weapon at all", () => {
+    expect(applyAction(newSave(), { type: "startHunt", zone: "forest", side: "sleepGun" }, ctx()).error).toBe("locked");
+    expect(applyAction(newSave(), { type: "startHunt", zone: "forest", side: "bazooka" }, ctx()).error).toBe("bad_action");
+    expect(applyAction(newSave(), { type: "startHunt", zone: "forest" }, ctx()).error).toBe("bad_action");
   });
 });

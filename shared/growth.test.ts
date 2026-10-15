@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyAction, type ActionContext } from "./actions";
 import { BALANCE } from "./balance";
-import { bagSlots, huntStats, level, lunchSlots, maxLevel, menuSlots, nextCost, seatBonus, UPGRADE_IDS } from "./growth";
+import { ammoOf, bagSlots, huntStats, ownsSide, sleepFallMs, level, lunchSlots, maxLevel, menuSlots, nextCost, seatBonus, UPGRADE_IDS } from "./growth";
 import { planFloor } from "./hunt/plan";
 import { planService } from "./service/plan";
 import { newSave, readSave } from "./save";
@@ -11,9 +11,9 @@ const U = BALANCE.upgrades;
 const buy = (s: ReturnType<typeof newSave>, id: string) => applyAction(s, { type: "buyUpgrade", id }, ctx);
 
 describe("upgrade levels", () => {
-  it("starts every upgrade at level 1", () => {
+  it("starts every upgrade at its base level", () => {
     const s = newSave();
-    for (const id of UPGRADE_IDS) expect(level(s, id)).toBe(1);
+    for (const id of UPGRADE_IDS) expect(level(s, id)).toBe(U[id].base);
     expect(maxLevel("melee")).toBe(1 + U.melee.costs.length);
     expect(nextCost(s, "melee")).toBe(U.melee.costs[0]);
   });
@@ -61,7 +61,7 @@ describe("upgrade effects", () => {
     expect(lunchSlots(at({ lunchbox: 2 }))).toBe(2);
   });
   it("lets the server take a 15-item haul once the bag is upgraded", () => {
-    const start = applyAction({ ...newSave(), upgrades: { bag: 2 } }, { type: "startHunt", zone: "forest" }, { ...ctx, now: 1_000_000 }).save;
+    const start = applyAction({ ...newSave(), upgrades: { bag: 2 } }, { type: "startHunt", zone: "forest", side: "sling" }, { ...ctx, now: 1_000_000 }).save;
     const plan = planFloor(start.hunt!.seed, 1, "morning");
     const kills = [...plan.spawns.filter((s) => s.wave === 0), ...plan.spawns.filter((s) => s.wave === 1)].slice(0, 15).map((s) => ({ kill: s.id, grade: "normal" }));
     const r = applyAction(start, { type: "finishHunt", huntId: start.hunt!.id, events: kills, exit: "1-e0", ko: false }, { ...ctx, now: 1_000_000 + 15 * BALANCE.hunt.minMsPerKill });
@@ -77,5 +77,19 @@ describe("upgrade effects", () => {
   it("brings one more guest a night per seat level, the same way for the server and the page", () => {
     const opts = { day: 1, reputation: 0, menu: ["grilled_belly" as const] };
     expect(planService(5, { ...opts, seats: 1 })).toHaveLength(planService(5, opts).length + 1);
+  });
+});
+
+describe("side weapons in the upgrade shop", () => {
+  it("starts with the slingshot only; the others are bought with gold", () => {
+    const s = newSave();
+    expect([ownsSide(s, "sling"), ownsSide(s, "sleepGun"), ownsSide(s, "netGun"), ownsSide(s, "firecracker")]).toEqual([true, false, false, false]);
+    expect(ammoOf(s, "sling")).toBe(12);
+    expect(ammoOf(s, "sleepGun")).toBe(0);
+    const bought = buy({ ...s, gold: 800 }, "sleepGun").save;
+    expect([ownsSide(bought, "sleepGun"), ammoOf(bought, "sleepGun"), bought.gold]).toEqual([true, 4, 0]);
+  });
+  it("puts the sleep dart to work faster at levels 2 and 3", () => {
+    expect([sleepFallMs({ upgrades: { sleepGun: 1 } }), sleepFallMs({ upgrades: { sleepGun: 2 } }), sleepFallMs({ upgrades: { sleepGun: 3 } })]).toEqual([1500, 1000, 600]);
   });
 });

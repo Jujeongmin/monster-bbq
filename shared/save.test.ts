@@ -148,15 +148,18 @@ describe("save version 6 (hunt v3: two hunts a day)", () => {
     expect(newSave()).toMatchObject({ version: 6, stage: "hunt", hunt: null });
   });
   it("keeps the lunch stage and a hunt's time of day", () => {
-    const s = readSave({ ...newSave(), stage: "lunch", hunt: { id: "h1", seed: 3, zone: "forest", period: "afternoon", startedAt: 5 } });
+    const s = readSave({ ...newSave(), stage: "lunch", hunt: { id: "h1", seed: 3, zone: "forest", period: "afternoon", side: "sleepGun", startedAt: 5 } });
     expect(s.stage).toBe("lunch");
-    expect(s.hunt).toEqual({ id: "h1", seed: 3, zone: "forest", period: "afternoon", startedAt: 5 });
+    expect(s.hunt).toEqual({ id: "h1", seed: 3, zone: "forest", period: "afternoon", side: "sleepGun", startedAt: 5 });
   });
   it("reads a version 5 save as version 6, a hunt in progress as the morning hunt", () => {
     const v5 = { ...newSave(), version: 5, stage: "hunt", hunt: { id: "h1", seed: 3, zone: "forest", startedAt: 5 } };
     const s = readSave(v5);
     expect(s.version).toBe(6);
     expect(s.hunt?.period).toBe("morning");
+  });
+  it("reads a hunt saved before side weapons as carrying the slingshot", () => {
+    expect(readSave({ ...newSave(), hunt: { id: "h1", seed: 3, zone: "forest", period: "morning", startedAt: 5 } }).hunt?.side).toBe("sling");
   });
   it("reads an unknown time of day as the morning", () => {
     expect(readSave({ ...newSave(), hunt: { id: "h1", seed: 3, zone: "forest", period: "midnight", startedAt: 5 } }).hunt?.period).toBe("morning");

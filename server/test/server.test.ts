@@ -6,13 +6,13 @@ describe("Server", () => {
   });
 
   test("opens a hunt with its own seed", async (server) => {
-    const s = await server.act({ type: "startHunt", zone: "forest" });
+    const s = await server.act({ type: "startHunt", zone: "forest", side: "sling" });
     expect(s.hunt.zone).toBe("forest");
     expect(typeof s.hunt.seed).toBe("number");
   });
 
   test("settles an empty hunt", async (server) => {
-    const started = await server.act({ type: "startHunt", zone: "forest" });
+    const started = await server.act({ type: "startHunt", zone: "forest", side: "sling" });
     const s = await server.act({ type: "finishHunt", huntId: started.hunt.id, events: [], exit: "1-e0", ko: false });
     expect(s.hunt).toBe(null);
   });
@@ -20,7 +20,7 @@ describe("Server", () => {
   test("refuses a forged hunt", async (server) => {
     let refused = false;
     try {
-      await server.act({ type: "startHunt", zone: "forest" });
+      await server.act({ type: "startHunt", zone: "forest", side: "sling" });
       await server.act({ type: "finishHunt", huntId: "forged", events: [{ kill: "1-s0", grade: "premium" }], exit: "1-e0", ko: false });
     } catch {
       refused = true;
@@ -30,16 +30,16 @@ describe("Server", () => {
 
   test("goes out twice a day: morning, lunch, afternoon", async (server) => {
     server.connect({ account: "two-hunts" });
-    const m = await server.act({ type: "startHunt", zone: "forest" });
+    const m = await server.act({ type: "startHunt", zone: "forest", side: "sling" });
     const lunch = await server.act({ type: "finishHunt", huntId: m.hunt.id, events: [], exit: "1-e0", ko: false });
     expect(lunch.stage).toBe("lunch");
-    const a = await server.act({ type: "startHunt", zone: "forest" });
+    const a = await server.act({ type: "startHunt", zone: "forest", side: "sling" });
     expect(a.hunt.period).toBe("afternoon");
   });
 
   test("keeps each account's save apart", async (server) => {
     server.connect({ account: "user-a" });
-    await server.act({ type: "startHunt", zone: "forest" });
+    await server.act({ type: "startHunt", zone: "forest", side: "sling" });
     server.connect({ account: "user-b" });
     const s = await server.load();
     expect(s.hunt).toBe(null);

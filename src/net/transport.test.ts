@@ -11,7 +11,7 @@ function memory() {
 describe("LocalTransport", () => {
   it("plays by the shared rules and remembers the save", async () => {
     const store = memory();
-    await new LocalTransport(store).act({ type: "startHunt", zone: "forest" });
+    await new LocalTransport(store).act({ type: "startHunt", zone: "forest", side: "sling" });
     expect((await new LocalTransport(store).load()).hunt?.zone).toBe("forest");
   });
   it("starts fresh instead of failing when the stored save is not even JSON", async () => {

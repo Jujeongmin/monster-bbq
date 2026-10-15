@@ -3,6 +3,7 @@ import { isItemId, parseItemKey, type ItemId } from "./content/items";
 import { RECIPES } from "./content/recipes";
 import { BALANCE } from "./balance";
 import type { Period } from "./content/floors";
+import { isSideWeaponId, type SideWeaponId } from "./content/sideWeapons";
 import { isUpgradeId, type UpgradeId } from "./content/upgrades";
 import { MAX_DISH_LEVEL, MAX_SETS, type MenuLine, type TonightDish } from "./kitchen/dish";
 
@@ -15,6 +16,8 @@ export interface PendingHunt {
   seed: number;
   zone: Zone;
   period: Period;
+  // the side weapon taken out (its shots are the whole hunt's)
+  side: SideWeaponId;
   startedAt: number;
 }
 
@@ -111,7 +114,9 @@ function readHunt(raw: unknown): PendingHunt | null {
   if (typeof h.id !== "string" || typeof h.seed !== "number" || h.zone !== "forest" || typeof h.startedAt !== "number") return null;
   // a hunt saved before hunt v3 (or with an unknown time of day) is the morning hunt
   const period = h.period === "afternoon" ? "afternoon" : "morning";
-  return { id: h.id, seed: h.seed, zone: h.zone, period, startedAt: h.startedAt };
+  // a hunt saved before side weapons carried the slingshot
+  const side = isSideWeaponId(h.side) ? h.side : "sling";
+  return { id: h.id, seed: h.seed, zone: h.zone, period, side, startedAt: h.startedAt };
 }
 
 // A list of known values, each once, in stored order.

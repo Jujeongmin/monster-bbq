@@ -6,6 +6,7 @@ import type { HitTuning, WeaponKind, WeaponStats } from "./hunt/combat";
 import type { DishId } from "./content/dishes";
 import type { ItemId } from "./content/items";
 import type { UpgradeId } from "./content/upgrades";
+import type { SideWeaponId } from "./content/sideWeapons";
 
 // Every hunting number lives here. Prototype values from plan 01; tuned in the playtest.
 export const BALANCE: {
@@ -44,7 +45,7 @@ export const BALANCE: {
   // ingredients; level 1's cost is the research). A set with a premium part sells for premiumBonus more.
   dishes: { levels: { price: number; plates: number; gold: number; sets: number }[]; premiumBonus: number };
   // per upgrade: its starting level, the cost of each next level, and target levels locked until later
-  // chapters (boss parts, story)
+  // chapters (boss parts, story); base 0 = not owned until bought (the side weapons)
   upgrades: Record<UpgradeId, { base: 0 | 1; costs: number[]; locked?: number[] }>;
   // lunchbox effects on the hunt: health back per gold of the dish's price, and a few dishes that
   // also put a spring in the step
@@ -59,6 +60,9 @@ export const BALANCE: {
     menu: number[];
     seats: number[];
     lunch: number[];
+    // side weapons: shots per hunt by level, and how fast the sleep dart works by its level
+    ammo: Record<SideWeaponId, number[]>;
+    sleepFallMs: number[];
   };
   service: {
     baseCustomers: number;
@@ -160,6 +164,11 @@ export const BALANCE: {
     menu: { base: 1, costs: [400, 1200, 3000] },
     seats: { base: 1, costs: [800, 1600, 3200, 6400] },
     lunchbox: { base: 1, costs: [300, 1500] },
+    // side weapons (hunt v3 design 4.4, user-approved draft 2026-10-15): gold only until the deep floors' parts (stage 3)
+    sling: { base: 1, costs: [600, 1500] },
+    sleepGun: { base: 0, costs: [800, 2000, 4500] },
+    netGun: { base: 0, costs: [1200, 3000] },
+    firecracker: { base: 0, costs: [500] },
   },
   lunch: { healPerGold: 0.8, speedDishes: ["honey_rabbit", "baeksuk"], speedMul: 1.2, speedMs: 10000 },
   growth: {
@@ -171,6 +180,8 @@ export const BALANCE: {
     menu: [2, 3, 4, 5],
     seats: [0, 1, 2, 3, 4],
     lunch: [1, 2, 3],
+    ammo: { sling: [12, 16, 20], sleepGun: [4, 5, 6], netGun: [2, 3], firecracker: [3] },
+    sleepFallMs: [1500, 1000, 600],
   },
   // the night service (restaurant v2 design 4); first guesses, tuned in play
   service: {

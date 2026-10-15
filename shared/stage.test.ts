@@ -9,7 +9,7 @@ const ctx = (now = 1_000_000): ActionContext => ({ now, random: () => 0.4 });
 function hunted(): SaveData {
   let s = newSave();
   for (const exit of ["1-e0", "1-e1"]) {
-    s = applyAction(s, { type: "startHunt", zone: "forest" }, ctx()).save;
+    s = applyAction(s, { type: "startHunt", zone: "forest", side: "sling" }, ctx()).save;
     const r = applyAction(s, { type: "finishHunt", huntId: s.hunt!.id, events: [], exit, ko: false }, ctx());
     if (r.error) throw new Error(r.error);
     s = r.save;
@@ -24,7 +24,7 @@ describe("the day's stage", () => {
   it("moves to the kitchen after the afternoon hunt, and refuses a third hunt that day", () => {
     const s = hunted();
     expect(s.stage).toBe("kitchen");
-    expect(applyAction(s, { type: "startHunt", zone: "forest" }, ctx()).error).toBe("wrong_stage");
+    expect(applyAction(s, { type: "startHunt", zone: "forest", side: "sling" }, ctx()).error).toBe("wrong_stage");
   });
   it("opens the shop only from the kitchen, and settles to the settle stage", () => {
     expect(applyAction({ ...newSave(), dishes: { grilled_belly: 1 }, items: { "boar_belly:normal": 1 } }, { type: "openShop", menu: [{ dish: "grilled_belly", sets: 1 }] }, ctx()).error).toBe("wrong_stage");

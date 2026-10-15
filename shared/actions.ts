@@ -2,7 +2,8 @@ import { BALANCE } from "./balance";
 import { isDishId, type DishId } from "./content/dishes";
 import { isUpgradeId } from "./content/upgrades";
 import { RECIPES } from "./content/recipes";
-import { bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost } from "./growth";
+import { bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost, ownsSide } from "./growth";
+import { isSideWeaponId, type SideWeaponId } from "./content/sideWeapons";
 import { itemKey, parseItemKey, type ItemId } from "./content/items";
 import { addToBag } from "./hunt/bag";
 import { dropFor } from "./hunt/drops";
@@ -18,7 +19,7 @@ import type { SaveData, Zone } from "./save";
 export type HuntEvent = { kill: string; grade: "premium" | "normal" } | { gather: string } | { down: FloorId };
 
 export type Action =
-  | { type: "startHunt"; zone: Zone }
+  | { type: "startHunt"; zone: Zone; side: SideWeaponId }
   | { type: "finishHunt"; huntId: string; events: HuntEvent[]; exit: string | null; ko: boolean }
   | { type: "skipHunt" }
   | { type: "research"; dish: string }
@@ -173,15 +174,16 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
   if (!a || typeof a !== "object") return { save, error: "bad_action" };
   switch (a.type) {
     case "startHunt": {
-      if (a.zone !== "forest") return { save, error: "bad_action" };
+      if (a.zone !== "forest" || !isSideWeaponId(a.side)) return { save, error: "bad_action" };
       // the morning hunt from the day's start, the afternoon hunt from lunch (hunt v3 design 3)
       if (save.stage !== "hunt" && save.stage !== "lunch") return { save, error: "wrong_stage" };
       // already out (a retry after a lost reply): the same hunt stands, never a second seed
       if (save.hunt) return { save };
+      if (!ownsSide(save, a.side)) return { save, error: "locked" };
       const period = save.stage === "hunt" ? "morning" : "afternoon";
       const seed = Math.floor(ctx.random() * 2 ** 31);
       const id = `h${ctx.now.toString(36)}${Math.floor(ctx.random() * 1e9).toString(36)}`;
-      return { save: { ...save, hunt: { id, seed, zone: a.zone, period, startedAt: ctx.now } } };
+      return { save: { ...save, hunt: { id, seed, zone: a.zone, period, side: a.side, startedAt: ctx.now } } };
     }
     case "finishHunt": {
       const gained = settleHunt(save, a, ctx.now);

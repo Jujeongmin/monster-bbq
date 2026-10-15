@@ -1,5 +1,6 @@
 import { BALANCE } from "./balance";
 import { UPGRADE_IDS, type UpgradeId } from "./content/upgrades";
+import type { SideWeaponId } from "./content/sideWeapons";
 import type { SaveData } from "./save";
 
 // Upgrade levels (growth design 2): everything starts at level 1.
@@ -35,3 +36,8 @@ export const bagSlots = (save: Pick<SaveData, "upgrades">) => at(E.bag, level(sa
 export const menuSlots = (save: Pick<SaveData, "upgrades">) => at(E.menu, level(save, "menu"));
 export const seatBonus = (save: Pick<SaveData, "upgrades">) => at(E.seats, level(save, "seats"));
 export const lunchSlots = (save: Pick<SaveData, "upgrades">) => at(E.lunch, level(save, "lunchbox"));
+
+// Side weapons (hunt v3 design 4.4): owned from level 1; shots per hunt by level.
+export const ownsSide = (save: Pick<SaveData, "upgrades">, id: SideWeaponId): boolean => level(save, id) >= 1;
+export const ammoOf = (save: Pick<SaveData, "upgrades">, id: SideWeaponId): number => (ownsSide(save, id) ? at(E.ammo[id], level(save, id)) : 0);
+export const sleepFallMs = (save: Pick<SaveData, "upgrades">): number => at(E.sleepFallMs, Math.max(1, level(save, "sleepGun")));

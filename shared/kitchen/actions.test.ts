@@ -107,7 +107,7 @@ describe("openShop", () => {
 
 describe("finishHunt sees what came home", () => {
   it("adds the ingredients brought home to seenItems once", () => {
-    const s = applyAction(newSave(), { type: "startHunt", zone: "forest" }, ctx()).save;
+    const s = applyAction(newSave(), { type: "startHunt", zone: "forest", side: "sling" }, ctx()).save;
     const plain = { ...s, seenItems: ["boar_belly" as const] };
     // an empty report brings nothing new
     expect(applyAction(plain, { type: "finishHunt", huntId: s.hunt!.id, events: [], exit: "1-e0", ko: false }, ctx()).save.seenItems).toEqual(["boar_belly"]);

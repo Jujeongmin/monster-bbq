@@ -9,7 +9,7 @@ import { newSave, type SaveData } from "./save";
 const ctx = (now: number): ActionContext => ({ now, random: () => 0.25 });
 
 function started(now = 1_000_000): SaveData {
-  const r = applyAction(newSave(), { type: "startHunt", zone: "forest" }, ctx(now));
+  const r = applyAction(newSave(), { type: "startHunt", zone: "forest", side: "sling" }, ctx(now));
   if (r.error) throw new Error(r.error);
   return r.save;
 }

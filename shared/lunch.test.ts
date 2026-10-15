@@ -44,7 +44,7 @@ describe("packLunch", () => {
 describe("the lunchbox and the hunt", () => {
   it("is empty once the hunt is settled, eaten or not", () => {
     const packed = { ...pack(kitchen, ["grilled_belly"]).save, stage: "hunt" as const };
-    const started = applyAction(packed, { type: "startHunt", zone: "forest" }, ctx()).save;
+    const started = applyAction(packed, { type: "startHunt", zone: "forest", side: "sling" }, ctx()).save;
     const r = applyAction(started, { type: "finishHunt", huntId: started.hunt!.id, events: [], exit: "1-e0", ko: false }, ctx());
     expect(r.save.lunchbox).toEqual([]);
   });
