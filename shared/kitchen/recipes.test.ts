@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-// The server's answer table, checked here (test files never reach the client bundle).
-import { RECIPES } from "../../server/src/recipes";
+// The public recipe table (restaurant v2), checked for the shape the kitchen relies on.
+import { RECIPES } from "../content/recipes";
 import { DISHES, METHODS } from "../content/dishes";
 import { ITEMS } from "../content/items";
 
-describe("server recipe table", () => {
+describe("recipe table", () => {
   it("has exactly the public dish list", () => {
     expect(Object.keys(RECIPES).sort()).toEqual(Object.keys(DISHES).sort());
   });
