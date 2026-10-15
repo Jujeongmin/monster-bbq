@@ -140,7 +140,7 @@ export const BALANCE: {
     // and left dazed (counter)
     harpoon: {
       speed: 340,
-      handHeight: 22,
+      handHeight: 15,
       bodyOffsetY: 16,
       hitRadius: 18,
       pullSpeed: 260,

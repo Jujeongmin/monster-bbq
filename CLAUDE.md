@@ -12,6 +12,7 @@ Verse8 횡스크롤 사냥 + 고깃집 경영 게임 (Vite + React + TypeScript,
 - **Kenney·itch.io·OpenGameArt 에셋은 쓰지 않는다**(사용자가 이미 너무 많이 썼다). 소리는 Mixkit.
 - UI 요소(창·버튼·배경)는 CSS 색 박스로 만들지 않는다. PixelLab으로 생성한다.
 - 사냥 시점은 쿼터뷰 탑다운(MMORPG 카메라, 참고: 도깨비의세계). 캐릭터·몬스터는 PixelLab low top-down 각도, 4/8방향. 가게는 옆모습 단면도.
+- 지금은 프로토타입이다. UI·연출을 최종으로 확정하지 말고 계속 다듬는다. 데이브 더 다이버를 계속 참고해 퀄리티를 올리는 데 집중한다(2026-10-15 사용자).
 - 사냥 조작은 데이브 더 다이브식: PC는 WASD 이동 + 마우스 조준(좌클릭 작살, 우클릭 베기), 모바일은 가상 조이스틱 + 오른쪽 눌러 조준·떼면 발사 + 베기 버튼. 가게·주방 화면은 클릭/탭.
 - 그림은 PixelLab 외에 Codex로 만들어도 된다(사용자 허락, 2026-10-14). 단 컨셉(코믹·아기자기 픽셀아트, 쿼터뷰 시점)을 지킨다.
   - Codex 사용법: 프롬프트를 파일로 써서 `codex exec --skip-git-repo-check -s workspace-write -C <프로젝트> --image <참고그림> - < prompt.txt`. `--image`는 뒤의 인자를 전부 이미지로 먹으니 프롬프트는 표준입력으로 넘긴다. `-s workspace-write`가 없으면 저장을 못 하고, 생성본은 `~/.codex/generated_images/<세션>/`에만 남는다.

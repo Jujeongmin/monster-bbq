@@ -33,6 +33,10 @@ export interface Mob {
   dead: boolean;
 }
 
+// Hunter and monsters are drawn smaller than their frames (user, 2026-10-15: they filled too much of the
+// field); only the look changes, the hit sizes stay in shared/balance.
+export const CHAR_SCALE = 0.7;
+
 export function createMob(scene: Phaser.Scene, spawn: Spawn): Mob {
   const pos = { x: spawn.x, y: spawn.y };
   const kind = MONSTERS[spawn.monster].kind;
@@ -44,7 +48,7 @@ export function createMob(scene: Phaser.Scene, spawn: Spawn): Mob {
         : kind === "shooter"
           ? { kind, s: newShooter(pos) }
           : { kind, s: newPackMember(pos) };
-  const sprite = scene.add.sprite(pos.x, pos.y, `${spawn.monster}_side_0`).setOrigin(0.5, FEET[spawn.monster]).setDepth(pos.y);
+  const sprite = scene.add.sprite(pos.x, pos.y, `${spawn.monster}_side_0`).setOrigin(0.5, FEET[spawn.monster]).setScale(CHAR_SCALE).setDepth(pos.y);
   sprite.setAlpha(0);
   scene.tweens.add({ targets: sprite, alpha: 1, duration: 400 });
   return { spawn, sprite, ai, hp: MONSTERS[spawn.monster].maxHp, hits: EMPTY_HIT_LOG, dead: false };
@@ -128,7 +132,7 @@ export function stepMob(m: Mob, dt: number, player: Vec | null, field: Field, ob
     case "shooter": {
       const r = updateShooter(m.ai.s, seen, dt, H.bee, field);
       m.ai = { kind: "shooter", s: r.state };
-      if (r.shot) out.shot = { ...r.shot, pos: { x: r.shot.pos.x, y: r.shot.pos.y - 14 } };
+      if (r.shot) out.shot = { ...r.shot, pos: { x: r.shot.pos.x, y: r.shot.pos.y - 10 } };
       break;
     }
     case "pack": {
@@ -158,7 +162,7 @@ export function drawMob(scene: Phaser.Scene, m: Mob, phaseChanged: boolean, shou
     const warn = (tint: number, ms: number) => {
       s.setTint(tint);
       scene.tweens.add({ targets: s, alpha: 0.5, yoyo: true, repeat: 3, duration: ms / 8 });
-      shout(pos.x, pos.y - 48, "!", "#ff5050", ms);
+      shout(pos.x, pos.y - 36, "!", "#ff5050", ms);
     };
     if (m.ai.kind === "charger" && m.ai.s.phase === "telegraph") warn(0xff6060, H.boar.telegraphMs);
     if (m.ai.kind === "shooter" && m.ai.s.phase === "aim") warn(0xffb040, H.bee.aimMs);

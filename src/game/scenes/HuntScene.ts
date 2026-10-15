@@ -17,7 +17,7 @@ import { itemName, t } from "../../i18n";
 import { artUrl } from "../art";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 import { createCharacterAnims, loadCharacterArt, lookOf, stepBob } from "../hunt/anims";
-import { angerFlock, createMob, dazeMob, drawMob, isMobVulnerable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
+import { angerFlock, CHAR_SCALE, createMob, dazeMob, drawMob, isMobVulnerable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { joystickVector } from "../joystick";
 import { addButton, addGauge, loadUiArt, TEXT, TEXT_SMALL, type UiGauge } from "../ui";
 
@@ -61,6 +61,9 @@ interface Player {
   pos: Vec;
   // unit vector toward the aim (or the last move on touch)
   aim: Vec;
+  // which way the hunter faces: the way it walks (Dave the Diver style), not the mouse; attacks turn it
+  // toward the aim only while they play
+  face: Vec;
   hp: number;
   cooldownMs: number;
   harpoonCooldownMs: number;
@@ -137,7 +140,7 @@ export class HuntScene extends Phaser.Scene {
     this.lunch = [];
     this.speedUntil = 0;
     this.plan = planHunt(data.seed, data.zone);
-    this.player = { pos: { ...HUNT_START }, aim: { x: 1, y: 0 }, hp: this.maxHp, cooldownMs: 0, harpoonCooldownMs: 0, swingMs: 0, comboStep: 0, msSinceSwing: Infinity, down: false };
+    this.player = { pos: { ...HUNT_START }, aim: { x: 1, y: 0 }, face: { x: 0, y: 1 }, hp: this.maxHp, cooldownMs: 0, harpoonCooldownMs: 0, swingMs: 0, comboStep: 0, msSinceSwing: Infinity, down: false };
     this.mobs = [];
     this.refills = this.plan.spawns.filter((s) => s.wave > 0);
     this.nextRefill = 0;
@@ -185,7 +188,7 @@ export class HuntScene extends Phaser.Scene {
     }
     createCharacterAnims(this);
 
-    this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_down_0").setOrigin(0.5, HUNTER_FEET);
+    this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_down_0").setOrigin(0.5, HUNTER_FEET).setScale(CHAR_SCALE);
     this.fx = this.add.graphics().setDepth(5000);
     for (const s of this.plan.spawns.filter((s) => s.wave === 0)) this.mobs.push(createMob(this, s));
 
@@ -394,16 +397,18 @@ export class HuntScene extends Phaser.Scene {
       const next = moveByInput(p.pos, move, speed, dt, H.field, H.player.depthSpeedRatio);
       p.pos = clampToField(pushOutOfRects(next, this.obstacles, H.player.radius), H.field);
       if (this.touch && this.aimPointer === null) p.aim = unit(move, p.aim);
+      p.face = unit(move, p.face);
     }
     if (this.gathering) this.stepGather(dt);
     this.showHunter(moving);
   }
 
-  // Walk cycle toward the aim (down, up or sideways); standing still shows its first frame.
+  // Walk cycle the way the hunter walks (down, up or sideways); standing still keeps the last way and
+  // shows its first frame.
   private showHunter(moving: boolean) {
     const p = this.player;
-    const look = lookOf(p.aim);
-    this.hunter.setFlipX(look === "side" && p.aim.x < 0);
+    const look = lookOf(p.face);
+    this.hunter.setFlipX(look === "side" && p.face.x < 0);
     if (moving) {
       const key = `hunter_walk_${look}`;
       if (this.hunter.anims.currentAnim?.key !== key || !this.hunter.anims.isPlaying) this.hunter.play(key);
@@ -451,10 +456,10 @@ export class HuntScene extends Phaser.Scene {
     this.rememberEaten();
     const heal = Math.round(BALANCE.service.dishPrice[l.dish] * BALANCE.lunch.healPerGold);
     p.hp = Math.min(this.maxHp, p.hp + heal);
-    this.popText(p.pos.x, p.pos.y - 44, `+${heal}`, "#7fe07f");
+    this.popText(p.pos.x, p.pos.y - 32, `+${heal}`, "#7fe07f");
     if (BALANCE.lunch.speedDishes.includes(l.dish)) {
       this.speedUntil = this.time.now + BALANCE.lunch.speedMs;
-      this.popText(p.pos.x, p.pos.y - 58, t("hunt.speedUp"), "#ffd166", 1200);
+      this.popText(p.pos.x, p.pos.y - 44, t("hunt.speedUp"), "#ffd166", 1200);
     }
   }
 
@@ -472,7 +477,7 @@ export class HuntScene extends Phaser.Scene {
     this.hunter.setPosition(p.pos.x, p.pos.y).setTint(0xff8080);
     this.time.delayedCall(150, () => this.hunter.clearTint());
     this.cameras.main.shake(100, 0.01);
-    this.popText(p.pos.x, p.pos.y - 44, `-${damage}`, "#ff6060");
+    this.popText(p.pos.x, p.pos.y - 32, `-${damage}`, "#ff6060");
     if (p.hp === 0) {
       p.down = true;
       this.harpoon = null;
@@ -512,7 +517,7 @@ export class HuntScene extends Phaser.Scene {
     const key = itemKey(g.node.node.item);
     const r = addToBag(this.bag, key, this.bagSlots);
     if (!r.added) {
-      this.popText(this.player.pos.x, this.player.pos.y - 56, t("hunt.bagFull"), "#ffb0b0", 1200);
+      this.popText(this.player.pos.x, this.player.pos.y - 42, t("hunt.bagFull"), "#ffb0b0", 1200);
       return;
     }
     this.bag = r.bag;
@@ -556,7 +561,7 @@ export class HuntScene extends Phaser.Scene {
       // reeled in and dazed for dazeMs: open for counters
       dazeMob(m, unit({ x: this.player.pos.x - r.pos.x, y: this.player.pos.y - r.pos.y }));
       drawMob(this, m, true, (x, y, s, c, ms) => this.popText(x, y, s, c, ms));
-      this.popText(r.pos.x, r.pos.y - 48, t("hunt.chance"), "#7fe0ff", 600);
+      this.popText(r.pos.x, r.pos.y - 36, t("hunt.chance"), "#7fe0ff", 600);
     }
   }
 
@@ -618,7 +623,7 @@ export class HuntScene extends Phaser.Scene {
     this.time.delayedCall(70, () => m.sprite.active && m.sprite.clearTint());
     const tags = tagList.filter(Boolean).join(" ");
     const at = mobPos(m);
-    this.popText(at.x, at.y - 40, `${damage}${tags ? " " + tags : ""}`, tags ? "#ffd166" : "#ffffff");
+    this.popText(at.x, at.y - 30, `${damage}${tags ? " " + tags : ""}`, tags ? "#ffd166" : "#ffffff");
     if (m.hp <= 0) this.killMob(m);
   }
 
@@ -634,8 +639,8 @@ export class HuntScene extends Phaser.Scene {
     const at = mobPos(m);
     if (r.added) {
       this.bag = r.bag;
-      this.popItem(at.x, at.y - 52, key);
-    } else this.popText(at.x, at.y - 52, t("hunt.bagFull"), "#ffb0b0", 1200);
+      this.popItem(at.x, at.y - 38, key);
+    } else this.popText(at.x, at.y - 38, t("hunt.bagFull"), "#ffb0b0", 1200);
     this.tweens.killTweensOf(m.sprite);
     m.sprite.setAlpha(1).clearTint();
     this.tweens.add({
@@ -665,7 +670,7 @@ export class HuntScene extends Phaser.Scene {
   }
 
   private updateShots(dt: number) {
-    const target = { x: this.player.pos.x, y: this.player.pos.y - 14 };
+    const target = { x: this.player.pos.x, y: this.player.pos.y - 10 };
     this.shots = this.shots.filter((s) => {
       const next = stepShot(s.shot, dt);
       if (next && !this.player.down && shotHits(next, target, H.bee.shotRadius)) {
@@ -692,12 +697,12 @@ export class HuntScene extends Phaser.Scene {
     for (const m of this.mobs) {
       if (m.dead) continue;
       if (m.ai.kind === "charger" && m.ai.s.phase === "telegraph") this.drawLane(g, mobPos(m), m.ai.s.chargeDir, H.boar.chargeSpeed * (H.boar.chargeMs / 1000), H.boar.hitRadius);
-      if (m.ai.kind === "shooter" && m.ai.s.phase === "aim") this.drawLane(g, { x: mobPos(m).x, y: mobPos(m).y - 14 }, m.ai.s.aimDir, H.bee.shotSpeed * (H.bee.shotLifeMs / 1000), 4);
+      if (m.ai.kind === "shooter" && m.ai.s.phase === "aim") this.drawLane(g, { x: mobPos(m).x, y: mobPos(m).y - 10 }, m.ai.s.aimDir, H.bee.shotSpeed * (H.bee.shotLifeMs / 1000), 4);
     }
     if (this.slashArc) {
       const { at, aim } = this.slashArc;
       const a = Math.atan2(aim.y, aim.x);
-      g.lineStyle(2, 0xffffff, 0.8).beginPath().arc(at.x, at.y - 10, this.melee.range * 0.8, a - H.slashHalfAngle, a + H.slashHalfAngle).strokePath();
+      g.lineStyle(2, 0xffffff, 0.8).beginPath().arc(at.x, at.y - 7, this.melee.range * 0.8, a - H.slashHalfAngle, a + H.slashHalfAngle).strokePath();
       this.slashArc.ms -= dt;
       if (this.slashArc.ms <= 0) this.slashArc = null;
     }
