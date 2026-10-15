@@ -1,0 +1,11 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a sprite sheet of a new character for a cozy Korean BBQ restaurant game. Match the art style, palette, chunky pixel size and dark outline of the attached images (comic, cute cartoon pixel art; the first image is the shop, the second shows customers for style and scale).
+
+The character, "Bandal": the restaurant's kitchen cook, a big round chubby Asiatic black bear yokai. Black fur, a white crescent-moon mark on the chest, small round ears, a small red-and-white headscarf (du-geon) tied on the head, and a cream cooking apron that is clearly a little too tight for him. His face looks a bit scary at first glance (heavy brows, big build) but he is gentle and shy. Huge paws that handle tiny tools very delicately.
+
+He is always seen standing INSIDE a kitchen pass-through window, so draw him from the WAIST UP only (the bottom of every pose is a straight horizontal cut at the waist, as if hidden behind a counter), facing the viewer, turned slightly to the right.
+
+Save as art-src/codex/raw/bandal_sheet.png — a WIDE image (for example 1536x768), flat solid magenta (#FF00FF) background, a 4 columns x 2 rows layout with exactly one pose centred in each cell. All poses the same size and the same waist line height. No grid lines or borders, no text, no shadows on the background. Every pose drawn COMPLETELY with its dark outline closed (except the straight waist cut), with wide empty magenta space around it, nowhere near another pose or the image edge.
+ row 1: standing calmly, idle; idle breathing (shoulders slightly up); grilling: holding tiny metal tongs very carefully over something below the frame, tongue slightly out in concentration; grilling: turning the meat with the tongs, a puff of steam
+ row 2: holding out a plate of grilled meat with BOTH paws, politely, a small bow; a tiny secret happy smile with eyes closed and a little blush; standing stiffly at attention, quickly fixing his headscarf, startled and sweating (someone just mentioned the grandmother); wiping sweat from his forehead with the back of a paw, tired but content
+
+Reply only with the saved file path.
