@@ -110,7 +110,7 @@ describe("finishHunt sees what came home", () => {
     const s = applyAction(newSave(), { type: "startHunt", zone: "forest" }, ctx()).save;
     const plain = { ...s, seenItems: ["boar_belly" as const] };
     // an empty report brings nothing new
-    expect(applyAction(plain, { type: "finishHunt", huntId: s.hunt!.id, events: [], ko: false }, ctx()).save.seenItems).toEqual(["boar_belly"]);
+    expect(applyAction(plain, { type: "finishHunt", huntId: s.hunt!.id, events: [], exit: "1-e0", ko: false }, ctx()).save.seenItems).toEqual(["boar_belly"]);
   });
 });
 

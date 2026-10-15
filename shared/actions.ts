@@ -6,18 +6,21 @@ import { bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost } from "./gr
 import { itemKey, parseItemKey, type ItemId } from "./content/items";
 import { addToBag } from "./hunt/bag";
 import { dropFor } from "./hunt/drops";
-import { planHunt } from "./hunt/plan";
+import { planFloor, type FloorPlan } from "./hunt/plan";
+import { FLOORS, isFloorId, type FloorId } from "./content/floors";
 import { levelCost, MAX_SETS, planShop, takeSets, type MenuLine } from "./kitchen/dish";
 import { settleService } from "./service/settle";
 import type { SaveData, Zone } from "./save";
 
-// What a hunt report lists, in the order things happened (spec 7: the client says what it took,
-// the server re-creates the hunt from its seed to check it and decides the drops itself).
-export type HuntEvent = { kill: string; grade: "premium" | "normal" } | { gather: string };
+// What a hunt report lists, in the order things happened (hunt v3 design 5.3: the client says what it
+// took and where it went, the server re-creates each floor from the seed to check it and decides the
+// drops itself). `down` is taking the way down to that floor.
+export type HuntEvent = { kill: string; grade: "premium" | "normal" } | { gather: string } | { down: FloorId };
 
 export type Action =
   | { type: "startHunt"; zone: Zone }
-  | { type: "finishHunt"; huntId: string; events: HuntEvent[]; ko: boolean }
+  | { type: "finishHunt"; huntId: string; events: HuntEvent[]; exit: string | null; ko: boolean }
+  | { type: "skipHunt" }
   | { type: "research"; dish: string }
   | { type: "upgradeDish"; dish: string; from?: number }
   | { type: "openShop"; menu: { dish: string; sets: number }[] }
@@ -41,39 +44,51 @@ export function koPenalty(items: Record<string, number>): Record<string, number>
 
 const MAX_EVENTS = 200;
 
-// Re-creates the hunt from its seed and checks the report: every kill a real spawn, taken once, the
-// r-th refill (refills appear one per kill, in plan order) only after r+1 kills; every gathering spot real and taken once;
-// not faster than BALANCE.hunt.minMsPerKill per kill. Items go into the bag in report order until it
+// Re-creates the hunt floor by floor from its seed and follows the report: every way down taken from the
+// floor the hunter is on to the next one that exists; every kill a real spawn of the current floor, taken
+// once, the floor's r-th refill only after r+1 kills on that floor; every gathering spot of the current
+// floor, taken once; home through an exit of the last floor (or knocked out, with no exit); not faster
+// than minMsPerKill a kill and minMsPerFloor a way down. Items go into the bag in report order until it
 // is full. Returns the items gained, or null for a report that cannot be true.
 function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Record<string, number> | null {
   const hunt = save.hunt;
   if (!hunt || a.huntId !== hunt.id || !Array.isArray(a.events) || a.events.length > MAX_EVENTS || typeof a.ko !== "boolean") return null;
-  const plan = planHunt(hunt.seed, hunt.zone);
-  const spawns = new Map(plan.spawns.map((s) => [s.id, s]));
-  const nodes = new Map(plan.nodes.map((n) => [n.id, n]));
-  const refillOrder = new Map(plan.spawns.filter((s) => s.wave > 0).map((s, i) => [s.id, i]));
+  if (a.ko ? a.exit !== null : typeof a.exit !== "string") return null;
+  const plans = new Map<FloorId, FloorPlan>();
+  const planOf = (f: FloorId) => plans.get(f) ?? plans.set(f, planFloor(hunt.seed, f, hunt.period)).get(f)!;
+  let floor: FloorId = 1;
   const taken = new Set<string>();
+  const killsOn = new Map<FloorId, number>();
   let kills = 0;
+  let descents = 0;
   let bag: Record<string, number> = {};
   for (const raw of a.events as unknown[]) {
-    const e = raw as { kill?: unknown; grade?: unknown; gather?: unknown } | null;
+    const e = raw as { kill?: unknown; grade?: unknown; gather?: unknown; down?: unknown } | null;
     if (!e || typeof e !== "object") return null;
-    if (typeof e.kill === "string") {
-      const spawn = spawns.get(e.kill);
+    const plan = planOf(floor);
+    if (e.down !== undefined) {
+      if (!FLOORS[floor].down || e.down !== floor + 1 || !isFloorId(e.down)) return null;
+      floor = e.down;
+      descents++;
+    } else if (typeof e.kill === "string") {
+      const spawn = plan.spawns.find((s) => s.id === e.kill);
       if (!spawn || taken.has(e.kill) || (e.grade !== "premium" && e.grade !== "normal")) return null;
-      const refill = refillOrder.get(e.kill);
-      if (refill !== undefined && kills < refill + 1) return null;
+      const refill = plan.spawns.filter((s) => s.wave > 0).indexOf(spawn);
+      const onFloor = killsOn.get(floor) ?? 0;
+      if (refill >= 0 && onFloor < refill + 1) return null;
       taken.add(e.kill);
+      killsOn.set(floor, onFloor + 1);
       kills++;
       bag = addToBag(bag, itemKey(dropFor(hunt.seed, spawn), e.grade), bagSlots(save)).bag;
     } else if (typeof e.gather === "string") {
-      const node = nodes.get(e.gather);
+      const node = plan.nodes.find((n) => n.id === e.gather);
       if (!node || taken.has(e.gather)) return null;
       taken.add(e.gather);
       bag = addToBag(bag, itemKey(node.item), bagSlots(save)).bag;
     } else return null;
   }
-  if (now - hunt.startedAt < kills * BALANCE.hunt.minMsPerKill) return null;
+  if (!a.ko && !FLOORS[floor].exits.some((x) => x.id === a.exit)) return null;
+  if (now - hunt.startedAt < kills * BALANCE.hunt.minMsPerKill + descents * BALANCE.hunt.minMsPerFloor) return null;
   return a.ko ? koPenalty(bag) : bag;
 }
 
@@ -159,10 +174,12 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
   switch (a.type) {
     case "startHunt": {
       if (a.zone !== "forest") return { save, error: "bad_action" };
-      if (save.stage !== "hunt") return { save, error: "wrong_stage" };
+      // the morning hunt from the day's start, the afternoon hunt from lunch (hunt v3 design 3)
+      if ((save.stage !== "hunt" && save.stage !== "lunch") || save.hunt) return { save, error: "wrong_stage" };
+      const period = save.stage === "hunt" ? "morning" : "afternoon";
       const seed = Math.floor(ctx.random() * 2 ** 31);
       const id = `h${ctx.now.toString(36)}${Math.floor(ctx.random() * 1e9).toString(36)}`;
-      return { save: { ...save, hunt: { id, seed, zone: a.zone, startedAt: ctx.now } } };
+      return { save: { ...save, hunt: { id, seed, zone: a.zone, period, startedAt: ctx.now } } };
     }
     case "finishHunt": {
       const gained = settleHunt(save, a, ctx.now);
@@ -172,8 +189,14 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       // what came home shows on the cookbook's silhouettes from now on (restaurant v2 design 3)
       const ids = Object.keys(gained).map((k) => parseItemKey(k)!.id);
       const seenItems = [...new Set<ItemId>([...save.seenItems, ...ids])];
-      return { save: { ...save, items, hunt: null, seenItems, stage: "kitchen", lunchbox: [] } };
+      // after the morning hunt comes lunch; after the afternoon one, the evening kitchen
+      const stage = save.hunt!.period === "morning" ? "lunch" : "kitchen";
+      return { save: { ...save, items, hunt: null, seenItems, stage, lunchbox: [] } };
     }
+    case "skipHunt":
+      // staying home this afternoon: straight on to the evening kitchen
+      if (save.stage !== "lunch" || save.hunt) return { save, error: "wrong_stage" };
+      return { save: { ...save, stage: "kitchen" } };
     case "research":
       return research(save, a);
     case "upgradeDish":
@@ -193,9 +216,9 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
     case "packLunch":
       return packLunch(save, a);
     case "endDay":
-      // from the settle screen, or from the kitchen when the shop stays shut tonight; never mid-hunt and
-      // never while tonight's service is still open
-      if (save.stage === "hunt" || save.service) return { save, error: "wrong_stage" };
+      // from the settle screen, or from the kitchen when the shop stays shut tonight; never mid-hunt,
+      // never at lunch (the afternoon is still to come) and never while tonight's service is still open
+      if (save.stage === "hunt" || save.stage === "lunch" || save.service) return { save, error: "wrong_stage" };
       return { save: { ...save, day: save.day + 1, stage: "hunt" } };
     default:
       return { save, error: "bad_action" };

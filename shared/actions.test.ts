@@ -3,7 +3,7 @@ import { applyAction, koPenalty, type ActionContext } from "./actions";
 import { BALANCE } from "./balance";
 import { itemKey } from "./content/items";
 import { dropFor } from "./hunt/drops";
-import { planHunt } from "./hunt/plan";
+import { planFloor } from "./hunt/plan";
 import { newSave, type SaveData } from "./save";
 
 const ctx = (now: number): ActionContext => ({ now, random: () => 0.25 });
@@ -28,11 +28,11 @@ describe("startHunt", () => {
 
 describe("finishHunt", () => {
   const s0 = started();
-  const plan = planHunt(s0.hunt!.seed, "forest");
+  const plan = planFloor(s0.hunt!.seed, 1, "morning");
   const wave0 = plan.spawns.filter((s) => s.wave === 0);
   const wave1 = plan.spawns.filter((s) => s.wave === 1);
   const later = (kills: number) => ctx(s0.hunt!.startedAt + kills * BALANCE.hunt.minMsPerKill);
-  const report = (events: unknown[], extra: object = {}) => ({ type: "finishHunt", huntId: s0.hunt!.id, events, ko: false, ...extra });
+  const report = (events: unknown[], extra: object = {}) => ({ type: "finishHunt", huntId: s0.hunt!.id, events, exit: "1-e0", ko: false, ...extra });
 
   it("adds the server-decided drops and gathered items, and closes the hunt", () => {
     const events = [{ kill: wave0[0].id, grade: "premium" }, { gather: plan.nodes[0].id }, { kill: wave0[1].id, grade: "normal" }];
@@ -70,7 +70,7 @@ describe("finishHunt", () => {
   it("halves each item after a knockout", () => {
     const events = wave0.slice(0, 4).map((s) => ({ kill: s.id, grade: "normal" }));
     const full = applyAction(s0, report(events), later(4)).save.items;
-    const halved = applyAction(s0, report(events, { ko: true }), later(4)).save.items;
+    const halved = applyAction(s0, report(events, { ko: true, exit: null }), later(4)).save.items;
     for (const [k, n] of Object.entries(halved)) expect(n).toBe(Math.floor(full[k] / 2));
   });
 

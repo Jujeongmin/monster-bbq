@@ -2,22 +2,26 @@ import { describe, expect, it } from "vitest";
 import { applyAction, type ActionContext } from "./actions";
 import { newSave, readSave, type SaveData } from "./save";
 
-// The day goes hunt -> kitchen -> (service) -> settle -> next day, and the server holds which stage it
+// The day goes morning hunt -> lunch -> afternoon hunt -> kitchen -> (service) -> settle -> next day, and the server holds which stage it
 // is in, so a reload cannot skip ahead or hunt twice in one day.
 const ctx = (now = 1_000_000): ActionContext => ({ now, random: () => 0.4 });
 
 function hunted(): SaveData {
-  const s = applyAction(newSave(), { type: "startHunt", zone: "forest" }, ctx()).save;
-  const r = applyAction(s, { type: "finishHunt", huntId: s.hunt!.id, events: [], ko: false }, ctx());
-  if (r.error) throw new Error(r.error);
-  return r.save;
+  let s = newSave();
+  for (const exit of ["1-e0", "1-e1"]) {
+    s = applyAction(s, { type: "startHunt", zone: "forest" }, ctx()).save;
+    const r = applyAction(s, { type: "finishHunt", huntId: s.hunt!.id, events: [], exit, ko: false }, ctx());
+    if (r.error) throw new Error(r.error);
+    s = r.save;
+  }
+  return s;
 }
 
 describe("the day's stage", () => {
   it("starts a new save at the hunt", () => {
     expect(newSave().stage).toBe("hunt");
   });
-  it("moves to the kitchen once the hunt is settled, and refuses a second hunt that day", () => {
+  it("moves to the kitchen after the afternoon hunt, and refuses a third hunt that day", () => {
     const s = hunted();
     expect(s.stage).toBe("kitchen");
     expect(applyAction(s, { type: "startHunt", zone: "forest" }, ctx()).error).toBe("wrong_stage");
