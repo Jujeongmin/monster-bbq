@@ -2,7 +2,7 @@ import { BALANCE } from "../balance";
 import { FLOORS, type FloorId, type Period } from "../content/floors";
 import type { ItemId } from "../content/items";
 import { MONSTERS, type MonsterId } from "../content/monsters";
-import { OBJECT_KINDS, SMALL_OBJECTS, TREES, type ObjectKind } from "../content/objects";
+import { OBJECT_KINDS, type ObjectKind } from "../content/objects";
 import type { Rect } from "./geometry";
 import { scatter, seededRandom } from "./scatter";
 
@@ -39,9 +39,10 @@ export function planFloor(seed: number, floor: FloorId, period: Period): FloorPl
     objects.push({ kind, x: p.x, y: p.y, foot: { x0: p.x - foot.w / 2, x1: p.x + foot.w / 2, y0: p.y - foot.h, y1: p.y } });
   };
   const treeSpots = scatter(ground, area, TREE_COUNT, 170, open);
-  for (const p of treeSpots) place(p, TREES[Math.floor(pick() * TREES.length)]);
+  const kinds = f.objects;
+  for (const p of treeSpots) place(p, kinds.trees[Math.floor(pick() * kinds.trees.length)]);
   for (const p of scatter(ground + 2, area, SMALL_COUNT, 130, [...open, ...treeSpots.map((t) => ({ x: t.x, y: t.y, r: 70 }))]))
-    place(p, SMALL_OBJECTS[Math.floor(pick() * SMALL_OBJECTS.length)]);
+    place(p, kinds.smalls[Math.floor(pick() * kinds.smalls.length)]);
 
   // who and what: from the hunt's seed, mixed with the floor so each floor differs
   const s0 = seed ^ (floor * 0x9e3779b1);
@@ -61,10 +62,11 @@ export function planFloor(seed: number, floor: FloorId, period: Period): FloorPl
       const p = soloSpots[i % soloSpots.length];
       spawns.push({ id: `${floor}-s${n++}`, monster, x: p.x, y: p.y, wave });
     });
-    const centres = spots(s0 + 200 + wave, roster.flocks, 160, 40);
+    const flock = roster.flock;
+    const centres = flock ? spots(s0 + 200 + wave, flock.count, 160, 40) : [];
     centres.forEach((c, k) => {
-      const flock = `${floor}-f${wave}-${k}`;
-      for (let m = 0; m < roster.flockSize; m++) {
+      const id = `${floor}-f${wave}-${k}`;
+      for (let m = 0; m < flock!.size; m++) {
         // members around the centre, nudged until clear of tree bases
         let x = c.x;
         let y = c.y;
@@ -73,11 +75,11 @@ export function planFloor(seed: number, floor: FloorId, period: Period): FloorPl
           const d = 10 + rand() * 24;
           x = c.x + Math.cos(a) * d;
           y = c.y + Math.sin(a) * d;
-          if (clearOf(x, y, MONSTERS.chicken.radius)) break;
+          if (clearOf(x, y, MONSTERS[flock!.monster].radius)) break;
           x = c.x;
           y = c.y;
         }
-        spawns.push({ id: `${floor}-s${n++}`, monster: "chicken", x, y, wave, flock });
+        spawns.push({ id: `${floor}-s${n++}`, monster: flock!.monster, x, y, wave, flock: id });
       }
     });
   }

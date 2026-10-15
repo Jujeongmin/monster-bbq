@@ -52,8 +52,8 @@ describe("reading upgrades from a save", () => {
 describe("upgrade effects", () => {
   const at = (upgrades: Record<string, number>) => ({ ...newSave(), upgrades });
   it("gives stronger hunts, a bigger bag, more menu slots, more guests by level", () => {
-    expect(huntStats(newSave())).toEqual({ meleeDamage: 10, rangedDamage: 5, rangedRange: 1, maxHp: 100 });
-    expect(huntStats(at({ melee: 3, ranged: 2, armor: 4 }))).toEqual({ meleeDamage: 19, rangedDamage: 8, rangedRange: 1.1, maxHp: 220 });
+    expect(huntStats(newSave())).toEqual({ meleeDamage: 10, rangedDamage: 5, rangedRange: 1, maxHp: 100, damageTaken: 1 });
+    expect(huntStats(at({ melee: 3, ranged: 2, armor: 4, tank: 4 }))).toEqual({ meleeDamage: 19, rangedDamage: 8, rangedRange: 1.1, maxHp: 220, damageTaken: 0.7 });
     expect(bagSlots(newSave())).toBe(12);
     expect(bagSlots(at({ bag: 3 }))).toBe(18);
     expect(menuSlots(at({ menu: 2 }))).toBe(3);

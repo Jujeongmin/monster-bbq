@@ -81,7 +81,8 @@ export const BALANCE: {
   dishes: { levels: { price: number; plates: number; gold: number; sets: number }[]; premiumBonus: number };
   // per upgrade: its starting level, the cost of each next level, and target levels locked until later
   // chapters (boss parts, story); base 0 = not owned until bought (the side weapons)
-  upgrades: Record<UpgradeId, { base: 0 | 1; costs: number[]; locked?: number[] }>;
+  // mats: the deep floors' materials each next level also costs (plan 08c), level by level
+  upgrades: Record<UpgradeId, { base: 0 | 1; costs: number[]; locked?: number[]; mats?: { item: ItemId; n: number }[][] }>;
   // lunchbox effects on the hunt: health back per gold of the dish's price, and a few dishes that
   // also put a spring in the step
   lunch: { healPerGold: number; speedDishes: DishId[]; speedMul: number; speedMs: number };
@@ -90,7 +91,10 @@ export const BALANCE: {
     meleeDamage: number[];
     rangedDamage: number[];
     rangedRange: number[];
+    // stamina by the tank's level, damage taken by the armour's, the lantern's light radius
     maxHp: number[];
+    damageTaken: number[];
+    light: number[];
     bag: number[];
     menu: number[];
     seats: number[];
@@ -161,7 +165,7 @@ export const BALANCE: {
     // user-approved drafts (plan 08b), tuned in play
     stars: { down: { count: 1, grade: "normal" }, capture: { count: 2, grade: "normal" }, sleep: { count: 2, grade: "premium" }, net: { count: 2, grade: "premium" }, bossMul: 2 },
     capture: { start: 0.35, tap: [0.09, 0.1, 0.11], decayPerSec: 0.25, minMs: 1200 },
-    sleepHits: { rabbit: 1, chicken: 1, bee: 1, boar: 2, tusk: 5 },
+    sleepHits: { rabbit: 1, chicken: 1, bee: 1, boar: 2, tusk: 5, frog: 2, snake: 1, bat: 1, crab: 2 },
     sleepMs: 15000,
     netSmallMaxRadius: 8,
     netBindMs: 3000,
@@ -204,6 +208,15 @@ export const BALANCE: {
       shiitake: { normal: 6 },
       wild_garlic: { normal: 5 },
       perilla: { normal: 4 },
+      frog_leg: { normal: 16, premium: 32 },
+      snake_meat: { normal: 18, premium: 36 },
+      crab_meat: { normal: 22, premium: 44 },
+      frog_skin: { normal: 20 },
+      snake_scale: { normal: 24 },
+      bat_wing: { normal: 18 },
+      crab_shell: { normal: 30 },
+      glow_mushroom: { normal: 26 },
+      iron_ore: { normal: 35 },
     },
     maxMeatPerHunt: 20,
   },
@@ -224,7 +237,8 @@ export const BALANCE: {
   upgrades: {
     melee: { base: 1, costs: [300, 900, 2400], locked: [4] },
     ranged: { base: 1, costs: [400, 1500] },
-    armor: { base: 1, costs: [300, 1000, 2800] },
+    // the apron armour takes damage off now (plan 08c); its old job, stamina, went to the tank
+    armor: { base: 1, costs: [500, 1200, 2500], mats: [[{ item: "frog_skin", n: 2 }], [{ item: "crab_shell", n: 2 }], [{ item: "iron_ore", n: 3 }]] },
     bag: { base: 1, costs: [200, 500, 1000, 2000] },
     menu: { base: 1, costs: [400, 1200, 3000] },
     seats: { base: 1, costs: [800, 1600, 3200, 6400] },
@@ -234,6 +248,10 @@ export const BALANCE: {
     sleepGun: { base: 0, costs: [800, 2000, 4500] },
     netGun: { base: 0, costs: [1200, 3000] },
     firecracker: { base: 0, costs: [500] },
+    // gear (hunt v3 design 4.5, user-approved draft numbers 2026-10-15)
+    boots: { base: 0, costs: [400] },
+    lantern: { base: 0, costs: [600, 1500, 3000], mats: [[{ item: "frog_skin", n: 3 }], [{ item: "snake_scale", n: 4 }, { item: "glow_mushroom", n: 2 }], [{ item: "iron_ore", n: 4 }]] },
+    tank: { base: 1, costs: [600, 1500, 3000], mats: [[{ item: "frog_skin", n: 2 }], [{ item: "snake_scale", n: 3 }], [{ item: "crab_shell", n: 3 }]] },
   },
   lunch: { healPerGold: 0.8, speedDishes: ["honey_rabbit", "baeksuk"], speedMul: 1.2, speedMs: 10000 },
   growth: {
@@ -241,6 +259,8 @@ export const BALANCE: {
     rangedDamage: [5, 8, 12],
     rangedRange: [1, 1.1, 1.1],
     maxHp: [100, 130, 170, 220],
+    damageTaken: [1, 0.9, 0.8, 0.7],
+    light: [90, 130, 170],
     bag: [12, 15, 18, 21, 24],
     menu: [2, 3, 4, 5],
     seats: [0, 1, 2, 3, 4],

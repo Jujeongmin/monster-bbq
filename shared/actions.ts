@@ -2,8 +2,8 @@ import { BALANCE } from "./balance";
 import { isDishId, type DishId } from "./content/dishes";
 import { isUpgradeId } from "./content/upgrades";
 import { RECIPES } from "./content/recipes";
-import { ammoOf, bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost, ownsSide, sleepFallMs } from "./growth";
-import { TAKE_HOWS, takeYield, type TakeHow } from "./hunt/stars";
+import { ammoOf, bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost, nextMats, ownsSide, sleepFallMs } from "./growth";
+import { TAKE_HOWS, takeParts, type TakeHow } from "./hunt/stars";
 import { isSideWeaponId, type SideWeaponId } from "./content/sideWeapons";
 import { itemKey, parseItemKey, type ItemId } from "./content/items";
 import { addToBag } from "./hunt/bag";
@@ -76,6 +76,9 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
     const plan = planOf(floor);
     if (e.down !== undefined) {
       if (!FLOORS[floor].down || e.down !== floor + 1 || !isFloorId(e.down)) return null;
+      // the swamp needs boots, the cave a lantern (hunt v3 design 4.5)
+      const needs = FLOORS[e.down].needs;
+      if (needs && level(save, needs) < 1) return null;
       floor = e.down;
       descents++;
     } else if (typeof e.take === "string") {
@@ -97,8 +100,8 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
       kills++;
       if (how === "capture") captures++;
       if (how === "sleep") sleeps++;
-      const y = takeYield(how, spawn.monster === "tusk");
-      for (let i = 0; i < y.count; i++) bag = addToBag(bag, itemKey(dropFor(hunt.seed, spawn), y.grade), bagSlots(save)).bag;
+      const got = takeParts(dropFor(hunt.seed, spawn), how, spawn.monster === "tusk");
+      for (let i = 0; i < got.count; i++) bag = addToBag(bag, got.key, bagSlots(save)).bag;
     } else if (typeof e.gather === "string") {
       const node = plan.nodes.find((n) => n.id === e.gather);
       if (!node || taken.has(e.gather)) return null;
@@ -236,7 +239,15 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       if (cost === null) return { save, error: "max_level" };
       if (isLocked(save, a.id)) return { save, error: "locked" };
       if (save.gold < cost) return { save, error: "no_gold" };
-      return { save: { ...save, gold: save.gold - cost, upgrades: { ...save.upgrades, [a.id]: level(save, a.id) + 1 } } };
+      // and the deep floors' materials (plan 08c)
+      const items = { ...save.items };
+      for (const m of nextMats(save, a.id)) {
+        const key = itemKey(m.item);
+        if ((items[key] ?? 0) < m.n) return { save, error: "no_materials" };
+        items[key] -= m.n;
+        if (items[key] === 0) delete items[key];
+      }
+      return { save: { ...save, gold: save.gold - cost, items, upgrades: { ...save.upgrades, [a.id]: level(save, a.id) + 1 } } };
     }
     case "packLunch":
       return packLunch(save, a);

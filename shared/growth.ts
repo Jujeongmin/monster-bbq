@@ -1,6 +1,7 @@
 import { BALANCE } from "./balance";
 import { UPGRADE_IDS, type UpgradeId } from "./content/upgrades";
 import type { SideWeaponId } from "./content/sideWeapons";
+import type { ItemId } from "./content/items";
 import type { SaveData } from "./save";
 
 // Upgrade levels (growth design 2): everything starts at level 1.
@@ -29,7 +30,8 @@ export function huntStats(save: Pick<SaveData, "upgrades">) {
     meleeDamage: at(E.meleeDamage, level(save, "melee")),
     rangedDamage: at(E.rangedDamage, level(save, "ranged")),
     rangedRange: at(E.rangedRange, level(save, "ranged")),
-    maxHp: at(E.maxHp, level(save, "armor")),
+    maxHp: at(E.maxHp, level(save, "tank")),
+    damageTaken: at(E.damageTaken, level(save, "armor")),
   };
 }
 export const bagSlots = (save: Pick<SaveData, "upgrades">) => at(E.bag, level(save, "bag"));
@@ -41,3 +43,13 @@ export const lunchSlots = (save: Pick<SaveData, "upgrades">) => at(E.lunch, leve
 export const ownsSide = (save: Pick<SaveData, "upgrades">, id: SideWeaponId): boolean => level(save, id) >= 1;
 export const ammoOf = (save: Pick<SaveData, "upgrades">, id: SideWeaponId): number => (ownsSide(save, id) ? at(E.ammo[id], level(save, id)) : 0);
 export const sleepFallMs = (save: Pick<SaveData, "upgrades">): number => at(E.sleepFallMs, Math.max(1, level(save, "sleepGun")));
+
+// The deep floors' materials the next level costs on top of its gold (plan 08c); none at the top.
+export function nextMats(save: Pick<SaveData, "upgrades">, id: UpgradeId): { item: ItemId; n: number }[] {
+  const lv = level(save, id);
+  if (lv >= maxLevel(id)) return [];
+  return BALANCE.upgrades[id].mats?.[lv - baseLevel(id)] ?? [];
+}
+
+// How far the lantern lights the cave (0 without one).
+export const lightRadius = (save: Pick<SaveData, "upgrades">): number => (level(save, "lantern") >= 1 ? at(E.light, level(save, "lantern")) : 0);

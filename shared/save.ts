@@ -50,7 +50,7 @@ const isStage = (v: unknown): v is Stage => v === "hunt" || v === "lunch" || v =
 
 // The whole save of one account, kept in its Global User State under "save" (spec 7).
 export interface SaveData {
-  version: 6;
+  version: 7;
   day: number;
   stage: Stage;
   gold: number;
@@ -74,7 +74,7 @@ export interface SaveData {
 
 export function newSave(): SaveData {
   return {
-    version: 6,
+    version: 7,
     day: 1,
     stage: "hunt",
     gold: 0,
@@ -250,10 +250,16 @@ export function readSave(raw: unknown): SaveData {
   if (r.version === 2 || r.version === 3 || r.version === 4) return readSave(fromV4(r));
   // version 6 (hunt v3) only adds the lunch stage and the hunt's time of day, both read with defaults
   if (r.version === 5) return readSave({ ...r, version: 6 });
-  if (r.version !== 6) return newSave();
+  // version 7 (plan 08c): the stamina the armour gave moves to the stamina tank; the armour now takes
+  // damage off and starts over at level 1
+  if (r.version === 6) {
+    const up = r.upgrades && typeof r.upgrades === "object" ? (r.upgrades as Record<string, unknown>) : {};
+    return readSave({ ...r, version: 7, upgrades: up.armor === undefined ? up : { ...up, tank: up.armor, armor: 1 } });
+  }
+  if (r.version !== 7) return newSave();
   const dishes = readDishes(r.dishes);
   return {
-    version: 6,
+    version: 7,
     day: count(r.day, 1),
     stage: isStage(r.stage) ? r.stage : "hunt",
     gold: count(r.gold),
