@@ -103,6 +103,9 @@ canvas { image-rendering: pixelated; display: block; }
   border-image: url("../art/test/ui2/topbar.png") 3 5 fill / calc(3 * var(--k)) calc(5 * var(--k)) stretch;
   image-rendering: pixelated;
   color: var(--cream);
+  /* the bold cut with the buttons' dark drop: the regular cut drew thin and blurry here (user, 2026-10-15) */
+  font-weight: 700;
+  text-shadow: var(--s) var(--s) 0 #2b1408;
 }
 .ui-slot {
   display: inline-flex; align-items: center; justify-content: center;
