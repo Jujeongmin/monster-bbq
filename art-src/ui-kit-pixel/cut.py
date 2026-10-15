@@ -26,8 +26,9 @@ NAMES = [
 ]
 
 # Colours swapped inside one piece, nothing else touched (user, 2026-10-15: the selected tab showed a grey
-# line under its brass rim; it becomes the same dark brown as the tab's other inner edges)
-RECOLOUR = {"tab_on": {(0x9D, 0xA0, 0xA3): (0x2B, 0x12, 0x0A)}}
+# line under its brass rim; it becomes the same dark brown as the tab's other inner edges; the paper card
+# has the same kind of grey line down its left inside edge)
+RECOLOUR = {"tab_on": {(0x9D, 0xA0, 0xA3): (0x2B, 0x12, 0x0A)}, "card": {(0x5D, 0x60, 0x63): (0x54, 0x21, 0x0E)}}
 
 
 def is_key(p) -> bool:
@@ -159,6 +160,15 @@ def main():
         piece.save(OUT / f"{name}.png")
         cut.append((name, piece))
         print(name, piece.size, len(piece.getcolors(1 << 16) or []), "colours")
+    # a speech box with no tail (user, 2026-10-15: the tail pointed the wrong way): the bubble's top half and
+    # the same half flipped upside down, so its bottom corners match its top ones (copied, not drawn)
+    bubble = dict(cut)["bubble"]
+    top = bubble.crop((0, 0, bubble.width, 9))
+    plain = Image.new("RGBA", (bubble.width, 18), (0, 0, 0, 0))
+    plain.alpha_composite(top, (0, 0))
+    plain.alpha_composite(top.transpose(Image.Transpose.FLIP_TOP_BOTTOM), (0, 9))
+    plain.save(OUT / "bubble_plain.png")
+    print("bubble_plain", plain.size)
     print("offset", off, "art size", small.size, "colours", len(small.convert("RGB").getcolors(1 << 16)))
     sheet = Image.new("RGBA", (small.width * 4, small.height * 4), (40, 30, 26, 255))
     sheet.alpha_composite(small.resize((small.width * 4, small.height * 4), Image.NEAREST))

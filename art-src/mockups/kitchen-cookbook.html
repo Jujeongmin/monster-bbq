@@ -37,7 +37,7 @@
   .count { position: absolute; right: 28px; top: -2px; color: var(--brass); font-weight: 700; }
   .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 20px; }
   .card { position: relative; height: 202px; display: flex; flex-direction: column; align-items: center; padding: 0 4px;
-    border-width: calc(3 * var(--k)); border-image: url("../ui-kit-pixel/out/card.png") 3 fill / calc(3 * var(--k)) stretch; }
+    border-width: calc(3 * var(--k)); border-image: url("../ui-kit-pixel/out/card.png") 5 fill / calc(5 * var(--k)) round; }
   .card > * { margin-top: -4px; }
   .dish { width: 84px; height: 80px; }
   .sil { filter: brightness(0); opacity: 0.32; }
@@ -64,8 +64,8 @@
   .ready { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: 320px; height: 52px; font-size: 24px; }
   .lid { position: absolute; left: 6px; bottom: -6px; width: 240px; z-index: 3; }
   .say { position: absolute; left: 230px; bottom: 96px; width: 500px; min-height: 84px; padding: 6px 20px 2px 12px; z-index: 3;
-    border-width: calc(3 * var(--k)) calc(3 * var(--k)) calc(7 * var(--k)) calc(8 * var(--k));
-    border-image: url("../ui-kit-pixel/out/bubble.png") 3 3 7 8 fill / calc(3 * var(--k)) calc(3 * var(--k)) calc(7 * var(--k)) calc(8 * var(--k)) stretch; }
+    border-width: calc(3 * var(--k));
+    border-image: url("../ui-kit-pixel/out/bubble_plain.png") 3 fill / calc(3 * var(--k)) stretch; }
   .say span { display: block; margin: -6px 0 -8px; line-height: 1.6; }
 </style>
 </head>
