@@ -11,9 +11,9 @@ import { Research } from "./Research";
 import "./kitchen.css";
 
 // The evening kitchen (spec 4): research new recipes, read the cookbook, pick tonight's menu. Every
-// change goes through `act` (the server's rules); the screen shows what the save says. The tabs, the
-// day and gold and the ready button share one row at the bottom, so the cooking stage keeps the full
-// height of the landscape frame. The ready button sends the picked menu and opens the shop.
+// change goes through `act` (the server's rules); the screen shows what the save says. Layout (user,
+// 2026-10-15): the cooking stage at 70% in the top left, day and gold with the four tabs in one row at the
+// top right, the ready button at the bottom centre. The ready button sends the picked menu and opens the shop.
 type Tab = "research" | "cookbook" | "menu" | "lunch";
 const TABS: Tab[] = ["research", "cookbook", "menu", "lunch"];
 
@@ -39,14 +39,7 @@ export function Kitchen({
         {tab === "menu" && <MenuPick save={save} picked={picked} setPicked={setPicked} />}
         {tab === "lunch" && <LunchPick save={save} busy={busy} act={act} />}
       </div>
-      <div className="kitchen-foot">
-        <div className="kitchen-tabs">
-          {TABS.map((k) => (
-            <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
-              {t(`kitchen.tab.${k}` as StringKey)}
-            </button>
-          ))}
-        </div>
+      <div className="kitchen-top">
         <div className="ui-bar kitchen-res">
           <span>
             <img className="ui-icon" src={artUrl("test/ui/icon_day.png")} alt="" />
@@ -57,10 +50,17 @@ export function Kitchen({
             {t("hud.gold", { gold: save.gold })}
           </span>
         </div>
-        <button className="ui-btn kitchen-ready" disabled={busy} onClick={() => onReady(picked)}>
-          {t("kitchen.ready")}
-        </button>
+        <div className="kitchen-tabs">
+          {TABS.map((k) => (
+            <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
+              {t(`kitchen.tab.${k}` as StringKey)}
+            </button>
+          ))}
+        </div>
       </div>
+      <button className="ui-btn kitchen-ready" disabled={busy} onClick={() => onReady(picked)}>
+        {t("kitchen.ready")}
+      </button>
     </div>
   );
 }

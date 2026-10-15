@@ -1,19 +1,25 @@
 /* The evening kitchen on UI kit A: wooden tabs, hanji panels, lacquered buttons. Sizes in multiples of
    the Galmuri pixel grid (see src/index.css). */
-.kitchen { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--wood-dark); overflow: hidden; }
-.kitchen-foot { display: flex; align-items: center; gap: calc(6px * var(--s)); padding: 0 calc(6px * var(--s)) calc(2px * var(--s)); }
+.kitchen { position: absolute; inset: 0; background: var(--wood-dark); overflow: hidden; }
+/* day and gold, then the four tabs, in one row at the top right */
+.kitchen-top { position: absolute; top: calc(2px * var(--s)); right: calc(4px * var(--s)); z-index: 5; display: flex; align-items: center; gap: calc(4px * var(--s)); }
 .kitchen-tabs { display: flex; align-items: flex-end; gap: calc(3px * var(--s)); }
 .kitchen-res { display: flex; gap: calc(8px * var(--s)); align-items: center; white-space: nowrap; }
 .kitchen-res span { display: inline-flex; align-items: center; gap: calc(3px * var(--s)); }
-.kitchen-foot .kitchen-ready { margin-left: auto; white-space: nowrap; }
-.kitchen-body { flex: 1; min-height: 0; overflow: auto; padding: calc(4px * var(--s)) calc(6px * var(--s)); }
-.kitchen-body.full { padding: 0; overflow: hidden; }
+/* the ready button at the bottom centre */
+.kitchen-ready { position: absolute; left: 50%; bottom: calc(4px * var(--s)); transform: translateX(-50%); z-index: 5; white-space: nowrap; }
+.kitchen-ready:active:not(:disabled) { transform: translate(-50%, var(--s)); }
+/* the other tabs' pages sit between the top row and the ready button */
+.kitchen-body { position: absolute; inset: calc(44px * var(--s)) 0 calc(48px * var(--s)); overflow: auto; padding: calc(4px * var(--s)) calc(6px * var(--s)); }
+.kitchen-body.full { inset: 0; padding: 0; overflow: hidden; }
 .kitchen-empty { margin: calc(2px * var(--s)) 0; font-size: var(--fs-small); font-family: "Galmuri9", monospace; color: var(--paper-ink-soft); }
 
 /* research: the cooking stage, with the verdict over it */
 .research { position: relative; display: block; }
 .research { height: 100%; }
 .cook-stage { width: 100%; height: 100%; margin: 0 auto; background: var(--wood-dark); }
+/* in the research kitchen the stage is drawn at 70%, in the top left just under the top row */
+.research > .cook-stage { position: absolute; left: 0; top: calc(36px * var(--s)); width: 70%; height: 70%; margin: 0; }
 .cook-result-wrap { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); min-width: calc(180px * var(--s)); max-width: 90%; text-align: center; animation: cook-pop 0.35s ease-out; }
 .cook-result p { margin: calc(2px * var(--s)) 0 0; color: var(--paper-ink-soft); }
 .cook-banner { font-weight: 700; color: var(--good); }

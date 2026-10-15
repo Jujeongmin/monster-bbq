@@ -137,7 +137,8 @@ export class CookStage extends Phaser.Scene implements CookHost {
     this.cursor = this.add.image(0, 0, "scissors").setScale(0.7).setAngle(-30).setDepth(90).setVisible(false);
 
     // which station is in front: the other keeps cooking where it is
-    (["grill", "pot"] as const).forEach((k, i) => this.tabs.push(addTab(this, 474 + i * 52, 22, t(`cook.tab.${k}`), () => this.show(this.stations[i]))));
+    // the station tabs at the top left, over the station they switch (user, 2026-10-15)
+    (["grill", "pot"] as const).forEach((k, i) => this.tabs.push(addTab(this, 30 + i * 52, 22, t(`cook.tab.${k}`), () => this.show(this.stations[i]))));
     this.show(grill);
 
     this.buildTray();
