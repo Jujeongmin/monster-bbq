@@ -1,16 +1,16 @@
 import Phaser from "phaser";
-import type { DishId, Method } from "../../../shared/content/dishes";
+import { DISHES, type DishId } from "../../../shared/content/dishes";
+import type { TonightDish } from "../../../shared/kitchen/dish";
 import type { Customer } from "../../../shared/service/plan";
-import { dishScore, serveValue } from "../../../shared/service/settle";
 import { t } from "../../i18n";
-import type { CookStage, Order } from "../cook/CookStage";
+import { artUrl } from "../art";
 import { createCharacterAnims, loadCharacterArt } from "../hunt/anims";
 import { addButton, addGauge, kitSlice, loadUiArt, TEXT, type UiButton, type UiGauge } from "../ui";
 
 // The shop at night (cooking-service design 5), seen from the side. Customers (the server's seed, see
 // shared/service/plan) come in at their time, sit at their table and show their order with a patience
-// bar. Tap an order: the view zooms into the cooking stage at that dish's station (the stage keeps
-// cooking either way). A served customer eats, pays and leaves; one who runs out of patience leaves
+// bar. Tap an order: the plate goes out at once (restaurant v2 stage 1, until the waiter serves by hand).
+// When the last plate is gone the doors close by themselves. A served customer eats, pays and leaves; one who runs out of patience leaves
 // angry. Closing (user, 2026-10-15): "close orders" lets no one else in; after it "close the hall" sends
 // whoever is still waiting home angry (they count as left). When everyone is done: game.events
 // "service:end" { served, left }.
@@ -20,14 +20,13 @@ export interface ServiceData {
   // the service's id: the shop clock is kept per service so a reload resumes the night where it was
   serviceId: string;
   customers: Customer[];
-  // dish -> its station
-  methods: Partial<Record<DishId, Method>>;
+  // tonight's plates and prices (openShop)
+  dishes: TonightDish[];
 }
 
 export interface ServedReport {
   customer: string;
-  keys: string[];
-  accuracy: number;
+  dish: DishId;
 }
 
 const MAX_DT_MS = 50;
@@ -55,7 +54,8 @@ export class ServiceScene extends Phaser.Scene {
   private customers: Customer[] = [];
   private serviceId = "";
   private savedAt = 0;
-  private methods: Partial<Record<DishId, Method>> = {};
+  private plates = new Map<DishId, number>();
+  private prices = new Map<DishId, number>();
   private guests: Guest[] = [];
   private clock = 0;
   private paused = false;
@@ -65,7 +65,6 @@ export class ServiceScene extends Phaser.Scene {
   // orders closed: no more arrivals; the button then closes the hall
   private ordersClosed = false;
   private closeButton!: UiButton;
-  private inCook = false;
   private pauseButton!: UiButton;
   private tally!: Phaser.GameObjects.Text;
   private earned = 0;
@@ -78,7 +77,8 @@ export class ServiceScene extends Phaser.Scene {
     this.customers = data.customers;
     this.serviceId = data.serviceId;
     this.savedAt = 0;
-    this.methods = data.methods;
+    this.plates = new Map(data.dishes.map((d) => [d.dish, d.plates]));
+    this.prices = new Map(data.dishes.map((d) => [d.dish, d.price]));
     this.guests = [];
     this.clock = this.resumedClock();
     this.paused = false;
@@ -86,14 +86,15 @@ export class ServiceScene extends Phaser.Scene {
     this.left = [];
     this.ended = false;
     this.ordersClosed = this.resumedClosed();
-    this.inCook = false;
     this.earned = 0;
   }
 
-  // the grill, plate and dish pictures come from the cooking stage, which loads first (ServiceGame)
   preload() {
     loadCharacterArt(this);
     loadUiArt(this);
+    // tables: the grill stands in until the new shop art goes in (stage 2)
+    this.load.image("grill", artUrl("test/cooking/grill.png"));
+    for (const id of Object.keys(DISHES)) this.load.image(`dish_${id}`, artUrl(`test/dishes/${id}.png`));
   }
 
   create() {
@@ -109,12 +110,6 @@ export class ServiceScene extends Phaser.Scene {
     this.pauseButton.box.setDepth(1000);
     this.closeButton = addButton(this, 514, 18, t(this.ordersClosed ? "service.closeHall" : "service.closeOrders"), () => this.close(), 84);
     this.closeButton.box.setDepth(1000);
-    this.game.events.on("service:serve", (r: ServedReport) => this.onServed(r));
-    this.game.events.on("service:shop", () => this.toShop());
-    this.events.once("shutdown", () => {
-      this.game.events.off("service:serve");
-      this.game.events.off("service:shop");
-    });
   }
 
   // First press: no one else comes in. Second press: the hall closes and whoever still waits leaves angry.
@@ -146,9 +141,6 @@ export class ServiceScene extends Phaser.Scene {
   private togglePause() {
     this.paused = !this.paused;
     this.pauseButton.setText(this.paused ? t("service.resume") : t("service.pause"));
-    // the stage stops cooking too
-    if (this.paused) this.scene.pause("cook");
-    else this.scene.resume("cook");
   }
 
   update(_time: number, rawDt: number) {
@@ -169,12 +161,10 @@ export class ServiceScene extends Phaser.Scene {
       if (!this.ordersClosed && c.arriveMs <= this.clock && !this.guests.some((g) => g.c.id === c.id)) this.guests.push(this.makeGuest(c));
     }
     for (const g of this.guests) this.stepGuest(g, dt);
-    // waiting orders for the stage's chips: seated, not served yet, oldest first
-    const orders: Order[] = this.guests
-      .filter((g) => g.phase === "seated")
-      .map((g) => ({ customer: g.c.id, dish: g.c.dish, patience: Math.max(0, 1 - g.waitedMs / g.c.patienceMs) }));
-    this.registry.set("orders", orders);
-    this.tally.setText(t("service.tally", { served: this.served.length, total: this.customers.length, gold: this.earned }));
+    const left = [...this.plates.values()].reduce((a, b) => a + b, 0);
+    this.tally.setText(`${t("service.tally", { served: this.served.length, total: this.customers.length, gold: this.earned })} · ${t("service.platesLeft", { n: left })}`);
+    // the last plate is gone: no one else comes in (the ones inside still wait for theirs)
+    if (left === 0 && !this.ordersClosed) this.close();
     // done when everyone who came has gone, and either everyone came or the doors were closed
     const allCame = this.guests.length === this.customers.length || this.ordersClosed;
     if (!this.ended && (this.customers.length > 0 || this.ordersClosed) && allCame && this.guests.every((g) => g.phase === "gone")) {
@@ -210,14 +200,14 @@ export class ServiceScene extends Phaser.Scene {
     return g;
   }
 
-  // The order above the customer: the dish in a speech bubble, patience in a gauge below it. Tap to cook.
+  // The order above the customer: the dish in a speech bubble, patience in a gauge below it. Tap to serve.
   private makeBubble(g: Guest) {
     g.bubble.removeAll(true);
     const bubble = kitSlice(this, 0, 0, "bubble_plain", 56, 50, 3, 3, 3, 3);
     const dish = this.add.image(1, -4, `dish_${g.c.dish}`);
     g.gauge = addGauge(this, 0, 32);
     g.bubble.add([bubble, dish, g.gauge.box]);
-    g.bubble.setSize(56, 50).setInteractive({ useHandCursor: true }).on("pointerdown", () => this.openOrder(g));
+    g.bubble.setSize(56, 50).setInteractive({ useHandCursor: true }).on("pointerdown", () => this.serve(g));
   }
 
   private stepGuest(g: Guest, dt: number) {
@@ -240,6 +230,18 @@ export class ServiceScene extends Phaser.Scene {
         s.setFlipX(false);
         s.x = Math.min(g.targetX, s.x + (WALK_SPEED * 1.6 * dt) / 1000);
         if (s.x >= g.targetX) {
+          // tonight's dish if plates are left, else any dish that still has some; none left: home, unbothered
+          const dish = (this.plates.get(g.c.dish) ?? 0) > 0 ? g.c.dish : [...this.plates.entries()].find(([, n]) => n > 0)?.[0];
+          if (!dish) {
+            g.phase = "leaving";
+            s.setFlipX(true).play(`${who}_walk_side`);
+            g.angry = true;
+            break;
+          }
+          if (dish !== g.c.dish) {
+            g.c = { ...g.c, dish };
+            this.makeBubble(g);
+          }
           g.phase = "seated";
           s.anims.stop();
           s.setTexture(`${who}_side_0`);
@@ -279,50 +281,24 @@ export class ServiceScene extends Phaser.Scene {
     this.pop(g.sprite.x, SEAT_Y - 70, t("service.angry"), "#ff8080");
   }
 
-  private onServed(r: ServedReport) {
-    const g = this.guests.find((x) => x.c.id === r.customer && x.phase === "seated");
-    if (!g) return;
-    this.served.push(r);
+  // A tapped order goes out at once if a plate of it is left: the customer eats, pays and leaves.
+  private serve(g: Guest) {
+    if (this.paused || g.phase !== "seated") return;
+    const n = this.plates.get(g.c.dish) ?? 0;
+    if (n < 1) return;
+    this.plates.set(g.c.dish, n - 1);
+    this.served.push({ customer: g.c.id, dish: g.c.dish });
     g.phase = "eating";
     g.bubble.setVisible(false);
-    const v = serveValue(g.c.dish, dishScore(r.accuracy, r.keys));
-    this.earned += v.gold + v.tip;
+    const gold = this.prices.get(g.c.dish) ?? 0;
+    this.earned += gold;
     // a happy little bounce while eating, then the coins, then out
     this.tweens.add({ targets: g.sprite, y: SEAT_Y - 4, duration: 180, yoyo: true, repeat: 5 });
     this.time.delayedCall(2200, () => {
-      this.pop(g.sprite.x, SEAT_Y - 70, `+${v.gold + v.tip}${v.tip ? " ♥" : ""}`, v.happy ? "#ffd166" : "#ffffff");
+      this.pop(g.sprite.x, SEAT_Y - 70, `+${gold}`, "#ffd166");
       g.phase = "leaving";
       g.sprite.play(`${STAND_IN[g.c.kind]}_walk_side`);
     });
-  }
-
-  // Into the cooking stage at the order's station: a quick zoom toward the table, then the stage.
-  private openOrder(g: Guest) {
-    if (this.inCook || this.paused) return;
-    this.inCook = true;
-    const cook = this.scene.get("cook") as CookStage;
-    cook.showMethod(this.methods[g.c.dish] ?? "grill");
-    this.cameras.main.pan(g.sprite.x, SEAT_Y - 20, 250, "Sine.easeIn");
-    this.cameras.main.zoomTo(1.8, 250, "Sine.easeIn", false, (_cam, progress) => {
-      if (progress < 1) return;
-      this.input.enabled = false;
-      this.scene.setVisible(false);
-      cook.scene.setVisible(true);
-      cook.input.enabled = true;
-      cook.cameras.main.fadeIn(180);
-    });
-  }
-
-  private toShop() {
-    if (!this.inCook) return;
-    this.inCook = false;
-    const cook = this.scene.get("cook") as CookStage;
-    cook.input.enabled = false;
-    cook.scene.setVisible(false);
-    this.scene.setVisible(true);
-    this.input.enabled = true;
-    this.cameras.main.zoomTo(1, 250, "Sine.easeOut");
-    this.cameras.main.pan(320, 180, 250, "Sine.easeOut");
   }
 
   private pop(x: number, y: number, text: string, color: string) {

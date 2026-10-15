@@ -47,8 +47,9 @@ export interface HuntData {
   // health, how big the bag
   stats: { meleeDamage: number; rangedDamage: number; rangedRange: number; maxHp: number };
   bagSlots: number;
-  // dishes packed for this hunt: eat one with its button (or keys 1-3)
-  lunchbox: DishId[];
+  // dishes packed for this hunt and the health each gives back (its level price, shared/kitchen/dish): eat one
+  // with its button (or keys 1-3)
+  lunchbox: { dish: DishId; heal: number }[];
 }
 
 // What the hunt hands to the day flow when it ends (PhaserGame forwards the "hunt:end" event).
@@ -87,7 +88,7 @@ export class HuntScene extends Phaser.Scene {
   private ranged = H.weapons.ranged;
   private maxHp: number = H.player.maxHp;
   private bagSlots: number = H.bagSlots;
-  private lunch: { dish: DishId; button: Phaser.GameObjects.Container; eaten: boolean }[] = [];
+  private lunch: { dish: DishId; heal: number; button: Phaser.GameObjects.Container; eaten: boolean }[] = [];
   private speedUntil = 0;
   private plan!: HuntPlan;
   private player!: Player;
@@ -170,7 +171,7 @@ export class HuntScene extends Phaser.Scene {
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
     loadCharacterArt(this);
     loadUiArt(this);
-    for (const id of new Set(this.huntData.lunchbox)) this.load.image(`dish_${id}`, artUrl(`test/dishes/${id}.png`));
+    for (const id of new Set(this.huntData.lunchbox.map((l) => l.dish))) this.load.image(`dish_${id}`, artUrl(`test/dishes/${id}.png`));
     for (const id of ["shiitake", "wild_garlic", "perilla"]) this.load.image(`node_${id}`, artUrl(`test/items/node_${id}.png`));
     for (const id of ["boar_belly", "boar_neck", "boar_rib", "rabbit_leg", "honeycomb", "chicken_thigh", "chicken_breast", "shiitake", "wild_garlic", "perilla"])
       this.load.image(`icon_${id}`, artUrl(`test/items/icon_${id}.png`));
@@ -215,13 +216,13 @@ export class HuntScene extends Phaser.Scene {
     const back = addButton(this, GAME_WIDTH - 36, 18, t("hunt.return"), () => this.endHunt(false), 56);
     this.returnButton = back.box.setScrollFactor(0).setDepth(10000);
     // the lunchbox: one button per packed dish under the way home (the dish at one game pixel per art pixel)
-    this.huntData.lunchbox.forEach((dish, i) => {
+    this.huntData.lunchbox.forEach(({ dish, heal }, i) => {
       const bubble = kitSlice(this, 0, 0, "bubble_plain", 50, 48, 3, 3, 3, 3);
       const pic = this.add.image(1, -3, `dish_${dish}`);
       const key = this.add.text(18, 12, `${i + 1}`, TEXT_SMALL).setOrigin(0.5);
       const button = this.add.container(GAME_WIDTH - 28, 56 + i * 52, [bubble, pic, key]).setSize(50, 48).setScrollFactor(0).setDepth(10000);
       button.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.eat(i));
-      this.lunch.push({ dish, button, eaten: false });
+      this.lunch.push({ dish, heal, button, eaten: false });
     });
     // lunches already eaten on this hunt before a reload stay eaten
     for (const i of this.eatenBefore()) {
@@ -454,7 +455,7 @@ export class HuntScene extends Phaser.Scene {
     l.eaten = true;
     l.button.setAlpha(0.3).disableInteractive();
     this.rememberEaten();
-    const heal = Math.round(BALANCE.service.dishPrice[l.dish] * BALANCE.lunch.healPerGold);
+    const heal = l.heal;
     p.hp = Math.min(this.maxHp, p.hp + heal);
     this.popText(p.pos.x, p.pos.y - 32, `+${heal}`, "#7fe07f");
     if (BALANCE.lunch.speedDishes.includes(l.dish)) {

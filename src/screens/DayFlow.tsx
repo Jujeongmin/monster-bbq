@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
 import { bagSlots, huntStats, seatBonus } from "../../shared/growth";
-import type { MenuLine } from "../../shared/kitchen/dish";
+import { BALANCE } from "../../shared/balance";
+import { dishPrice, type MenuLine } from "../../shared/kitchen/dish";
 import { planService } from "../../shared/service/plan";
 import type { SaveData } from "../../shared/save";
 import { PhaserGame } from "../game/PhaserGame";
@@ -97,7 +98,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
       {phase === "hunt" && save.hunt && (
         <PhaserGame
           key={save.hunt.id}
-          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, stats: huntStats(save), bagSlots: bagSlots(save), lunchbox: save.lunchbox }}
+          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, stats: huntStats(save), bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
           onHuntEnd={(r: HuntResult) => act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, ko: r.ko }, "kitchen")}
         />
       )}
@@ -169,18 +170,10 @@ function Panel({ title, body, children }: { title: string; body: string; childre
   );
 }
 
-// Tonight's service: the customers the server's seed brings (same plan as the server checks), the menu's
-// stations and ingredients from the cookbook.
-function Night({ save, onEnd }: { save: SaveData; onEnd: (r: { served: { customer: string; keys: string[]; accuracy: number }[]; left: string[] }) => void }) {
+// Tonight's service: the customers the server's seed brings (same plan as the server checks) and the
+// plates the menu board made.
+function Night({ save, onEnd }: { save: SaveData; onEnd: (r: { served: { customer: string; dish: string }[]; left: string[] }) => void }) {
   const svc = save.service!;
-  const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.menu, seats: seatBonus(save) });
-  const methods: Partial<Record<DishId, Method>> = {};
-  const menu = svc.menu.flatMap((dish) => {
-    const r = save.cookbook[dish];
-    if (!r) return [];
-    methods[dish] = r.method;
-    return [{ dish, items: r.items }];
-  });
-  const quality = { grill: toolQuality(save, "grill"), boil: toolQuality(save, "boil") };
-  return <ServiceGame key={svc.id} shop={{ serviceId: svc.id, customers, methods }} items={save.items} menu={menu} quality={quality} onEnd={onEnd} />;
+  const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.dishes.map((d) => d.dish), seats: seatBonus(save) });
+  return <ServiceGame key={svc.id} shop={{ serviceId: svc.id, customers, dishes: svc.dishes }} onEnd={onEnd} />;
 }
