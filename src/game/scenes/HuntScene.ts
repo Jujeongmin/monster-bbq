@@ -214,12 +214,12 @@ export class HuntScene extends Phaser.Scene {
     this.gatherHint = this.add.text(0, 0, t("hunt.gather"), hudStyle).setOrigin(0.5).setDepth(9500).setVisible(false);
     const back = addButton(this, GAME_WIDTH - 36, 18, t("hunt.return"), () => this.endHunt(false), 56);
     this.returnButton = back.box.setScrollFactor(0).setDepth(10000);
-    // the lunchbox: one button per packed dish under the way home
+    // the lunchbox: one button per packed dish under the way home (the dish at one game pixel per art pixel)
     this.huntData.lunchbox.forEach((dish, i) => {
-      const bubble = this.add.nineslice(0, 0, "ui_bubble", undefined, 40, 36, 22, 8, 8, 14);
-      const pic = this.add.image(2, -3, `dish_${dish}`).setScale(0.7);
-      const key = this.add.text(14, 8, `${i + 1}`, TEXT_SMALL).setOrigin(0.5);
-      const button = this.add.container(GAME_WIDTH - 24, 52 + i * 40, [bubble, pic, key]).setSize(40, 36).setScrollFactor(0).setDepth(10000);
+      const bubble = this.add.nineslice(0, 0, "ui_bubble", undefined, 50, 48, 22, 8, 8, 14);
+      const pic = this.add.image(1, -3, `dish_${dish}`);
+      const key = this.add.text(18, 12, `${i + 1}`, TEXT_SMALL).setOrigin(0.5);
+      const button = this.add.container(GAME_WIDTH - 28, 56 + i * 52, [bubble, pic, key]).setSize(50, 48).setScrollFactor(0).setDepth(10000);
       button.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.eat(i));
       this.lunch.push({ dish, button, eaten: false });
     });

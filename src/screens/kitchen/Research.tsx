@@ -76,13 +76,13 @@ function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookP
     return outcome.kind === "new" ? (
       <div className="cook-result new">
         <div className="cook-banner">{t("kitchen.new")}</div>
-        <DishIcon dish={outcome.dish} size={96} />
+        <DishIcon dish={outcome.dish} scale={2} />
         <div className="cook-dish">{t(`dish.${outcome.dish}` as StringKey)}</div>
         <SkillLine plate={plate} />
       </div>
     ) : (
       <div className="cook-result">
-        <DishIcon dish={outcome.dish} size={64} />
+        <DishIcon dish={outcome.dish} scale={2} />
         <div className="cook-dish">{t(`dish.${outcome.dish}` as StringKey)}</div>
         <p>{t("kitchen.known")}</p>
         <SkillLine plate={plate} />
@@ -97,7 +97,7 @@ function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookP
     );
   return (
     <div className="cook-result fail">
-      <DishIcon dish="fail" size={64} />
+      <DishIcon dish="fail" scale={2} />
       <div className="cook-dish">{t(`kitchen.fail.${outcome.method}` as StringKey)}</div>
 
     </div>

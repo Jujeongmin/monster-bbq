@@ -28,7 +28,7 @@ export function MenuPick({ save, picked, setPicked }: { save: SaveData; picked: 
         return (
           <button key={id} className={`ui-box menu-row${on ? " on" : ""}`} disabled={!hasTool} onClick={() => toggle(id)}>
             <span className="menu-dish">
-              <DishIcon dish={id} size={40} />
+              <DishIcon dish={id} />
               <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>
             </span>
             <span className="menu-info">

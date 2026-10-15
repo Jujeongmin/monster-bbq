@@ -34,7 +34,7 @@
 
 /* item and dish pictures, at whole pixel multiples */
 .item-icon { position: relative; display: inline-flex; }
-.item-icon img { width: calc(20px * var(--s)); height: auto; image-rendering: pixelated; }
+.item-icon img { width: calc(21px * var(--s)); height: auto; image-rendering: pixelated; }
 .item-star { position: absolute; left: calc(-2px * var(--s)); top: calc(-4px * var(--s)); font-size: var(--fs-small); color: var(--brass); text-shadow: 0 0 2px #000; }
 .dish-icon { display: block; height: auto; image-rendering: pixelated; }
 .dish-icon.silhouette { filter: brightness(0); opacity: 0.3; }

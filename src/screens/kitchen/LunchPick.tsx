@@ -25,12 +25,12 @@ export function LunchPick({ save, busy, act }: { save: SaveData; busy: boolean; 
       <div className="lunch-box">
         {save.lunchbox.map((id, i) => (
           <span key={`p${i}`} className="ui-box lunch-slot packed">
-            <DishIcon dish={id} size={32} />
+            <DishIcon dish={id} />
           </span>
         ))}
         {picked.map((id, i) => (
           <button key={`n${i}`} className="ui-box lunch-slot" onClick={() => setPicked(picked.filter((_, j) => j !== i))}>
-            <DishIcon dish={id} size={32} />
+            <DishIcon dish={id} />
           </button>
         ))}
       </div>
@@ -41,7 +41,7 @@ export function LunchPick({ save, busy, act }: { save: SaveData; busy: boolean; 
           return (
             <button key={id} className="ui-box menu-row" disabled={left <= 0 || picked.length >= free} onClick={() => add(id)}>
               <span className="menu-dish">
-                <DishIcon dish={id} size={32} />
+                <DishIcon dish={id} />
                 <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>
               </span>
               <span className="menu-info">

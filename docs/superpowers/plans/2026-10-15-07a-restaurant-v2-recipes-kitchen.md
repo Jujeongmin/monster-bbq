@@ -1636,7 +1636,7 @@ export function MenuPick({ save, menu, setMenu }: { save: SaveData; menu: MenuLi
         return (
           <div key={id} className={`ui-box menu-row${l ? " on" : ""}`}>
             <button className="menu-dish" disabled={!l && (menu.length >= slots || more < 1)} onClick={() => toggle(id)}>
-              <DishIcon dish={id} size={40} />
+              <DishIcon dish={id} />
               <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>
             </button>
             {l && (
@@ -1684,7 +1684,7 @@ export function DishUpgrade({ save, busy, act }: { save: SaveData; busy: boolean
         const why = !cost ? t("upgrade.max") : save.gold < cost.gold ? t("upgrade.noGold") : setsAvailable(save.items, id) < cost.sets ? t("kitchen.noSets") : null;
         return (
           <div key={id} className="ui-box upgrade-row">
-            <DishIcon dish={id} size={32} />
+            <DishIcon dish={id} />
             <span className="upgrade-name">
               {t(`dish.${id}` as StringKey)} {t("kitchen.level", { lv, max: MAX_DISH_LEVEL })}
             </span>
@@ -2218,7 +2218,7 @@ export function ResearchCutIn({ dish, onDone }: { dish: DishId; onDone: () => vo
       <img className="cutin-bandal" src={artUrl(`test/bandal/${step.frame}.png`)} alt="" />
       {step.stamp && (
         <div className="cutin-stamp">
-          <DishIcon dish={dish} size={56} />
+          <DishIcon dish={dish} scale={2} />
           <span className="cutin-new">{t("cutin.new")}</span>
           <span className="cutin-name">{t(`dish.${dish}` as StringKey)}</span>
         </div>
