@@ -21,7 +21,7 @@ describe("Server", () => {
     let refused = false;
     try {
       await server.act({ type: "startHunt", zone: "forest", side: "sling" });
-      await server.act({ type: "finishHunt", huntId: "forged", events: [{ kill: "1-s0", grade: "premium" }], exit: "1-e0", ko: false });
+      await server.act({ type: "finishHunt", huntId: "forged", events: [{ take: "1-s0", how: "down" }], exit: "1-e0", ko: false });
     } catch {
       refused = true;
     }
@@ -35,6 +35,18 @@ describe("Server", () => {
     expect(lunch.stage).toBe("lunch");
     const a = await server.act({ type: "startHunt", zone: "forest", side: "sling" });
     expect(a.hunt.period).toBe("afternoon");
+  });
+
+  test("takes sleeping monsters only with the sleep dart gun taken out", async (server) => {
+    server.connect({ account: "no-darts" });
+    const h = await server.act({ type: "startHunt", zone: "forest", side: "sling" });
+    let refused = false;
+    try {
+      await server.act({ type: "finishHunt", huntId: h.hunt.id, events: [{ take: "1-s0", how: "sleep" }], exit: "1-e0", ko: false });
+    } catch {
+      refused = true;
+    }
+    expect(refused).toBe(true);
   });
 
   test("keeps each account's save apart", async (server) => {

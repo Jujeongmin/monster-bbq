@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
-import { bagSlots, huntStats, seatBonus } from "../../shared/growth";
+import { ammoOf, bagSlots, huntStats, level, seatBonus, sleepFallMs } from "../../shared/growth";
+import type { HuntEvent } from "../../shared/actions";
+import type { SideWeaponId } from "../../shared/content/sideWeapons";
 import { BALANCE } from "../../shared/balance";
 import { dishPrice, type MenuLine } from "../../shared/kitchen/dish";
 import { planService } from "../../shared/service/plan";
@@ -12,6 +14,8 @@ import { t, type StringKey } from "../i18n";
 import type { Transport } from "../net/transport";
 import { Kitchen } from "./kitchen/Kitchen";
 import { Upgrades } from "./Upgrades";
+import { HuntSummary } from "./HuntSummary";
+import { SidePick } from "./SidePick";
 import { artUrl } from "../game/art";
 import "./dayflow.css";
 
@@ -37,6 +41,10 @@ export function DayFlow({ transport }: { transport: Transport }) {
   const [busy, setBusy] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [shopping, setShopping] = useState(false);
+  // the side weapon window at lunch (in the morning it shows by itself before the hunt)
+  const [picking, setPicking] = useState(false);
+  // the hunt just settled: what was taken and the fridge before it, for the summary
+  const [summary, setSummary] = useState<{ events: HuntEvent[]; ko: boolean; before: Record<string, number> } | null>(null);
   // a second click can land before React re-renders with busy=true
   const busyRef = useRef(false);
 
@@ -52,10 +60,11 @@ export function DayFlow({ transport }: { transport: Transport }) {
   // the upgrade shop belongs to the screen it was opened from: a new stage closes it
   useEffect(() => setShopping(false), [phase]);
 
-  // the server opens every hunt (its seed decides the hunting ground): ask whenever a day's hunt starts
-  useEffect(() => {
-    if (save && phase === "hunt" && save.stage === "hunt" && !save.hunt && !failed) void act({ type: "startHunt", zone: "forest" }, "hunt");
-  }, [save, phase, failed]);
+  // the server opens every hunt (its seed decides the hunting ground) with the side weapon picked first
+  function setOut(side: SideWeaponId) {
+    setPicking(false);
+    void act({ type: "startHunt", zone: "forest", side }, "hunt");
+  }
 
   // true once the server saved it; on failure the banner offers a retry (or says what is missing)
   async function act(action: Action, next: Phase): Promise<boolean> {
@@ -101,8 +110,11 @@ export function DayFlow({ transport }: { transport: Transport }) {
       {phase === "hunt" && save.hunt && (
         <PhaserGame
           key={save.hunt.id}
-          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, stats: huntStats(save), bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
-          onHuntEnd={(r: HuntResult) => act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, exit: r.exit, ko: r.ko }, save.hunt!.period === "morning" ? "lunch" : "kitchen")}
+          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, side: save.hunt.side, ammo: ammoOf(save, save.hunt.side), harpoonLevel: level(save, "ranged"), sleepFallMs: sleepFallMs(save), stats: huntStats(save), bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
+          onHuntEnd={(r: HuntResult) => {
+            const before = save.items;
+            void act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, exit: r.exit, ko: r.ko }, save.hunt!.period === "morning" ? "lunch" : "kitchen").then((ok) => ok && setSummary({ events: r.events, ko: r.ko, before }));
+          }}
         />
       )}
 
@@ -129,7 +141,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
           save={save}
           busy={busy}
           act={(a) => void act(a, "lunch")}
-          onHunt={() => void act({ type: "startHunt", zone: "forest" }, "hunt")}
+          onHunt={() => setPicking(true)}
           onSkip={() => void act({ type: "skipHunt" }, "kitchen")}
           onUpgrades={() => setShopping(true)}
         />
@@ -154,6 +166,11 @@ export function DayFlow({ transport }: { transport: Transport }) {
         </Panel>
       )}
       {phase === "settle" && shopping && <Upgrades save={save} busy={busy} act={(a) => void act(a, "settle")} onClose={() => setShopping(false)} />}
+
+      {/* the morning: pick the side weapon, then set out; at lunch the same window opens from its button */}
+      {phase === "hunt" && save.stage === "hunt" && !save.hunt && !failed && <SidePick save={save} busy={busy} onGo={setOut} />}
+      {phase === "lunch" && picking && <SidePick save={save} busy={busy} onGo={setOut} onCancel={() => setPicking(false)} />}
+      {summary && phase !== "hunt" && <HuntSummary events={summary.events} ko={summary.ko} before={summary.before} after={save.items} onDone={() => setSummary(null)} />}
 
       {failed && (
         <div className="dayflow-error ui-panel">

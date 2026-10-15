@@ -10,7 +10,7 @@ export const TEXT = { fontFamily: FONT, fontSize: "12px", color: "#fff3d8", stro
 export const TEXT_SMALL = { fontFamily: FONT_SMALL, fontSize: "10px", color: "#fff3d8", stroke: "#2b1408", strokeThickness: 3 } as const;
 
 // the pixel UI kit (art/test/ui2) inside Phaser scenes; each art pixel is KIT game pixels
-const PIECES = ["btn_normal", "btn_pressed", "btn_disabled", "gauge_empty", "gauge_full", "bubble_plain", "topbar"];
+const PIECES = ["btn_normal", "btn_pressed", "btn_disabled", "gauge_empty", "gauge_full", "bubble_plain", "topbar", "panel"];
 const ICONS = ["icon_gold", "icon_day", "icon_charcoal"];
 export const KIT = 2;
 

@@ -8,21 +8,27 @@ import { clampToField, pushOutOfRects, type Rect } from "../../../shared/hunt/ge
 import { angerPack, newPackMember, updatePackMember, type PackMemberState } from "../../../shared/hunt/pack";
 import type { FloorPlan } from "../../../shared/hunt/plan";
 import { newShooter, updateShooter, type ShooterState, type Shot } from "../../../shared/hunt/shooter";
+import { FREE, isHeld, stepStatus, wake, type MobStatus } from "../../../shared/hunt/status";
+import { isTuskVulnerable, newTusk, updateTusk, type TuskState } from "../../../shared/hunt/tusk";
 import type { Field, Vec } from "../../../shared/hunt/types";
 import { lookOf, stepBob } from "./anims";
 
 // One monster on the hunting ground: its spawn (from the hunt plan), its behaviour's state machine
-// (shared/hunt), its sprite, and what it has taken (for the meat grade).
+// (shared/hunt), what the side weapons have done to it (status: stunned, drowsy, asleep, tied up) and
+// its sprite. The tusk boss is drawn with the boar's frames at twice the size until its own art.
 const H = BALANCE.hunt;
 // Where the feet are inside each sheet's cells (measured when slicing).
-const FEET: Record<MonsterId, number> = { boar: 0.92, rabbit: 0.885, bee: 0.885, chicken: 0.89 };
+const FEET: Record<MonsterId, number> = { boar: 0.92, rabbit: 0.885, bee: 0.885, chicken: 0.89, tusk: 0.92 };
+// whose frames a monster is drawn with
+export const artOf = (monster: MonsterId): string => (monster === "tusk" ? "boar" : monster);
 
 export type Spawn = FloorPlan["spawns"][number];
 export type MobAI =
   | { kind: "charger"; s: ChargerState }
   | { kind: "fleer"; s: FleerState }
   | { kind: "shooter"; s: ShooterState }
-  | { kind: "pack"; s: PackMemberState };
+  | { kind: "pack"; s: PackMemberState }
+  | { kind: "boss"; s: TuskState };
 
 export interface Mob {
   spawn: Spawn;
@@ -30,6 +36,7 @@ export interface Mob {
   ai: MobAI;
   hp: number;
   hits: HitLog;
+  status: MobStatus;
   dead: boolean;
 }
 
@@ -47,11 +54,14 @@ export function createMob(scene: Phaser.Scene, spawn: Spawn): Mob {
         ? { kind, s: newFleer(pos) }
         : kind === "shooter"
           ? { kind, s: newShooter(pos) }
-          : { kind, s: newPackMember(pos) };
-  const sprite = scene.add.sprite(pos.x, pos.y, `${spawn.monster}_side_0`).setOrigin(0.5, FEET[spawn.monster]).setScale(CHAR_SCALE).setDepth(pos.y);
+          : kind === "boss"
+            ? { kind, s: newTusk(pos) }
+            : { kind, s: newPackMember(pos) };
+  const big = kind === "boss" ? 2 : 1;
+  const sprite = scene.add.sprite(pos.x, pos.y, `${artOf(spawn.monster)}_side_0`).setOrigin(0.5, FEET[spawn.monster]).setScale(CHAR_SCALE * big).setDepth(pos.y);
   sprite.setAlpha(0);
   scene.tweens.add({ targets: sprite, alpha: 1, duration: 400 });
-  return { spawn, sprite, ai, hp: MONSTERS[spawn.monster].maxHp, hits: EMPTY_HIT_LOG, dead: false };
+  return { spawn, sprite, ai, hp: MONSTERS[spawn.monster].maxHp, hits: EMPTY_HIT_LOG, status: FREE, dead: false };
 }
 
 export const mobPos = (m: Mob): Vec => m.ai.s.pos;
@@ -74,6 +84,8 @@ export function isMobVulnerable(m: Mob): boolean {
       return m.ai.s.phase === "cooldown";
     case "pack":
       return m.ai.s.phase === "recover";
+    case "boss":
+      return isTuskVulnerable(m.ai.s);
   }
 }
 
@@ -93,11 +105,15 @@ export function dazeMob(m: Mob, toward: Vec) {
     case "pack":
       m.ai = { kind: "pack", s: { ...m.ai.s, phase: "recover", phaseMs: H.chicken.recoverMs - d, facing: toward } };
       break;
+    case "boss":
+      break;
   }
 }
 
 // A rabbit bolts the moment it is hit (a flock's anger is the scene's job: it knows the flock).
 export function mobWasHit(m: Mob) {
+  // a hit wakes a sleeping or drowsy monster
+  m.status = wake(m.status);
   if (m.ai.kind === "fleer") m.ai = { kind: "fleer", s: fleerHit(m.ai.s) };
 }
 
@@ -111,6 +127,11 @@ export function angerFlock(mobs: Mob[], flock: string) {
 export interface MobStep {
   hurt?: { damage: number; dir: Vec };
   shot?: Shot;
+  // the tusk boss pinned the hunter, or slammed the ground here
+  grabbed?: boolean;
+  slam?: Vec;
+  // the side weapons' effects: fell asleep, woke up
+  statusEvent?: "fell_asleep" | "woke" | null;
   phaseChanged: boolean;
 }
 
@@ -118,7 +139,11 @@ export interface MobStep {
 export function stepMob(m: Mob, dt: number, player: Vec | null, field: Field, obstacles: Rect[]): MobStep {
   const seen = player ?? { x: -99999, y: -99999 };
   const before = m.ai.s.phase;
-  const out: MobStep = { phaseChanged: false };
+  const st = stepStatus(m.status, dt);
+  m.status = st.s;
+  // stunned, asleep or tied up: it does nothing this frame
+  if (isHeld(m.status)) return { phaseChanged: false, statusEvent: st.event };
+  const out: MobStep = { phaseChanged: false, statusEvent: st.event };
   switch (m.ai.kind) {
     case "charger": {
       const r = updateCharger(m.ai.s, seen, dt, H.boar, field, Math.random);
@@ -141,6 +166,14 @@ export function stepMob(m: Mob, dt: number, player: Vec | null, field: Field, ob
       if (r.hit) out.hurt = { damage: H.chicken.peckDamage, dir: r.state.peckDir };
       break;
     }
+    case "boss": {
+      const r = updateTusk(m.ai.s, seen, dt, field, Math.random);
+      m.ai = { kind: "boss", s: r.state };
+      if (r.hurt) out.hurt = { damage: r.hurt.damage, dir: r.state.chargeDir };
+      if (r.grabbed) out.grabbed = true;
+      if (r.slam) out.slam = r.slam;
+      break;
+    }
   }
   // pushed back by a tree or rock: a stroll toward that spot would never arrive, so pick another
   const s = m.ai.s;
@@ -156,6 +189,14 @@ export function stepMob(m: Mob, dt: number, player: Vec | null, field: Field, ob
 export function drawMob(scene: Phaser.Scene, m: Mob, phaseChanged: boolean, shout: (x: number, y: number, text: string, color: string, ms: number) => void) {
   const s = m.sprite;
   const pos = mobPos(m);
+  const art = artOf(m.spawn.monster);
+  // held by a side weapon: its standing frame, still
+  if (isHeld(m.status)) {
+    s.anims.stop();
+    s.setTexture(`${art}_side_0`).setFlipX(mobFacing(m).x < 0);
+    s.setPosition(pos.x, pos.y).setDepth(pos.y);
+    return;
+  }
   if (phaseChanged) {
     scene.tweens.killTweensOf(s);
     s.setAlpha(1).clearTint();
@@ -167,6 +208,7 @@ export function drawMob(scene: Phaser.Scene, m: Mob, phaseChanged: boolean, shou
     if (m.ai.kind === "charger" && m.ai.s.phase === "telegraph") warn(0xff6060, H.boar.telegraphMs);
     if (m.ai.kind === "shooter" && m.ai.s.phase === "aim") warn(0xffb040, H.bee.aimMs);
     if (m.ai.kind === "pack" && m.ai.s.phase === "windup") warn(0xff7070, H.chicken.windupMs);
+    if (m.ai.kind === "boss" && (m.ai.s.phase === "telegraph" || m.ai.s.phase === "slamWindup" || m.ai.s.phase === "rush")) warn(0xff4040, H.tusk.telegraphMs);
   }
 
   let key: string | null = null;
@@ -205,6 +247,21 @@ export function drawMob(scene: Phaser.Scene, m: Mob, phaseChanged: boolean, shou
       else if (p === "cooldown") still = m.ai.s.phaseMs < 150 ? "bee_attack_2" : "bee_attack_3";
       else key = `bee_walk_${lookOf(dir)}`;
       if (p !== "hover") dir = { x: dir.x || 1, y: 0 };
+      break;
+    }
+    case "boss": {
+      const p = m.ai.s.phase;
+      if (p === "charge" || p === "rush") dir = m.ai.s.chargeDir;
+      const look = lookOf(dir);
+      if (p === "telegraph" || p === "slamWindup") {
+        if (phaseChanged) s.play("boar_windup");
+        s.setFlipX(dir.x < 0);
+        s.setPosition(pos.x, pos.y).setDepth(pos.y);
+        return;
+      }
+      if (p === "recover" || p === "grab" || p === "gap" || p === "slam") still = `boar_${look}_0`;
+      else if (p === "charge" || p === "rush") key = look === "side" ? "boar_charge" : `boar_run_${look}`;
+      else ((key = `boar_walk_${look}`), (bob = true));
       break;
     }
     case "pack": {

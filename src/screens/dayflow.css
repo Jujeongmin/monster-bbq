@@ -37,3 +37,25 @@
 .upgrade-fx { grid-column: 2 / 4; font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
 .upgrade-row .ui-btn { grid-column: 3; grid-row: 1; font: var(--fs-small) "Galmuri9", monospace; }
 .upgrades > .ui-btn { align-self: center; padding-left: calc(16px * var(--s)); padding-right: calc(16px * var(--s)); }
+
+/* setting out: the side weapon cards (hunt v3 design 4.4) */
+.side-pick { min-width: calc(420px * var(--s)); padding: calc(6px * var(--s)) calc(10px * var(--s)); text-align: center; }
+.side-pick h2, .hunt-summary h2 { margin: 0 0 calc(6px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink); }
+.side-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(6px * var(--s)); margin-bottom: calc(8px * var(--s)); }
+.side-card { display: flex; flex-direction: column; align-items: center; gap: calc(2px * var(--s)); padding: calc(4px * var(--s)) 0; background: none; font: inherit; cursor: pointer; }
+.side-card img { width: calc(50px * var(--s)); image-rendering: pixelated; }
+.side-card.on { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(var(--k) 0 0 #ffd65a) drop-shadow(calc(-1 * var(--k)) 0 0 #ffd65a) drop-shadow(0 var(--k) 0 #ffd65a) drop-shadow(0 calc(-1 * var(--k)) 0 #ffd65a); }
+.side-card:disabled { cursor: default; filter: grayscale(1) brightness(0.8); }
+.side-name { font-weight: 700; color: var(--ink); }
+.side-ammo { font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
+/* home from the hunt: what was taken by stars, and the parts */
+.hunt-summary { min-width: calc(300px * var(--s)); padding: calc(6px * var(--s)) calc(12px * var(--s)); text-align: center; color: var(--ink); }
+.summary-stars { list-style: none; margin: 0 0 calc(6px * var(--s)); padding: 0; display: flex; flex-direction: column; gap: calc(2px * var(--s)); }
+.summary-stars li { display: flex; gap: calc(8px * var(--s)); justify-content: center; }
+.summary-star { color: #c88a10; font-weight: 700; min-width: calc(40px * var(--s)); text-align: right; }
+.summary-items { display: flex; flex-wrap: wrap; gap: calc(6px * var(--s)); justify-content: center; margin-bottom: calc(8px * var(--s)); }
+.summary-item { display: inline-flex; align-items: center; gap: calc(2px * var(--s)); font-weight: 700; }
+.summary-item img { width: calc(21px * var(--s)); image-rendering: pixelated; }
+.summary-item.premium { color: #c88a10; }
+.summary-ko { margin: 0 0 calc(6px * var(--s)); color: var(--red); }
+

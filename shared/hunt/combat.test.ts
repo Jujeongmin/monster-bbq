@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_HIT_LOG, computeHit, coneTargets, nextComboStep, recordHit, type HitTuning, type WeaponStats } from "./combat";
+import { computeHit, coneTargets, nextComboStep, type HitTuning, type WeaponStats } from "./combat";
 
 const melee: WeaponStats = { kind: "melee", range: 30, damage: 10, cooldownMs: 550, swingMs: 450 };
 const ranged: WeaponStats = { kind: "ranged", range: 140, damage: 5, cooldownMs: 700, swingMs: 450 };

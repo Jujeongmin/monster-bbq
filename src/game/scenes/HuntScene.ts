@@ -5,7 +5,13 @@ import type { DishId } from "../../../shared/content/dishes";
 import { itemKey, parseItemKey, type ItemId } from "../../../shared/content/items";
 import { OBJECT_KINDS } from "../../../shared/content/objects";
 import { addToBag, bagCount } from "../../../shared/hunt/bag";
-import { computeHit, coneTargets, meatGrade, nextComboStep, recordHit, type WeaponKind } from "../../../shared/hunt/combat";
+import { computeHit, coneTargets, nextComboStep, recordHit, type WeaponKind } from "../../../shared/hunt/combat";
+import { MONSTERS } from "../../../shared/content/monsters";
+import type { SideWeaponId } from "../../../shared/content/sideWeapons";
+import { startCapture, stepCapture, tapCapture, type Capture } from "../../../shared/hunt/capture";
+import { bind, dart, stun } from "../../../shared/hunt/status";
+import { starsOf, takeYield, type TakeHow } from "../../../shared/hunt/stars";
+import { mashTusk } from "../../../shared/hunt/tusk";
 import { dropFor } from "../../../shared/hunt/drops";
 import { clampToField, distance, moveByInput, pushOutOfRects, unit, type Rect } from "../../../shared/hunt/geometry";
 import { fireHarpoon, harpoonDone, harpoonHit, reelStep, stepHarpoon, type Harpoon } from "../../../shared/hunt/harpoon";
@@ -19,14 +25,17 @@ import { itemName, t, type StringKey } from "../../i18n";
 import { artUrl } from "../art";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 import { createCharacterAnims, loadCharacterArt, lookOf, stepBob } from "../hunt/anims";
-import { angerFlock, CHAR_SCALE, createMob, dazeMob, drawMob, isMobVulnerable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
+import { angerFlock, CHAR_SCALE, createMob, drawMob, isMobVulnerable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
+import { fleerHit } from "../../../shared/hunt/fleer";
 import { joystickVector } from "../joystick";
-import { KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL } from "../ui";
+import { addButton, addGauge, KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiButton, type UiGauge } from "../ui";
 
-// The forest hunt (plan 03), quarter view, Dave-the-Diver controls.
-// PC: WASD / arrows move, aim with the mouse, left click = harpoon, right click = slash, E = gather, go
-//     down, or leave by one of Bandal's carts (keyboard only: Z = slash, X = harpoon straight ahead).
-// Touch: stick on the left; press on the right half to aim, release to fire; slash and gather buttons.
+// The forest hunt (plan 03, hunt v3), quarter view, Dave-the-Diver controls.
+// PC: WASD / arrows move, aim with the mouse, left click = harpoon (and mash while capturing), right click
+//     = the side weapon, Space = slash (and mash), E = gather, bag a sleeper, go down, or leave by one of
+//     Bandal's carts, Esc = pause (keyboard only: Z = slash, X = harpoon, C = side weapon straight ahead).
+// Touch: stick on the left; press on the right half to aim, release to fire; slash, side weapon and use
+//     buttons; while capturing or pinned, a tap anywhere mashes.
 // Each floor comes from the server's seed (planFloor); the scene reports what was taken, in
 // order, and the server decides the drops the same way (spec 7).
 const H = BALANCE.hunt;
@@ -44,6 +53,12 @@ const REFILL_DELAY_MS = 2500;
 const STICK = { x: GAME_WIDTH * 0.12, y: GAME_HEIGHT * 0.78, radius: 36, deadZone: 0.2 };
 const SLASH_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.8, radius: 28 };
 const GATHER_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.58, radius: 22 };
+const SIDE_BTN = { x: GAME_WIDTH * 0.76, y: GAME_HEIGHT * 0.86, radius: 22 };
+// a mash every this often while auto-mash is on (pause menu)
+const AUTO_MASH_MS = 120;
+const AUTO_MASH_KEY = "monster-bbq:autoMash";
+// a missed harpoon reels back this long before it can fly again (hunt v3 design 4.2)
+const MISS_REEL_MS = 600;
 
 export interface HuntData {
   huntId: string;
@@ -58,6 +73,12 @@ export interface HuntData {
   // dishes packed for this hunt and the health each gives back (its level price, shared/kitchen/dish): eat one
   // with its button (or keys 1-3)
   lunchbox: { dish: DishId; heal: number }[];
+  // the side weapon taken out, its shots for the whole hunt, the harpoon's level (capture taps) and how
+  // fast this sleep dart works (shared/growth)
+  side: SideWeaponId;
+  ammo: number;
+  harpoonLevel: number;
+  sleepFallMs: number;
   // set by the scene itself when it restarts on the next floor
   run?: Run;
 }
@@ -70,6 +91,8 @@ interface Run {
   bag: Record<string, number>;
   report: HuntEvent[];
   eaten: boolean[];
+  // side weapon shots left (one supply for the whole hunt)
+  ammo: number;
 }
 
 // What the hunt hands to the day flow when it ends (PhaserGame forwards the "hunt:end" event): what was
@@ -101,7 +124,19 @@ interface Node {
   taken: boolean;
 }
 
-type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "E" | "ONE" | "TWO" | "THREE", Phaser.Input.Keyboard.Key>;
+type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "C" | "E" | "SPACE" | "ESC" | "ONE" | "TWO" | "THREE", Phaser.Input.Keyboard.Key>;
+
+// a side weapon shot in flight: pebble, dart or net (straight, like the harpoon), or a thrown firecracker
+interface Dart {
+  kind: SideWeaponId;
+  h: Harpoon;
+  sprite: Phaser.GameObjects.Image;
+}
+interface Bomb {
+  at: Vec;
+  ms: number;
+  sprite: Phaser.GameObjects.Image;
+}
 
 export class HuntScene extends Phaser.Scene {
   private huntData!: HuntData;
@@ -154,6 +189,25 @@ export class HuntScene extends Phaser.Scene {
   private stickKnob!: Phaser.GameObjects.Arc;
   private aimPointer: number | null = null;
   private aimScreen: Vec | null = null;
+  private sideQueued: Vec | null = null;
+  private mashQueued = false;
+  // reeled in and struggling on the capture gauge
+  private capturing: { mob: Mob; c: Capture; gauge: UiGauge } | null = null;
+  // pinned by the tusk boss: mash to break free
+  private pinned: Mob | null = null;
+  private darts: Dart[] = [];
+  private bombs: Bomb[] = [];
+  private missReel: { from: Vec; ms: number } | null = null;
+  private autoMash = false;
+  private autoMashMs = 0;
+  private paused = false;
+  private pauseMenu: Phaser.GameObjects.Container | null = null;
+  private ammoText!: Phaser.GameObjects.Text;
+  private bossBar: UiGauge | null = null;
+  private bossSeen = false;
+  // what a side weapon has done to each monster, shown above its head (Zzz, z, @@, #)
+  private statusLabels = new Map<Mob, Phaser.GameObjects.Text>();
+  private slamRing: { at: Vec; ms: number } | null = null;
 
   constructor() {
     super("hunt");
@@ -165,7 +219,7 @@ export class HuntScene extends Phaser.Scene {
     this.melee = { ...H.weapons.melee, damage: data.stats.meleeDamage };
     this.ranged = { ...H.weapons.ranged, damage: data.stats.rangedDamage, range: H.weapons.ranged.range * data.stats.rangedRange };
     this.maxStamina = data.stats.maxHp;
-    this.run = data.run ?? { floor: 1, stamina: data.stats.maxHp, bag: {}, report: [], eaten: data.lunchbox.map(() => false) };
+    this.run = data.run ?? { floor: 1, stamina: data.stats.maxHp, bag: {}, report: [], eaten: data.lunchbox.map(() => false), ammo: data.ammo };
     this.bagSlots = data.bagSlots;
     this.lunch = [];
     this.speedUntil = 0;
@@ -192,12 +246,32 @@ export class HuntScene extends Phaser.Scene {
     this.stickVec = { x: 0, y: 0 };
     this.aimPointer = null;
     this.aimScreen = null;
+    this.sideQueued = null;
+    this.mashQueued = false;
+    this.capturing = null;
+    this.pinned = null;
+    this.darts = [];
+    this.bombs = [];
+    this.missReel = null;
+    this.autoMashMs = 0;
+    this.paused = false;
+    this.pauseMenu = null;
+    this.bossBar = null;
+    this.bossSeen = false;
+    this.statusLabels = new Map();
+    this.slamRing = null;
+    try {
+      this.autoMash = localStorage.getItem(AUTO_MASH_KEY) === "1";
+    } catch {
+      this.autoMash = false;
+    }
   }
 
   preload() {
     this.load.image("grass", artUrl("test/bg/grass.png"));
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
     for (const k of ["ring_empty", "ring_full", "face_fine", "face_tired"]) this.load.image(`stamina_${k}`, artUrl(`test/ui/stamina/${k}.png`));
+    this.load.image(`side_${this.huntData.side}`, artUrl(`test/ui/side/${this.huntData.side}.png`));
     this.load.image("exit", artUrl("test/hunt/exit.png"));
     this.load.image("stairs", artUrl("test/hunt/stairs.png"));
     loadCharacterArt(this);
@@ -233,7 +307,7 @@ export class HuntScene extends Phaser.Scene {
 
     const keyboard = this.input.keyboard!;
     this.cursors = keyboard.createCursorKeys();
-    this.keys = keyboard.addKeys("W,A,S,D,Z,J,X,K,E,ONE,TWO,THREE") as Keys;
+    this.keys = keyboard.addKeys("W,A,S,D,Z,J,X,K,C,E,SPACE,ESC,ONE,TWO,THREE") as Keys;
 
     // touch controls on touch devices (add ?touch to the URL to try them with a mouse)
     this.touch = this.sys.game.device.input.touch || new URLSearchParams(location.search).has("touch");
@@ -276,13 +350,22 @@ export class HuntScene extends Phaser.Scene {
       l.eaten = true;
       l.button.setAlpha(0.3).disableInteractive();
     });
+    // the side weapon taken out and its shots left, bottom right (on touch: on its button)
+    const sideAt = this.touch ? SIDE_BTN : { x: GAME_WIDTH - 44, y: GAME_HEIGHT - 52 };
+    hud(this.add.image(sideAt.x, sideAt.y, `side_${this.huntData.side}`).setScale(this.touch ? 1 : KIT));
+    this.ammoText = hud(this.add.text(sideAt.x + 18, sideAt.y + 14, "", { ...TEXT, fontStyle: "bold" }).setOrigin(0, 0.5));
     this.cameras.main.fadeIn(300, 0, 0, 0);
     this.floorCard();
+    // development builds only: the scene reachable from the page, for screen checks (art-src/mockups/tools)
+    if (import.meta.env.DEV) (window as unknown as { __hunt?: HuntScene }).__hunt = this;
   }
 
   update(_time: number, rawDt: number) {
     const dt = Math.min(rawDt, MAX_DT_MS);
     if (this.ended) return;
+    if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) this.togglePause();
+    // paused: nothing moves and stamina holds
+    if (this.paused) return;
     if (this.hitStopMs > 0) {
       this.hitStopMs -= dt;
       if (this.hitStopMs <= 0) this.anims.resumeAll();
@@ -294,8 +377,12 @@ export class HuntScene extends Phaser.Scene {
     }
     if (!this.player.down) this.updatePlayer(dt);
     this.updateHarpoon(dt);
+    this.updateCapture(dt);
+    this.updateDarts(dt);
+    this.updateBombs(dt);
     this.updateMobs(dt);
     this.updateShots(dt);
+    this.drawStatusLabels();
     this.fadeCanopies();
     this.drawFx(dt);
     this.drawHud();
@@ -306,8 +393,9 @@ export class HuntScene extends Phaser.Scene {
   private createMouseControls() {
     this.input.mouse?.disableContextMenu();
     this.input.on("pointerdown", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
-      if (this.overHud(over)) return;
-      if (p.rightButtonDown()) this.slashQueued = true;
+      if (this.overHud(over) || this.paused) return;
+      if (p.rightButtonDown()) this.sideQueued = this.toWorld(p.x, p.y);
+      else if (this.capturing || this.pinned) this.mashQueued = true;
       else this.shotQueued = this.toWorld(p.x, p.y);
     });
   }
@@ -329,10 +417,23 @@ export class HuntScene extends Phaser.Scene {
     this.gatherButtonLabel = label(GATHER_BTN, t("hunt.useButton")).setVisible(false);
     this.gatherButton.setInteractive(new Phaser.Geom.Circle(GATHER_BTN.radius, GATHER_BTN.radius, GATHER_BTN.radius + 6), Phaser.Geom.Circle.Contains);
     this.gatherButton.on("pointerdown", () => (this.gatherQueued = true));
+    // the side weapon fires the way the hunter aims
+    const side = ui(this.add.circle(SIDE_BTN.x, SIDE_BTN.y, SIDE_BTN.radius, 0x806020, 0.6).setStrokeStyle(1, 0xffffff, 0.8));
+    side.setInteractive(new Phaser.Geom.Circle(SIDE_BTN.radius, SIDE_BTN.radius, SIDE_BTN.radius + 6), Phaser.Geom.Circle.Contains);
+    side.on("pointerdown", () => {
+      const p = this.player;
+      this.sideQueued = { x: p.pos.x + p.aim.x * 100, y: p.pos.y + p.aim.y * 100 - H.harpoon.handHeight };
+    });
 
     const onButton = (p: Phaser.Input.Pointer) =>
-      [SLASH_BTN, ...(this.gatherButton?.visible ? [GATHER_BTN] : [])].some((b) => Phaser.Math.Distance.Between(p.x, p.y, b.x, b.y) <= b.radius + 6);
+      [SLASH_BTN, SIDE_BTN, ...(this.gatherButton?.visible ? [GATHER_BTN] : [])].some((b) => Phaser.Math.Distance.Between(p.x, p.y, b.x, b.y) <= b.radius + 6);
     this.input.on("pointerdown", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
+      if (this.paused) return;
+      // capturing or pinned: any tap away from the stick mashes
+      if ((this.capturing || this.pinned) && p.x >= GAME_WIDTH * 0.45) {
+        this.mashQueued = true;
+        return;
+      }
       if (onButton(p) || this.overHud(over)) return;
       if (p.x < GAME_WIDTH * 0.45) {
         if (this.stickPointer === null) {
@@ -398,8 +499,14 @@ export class HuntScene extends Phaser.Scene {
 
     const k = this.keys;
     const JD = Phaser.Input.Keyboard.JustDown;
+    const ahead = { x: p.pos.x + p.aim.x * 100, y: p.pos.y + p.aim.y * 100 - H.harpoon.handHeight };
+    if (JD(k.SPACE)) {
+      if (this.capturing || this.pinned) this.mashQueued = true;
+      else this.slashQueued = true;
+    }
     if (JD(k.Z) || JD(k.J)) this.slashQueued = true;
-    if (JD(k.X) || JD(k.K)) this.shotQueued = { x: p.pos.x + p.aim.x * 100, y: p.pos.y + p.aim.y * 100 - H.harpoon.handHeight };
+    if (JD(k.X) || JD(k.K)) this.shotQueued = ahead;
+    if (JD(k.C)) this.sideQueued = ahead;
     if (JD(k.E)) this.gatherQueued = true;
     if (JD(k.ONE)) this.eat(0);
     if (JD(k.TWO)) this.eat(1);
@@ -411,10 +518,30 @@ export class HuntScene extends Phaser.Scene {
       p.aim = unit({ x: aim.x - p.pos.x, y: aim.y - (p.pos.y - H.harpoon.handHeight) }, p.aim);
     }
 
+    // capturing or pinned: the hunter holds on and mashes, nothing else
+    if (this.capturing || this.pinned) {
+      if (this.autoMash) {
+        this.autoMashMs += dt;
+        if (this.autoMashMs >= AUTO_MASH_MS) {
+          this.autoMashMs = 0;
+          this.mashQueued = true;
+        }
+      }
+      if (this.mashQueued) {
+        this.mashQueued = false;
+        this.mash();
+      }
+      this.slashQueued = false;
+      this.shotQueued = null;
+      this.sideQueued = null;
+      this.showHunter(false);
+      return;
+    }
+
     const use = this.nearestUse();
-    const at = use?.kind === "node" ? use.node.node : use?.kind === "exit" ? this.floorDef.exits.find((e) => e.id === use.id)! : use ? this.floorDef.down! : null;
+    const at = use?.kind === "node" ? use.node.node : use?.kind === "sleeper" ? mobPos(use.mob) : use?.kind === "exit" ? this.floorDef.exits.find((e) => e.id === use.id)! : use ? this.floorDef.down! : null;
     this.gatherHint.setVisible(!!at && !this.gathering && !this.touch);
-    if (at) this.gatherHint.setText(t(use!.kind === "exit" ? "hunt.useExit" : use!.kind === "down" ? "hunt.useDown" : "hunt.gather")).setPosition(at.x, at.y - 34);
+    if (at) this.gatherHint.setText(t(use!.kind === "exit" ? "hunt.useExit" : use!.kind === "down" ? "hunt.useDown" : use!.kind === "sleeper" ? "hunt.take" : "hunt.gather")).setPosition(at.x, at.y - 34);
     this.gatherButton?.setVisible(!!use);
     this.gatherButtonLabel?.setVisible(!!use);
 
@@ -430,16 +557,23 @@ export class HuntScene extends Phaser.Scene {
     if (this.shotQueued) {
       const at = this.shotQueued;
       this.shotQueued = null;
-      if (p.harpoonCooldownMs === 0 && !this.harpoon && !this.reeling) {
+      if (p.harpoonCooldownMs === 0 && !this.harpoon && !this.reeling && !this.missReel) {
         this.gathering = null;
         this.throwHarpoon(at);
         return;
       }
     }
+    if (this.sideQueued) {
+      const at = this.sideQueued;
+      this.sideQueued = null;
+      this.gathering = null;
+      this.fireSide(at);
+    }
     if (this.gatherQueued) {
       this.gatherQueued = false;
       if (use?.kind === "exit") return this.endHunt(false, use.id);
       if (use?.kind === "down") return this.goDown();
+      if (use?.kind === "sleeper") return this.take(use.mob, "sleep");
       if (use?.kind === "node" && !this.gathering) this.gathering = { node: use.node, ms: 0 };
     }
 
@@ -544,6 +678,8 @@ export class HuntScene extends Phaser.Scene {
     p.down = true;
     this.harpoon = null;
     this.reeling = null;
+    this.endCapture();
+    this.pinned = null;
     this.hunter.anims.stop();
     this.hunter.setTint(0x777777).setAngle(-90);
     this.add
@@ -554,12 +690,16 @@ export class HuntScene extends Phaser.Scene {
     this.time.delayedCall(1500, () => this.endHunt(true, null));
   }
 
-  // What E (or the action button) would use here: an exit, the way down, else a gathering spot.
-  private nearestUse(): { kind: "exit"; id: string } | { kind: "down" } | { kind: "node"; node: Node } | null {
+  // What E (or the action button) would use here: an exit, the way down, a sleeping monster, else a
+  // gathering spot.
+  private nearestUse(): { kind: "exit"; id: string } | { kind: "down" } | { kind: "sleeper"; mob: Mob } | { kind: "node"; node: Node } | null {
     const p = this.player.pos;
     const exit = this.floorDef.exits.find((e) => distance(p, e) <= USE_RANGE);
     if (exit) return { kind: "exit", id: exit.id };
     if (this.floorDef.down && distance(p, this.floorDef.down) <= USE_RANGE) return { kind: "down" };
+    // a sleeping monster within reach: bag it (★★★)
+    const sleeper = this.mobs.find((m) => !m.dead && m.status.kind === "asleep" && distance(p, mobPos(m)) <= USE_RANGE + mobRadius(m));
+    if (sleeper) return { kind: "sleeper", mob: sleeper };
     const node = this.nearestNode();
     return node ? { kind: "node", node } : null;
   }
@@ -636,7 +776,15 @@ export class HuntScene extends Phaser.Scene {
       if (struck) {
         this.harpoon = null;
         this.harpoonStrike(struck);
-      } else this.harpoon = harpoonDone(h, this.ranged.range) ? null : h;
+      } else if (harpoonDone(h, this.ranged.range)) {
+        // a miss: the rope reels back before the harpoon can fly again
+        this.harpoon = null;
+        this.missReel = { from: h.tip, ms: MISS_REEL_MS };
+      } else this.harpoon = h;
+    }
+    if (this.missReel) {
+      this.missReel.ms -= dt;
+      if (this.missReel.ms <= 0) this.missReel = null;
     }
     const m = this.reeling;
     if (!m) return;
@@ -648,10 +796,11 @@ export class HuntScene extends Phaser.Scene {
     setMobPos(m, r.pos);
     if (r.done) {
       this.reeling = null;
-      // reeled in and dazed for dazeMs: open for counters
-      dazeMob(m, unit({ x: this.player.pos.x - r.pos.x, y: this.player.pos.y - r.pos.y }));
-      drawMob(this, m, true, (x, y, s, c, ms) => this.popText(x, y, s, c, ms));
-      this.popText(r.pos.x, r.pos.y - 36, t("hunt.chance"), "#7fe0ff", 600);
+      // reeled in: it struggles on the capture gauge (hunt v3 design 4.2)
+      const gauge = addGauge(this, r.pos.x, r.pos.y - 44, 40);
+      gauge.box.setDepth(9600);
+      this.capturing = { mob: m, c: startCapture(), gauge };
+      this.popText(r.pos.x, r.pos.y - 56, t("hunt.mash"), "#ffd166", 700);
     }
   }
 
@@ -714,23 +863,35 @@ export class HuntScene extends Phaser.Scene {
     const tags = tagList.filter(Boolean).join(" ");
     const at = mobPos(m);
     this.popText(at.x, at.y - 30, `${damage}${tags ? " " + tags : ""}`, tags ? "#ffd166" : "#ffffff");
-    if (m.hp <= 0) this.killMob(m);
+    if (m.hp <= 0) this.take(m, "down");
   }
 
-  // The part goes into the bag (the server decides the same drop from the seed); the kill is
-  // reported either way, and a refill comes in shortly after.
-  private killMob(m: Mob) {
+  // A monster taken (hunt v3 design 4.2): knocked down ★, captured ★★, put to sleep or netted ★★★. Its
+  // parts go into the bag by stars (the server decides the same drop from the seed and the same count);
+  // the take is reported either way, and a refill comes in shortly after.
+  private take(m: Mob, how: TakeHow) {
+    if (m.dead) return;
     m.dead = true;
     if (this.reeling === m) this.reeling = null;
-    const grade = meatGrade(m.hits, H.premiumMaxRangedHits);
-    const key = itemKey(dropFor(this.huntData.seed, m.spawn), grade);
-    this.run.report.push({ kill: m.spawn.id, grade });
-    const r = addToBag(this.run.bag, key, this.bagSlots);
+    if (this.capturing?.mob === m) this.endCapture();
+    if (this.pinned === m) this.pinned = null;
+    this.run.report.push({ take: m.spawn.id, how });
+    const y = takeYield(how, m.spawn.monster === "tusk");
+    const key = itemKey(dropFor(this.huntData.seed, m.spawn), y.grade);
     const at = mobPos(m);
-    if (r.added) {
+    let added = 0;
+    for (let i = 0; i < y.count; i++) {
+      const r = addToBag(this.run.bag, key, this.bagSlots);
+      if (!r.added) break;
       this.run.bag = r.bag;
-      this.popItem(at.x, at.y - 38, key);
-    } else this.popText(at.x, at.y - 38, t("hunt.bagFull"), "#ffb0b0", 1200);
+      added++;
+    }
+    this.celebrate(at, how);
+    if (added > 0) this.flyToBag(at, key, added);
+    else this.popText(at.x, at.y - 38, t("hunt.bagFull"), "#ffb0b0", 1200);
+    if (m.spawn.monster === "tusk") this.say(at, t("hunt.tuskCaught"));
+    this.statusLabels.get(m)?.destroy();
+    this.statusLabels.delete(m);
     this.tweens.killTweensOf(m.sprite);
     m.sprite.setAlpha(1).clearTint();
     this.tweens.add({
@@ -746,17 +907,288 @@ export class HuntScene extends Phaser.Scene {
     if (refill) this.time.delayedCall(REFILL_DELAY_MS, () => !this.ended && this.mobs.push(createMob(this, refill)));
   }
 
+  // ---------------------------------------------------------------- capture, pin, side weapons
+
+  // One mash: fills the capture gauge, or works the hunter loose from the tusk boss.
+  private mash() {
+    if (this.capturing) {
+      this.capturing.c = tapCapture(this.capturing.c, this.huntData.harpoonLevel);
+      this.cameras.main.shake(60, 0.004);
+      const g = this.capturing.gauge.box;
+      this.tweens.add({ targets: g, y: g.y - 2, duration: 50, yoyo: true });
+    } else if (this.pinned && this.pinned.ai.kind === "boss") {
+      this.pinned.ai = { kind: "boss", s: mashTusk(this.pinned.ai.s) };
+      this.cameras.main.shake(50, 0.004);
+    }
+  }
+
+  private updateCapture(dt: number) {
+    const cap = this.capturing;
+    if (!cap) return;
+    const m = cap.mob;
+    if (m.dead || this.player.down) return this.endCapture();
+    // it struggles in place, held by the taut rope
+    const at = mobPos(m);
+    m.sprite.setPosition(at.x + (Math.random() < 0.5 ? -1 : 1), at.y);
+    const r = stepCapture(cap.c, dt, Math.max(0, m.hp) / MONSTERS[m.spawn.monster].maxHp);
+    cap.c = r.c;
+    cap.gauge.set(cap.c.fill);
+    cap.gauge.box.setPosition(at.x - 20, at.y - 44);
+    if (r.result === "caught") this.take(m, "capture");
+    else if (r.result === "broke") {
+      this.endCapture();
+      this.popText(at.x, at.y - 40, t("hunt.ropeBroke"), "#ff8080", 900);
+      this.enrage(m);
+    }
+  }
+
+  private endCapture() {
+    this.capturing?.gauge.box.destroy();
+    this.capturing = null;
+  }
+
+  // The rope broke: the monster turns on the hunter (or runs, if it is the timid kind).
+  private enrage(m: Mob) {
+    const p = this.player.pos;
+    const toward = unit({ x: p.x - mobPos(m).x, y: p.y - mobPos(m).y });
+    switch (m.ai.kind) {
+      case "charger":
+        m.ai = { kind: "charger", s: { ...m.ai.s, phase: "telegraph", phaseMs: 0, facing: toward, chargeDir: toward, wanderTarget: null, hitThisCharge: false } };
+        break;
+      case "fleer":
+        m.ai = { kind: "fleer", s: fleerHit(m.ai.s) };
+        break;
+      case "shooter":
+        m.ai = { kind: "shooter", s: { ...m.ai.s, phase: "aim", phaseMs: 0, aimDir: toward } };
+        break;
+      case "pack":
+        if (m.spawn.flock) angerFlock(this.mobs, m.spawn.flock);
+        break;
+      case "boss":
+        break;
+    }
+  }
+
+  // The side weapon taken out (hunt v3 design 4.4): pebble, sleep dart and net fly straight like the
+  // harpoon; the firecracker is thrown to the aimed spot and goes off there.
+  private fireSide(at: Vec) {
+    const p = this.player;
+    if (this.run.ammo <= 0) {
+      this.popText(p.pos.x, p.pos.y - 40, t("hunt.noAmmo"), "#ffb0b0", 900);
+      return;
+    }
+    this.run.ammo--;
+    const side = this.huntData.side;
+    p.aim = unit({ x: at.x - p.pos.x, y: at.y - this.hand().y }, p.aim);
+    p.swingMs = this.ranged.swingMs;
+    this.hunter.setFlipX(p.aim.x < 0).play("hunter_throw");
+    if (side === "firecracker") {
+      const d = Math.min(H.firecracker.range, distance(this.hand(), at));
+      const to = { x: this.hand().x + p.aim.x * d, y: this.hand().y + p.aim.y * d + H.harpoon.handHeight };
+      const sprite = this.add.image(this.hand().x, this.hand().y, `side_${side}`).setScale(0.5).setDepth(9000);
+      this.tweens.add({ targets: sprite, x: to.x, y: to.y, angle: 360, duration: 400 });
+      this.bombs.push({ at: to, ms: 400, sprite });
+      return;
+    }
+    const sprite = this.add.image(this.hand().x, this.hand().y, `side_${side}`).setScale(0.5).setDepth(9000);
+    this.darts.push({ kind: side, h: fireHarpoon(this.hand(), at, p.aim.x < 0 ? -1 : 1), sprite });
+  }
+
+  private updateDarts(dt: number) {
+    this.darts = this.darts.filter((d) => {
+      const h = stepHarpoon(d.h, H.sling.speed, dt);
+      d.sprite.setPosition(h.tip.x, h.tip.y).setRotation(Math.atan2(h.dir.y, h.dir.x));
+      const live = this.mobs.filter((m) => !m.dead && m !== this.capturing?.mob).map((m) => ({ pos: mobPos(m), mob: m }));
+      const struck = harpoonHit(h.tip, live, H.harpoon.bodyOffsetY, H.harpoon.hitRadius)?.mob;
+      if (struck) {
+        d.sprite.destroy();
+        this.dartHit(d.kind, struck);
+        return false;
+      }
+      if (harpoonDone(h, H.sling.range)) {
+        d.sprite.destroy();
+        return false;
+      }
+      d.h = h;
+      return true;
+    });
+  }
+
+  private dartHit(kind: SideWeaponId, m: Mob) {
+    const at = mobPos(m);
+    if (kind === "sling") {
+      this.applyHit(m, "ranged", H.sling.damage, []);
+      if (!m.dead) m.status = stun(m.status, H.sling.stunMs);
+    } else if (kind === "sleepGun") {
+      m.status = dart(m.status, H.sleepHits[m.spawn.monster], this.huntData.sleepFallMs);
+      // the flock does not notice one of its own nodding off
+      this.tweens.add({ targets: m.sprite, angle: { from: -8, to: 8 }, duration: 160, yoyo: true, repeat: 2, onComplete: () => m.sprite.active && m.sprite.setAngle(0) });
+    } else if (kind === "netGun") {
+      if (MONSTERS[m.spawn.monster].radius <= H.netSmallMaxRadius) this.take(m, "net");
+      else {
+        m.status = bind(m.status, H.netBindMs);
+        this.popText(at.x, at.y - 40, "#", "#ffd166", 800);
+      }
+    }
+  }
+
+  private updateBombs(dt: number) {
+    this.bombs = this.bombs.filter((b) => {
+      b.ms -= dt;
+      if (b.ms > 0) return true;
+      b.sprite.destroy();
+      // bang: everything nearby is startled still; a flock bursts apart
+      this.cameras.main.shake(140, 0.01);
+      this.popText(b.at.x, b.at.y - 10, "펑!", "#ffd166", 700);
+      for (const m of this.mobs) {
+        if (m.dead || distance(mobPos(m), b.at) > H.firecracker.radius) continue;
+        m.status = stun(m.status, H.firecracker.stunMs);
+        if (m.ai.kind === "pack") {
+          const away = unit({ x: mobPos(m).x - b.at.x, y: mobPos(m).y - b.at.y });
+          setMobPos(m, clampToField(pushOutOfRects({ x: mobPos(m).x + away.x * 30, y: mobPos(m).y + away.y * 30 }, this.obstacles, mobRadius(m)), this.floorDef.field));
+        }
+      }
+      return false;
+    });
+  }
+
+  // Above each monster a side weapon has touched: Zzz while asleep, z for each dart while drowsy, @@
+  // while stunned, # while tied up.
+  private drawStatusLabels() {
+    for (const m of this.mobs) {
+      const st = m.status;
+      const text = st.kind === "asleep" ? "Zzz" : st.kind === "drowsy" ? "z".repeat(st.hits) : st.kind === "stunned" ? "@@" : st.kind === "bound" ? "#" : "";
+      let label = this.statusLabels.get(m);
+      if (!text || m.dead) {
+        label?.destroy();
+        this.statusLabels.delete(m);
+        continue;
+      }
+      if (!label) {
+        label = this.add.text(0, 0, "", { ...TEXT_SMALL, color: st.kind === "asleep" || st.kind === "drowsy" ? "#9fd8ff" : "#ffd166" }).setOrigin(0.5).setDepth(9500);
+        this.statusLabels.set(m, label);
+      }
+      const at = mobPos(m);
+      const bob = st.kind === "asleep" ? Math.sin(this.time.now / 300) * 3 : 0;
+      label.setText(text).setPosition(at.x + (st.kind === "asleep" ? 8 : 0), at.y - 34 - mobRadius(m) + bob);
+    }
+  }
+
+  // The catch, Dave the Diver style: a stamp for a capture, the stars springing up, a sparkle for ★★★.
+  private celebrate(at: Vec, how: TakeHow) {
+    const n = starsOf(how);
+    if (how === "capture") {
+      const stamp = this.add.text(at.x, at.y - 40, t("hunt.captured"), { ...TEXT, fontStyle: "bold", color: "#ffd166" }).setOrigin(0.5).setDepth(9700).setScale(2.4);
+      this.tweens.add({ targets: stamp, scale: 1, duration: 140, ease: "Back.easeOut", onComplete: () => this.tweens.add({ targets: stamp, alpha: 0, delay: 500, duration: 300, onComplete: () => stamp.destroy() }) });
+      this.hitStop(100);
+    }
+    const stars = this.add.text(at.x, at.y - 52, "★".repeat(n), { ...TEXT, fontStyle: "bold", color: n === 3 ? "#ffe680" : "#ffd166" }).setOrigin(0.5).setDepth(9700);
+    this.tweens.add({ targets: stars, y: at.y - 70, duration: 450, ease: "Back.easeOut", onComplete: () => this.tweens.add({ targets: stars, alpha: 0, delay: 400, duration: 300, onComplete: () => stars.destroy() }) });
+    if (n === 3)
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2;
+        const spark = this.add.text(at.x, at.y - 24, "✦", { ...TEXT_SMALL, color: "#fff3a0" }).setOrigin(0.5).setDepth(9700);
+        this.tweens.add({ targets: spark, x: at.x + Math.cos(a) * 22, y: at.y - 24 + Math.sin(a) * 16, alpha: 0, duration: 600, onComplete: () => spark.destroy() });
+      }
+  }
+
+  // The parts taken fly from the monster to the bag count at the top left.
+  private flyToBag(at: Vec, key: string, count: number) {
+    const item = parseItemKey(key);
+    if (!item) return;
+    const cam = this.cameras.main;
+    const target = { x: cam.worldView.x + RING.x + RING.r + 30, y: cam.worldView.y + RING.y - 6 };
+    for (let i = 0; i < count; i++) {
+      const icon = this.add.image(at.x, at.y - 30, `icon_${item.id as ItemId}`).setDepth(9800);
+      this.tweens.add({ targets: icon, x: target.x, y: target.y, scale: 0.6, delay: 120 * i, duration: 600, ease: "Cubic.easeIn", onComplete: () => icon.destroy() });
+    }
+    // the parts' name under the monster, clear of the stamp and the stars above it
+    this.popText(at.x, at.y + 10, `${itemName(key)} ×${count}`, item.grade === "premium" ? "#ffd166" : "#ffffff", 900);
+  }
+
+  // A line from a monster in a kit bubble (the tusk boss).
+  private say(at: Vec, line: string) {
+    const label = this.add.text(0, -1, line, { ...TEXT_SMALL, color: "#2b1408", stroke: "#2b1408", strokeThickness: 0 }).setOrigin(0.5);
+    const bubble = kitSlice(this, 0, 0, "bubble_plain", Math.ceil(label.width) + 16, 22, 3, 3, 3, 3);
+    const box = this.add.container(at.x, at.y - 60, [bubble, label]).setDepth(9800);
+    this.tweens.add({ targets: box, alpha: 0, delay: 1800, duration: 400, onComplete: () => box.destroy() });
+  }
+
+  // Esc: pause, with the auto-mash switch (hunt v3 design 5.2).
+  private togglePause() {
+    this.paused = !this.paused;
+    if (!this.paused) {
+      this.pauseMenu?.destroy();
+      this.pauseMenu = null;
+      this.anims.resumeAll();
+      this.tweens.resumeAll();
+      return;
+    }
+    this.anims.pauseAll();
+    this.tweens.pauseAll();
+    const panel = kitSlice(this, 0, 0, "panel", 220, 110, 5, 5, 5, 5);
+    const title = this.add.text(0, -36, t("hunt.paused"), { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
+    let toggle: UiButton;
+    const label = () => t(this.autoMash ? "hunt.autoMashOn" : "hunt.autoMashOff");
+    const resume = addButton(this, 0, -4, t("hunt.resume"), () => this.togglePause(), 140);
+    toggle = addButton(this, 0, 28, label(), () => {
+      this.autoMash = !this.autoMash;
+      try {
+        localStorage.setItem(AUTO_MASH_KEY, this.autoMash ? "1" : "0");
+      } catch {
+        // private mode: the switch lasts this hunt only
+      }
+      toggle.setText(label());
+    }, 140);
+    this.pauseMenu = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2, [panel, title, resume.box, toggle.box]).setScrollFactor(0).setDepth(20000);
+  }
+
   // ---------------------------------------------------------------- monsters and stingers
 
   private updateMobs(dt: number) {
     const seen = this.player.down ? null : this.player.pos;
     for (const m of this.mobs) {
       if (m.dead || m === this.reeling) continue;
+      if (m === this.capturing?.mob) continue;
       const step = stepMob(m, dt, seen, this.floorDef.field, this.obstacles);
       if (step.hurt) this.hurtPlayer(step.hurt.damage, step.hurt.dir);
+      if (step.grabbed && !this.player.down) {
+        // pinned under the tusk boss: mash to break free
+        this.pinned = m;
+        this.harpoon = null;
+        this.popText(this.player.pos.x, this.player.pos.y - 44, t("hunt.mash"), "#ff8080", 900);
+      }
+      if (step.slam) {
+        this.cameras.main.shake(200, 0.015);
+        this.slamRing = { at: step.slam, ms: 300 };
+      }
+      if (step.statusEvent === "fell_asleep") this.tweens.add({ targets: m.sprite, y: m.sprite.y + 2, duration: 200 });
+      if (m.ai.kind === "boss") this.watchBoss(m);
       if (step.shot) this.shots.push({ shot: step.shot, sprite: this.add.image(step.shot.pos.x, step.shot.pos.y, "bee_stinger").setDepth(9000).setRotation(Math.atan2(step.shot.dir.y, step.shot.dir.x)) });
       drawMob(this, m, step.phaseChanged, (x, y, s, c, ms) => this.popText(x, y, s, c, ms));
     }
+  }
+
+  // The tusk boss: its name card the first time it comes into view, its health along the top while it
+  // lives, and the pin released once it lets go.
+  private watchBoss(m: Mob) {
+    if (this.pinned === m && (m.ai.kind !== "boss" || m.ai.s.phase !== "grab")) this.pinned = null;
+    if (!this.bossSeen && this.cameras.main.worldView.contains(mobPos(m).x, mobPos(m).y)) {
+      this.bossSeen = true;
+      this.bossCard();
+      this.bossBar = addGauge(this, GAME_WIDTH / 2, 18, 240);
+      this.bossBar.box.setScrollFactor(0).setDepth(10000);
+    }
+    this.bossBar?.set(Math.max(0, m.hp) / MONSTERS.tusk.maxHp);
+  }
+
+  private bossCard() {
+    const line = this.add.text(0, -8, t("hunt.tuskCard"), { ...TEXT_SMALL, color: "#ffd166" }).setOrigin(0.5);
+    const name = this.add.text(0, 8, t("hunt.tuskName"), { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
+    const plate = kitSlice(this, 0, 0, "topbar", Math.max(line.width, name.width) + 48, 44, 5, 5, 2, 1);
+    const card = this.add.container(GAME_WIDTH + 140, GAME_HEIGHT / 2 - 40, [plate, line, name]).setScrollFactor(0).setDepth(10002);
+    this.tweens.add({ targets: card, x: GAME_WIDTH / 2, duration: 260, ease: "Cubic.easeOut", hold: 1200, yoyo: true, onComplete: () => card.destroy() });
+    this.cameras.main.shake(160, 0.008);
   }
 
   private updateShots(dt: number) {
@@ -788,6 +1220,14 @@ export class HuntScene extends Phaser.Scene {
       if (m.dead) continue;
       if (m.ai.kind === "charger" && m.ai.s.phase === "telegraph") this.drawLane(g, mobPos(m), m.ai.s.chargeDir, H.boar.chargeSpeed * (H.boar.chargeMs / 1000), H.boar.hitRadius);
       if (m.ai.kind === "shooter" && m.ai.s.phase === "aim") this.drawLane(g, { x: mobPos(m).x, y: mobPos(m).y - 10 }, m.ai.s.aimDir, H.bee.shotSpeed * (H.bee.shotLifeMs / 1000), 4);
+      if (m.ai.kind === "boss" && m.ai.s.phase === "telegraph") this.drawLane(g, mobPos(m), m.ai.s.chargeDir, H.tusk.chargeSpeed * (H.tusk.chargeMs / 1000), 22);
+      // the slam's circle, warned before it lands
+      if (m.ai.kind === "boss" && m.ai.s.phase === "slamWindup") g.fillStyle(0x400000, 0.3).fillCircle(mobPos(m).x, mobPos(m).y, H.tusk.slamRadius).lineStyle(2, 0xff3030, 1).strokeCircle(mobPos(m).x, mobPos(m).y, H.tusk.slamRadius * Math.min(1, m.ai.s.phaseMs / H.tusk.slamTelegraphMs));
+    }
+    if (this.slamRing) {
+      this.slamRing.ms -= dt;
+      g.lineStyle(3, 0xffd166, Math.max(0, this.slamRing.ms / 300)).strokeCircle(this.slamRing.at.x, this.slamRing.at.y, H.tusk.slamRadius * (1.2 - this.slamRing.ms / 1000));
+      if (this.slamRing.ms <= 0) this.slamRing = null;
     }
     if (this.slashArc) {
       const { at, aim } = this.slashArc;
@@ -805,6 +1245,16 @@ export class HuntScene extends Phaser.Scene {
     const hand = this.hand();
     let end: Vec | null = this.harpoon ? this.harpoon.tip : null;
     if (this.reeling && !this.reeling.dead) end = { x: mobPos(this.reeling).x, y: mobPos(this.reeling).y - H.harpoon.bodyOffsetY };
+    // capturing: the rope stays on, taut and trembling
+    if (this.capturing) {
+      const at = mobPos(this.capturing.mob);
+      end = { x: at.x + (Math.random() - 0.5) * 2, y: at.y - H.harpoon.bodyOffsetY + (Math.random() - 0.5) * 2 };
+    }
+    // a miss reeling back to the hand
+    if (!end && this.missReel) {
+      const k = this.missReel.ms / MISS_REEL_MS;
+      end = { x: hand.x + (this.missReel.from.x - hand.x) * k, y: hand.y + (this.missReel.from.y - hand.y) * k };
+    }
     if (end) {
       g.lineStyle(1, 0xe8d8b0, 1).lineBetween(hand.x, hand.y, end.x, end.y);
       g.fillStyle(0xcfd8e0, 1).fillCircle(end.x, end.y, 1.5);
@@ -887,6 +1337,7 @@ export class HuntScene extends Phaser.Scene {
     this.lowGlow.setVisible(low);
     if (low) this.lowGlow.setAlpha(0.8 + 0.2 * Math.sin(this.time.now / 180));
     this.drawExitArrow();
+    this.ammoText.setText(`${this.run.ammo}`).setColor(this.run.ammo > 0 ? "#fff3d8" : "#9a8f84");
   }
 
   // The nearest cart: an arrow beside the hunter pointing at it, pushed in to the screen's edge when the

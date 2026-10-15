@@ -19,17 +19,40 @@ await call("Emulation.setDeviceMetricsOverride", { width: 1280, height: 720, dev
 await call("Page.navigate", { url: `http://localhost:5190/art-src/mockups/${process.env.SEED ?? "seed-kitchen"}.html` });
 await sleep(Number(process.env.WAIT ?? 6000));
 let n = 0;
-// keyboard steps: "@hold W,A 800" holds keys for 800 ms, "@press E" taps a key, "@wait 1500" waits;
+// keyboard and mouse steps: "@hold W,A 800" holds keys for 800 ms, "@press E" taps a key, "@wait 1500" waits,
+// "@mouse x y", "@click x y", "@rclick x y" (screen pixels);
 // several may share one step, separated by ";". Anything else is JavaScript run in the page.
-const KEY = (k) => ({ key: k.toLowerCase(), code: `Key${k}`, windowsVirtualKeyCode: k.charCodeAt(0) });
+const KEY = (k) => (k === "Space" ? { key: " ", code: "Space", windowsVirtualKeyCode: 32 } : k === "Escape" ? { key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 } : { key: k.toLowerCase(), code: `Key${k}`, windowsVirtualKeyCode: k.charCodeAt(0) });
 async function keys(cmd) {
-  for (const part of cmd.split(";").map((p) => p.trim()).filter(Boolean)) {
+  // "@clickjs" takes the whole step (its expression may hold ";")
+  const parts = cmd.startsWith("@clickjs") ? [cmd] : cmd.split(";").map((p) => p.trim()).filter(Boolean);
+  for (const part of parts) {
     const [op, a, b] = part.split(/\s+/);
     if (op === "@wait") await sleep(Number(a));
     else if (op === "@press") {
       await call("Input.dispatchKeyEvent", { type: "keyDown", ...KEY(a) });
       await sleep(80);
       await call("Input.dispatchKeyEvent", { type: "keyUp", ...KEY(a) });
+    } else if (op === "@clickjs") {
+      // "@clickjs <expression>": the page works out where to click ({x, y} in screen pixels), then a left click
+      const r = await call("Runtime.evaluate", { expression: part.slice("@clickjs".length).trim(), returnByValue: true });
+      const at = r.result?.result?.value;
+      if (at) {
+        await call("Input.dispatchMouseEvent", { type: "mouseMoved", x: at.x, y: at.y });
+        await call("Input.dispatchMouseEvent", { type: "mousePressed", x: at.x, y: at.y, button: "left", buttons: 1, clickCount: 1 });
+        await sleep(60);
+        await call("Input.dispatchMouseEvent", { type: "mouseReleased", x: at.x, y: at.y, button: "left", clickCount: 1 });
+      }
+    } else if (op === "@mouse" || op === "@click" || op === "@rclick") {
+      // "@mouse x y" moves the mouse; "@click x y" / "@rclick x y" press the left / right button there
+      const x = Number(a), y = Number(b);
+      await call("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+      if (op !== "@mouse") {
+        const button = op === "@click" ? "left" : "right";
+        await call("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button, buttons: button === "left" ? 1 : 2, clickCount: 1 });
+        await sleep(60);
+        await call("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button, clickCount: 1 });
+      }
     } else if (op === "@hold") {
       const ks = a.split(",");
       for (const k of ks) await call("Input.dispatchKeyEvent", { type: "keyDown", ...KEY(k) });
@@ -42,7 +65,7 @@ async function keys(cmd) {
 for (const js of steps) {
   const r = js.startsWith("@") ? { result: { result: { value: await keys(js) } } } : await call("Runtime.evaluate", { expression: js, returnByValue: true, awaitPromise: true });
   console.log(n, JSON.stringify(r.result?.result?.value ?? r.result?.exceptionDetails?.text));
-  await sleep(800);
+  await sleep(Number(process.env.STEP ?? 800));
   const shot = await call("Page.captureScreenshot", { format: "png" });
   writeFileSync(`${prefix}_${n++}.png`, Buffer.from(shot.result.data, "base64"));
 }

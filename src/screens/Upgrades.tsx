@@ -10,7 +10,7 @@ import { t, type StringKey } from "../i18n";
 // through the server (buyUpgrade); the screen shows what the save says.
 const G = BALANCE.growth;
 const GROUPS: { title: StringKey; ids: UpgradeId[] }[] = [
-  { title: "upgrade.group.hunt", ids: ["melee", "ranged", "armor", "bag", "lunchbox"] },
+  { title: "upgrade.group.hunt", ids: ["melee", "ranged", "armor", "bag", "lunchbox", "sling", "sleepGun", "netGun", "firecracker"] },
   { title: "upgrade.group.kitchen", ids: ["menu"] },
   { title: "upgrade.group.shop", ids: ["seats"] },
 ];
@@ -22,11 +22,15 @@ const ICON: Record<UpgradeId, string> = {
   lunchbox: "test/ui/icon_pot.png",
   menu: "test/ui/icon_notebook.png",
   seats: "test/cooking/grill.png",
+  sling: "test/ui/side/sling.png",
+  sleepGun: "test/ui/side/sleepGun.png",
+  netGun: "test/ui/side/netGun.png",
+  firecracker: "test/ui/side/firecracker.png",
 };
 
 // "now -> next" in words for one upgrade at level `lv`
 function effect(id: UpgradeId, lv: number): string {
-  const a = lv - 1;
+  const a = Math.max(0, lv - 1);
   const pair = (table: number[], key: StringKey, f = (n: number) => String(n)) => t(key, { a: f(table[a]), b: f(table[Math.min(a + 1, table.length - 1)]) });
   switch (id) {
     case "melee":
@@ -43,6 +47,12 @@ function effect(id: UpgradeId, lv: number): string {
       return pair(G.menu, "upgrade.fx.menu");
     case "seats":
       return pair(G.seats, "upgrade.fx.guests");
+    case "sling":
+    case "sleepGun":
+    case "netGun":
+    case "firecracker":
+      // a side weapon not bought yet says what it brings; a bought one, its shots now and next
+      return lv === 0 ? t("upgrade.fx.newSide", { n: G.ammo[id][0] }) : pair(G.ammo[id], "upgrade.fx.ammo");
     default:
       return t(`upgrade.fx.${id}` as StringKey);
   }
@@ -68,7 +78,7 @@ export function Upgrades({ save, busy, act, onClose }: { save: SaveData; busy: b
                     <span className="upgrade-name">{t(`upgrade.${id}` as StringKey)}</span>
                     <span className="upgrade-fx">
                       {t("upgrade.level", { lv, max: maxLevel(id) })}
-                      {cost === null ? "" : ` · ${effect(id, Math.max(1, lv))}`}
+                      {cost === null ? "" : ` · ${effect(id, lv)}`}
                     </span>
                     <button className="ui-btn" disabled={busy || why !== null} onClick={() => act({ type: "buyUpgrade", id })}>
                       {why ?? t("upgrade.buy", { cost: cost! })}
