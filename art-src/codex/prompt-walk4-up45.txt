@@ -1,0 +1,16 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a 4-frame WALK CYCLE sprite strip of the character in the attached image (the attached picture is the approved standing pose for this facing: copy his identity exactly — spiky black hair, red bandana, green hooded jacket, cream apron, brown gloves and boots, harpoon with a coiled rope slung on the back, small cleaver at the belt; same chunky pixel-art style, same dark outline, same proportions, same size).
+
+Save as art-src/codex/raw/walk4_up45.png — a WIDE image exactly 4 times as wide as it is tall (for example 1024x256): 4 equal square cells side by side, left to right, one full-body pose centred in each cell, all poses the same size with the feet on the same baseline. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no motion lines, no dust, nothing outside the character. No pose touches its cell edge.
+
+FACING for every frame: three-quarter back view, turned 45 degrees away toward camera-right (walking up and to the right; only a sliver of the cheek visible). The SECOND attached image is the approved back-view walk of the same character: copy its leg and boot drawing exactly, only turned 45 degrees.
+
+FEET — the most important rule (a first try drew twisted, crossed boots):
+- Both boots are drawn whole and solid, like the boots in the attached standing pose: brown, chunky, toes pointing away from the viewer (up-right). Never crossed, never twisted sideways, never one boot hidden behind the other, never a boot drawn as a thin sliver.
+- The two legs stay apart, one on the image-left side and one on the image-right side of the body in every frame.
+frame 1 (step): the IMAGE-RIGHT leg is forward (farther from the viewer): its boot is HIGHER in the picture, slightly smaller, fully visible. The IMAGE-LEFT leg trails (closer to the viewer): its boot is LOWER in the picture, slightly bigger, the sole showing a little.
+frame 2 (passing): both boots side by side under the body, the body one pixel higher.
+frame 3 (step): the mirror of frame 1 — the IMAGE-LEFT leg is forward and HIGHER, the IMAGE-RIGHT boot LOWER and bigger with the sole showing a little.
+frame 4 (passing): like frame 2.
+Arms swing opposite to the legs. Keep the head and the harpoon steady except a one-pixel bob.
+
+Reply only with the saved file path.

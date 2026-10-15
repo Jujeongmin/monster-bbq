@@ -189,7 +189,7 @@ export class HuntScene extends Phaser.Scene {
     }
     createCharacterAnims(this);
 
-    this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_down_0").setOrigin(0.5, HUNTER_FEET).setScale(CHAR_SCALE);
+    this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_down_1").setOrigin(0.5, HUNTER_FEET).setScale(CHAR_SCALE);
     this.fx = this.add.graphics().setDepth(5000);
     for (const s of this.plan.spawns.filter((s) => s.wave === 0)) this.mobs.push(createMob(this, s));
 
@@ -415,7 +415,7 @@ export class HuntScene extends Phaser.Scene {
       if (this.hunter.anims.currentAnim?.key !== key || !this.hunter.anims.isPlaying) this.hunter.play(key);
     } else {
       this.hunter.anims.stop();
-      this.hunter.setTexture(`hunter_${look}_0`);
+      this.hunter.setTexture(`hunter_${look}_1`);
     }
     // drawn in front of anything standing exactly level with the hunter
     this.hunter.setPosition(p.pos.x, p.pos.y + (moving ? stepBob(this.hunter) : 0)).setDepth(p.pos.y + 0.5);

@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a 4-frame WALK CYCLE sprite strip of the character in the attached image (the attached picture is the approved standing pose for this facing: copy his identity exactly — spiky black hair, red bandana, green hooded jacket, cream apron, brown gloves and boots, harpoon with a coiled rope slung on the back, small cleaver at the belt; same chunky pixel-art style, same dark outline, same proportions, same size).
+
+Save as art-src/codex/raw/walk4_up.png — a WIDE image exactly 4 times as wide as it is tall (for example 1024x256): 4 equal square cells side by side, left to right, one full-body pose centred in each cell, all poses the same size with the feet on the same baseline. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no motion lines, no dust, nothing outside the character. No pose touches its cell edge.
+
+FACING for every frame: facing away from the viewer (back view, walking away from the camera; no face visible).
+
+The four frames must be clearly DIFFERENT poses — this is the most important rule:
+frame 1 (step): the leg on the IMAGE-LEFT side is the back leg planted near the viewer, its boot LOWER in the picture (sole showing); the image-right leg steps forward away from the viewer, its boot HIGHER.
+frame 2 (passing): both boots side by side under the body, body one pixel higher.
+frame 3 (step): the opposite — the IMAGE-RIGHT boot is LOWER in the picture, the image-left leg steps forward and its boot is HIGHER.
+frame 4 (passing): like frame 2.
+Arms swing opposite to the legs. Keep the head and the harpoon steady except a one-pixel bob. The two stepping frames (1 and 3) must be mirror opposites of each other in which leg leads; never draw the same leg leading twice.
+
+Reply only with the saved file path.

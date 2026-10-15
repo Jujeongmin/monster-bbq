@@ -19,7 +19,8 @@ export function lookOf(v: { x: number; y: number }): Look {
   return Math.abs(v.y) > Math.abs(v.x) ? (v.y > 0 ? "down" : "up") : "side";
 }
 
-// Walk cycles go contact, passing, contact, passing: lift the body a pixel on the passing frames so the
+// Walk cycles go contact, passing, contact, passing (frames 0-3; the passing frame 1 doubles as standing):
+// lift the body a pixel on the passing frames so the
 // step reads (the frames alone barely move).
 export function stepBob(sprite: Phaser.GameObjects.Sprite): number {
   const i = sprite.anims.currentFrame?.index ?? 1;
