@@ -9,9 +9,11 @@
 .dialogue-box {
   position: relative; isolation: isolate;
   width: 100%;
-  min-height: calc(64px * var(--s));
+  min-height: calc(52px * var(--s));
+  /* the name and the line sit in the middle of the bar, not at its top */
+  display: flex; flex-direction: column; justify-content: center;
   /* room at the left for the portrait (a fifth of the screen) */
-  padding: calc(12px * var(--s)) calc(18px * var(--s)) calc(12px * var(--s)) 22%;
+  padding: calc(8px * var(--s)) calc(28px * var(--s)) calc(8px * var(--s)) 22%;
 }
 /* the dark bar, a little see-through so the scene shows behind it (the words stay solid) */
 .dialogue-box::before {
@@ -24,7 +26,7 @@
 /* the portrait standing at the left over the top of the box, sized by the screen: the lid about a fifth
    of its width (the picture has a little empty room round the lid) */
 .dialogue-face {
-  position: absolute; left: calc(2px * var(--s)); bottom: calc(30px * var(--s));
+  position: absolute; left: calc(2px * var(--s)); bottom: calc(18px * var(--s));
   width: 23%; height: auto;
   image-rendering: pixelated; pointer-events: none;
 }
@@ -39,7 +41,7 @@
 .dialogue-text { margin: 0; font: var(--fs) / 1.6 "Galmuri11", monospace; color: var(--cream); white-space: pre-wrap; word-break: keep-all; }
 .dialogue-rest { visibility: hidden; }
 .dialogue-more {
-  position: absolute; right: calc(14px * var(--s)); bottom: calc(8px * var(--s));
+  position: absolute; right: calc(14px * var(--s)); bottom: calc(6px * var(--s));
   font: var(--fs) "Galmuri11", monospace; color: #b1895c;
   animation: dialogue-blink 0.8s steps(2, jump-none) infinite;
 }
