@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image: three upgrade pictures of the character in the attached images, side by side. The attached pictures are the approved hunter (first: side view facing right, second: front view). Copy his identity exactly: chibi proportions with a big head, spiky black hair, red bandana tied at the back, big brown eyes, green hooded jacket, cream apron with a brown belt, brown fingerless gloves, brown boots, a harpoon with a coiled rope slung on his back, a small cleaver at the belt. Same chunky pixel-art style, same dark 1-pixel outline, same palette, same proportions. Comic and cute, not realistic.
+
+Save as art-src/codex/raw/upgrades_newhunter.png — a WIDE image exactly 3 times as wide as it is tall (for example 1536x512): 3 equal square cells side by side, one full-body picture centred in each cell, all three the same character size with the feet on the same baseline. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no frame, nothing outside the pictures. Nothing touches its cell edge.
+
+cell 1 (kitchen knife upgrade): side view facing right, mid-swing with the cleaver in his right hand, legs in a wide lunge, a pale lavender crescent slash arc in front of him.
+cell 2 (harpoon upgrade): side view facing right, throwing the harpoon forward with his arm stretched out, the rope trailing in a loop behind the harpoon head, legs in a wide lunge.
+cell 3 (apron armour upgrade): front view, standing proudly with one fist on his chest; the cream apron is reinforced with brown leather shoulder pads and a few stitched leather patches.
+
+Reply only with the saved file path.
