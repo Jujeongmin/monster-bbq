@@ -2,7 +2,6 @@
 export const ko = {
   "hud.day": "{day}일째",
   "hud.gold": "골드 {gold}",
-  "hud.meat": "고기 특급 {premium} · 보통 {normal}",
   "hud.items": "아이템 {count}",
   "phase.hunt": "낮 · 사냥",
   "phase.kitchen": "저녁 · 주방",

@@ -3,7 +3,6 @@ import type { ko } from "./ko";
 export const en: Record<keyof typeof ko, string> = {
   "hud.day": "Day {day}",
   "hud.gold": "Gold {gold}",
-  "hud.meat": "Meat: prime {premium} · regular {normal}",
   "hud.items": "Items {count}",
   "phase.hunt": "Day · Hunt",
   "phase.kitchen": "Evening · Kitchen",

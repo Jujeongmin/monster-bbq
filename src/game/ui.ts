@@ -4,14 +4,13 @@ import { artUrl } from "./art";
 // The pixel UI kit inside Phaser scenes (approved 2026-10-15), with the Galmuri pixel fonts
 // loaded by src/main.tsx. Text sizes stay at the fonts' design sizes (12 / 10 px) so the canvas scales
 // them with clean pixels.
-export const FONT = "Galmuri11";
-export const FONT_SMALL = "Galmuri9";
+const FONT = "Galmuri11";
+const FONT_SMALL = "Galmuri9";
 export const TEXT = { fontFamily: FONT, fontSize: "12px", color: "#fff3d8", stroke: "#2b1408", strokeThickness: 3 } as const;
 export const TEXT_SMALL = { fontFamily: FONT_SMALL, fontSize: "10px", color: "#fff3d8", stroke: "#2b1408", strokeThickness: 3 } as const;
-export const TEXT_INK = { fontFamily: FONT, fontSize: "12px", color: "#3a2414" } as const;
 
 // the pixel UI kit (art/test/ui2) inside Phaser scenes; each art pixel is KIT game pixels
-const PIECES = ["btn_normal", "btn_pressed", "btn_disabled", "tab_on", "tab_off", "gauge_empty", "gauge_full", "bubble_plain", "topbar", "btn_small"];
+const PIECES = ["btn_normal", "btn_pressed", "btn_disabled", "gauge_empty", "gauge_full", "bubble_plain", "topbar"];
 const ICONS = ["icon_gold", "icon_day", "icon_charcoal"];
 export const KIT = 2;
 
@@ -67,26 +66,6 @@ export function addButton(scene: Phaser.Scene, x: number, y: number, text: strin
     },
     setText(t: string) {
       label.setText(t);
-    },
-  };
-}
-
-export interface UiTab {
-  box: Phaser.GameObjects.Container;
-  setOn(on: boolean): void;
-}
-
-// A kit tab, 72x28 game pixels.
-export function addTab(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void): UiTab {
-  const bg = kitSlice(scene, 0, 0, "tab_off", 72, 28, 4, 4, 4, 4);
-  const label = scene.add.text(0, 0, text, { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
-  const box = scene.add.container(x, y, [bg, label]).setSize(72, 28);
-  box.setInteractive({ useHandCursor: true }).on("pointerdown", onClick);
-  return {
-    box,
-    setOn(on: boolean) {
-      bg.setTexture(on ? "ui_tab_on" : "ui_tab_off");
-      label.setColor(on ? "#3a2414" : "#fff3d8").setStroke(on ? "#00000000" : "#2b1408", on ? 0 : 3);
     },
   };
 }

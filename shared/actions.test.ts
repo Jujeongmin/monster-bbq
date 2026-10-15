@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyAction, koPenalty, saleLines, type ActionContext } from "./actions";
+import { applyAction, koPenalty, type ActionContext } from "./actions";
 import { BALANCE } from "./balance";
 import { itemKey } from "./content/items";
 import { dropFor } from "./hunt/drops";
@@ -93,17 +93,13 @@ describe("finishHunt", () => {
   }
 });
 
-describe("sellAll and endDay", () => {
-  it("sells every item at its price, premium parts at the premium price", () => {
-    const s = { ...newSave(), gold: 10, items: { "boar_belly:premium": 2, "boar_belly:normal": 3, shiitake: 2 } };
-    expect(applyAction(s, { type: "sellAll" }, ctx(0)).save).toEqual({ ...s, gold: 10 + 2 * 30 + 3 * 15 + 2 * 6, items: {} });
-  });
+describe("endDay", () => {
   it("moves to the next day", () => {
     expect(applyAction({ ...newSave(), stage: "settle" }, { type: "endDay" }, ctx(0)).save.day).toBe(2);
   });
   it("rejects unknown actions", () => {
     expect(applyAction(newSave(), { type: "giveMeGold", gold: 1e9 }, ctx(0)).error).toBe("bad_action");
-    expect(applyAction(newSave(), "sellAll", ctx(0)).error).toBe("bad_action");
+    expect(applyAction(newSave(), "endDay", ctx(0)).error).toBe("bad_action");
   });
 });
 
@@ -113,13 +109,4 @@ describe("koPenalty", () => {
   });
 });
 
-describe("saleLines", () => {
-  it("lists each stack with what it fetches, the best-paying first, skipping unknown keys", () => {
-    expect(saleLines({ shiitake: 2, "boar_belly:premium": 2, "boar_belly:normal": 3, junk: 5 })).toEqual([
-      { key: "boar_belly:premium", n: 2, gold: 60 },
-      { key: "boar_belly:normal", n: 3, gold: 45 },
-      { key: "shiitake", n: 2, gold: 12 },
-    ]);
-  });
-});
 

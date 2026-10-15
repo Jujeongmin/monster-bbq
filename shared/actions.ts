@@ -24,30 +24,12 @@ export type Action =
   | { type: "finishService"; serviceId: string; served: { customer: string; dish: string }[]; left: string[] }
   | { type: "buyUpgrade"; id: string }
   | { type: "packLunch"; dishes: string[] }
-  | { type: "sellAll" }
   | { type: "endDay" };
 
 // What only the server may decide: its clock and its dice.
 export interface ActionContext {
   now: number;
   random: () => number;
-}
-
-// What each stack fetches at the temporary shop (BALANCE.economy.itemPrice; premium parts their own
-// price), the best-paying first; unknown keys fetch nothing and are left out.
-export function saleLines(items: Record<string, number>): { key: string; n: number; gold: number }[] {
-  const lines: { key: string; n: number; gold: number }[] = [];
-  for (const [key, n] of Object.entries(items)) {
-    const item = parseItemKey(key);
-    if (!item) continue;
-    const price = BALANCE.economy.itemPrice[item.id];
-    lines.push({ key, n, gold: n * (item.grade === "premium" ? (price.premium ?? price.normal) : price.normal) });
-  }
-  return lines.sort((a, b) => b.gold - a.gold);
-}
-
-export function saleValue(items: Record<string, number>): number {
-  return saleLines(items).reduce((sum, l) => sum + l.gold, 0);
 }
 
 // Knocked out on the hunt: half of every stack is lost, rounded down (spec 3).
@@ -210,8 +192,6 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
     }
     case "packLunch":
       return packLunch(save, a);
-    case "sellAll":
-      return { save: { ...save, gold: save.gold + saleValue(save.items), items: {} } };
     case "endDay":
       // from the settle screen, or from the kitchen when the shop stays shut tonight; never mid-hunt
       if (save.stage === "hunt") return { save, error: "wrong_stage" };

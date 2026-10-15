@@ -7,3 +7,4 @@ art-src/codex/log*.txt
 *.log
 .ref/
 art-src/sprite-gen/**/.run.sg-rwlock
+__pycache__/
