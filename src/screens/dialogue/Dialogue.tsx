@@ -1,23 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { artUrl } from "../../game/art";
-import { t } from "../../i18n";
+import { t, type StringKey } from "../../i18n";
 import { press, start, tick, type DialogueState } from "./dialogueState";
 import "./dialogue.css";
 
-// The NPC dialogue box (like talking to an NPC in an MMORPG): the speaker's portrait at the left, a name
-// ribbon, the line typed out letter by letter. A click, tap, Space or Enter finishes the line, then
-// moves on; after the last line it closes. The bar is the approved dark dialogue art (art/test/ui). It covers the whole frame, so nothing underneath is pressed
-// while someone is talking. Portraits: art/test/lid (approved 2026-10-15).
-export type Face = "normal" | "angry" | "smug" | "surprised";
-export interface DialogueLine {
-  who: "lid";
-  face: Face;
-  text: string;
-}
+// The NPC dialogue box (like talking to an NPC in an MMORPG): the dark bar along the bottom (approved
+// art, art/test/ui), the speaker's portrait at the left, the name in plain lettering, the line typed out
+// letter by letter. A click, tap, Space or Enter finishes the line, then moves on; after the last line it
+// closes. It covers the whole frame, so nothing underneath is pressed while someone is talking.
+// Portraits (approved 2026-10-15): the lid sits inside the bar (art/test/lid); the yokai customers are
+// waist-up busts standing up over it (art/test/yokai).
+export type LidFace = "normal" | "angry" | "smug" | "surprised";
+export type YokaiFace = "normal" | "happy" | "scared" | "sulky";
+export type Yokai = "dokkaebi" | "gumiho" | "reaper" | "ghost";
+export type Face = LidFace | YokaiFace;
+export type DialogueLine = { who: "lid"; face: LidFace; text: string } | { who: Yokai; face: YokaiFace; text: string };
+type Speaker = DialogueLine["who"];
 
-const FACES: Face[] = ["normal", "angry", "smug", "surprised"];
-const NAME = { lid: "kitchen.lid" } as const;
+const LID_FACES: LidFace[] = ["normal", "angry", "smug", "surprised"];
+const YOKAI_FACES: YokaiFace[] = ["normal", "happy", "scared", "sulky"];
+const NAME: Record<Speaker, StringKey> = { lid: "kitchen.lid", dokkaebi: "who.dokkaebi", gumiho: "who.gumiho", reaper: "who.reaper", ghost: "who.ghost" };
+const portrait = (who: Speaker, face: Face) => artUrl(who === "lid" ? `test/lid/${face}.png` : `test/yokai/${who}_${face}.png`);
+const facesOf = (who: Speaker): Face[] => (who === "lid" ? LID_FACES : YOKAI_FACES);
 const LETTER_MS = 35;
 
 export function Dialogue({ lines, onDone }: { lines: DialogueLine[]; onDone: () => void }) {
@@ -56,10 +61,13 @@ export function Dialogue({ lines, onDone }: { lines: DialogueLine[]; onDone: () 
   const frame = document.querySelector(".frame");
   if (!line || !frame) return null;
   const out = state.shown >= line.text.length;
+  const bust = line.who !== "lid";
+  const speakers = [...new Set(lines.map((l) => l.who))];
   return createPortal(
     <div className="dialogue" role="dialog" aria-live="polite" onPointerDown={advance}>
+      {bust && <img className="dialogue-bust" src={portrait(line.who, line.face)} alt="" />}
       <div className="dialogue-box">
-        <img className="dialogue-face" src={artUrl(`test/lid/${line.face}.png`)} alt="" />
+        {!bust && <img className="dialogue-face" src={portrait(line.who, line.face)} alt="" />}
         <span className={`dialogue-name ${line.who}`}>{t(NAME[line.who])}</span>
         <p className="dialogue-text">
           {line.text.slice(0, state.shown)}
@@ -70,9 +78,7 @@ export function Dialogue({ lines, onDone }: { lines: DialogueLine[]; onDone: () 
       </div>
       {/* every face loaded up front, so a change of face does not blink */}
       <div className="dialogue-preload" aria-hidden>
-        {FACES.map((f) => (
-          <img key={f} src={artUrl(`test/lid/${f}.png`)} alt="" />
-        ))}
+        {speakers.flatMap((who) => facesOf(who).map((f) => <img key={`${who}_${f}`} src={portrait(who, f)} alt="" />))}
       </div>
     </div>,
     frame,

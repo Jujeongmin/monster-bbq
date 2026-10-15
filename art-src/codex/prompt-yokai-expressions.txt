@@ -1,0 +1,13 @@
+Use your image generation tool (do not write code to draw) to create ONE image.
+
+The attached yokai_faces.png shows four APPROVED front-view dialogue portraits (left to right: one-eyed red dokkaebi, white gumiho fox girl with four tails, jeoseungsaja grim reaper with the black gat hat, mulgwishin water ghost with long wet hair). Redraw those EXACT four characters — same size, same crop (head and upper body to the waist, cut off flat at the bottom), same colours, same outfits, same flat hand-placed retro pixel-art style (chunky visible square pixels, 2-3 tone cel shading, clean 1-pixel dark outline, NO gradients, NO glossy shine, NO texture noise, NO glow) — each with FOUR expressions. Only the face, the hands and small effect marks change; body, hair, clothes and position stay identical within a row.
+
+Save as art-src/codex/raw/yokai_expressions.png — a large SQUARE image (for example 2048x2048), flat solid magenta (#FF00FF) background, a grid of 4 columns x 4 rows. Each ROW is one character, in the order dokkaebi, gumiho, jeoseungsaja, mulgwishin. Each figure sits centred in its cell with wide empty magenta space around it, nowhere near another figure or the image edge, all figures the same size. No text anywhere.
+
+Columns (expressions):
+ 1 — normal: stiff, overly polite, a little nervous (one small sweat drop), like the approved picture.
+ 2 — happy: eyes closed in happy curves, a big delighted smile, blushing cheeks, a small pink heart beside the head (the food is delicious).
+ 3 — scared: eyes wide and shaking, pupils tiny, mouth wobbling, several sweat drops, hands raised defensively, three short blue fear lines above the head (someone just mentioned the grandmother).
+ 4 — sulky: half-closed tired eyes, a small pout, a little grey gloom cloud or droop lines above the head (they have waited too long for their food, but are too scared to complain).
+
+Reply only with the saved file path.

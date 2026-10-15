@@ -6,7 +6,7 @@ import type { SaveData } from "../../../shared/save";
 import type { CookPlate } from "../../game/cook/CookStage";
 import { CookStageGame } from "../../game/cook/CookStageGame";
 import { t, type StringKey } from "../../i18n";
-import { Dialogue, type DialogueLine, type Face } from "../dialogue/Dialogue";
+import { Dialogue, type DialogueLine, type LidFace } from "../dialogue/Dialogue";
 import { DishIcon } from "./DishIcon";
 
 // The research kitchen (cooking-service design 4): cook for real on the stage, put it on the plate,
@@ -60,7 +60,7 @@ function SkillLine({ plate }: { plate: CookPlate }) {
 }
 
 // What the lid says about a try, and with which face (none for a dish already in the cookbook).
-const HINT_FACE: Record<string, Face> = { method: "angry", extra: "surprised", "missing.meat": "normal", "missing.veg": "normal", "missing.sweet": "angry" };
+const HINT_FACE: Record<string, LidFace> = { method: "angry", extra: "surprised", "missing.meat": "normal", "missing.veg": "normal", "missing.sweet": "angry" };
 function lidLines(outcome: CookOutcome): DialogueLine[] | null {
   if (outcome.kind === "new") return [{ who: "lid", face: "smug", text: t("kitchen.newLine") }];
   if (outcome.kind === "near") {
@@ -88,16 +88,13 @@ function CookResultView({ outcome, plate }: { outcome: CookOutcome; plate: CookP
         <SkillLine plate={plate} />
       </div>
     );
-  if (outcome.kind === "near") {
-    const line = outcome.hint === "missing" ? `kitchen.hint.missing.${outcome.taste}` : `kitchen.hint.${outcome.hint}`;
+  // the lid already gave its hint in the dialogue box: the panel keeps only how it was cooked
+  if (outcome.kind === "near")
     return (
       <div className="cook-result near">
-        <span className="lid-name">{t("kitchen.lid")}</span>
-        <p className="lid-bubble ui-bubble">{t(line as StringKey)}</p>
         <SkillLine plate={plate} />
       </div>
     );
-  }
   return (
     <div className="cook-result fail">
       <DishIcon dish="fail" size={64} />

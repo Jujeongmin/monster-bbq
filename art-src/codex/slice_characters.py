@@ -193,6 +193,15 @@ LID_FACES = [
 LID_WINDOW = (300, 240)  # half width, half height around the body's middle (raw pixels)
 LID_SCALE = 0.4
 
+# the yokai customers' dialogue busts (yokai_expressions.png, 2026-10-15): rows dokkaebi, gumiho, reaper,
+# ghost; columns normal, happy, scared, sulky. Cell edges chosen by eye: the gumiho's tails leave only
+# x 315-318 free between the first two columns, so that split is at 316.
+YOKAI_ROWS = ["dokkaebi", "gumiho", "reaper", "ghost"]
+YOKAI_COLS = ["normal", "happy", "scared", "sulky"]
+YOKAI_X = [0, 316, 627, 940, 1254]
+YOKAI_Y = [0, 313, 627, 940, 1254]
+YOKAI_SCALE = 0.5
+
 
 def main():
     for name, file, rows, scale in SHEETS:
@@ -253,6 +262,22 @@ def main():
             rr, gg, bb, aa = small.split()
             Image.merge("RGBA", (rr, gg, bb, aa.point(lambda v: 255 if v >= 110 else 0))).save(ROOT / "art/test/lid" / f"{face}.png")
             print("lid", face, size)
+    if (RAW / "yokai_expressions.png").exists():
+        sheet = Image.open(RAW / "yokai_expressions.png")
+        (ROOT / "art/test/yokai").mkdir(parents=True, exist_ok=True)
+        # one canvas size for every bust, each centred on its cell's middle and standing on the cell's floor
+        cw = max(b - a for a, b in zip(YOKAI_X, YOKAI_X[1:]))
+        for r, who in enumerate(YOKAI_ROWS):
+            for c, face in enumerate(YOKAI_COLS):
+                box = (YOKAI_X[c], YOKAI_Y[r], YOKAI_X[c + 1], YOKAI_Y[r + 1])
+                cell = key_magenta(sheet.crop(box))
+                canvas = Image.new("RGBA", (cw, box[3] - box[1]), (0, 0, 0, 0))
+                canvas.paste(cell, ((cw - cell.width) // 2, 0))
+                size = (round(canvas.width * YOKAI_SCALE), round(canvas.height * YOKAI_SCALE))
+                small = canvas.convert("RGBa").resize(size, Image.BOX).convert("RGBA")
+                rr, gg, bb, aa = small.split()
+                Image.merge("RGBA", (rr, gg, bb, aa.point(lambda v: 255 if v >= 110 else 0))).save(ROOT / "art/test/yokai" / f"{who}_{face}.png")
+        print("yokai busts", size)
     for name, piece, src in TRIMS:
         im = Image.open(ROOT / "art/test" / src).convert("RGBA")
         box = im.getbbox()

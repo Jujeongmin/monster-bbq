@@ -30,6 +30,12 @@
   width: 21%; height: auto;
   image-rendering: pixelated; pointer-events: none;
 }
+/* a yokai's waist-up bust standing at the left, rising well over the bar (a speaker you face) */
+.dialogue-bust {
+  position: absolute; left: calc(6px * var(--s)); bottom: calc(4px * var(--s)); z-index: 1;
+  height: 44%; width: auto;
+  image-rendering: pixelated; pointer-events: none;
+}
 /* the speaker's name as plain lettering, no plate */
 .dialogue-name {
   display: block; margin-bottom: calc(2px * var(--s));

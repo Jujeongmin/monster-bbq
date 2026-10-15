@@ -20,8 +20,6 @@
 .cook-dish { font-weight: 700; color: var(--ink); }
 .cook-result.fail .cook-dish { color: var(--paper-ink-soft); }
 .cook-result.near { text-align: left; }
-.lid-name { font-weight: 700; color: var(--red); }
-.lid-bubble { margin: calc(2px * var(--s)) 0 0; }
 .cook-skill { margin: calc(4px * var(--s)) 0 0; color: var(--ink); }
 .cook-stars { color: #d08a10; }
 .cook-again { margin-top: calc(4px * var(--s)); }
