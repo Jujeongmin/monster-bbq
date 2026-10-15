@@ -66,11 +66,14 @@ canvas { image-rendering: pixelated; display: block; }
   font: 700 var(--fs) / 1 "Galmuri11", monospace;
   color: var(--cream);
   text-shadow: var(--s) var(--s) 0 #4a1408;
-  padding: 0 var(--k);
-  min-height: calc(10 * var(--k));
+  /* the art's red face starts 2 art px from the top, 1 from the bottom and 4 in from each brass cap;
+     the label sits inside that face with a margin, never on the brass or the dark rim */
+  padding: calc(4px * var(--s)) calc(8px * var(--s)) calc(3px * var(--s));
   background: none;
-  border: calc(3 * var(--k)) calc(4 * var(--k)) solid transparent;
-  border-image: url("../art/test/ui2/btn_normal.png") 3 4 fill / calc(3 * var(--k)) calc(4 * var(--k)) stretch;
+  border-style: solid;
+  border-color: transparent;
+  border-width: calc(2 * var(--k)) calc(4 * var(--k)) var(--k);
+  border-image: url("../art/test/ui2/btn_normal.png") 2 4 1 fill / calc(2 * var(--k)) calc(4 * var(--k)) var(--k) stretch;
   image-rendering: pixelated;
   white-space: nowrap;
   cursor: pointer;

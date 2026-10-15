@@ -30,5 +30,5 @@
 .upgrade-name, .upgrade-fx { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .upgrade-name { font-weight: 700; color: var(--ink); }
 .upgrade-fx { grid-column: 2 / 4; font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
-.upgrade-row .ui-btn { grid-column: 3; grid-row: 1; font: var(--fs-small) "Galmuri9", monospace; padding: 0 calc(2px * var(--s)); min-height: calc(26px * var(--s)); }
-.upgrades > .ui-btn { align-self: center; padding: 0 calc(16px * var(--s)); }
+.upgrade-row .ui-btn { grid-column: 3; grid-row: 1; font: var(--fs-small) "Galmuri9", monospace; }
+.upgrades > .ui-btn { align-self: center; padding-left: calc(16px * var(--s)); padding-right: calc(16px * var(--s)); }

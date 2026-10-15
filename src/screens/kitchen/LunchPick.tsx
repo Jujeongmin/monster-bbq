@@ -19,49 +19,64 @@ export function LunchPick({ save, busy, act }: { save: SaveData; busy: boolean; 
     if (picked.length < free) setPicked([...picked, id]);
   }
 
+  const slots = lunchSlots(save);
+
+  // Laid out on the real 1280x720 screen like Dave the Diver's prep screens: the box on top (what goes in
+  // and the one button that packs it), the dishes to pick from below as cards, the same as the cookbook's.
   return (
     <div className="lunch-pick">
-      <h3 className="cookbook-count">{t("lunch.box", { n: save.lunchbox.length + picked.length, max: lunchSlots(save) })}</h3>
-      <div className="lunch-box">
-        {save.lunchbox.map((id, i) => (
-          <span key={`p${i}`} className="ui-box lunch-slot packed">
-            <DishIcon dish={id} />
-          </span>
-        ))}
-        {picked.map((id, i) => (
-          <button key={`n${i}`} className="ui-box lunch-slot" onClick={() => setPicked(picked.filter((_, j) => j !== i))}>
-            <DishIcon dish={id} />
-          </button>
-        ))}
+      <h3 className="cookbook-count">{t("lunch.box", { n: save.lunchbox.length + picked.length, max: slots })}</h3>
+      <div className="ui-box lunch-tray">
+        <span className="lunch-tray-title">{t("lunch.tray")}</span>
+        <div className="lunch-box">
+          {Array.from({ length: slots }, (_, i) => {
+            if (i < save.lunchbox.length)
+              return (
+                <span key={i} className="ui-slot lunch-slot packed">
+                  <DishIcon dish={save.lunchbox[i]} />
+                </span>
+              );
+            const j = i - save.lunchbox.length;
+            if (j < picked.length)
+              return (
+                <button key={i} className="ui-slot lunch-slot" onClick={() => setPicked(picked.filter((_, k) => k !== j))}>
+                  <DishIcon dish={picked[j]} />
+                </button>
+              );
+            return <span key={i} className="ui-slot lunch-slot" />;
+          })}
+        </div>
+        <span className="lunch-hint soft">{picked.length === 0 && free > 0 ? t("lunch.pickHint") : ""}</span>
+        <button
+          className="ui-btn lunch-go"
+          disabled={busy || picked.length === 0}
+          onClick={() => {
+            act({ type: "packLunch", dishes: picked });
+            setPicked([]);
+          }}
+        >
+          {t("lunch.pack")}
+        </button>
       </div>
       {known.length === 0 && <p className="kitchen-empty">{t("kitchen.menuEmpty")}</p>}
-      <div className="lunch-list">
+      <div className="lunch-grid">
         {known.map((id) => {
           const left = setsAfter(save.items, picked, id);
           return (
-            <button key={id} className="ui-box menu-row" disabled={left <= 0 || picked.length >= free} onClick={() => add(id)}>
-              <span className="menu-dish">
-                <DishIcon dish={id} />
-                <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>
-              </span>
-              <span className="menu-info">
+            <button key={id} className="ui-box dish-card lunch-card" disabled={left <= 0 || picked.length >= free} onClick={() => add(id)}>
+              <DishIcon dish={id} />
+              <span className="dish-name">{t(`dish.${id}` as StringKey)}</span>
+              <span className="lunch-heal">
                 {t("lunch.heal", { hp: Math.round(dishPrice(id, save.dishes[id]!) * BALANCE.lunch.healPerGold) })}
+              </span>
+              <span className="dish-shape">
+                {t("lunch.sets", { n: left })}
                 {BALANCE.lunch.speedDishes.includes(id) ? ` · ${t("lunch.speed")}` : ""}
               </span>
             </button>
           );
         })}
       </div>
-      <button
-        className="ui-btn"
-        disabled={busy || picked.length === 0}
-        onClick={() => {
-          act({ type: "packLunch", dishes: picked });
-          setPicked([]);
-        }}
-      >
-        {t("lunch.pack")}
-      </button>
     </div>
   );
 }

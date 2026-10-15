@@ -50,18 +50,22 @@
 .research-foot { position: absolute; left: calc(12px * var(--s)); right: calc(12px * var(--s)); bottom: calc(10px * var(--s)); display: flex; align-items: center; justify-content: space-between; }
 .research-cost { font-weight: 700; }
 .research-go { width: calc(130px * var(--s)); }
-.research-lid { position: absolute; right: calc(-20px * var(--s)); bottom: calc(10px * var(--s)); width: calc(220px * var(--s)); display: flex; flex-direction: column; align-items: flex-end; }
-.research-say { margin: 0 0 calc(4px * var(--s)); padding: calc(2px * var(--s)) calc(8px * var(--s)); line-height: 1.6; }
-.research-lid img { width: calc(100px * var(--s)); image-rendering: pixelated; }
+/* the lid sits inside the window's bottom-right corner, centred under its bubble (the bubble has no tail,
+   so the lid has to stand right under it to read as the one talking) */
+.research-lid { position: absolute; right: calc(12px * var(--s)); bottom: 0; width: calc(196px * var(--s)); display: flex; flex-direction: column; align-items: center; }
+.research-say { align-self: stretch; margin: 0 0 calc(2px * var(--s)); padding: calc(2px * var(--s)) calc(6px * var(--s)); line-height: 1.6; text-align: center; word-break: keep-all; }
+/* smug.png has 23 empty rows over the lid's knob; pull the lid up into them so it touches its bubble */
+.research-lid img { width: calc(100px * var(--s)); margin-top: calc(-17px * var(--s)); image-rendering: pixelated; }
 
 /* menu board */
-.menu-pick { display: grid; grid-template-columns: calc(260px * var(--s)) 1fr; gap: calc(10px * var(--s)); margin-top: calc(10px * var(--s)); }
+.menu-pick { display: grid; grid-template-columns: calc(296px * var(--s)) 1fr; gap: calc(10px * var(--s)); margin-top: calc(10px * var(--s)); }
 .menu-list { display: flex; flex-direction: column; gap: calc(5px * var(--s)); }
 .menu-row, .menu-line { display: flex; align-items: center; gap: calc(6px * var(--s)); color: var(--ink); }
 .menu-row { height: calc(52px * var(--s)); }
 .menu-row.on { opacity: 0.45; }
 .menu-info { flex: 1; display: flex; flex-direction: column; gap: var(--s); min-width: 0; }
-.menu-put { width: calc(54px * var(--s)); }
+.menu-put { flex: none; }
+.menu-row .dish-shape { white-space: nowrap; }
 .menu-title { margin: 0 0 calc(4px * var(--s)) calc(4px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); }
 .menu-board { display: flex; flex-direction: column; gap: calc(6px * var(--s)); }
 .menu-line { height: calc(66px * var(--s)); }
@@ -84,10 +88,18 @@
 .pips i { width: calc(10px * var(--s)); height: calc(10px * var(--s)); border: calc(3px * var(--s)) solid transparent; border-image: url("../../../art/test/ui2/btn_small.png") 3 fill / calc(3px * var(--s)) stretch; image-rendering: pixelated; filter: grayscale(1) brightness(0.55); }
 .pips i.on { filter: none; }
 
-/* lunchbox (kept from before, on the new frame) */
-.lunch-pick { display: flex; flex-direction: column; gap: calc(4px * var(--s)); height: 100%; margin-top: calc(10px * var(--s)); }
-.lunch-box { display: flex; gap: calc(4px * var(--s)); min-height: calc(50px * var(--s)); }
-.lunch-slot { display: inline-flex; padding: 0; background: none; cursor: pointer; }
-.lunch-slot.packed { cursor: default; filter: saturate(0.6); }
-.lunch-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: calc(4px * var(--s)); flex: 1; min-height: 0; overflow: auto; align-content: start; }
-.lunch-pick > .ui-btn { align-self: flex-start; }
+/* lunchbox: the box on top, the dishes as cookbook-style cards below (checked on the real screen) */
+.lunch-pick { display: flex; flex-direction: column; gap: calc(8px * var(--s)); margin-top: calc(10px * var(--s)); }
+.lunch-tray { display: flex; align-items: center; gap: calc(10px * var(--s)); height: calc(64px * var(--s)); padding: 0 calc(6px * var(--s)); }
+.lunch-tray-title { font-weight: 700; white-space: nowrap; }
+.lunch-box { display: flex; gap: calc(4px * var(--s)); }
+.lunch-slot { width: calc(44px * var(--s)); height: calc(44px * var(--s)); padding: 0; background: none; font: inherit; }
+button.lunch-slot { cursor: pointer; }
+.lunch-slot .dish-icon { width: calc(36px * var(--s)) !important; }
+.lunch-slot.packed { filter: saturate(0.6); }
+.lunch-hint { flex: 1; font: var(--fs-small) "Galmuri9", monospace; }
+.lunch-go { margin-left: auto; }
+.lunch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(8px * var(--s)); }
+.lunch-card { height: calc(112px * var(--s)); justify-content: center; gap: 0; cursor: pointer; }
+.lunch-card:disabled { cursor: default; filter: grayscale(0.8) brightness(0.85); }
+.lunch-heal { font-weight: 700; color: var(--good); }

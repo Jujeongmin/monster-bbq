@@ -34,9 +34,10 @@ export interface UiButton {
 
 // A lacquered wooden button with brass corners; presses in while held, greyed when disabled.
 export function addButton(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void, minWidth = 56): UiButton {
-  const label = scene.add.text(0, -1, text, { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
-  const w = Math.max(minWidth, Math.ceil(label.width) + 22);
-  const bg = kitSlice(scene, 0, 0, "btn_normal", w, 24, 4, 4, 3, 3);
+  const label = scene.add.text(0, 0, text, { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
+  // the red face sits 4 art px in from each brass cap; the label keeps 8 game px of face on each side
+  const w = Math.max(minWidth, Math.ceil(label.width) + 32);
+  const bg = kitSlice(scene, 0, 0, "btn_normal", w, 24, 4, 4, 2, 1);
   const box = scene.add.container(x, y, [bg, label]).setSize(w, 24);
   let enabled = true;
   box.setInteractive({ useHandCursor: true });
