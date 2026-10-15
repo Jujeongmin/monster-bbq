@@ -1,0 +1,10 @@
+Use your image generation tool (do not write code to draw) to create ONE image, 1024x1024: two frames stacked top to bottom, each a 1024x508 panel (2:1), separated by a 8 px black gap.
+
+The character is the bear chef in the attached sheet: Bandal, a big round Asian black bear yokai cook — black fur, white crescent moon mark on the chest, a red-and-white zigzag bandana tied at the back, a cream apron, a stern face that is secretly kind. Copy his identity exactly. Style: the same chunky, comic, cute pixel art as the sheet, same dark outline and palette, crisp pixels, no blur, no painterly glow.
+
+This is for a "chef cut-in" like the cooking cut-ins in Dave the Diver: dramatic, anime-style, punchy. Each frame is a wide cinematic PANEL with its own dramatic background (warm orange-to-red radial burst with pixel speed lines streaming toward the centre), not magenta. No text, no letters, no speech bubbles, no borders between panels other than a 4 px black gap.
+
+frame 1 (top): extreme close-up of Bandal's face and shoulders, front view, both big paws up at the back of his head pulling the bandana knot tight with a snap, eyes shut in concentration, two small motion ticks at the knot.
+frame 2 (bottom): the same close-up, paws down, his eyes snap open with a sharp white glint in one eye and a fierce determined look, the speed lines stronger.
+
+Save as art-src/codex/raw/cutin_face.png. Reply only with the saved file path.

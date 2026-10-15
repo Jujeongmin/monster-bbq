@@ -1,0 +1,12 @@
+Use your image generation tool (do not write code to draw) to create ONE image, 1024x1536: three frames stacked top to bottom, each a 1024x506 panel (2:1), separated by 8 px black gaps.
+
+The character is the bear chef in the attached sheet: Bandal, a big round Asian black bear yokai cook — black fur, white crescent moon mark on the chest, a red-and-white zigzag bandana tied at the back, a cream apron, a stern face that is secretly kind. Copy his identity exactly. Style: the same chunky, comic, cute pixel art as the sheet, same dark outline and palette, crisp pixels, no blur, no painterly glow.
+
+This is for a "chef cut-in" like the cooking cut-ins in Dave the Diver: dramatic, anime-style, punchy. Each frame is a wide cinematic PANEL with its own dramatic background (warm orange-to-red radial burst with pixel speed lines streaming toward the centre), not magenta. No text, no letters, no speech bubbles, no borders between panels other than a 4 px black gap.
+
+All three frames are a close-up of Bandal's huge furry paw holding a SMALL pair of steel tongs over a round charcoal grill (the paw dwarfs the tongs, which is the joke), seen from a low 3/4 angle.
+frame 1 (top): the tongs grip a thick piece of pork belly on the grill, small flames licking up, sizzle sparks.
+frame 2 (middle): a big burst of flame shoots up as the meat is flipped high into the air with a spin, glistening and golden, sparks everywhere.
+frame 3 (bottom): the meat lands back on the grill perfectly seared side up, a puff of steam and a little star-shaped glint on it.
+
+Save as art-src/codex/raw/cutin_grill.png. Reply only with the saved file path.

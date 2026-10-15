@@ -10,8 +10,12 @@ import "./cutIn.css";
 // The research cut-in over the whole frame (Bandal art approved 2026-10-15; the close-up, flames and
 // stamp art come later, these are the stand-ins). It plays once and then waits (user, 2026-10-15: it
 // moved on by itself): a click, tap, Space or Enter while it plays jumps to the end, the next one closes it.
+const LINES = ["cutin.bandal0", "cutin.bandal1", "cutin.bandal2"] as const;
+
 export function ResearchCutIn({ dish, onDone }: { dish: DishId; onDone: () => void }) {
   const [ms, setMs] = useState(0);
+  // one of his three lines, picked when the cut-in opens
+  const [line] = useState(() => Math.floor(Math.random() * LINES.length));
   const done = useRef(false);
   const playing = useRef(true);
   const next = () => {
@@ -64,11 +68,10 @@ export function ResearchCutIn({ dish, onDone }: { dish: DishId; onDone: () => vo
           <span className="cutin-name">{t(`dish.${dish}` as StringKey)}</span>
         </div>
       )}
-      {/* the line is the lid's, not Bandal's (he hardly talks): the lid is shown saying it */}
+      {/* Bandal says it himself, ending in "곰" the way the lid ends in "껑" (user-approved lines 2026-10-15) */}
       {step.line && (
         <div className="cutin-say">
-          <img className="cutin-lid" src={artUrl("test/lid/smug.png")} alt="" />
-          <p className="ui-bubble cutin-line">{t("kitchen.newLine")}</p>
+          <p className="ui-bubble cutin-line">{t(LINES[line])}</p>
         </div>
       )}
       {step.done && <span className="cutin-next">{t("cutin.next")}</span>}
