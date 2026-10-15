@@ -10,21 +10,22 @@ import { dropFor } from "../../../shared/hunt/drops";
 import { clampToField, distance, moveByInput, pushOutOfRects, unit, type Rect } from "../../../shared/hunt/geometry";
 import { fireHarpoon, harpoonDone, harpoonHit, reelStep, stepHarpoon, type Harpoon } from "../../../shared/hunt/harpoon";
 import { planFloor, type FloorPlan } from "../../../shared/hunt/plan";
+import { drainStamina, LOW_STAMINA } from "../../../shared/hunt/stamina";
 import { shotHits, stepShot, type Shot } from "../../../shared/hunt/shooter";
 import type { Vec } from "../../../shared/hunt/types";
 import type { Zone } from "../../../shared/save";
-import { FLOORS, type FloorDef, type Period } from "../../../shared/content/floors";
-import { itemName, t } from "../../i18n";
+import { FLOORS, isFloorId, nearestExit, type FloorDef, type FloorId, type Period } from "../../../shared/content/floors";
+import { itemName, t, type StringKey } from "../../i18n";
 import { artUrl } from "../art";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 import { createCharacterAnims, loadCharacterArt, lookOf, stepBob } from "../hunt/anims";
 import { angerFlock, CHAR_SCALE, createMob, dazeMob, drawMob, isMobVulnerable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { joystickVector } from "../joystick";
-import { addButton, addGauge, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiGauge } from "../ui";
+import { addGauge, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiGauge } from "../ui";
 
 // The forest hunt (plan 03), quarter view, Dave-the-Diver controls.
-// PC: WASD / arrows move, aim with the mouse, left click = harpoon, right click = slash, E = gather,
-//     R = back to the shop (keyboard only: Z = slash, X = harpoon straight ahead).
+// PC: WASD / arrows move, aim with the mouse, left click = harpoon, right click = slash, E = gather, go
+//     down, or leave by one of Bandal's carts (keyboard only: Z = slash, X = harpoon straight ahead).
 // Touch: stick on the left; press on the right half to aim, release to fire; slash and gather buttons.
 // Each floor comes from the server's seed (planFloor); the scene reports what was taken, in
 // order, and the server decides the drops the same way (spec 7).
@@ -33,6 +34,8 @@ const H = BALANCE.hunt;
 const MAX_DT_MS = 50;
 const HUNTER_FEET = 0.92;
 const GATHER_RANGE = 26;
+// how close the hunter must stand to a cart or the way down to use it with E
+const USE_RANGE = 28;
 const GATHER_MS = 1000;
 const REFILL_DELAY_MS = 2500;
 // Touch controls, in screen pixels of the game, placed relative to its size.
@@ -53,6 +56,18 @@ export interface HuntData {
   // dishes packed for this hunt and the health each gives back (its level price, shared/kitchen/dish): eat one
   // with its button (or keys 1-3)
   lunchbox: { dish: DishId; heal: number }[];
+  // set by the scene itself when it restarts on the next floor
+  run?: Run;
+}
+
+// What carries over from floor to floor within one hunt (hunt v3 design 3): the scene restarts on each
+// way down with the same Run.
+interface Run {
+  floor: FloorId;
+  stamina: number;
+  bag: Record<string, number>;
+  report: HuntEvent[];
+  eaten: boolean[];
 }
 
 // What the hunt hands to the day flow when it ends (PhaserGame forwards the "hunt:end" event): what was
@@ -70,7 +85,6 @@ interface Player {
   // which way the hunter faces: the way it walks (Dave the Diver style), not the mouse; attacks turn it
   // toward the aim only while they play
   face: Vec;
-  hp: number;
   cooldownMs: number;
   harpoonCooldownMs: number;
   swingMs: number;
@@ -85,13 +99,15 @@ interface Node {
   taken: boolean;
 }
 
-type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "R" | "E" | "ONE" | "TWO" | "THREE", Phaser.Input.Keyboard.Key>;
+type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "E" | "ONE" | "TWO" | "THREE", Phaser.Input.Keyboard.Key>;
 
 export class HuntScene extends Phaser.Scene {
   private huntData!: HuntData;
   private melee = H.weapons.melee;
   private ranged = H.weapons.ranged;
-  private maxHp: number = H.player.maxHp;
+  // stamina's top (the armour upgrade's health table until the stamina tank, stage 3)
+  private maxStamina: number = H.player.maxHp;
+  private run!: Run;
   private bagSlots: number = H.bagSlots;
   private lunch: { dish: DishId; heal: number; button: Phaser.GameObjects.Container; eaten: boolean }[] = [];
   private speedUntil = 0;
@@ -106,8 +122,6 @@ export class HuntScene extends Phaser.Scene {
   private trees: { sprite: Phaser.GameObjects.Image }[] = [];
   private obstacles: Rect[] = [];
   private shots: { shot: Shot; sprite: Phaser.GameObjects.Image }[] = [];
-  private bag: Record<string, number> = {};
-  private report: HuntEvent[] = [];
   private harpoon: Harpoon | null = null;
   private reeling: Mob | null = null;
   private gathering: { node: Node; ms: number } | null = null;
@@ -118,7 +132,8 @@ export class HuntScene extends Phaser.Scene {
   private fx!: Phaser.GameObjects.Graphics;
   private bagText!: Phaser.GameObjects.Text;
   private gatherHint!: Phaser.GameObjects.Text;
-  private returnButton!: Phaser.GameObjects.Container;
+  private exitArrow!: Phaser.GameObjects.Text;
+  private lowGlow!: Phaser.GameObjects.Rectangle;
   private gatherButton: Phaser.GameObjects.Arc | null = null;
   private gatherButtonLabel: Phaser.GameObjects.Text | null = null;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -142,13 +157,14 @@ export class HuntScene extends Phaser.Scene {
     this.huntData = data;
     this.melee = { ...H.weapons.melee, damage: data.stats.meleeDamage };
     this.ranged = { ...H.weapons.ranged, damage: data.stats.rangedDamage, range: H.weapons.ranged.range * data.stats.rangedRange };
-    this.maxHp = data.stats.maxHp;
+    this.maxStamina = data.stats.maxHp;
+    this.run = data.run ?? { floor: 1, stamina: data.stats.maxHp, bag: {}, report: [], eaten: data.lunchbox.map(() => false) };
     this.bagSlots = data.bagSlots;
     this.lunch = [];
     this.speedUntil = 0;
-    this.floorDef = FLOORS[1];
-    this.plan = planFloor(data.seed, 1, data.period);
-    this.player = { pos: { ...this.floorDef.start }, aim: { x: 1, y: 0 }, face: { x: 0, y: 1 }, hp: this.maxHp, cooldownMs: 0, harpoonCooldownMs: 0, swingMs: 0, comboStep: 0, msSinceSwing: Infinity, down: false };
+    this.floorDef = FLOORS[this.run.floor];
+    this.plan = planFloor(data.seed, this.run.floor, data.period);
+    this.player = { pos: { ...this.floorDef.start }, aim: { x: 1, y: 0 }, face: { x: 0, y: 1 }, cooldownMs: 0, harpoonCooldownMs: 0, swingMs: 0, comboStep: 0, msSinceSwing: Infinity, down: false };
     this.mobs = [];
     this.refills = this.plan.spawns.filter((s) => s.wave > 0);
     this.nextRefill = 0;
@@ -156,8 +172,6 @@ export class HuntScene extends Phaser.Scene {
     this.trees = [];
     this.obstacles = [];
     this.shots = [];
-    this.bag = {};
-    this.report = [];
     this.harpoon = null;
     this.reeling = null;
     this.gathering = null;
@@ -176,6 +190,8 @@ export class HuntScene extends Phaser.Scene {
   preload() {
     this.load.image("grass", artUrl("test/bg/grass.png"));
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
+    this.load.image("exit", artUrl("test/hunt/exit.png"));
+    this.load.image("stairs", artUrl("test/hunt/stairs.png"));
     loadCharacterArt(this);
     loadUiArt(this);
     for (const id of new Set(this.huntData.lunchbox.map((l) => l.dish))) this.load.image(`dish_${id}`, artUrl(`test/dishes/${id}.png`));
@@ -194,6 +210,9 @@ export class HuntScene extends Phaser.Scene {
     for (const n of this.plan.nodes) {
       this.nodes.push({ node: n, sprite: this.add.image(n.x, n.y, `node_${n.item}`).setOrigin(0.5, 0.85).setDepth(n.y - 1), taken: false });
     }
+    // Bandal's carts (the only way home) and the way down
+    for (const e of this.floorDef.exits) this.add.image(e.x, e.y, "exit").setOrigin(0.5, 0.9).setDepth(e.y);
+    if (this.floorDef.down) this.add.image(this.floorDef.down.x, this.floorDef.down.y, "stairs").setOrigin(0.5, 0.7).setDepth(this.floorDef.down.y - 20);
     createCharacterAnims(this);
 
     this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_down_1").setOrigin(0.5, HUNTER_FEET).setScale(CHAR_SCALE);
@@ -206,7 +225,7 @@ export class HuntScene extends Phaser.Scene {
 
     const keyboard = this.input.keyboard!;
     this.cursors = keyboard.createCursorKeys();
-    this.keys = keyboard.addKeys("W,A,S,D,Z,J,X,K,R,E,ONE,TWO,THREE") as Keys;
+    this.keys = keyboard.addKeys("W,A,S,D,Z,J,X,K,E,ONE,TWO,THREE") as Keys;
 
     // touch controls on touch devices (add ?touch to the URL to try them with a mouse)
     this.touch = this.sys.game.device.input.touch || new URLSearchParams(location.search).has("touch");
@@ -215,13 +234,16 @@ export class HuntScene extends Phaser.Scene {
 
     const hudStyle = TEXT_SMALL;
     if (!this.touch) this.add.text(6, 4, t("hunt.help"), hudStyle).setScrollFactor(0).setDepth(10000);
-    // health in a brass gauge, the bag count under it, the way home top right (UI kit A)
+    // stamina in a brass gauge, the floor and the bag count under it (UI kit A); no way home but the carts
     this.hpGauge = addGauge(this, 56, 26);
     this.hpGauge.box.setScrollFactor(0).setDepth(10000);
     this.bagText = this.add.text(8, 40, "", hudStyle).setScrollFactor(0).setDepth(10000);
-    this.gatherHint = this.add.text(0, 0, t("hunt.gather"), hudStyle).setOrigin(0.5).setDepth(9500).setVisible(false);
-    const back = addButton(this, GAME_WIDTH - 36, 18, t("hunt.return"), () => this.endHunt(false), 56);
-    this.returnButton = back.box.setScrollFactor(0).setDepth(10000);
+    this.gatherHint = this.add.text(0, 0, "", hudStyle).setOrigin(0.5).setDepth(9500).setVisible(false);
+    // which way the nearest cart is, at the screen's edge when it is out of sight (or always, when the bag
+    // is full or stamina runs low)
+    this.exitArrow = this.add.text(0, 0, "▶", { ...TEXT, color: "#ffd166" }).setOrigin(0.5).setScrollFactor(0).setDepth(10001).setVisible(false);
+    // low stamina: the screen's edge pulses red (Dave the Diver's oxygen warning)
+    this.lowGlow = this.add.rectangle(4, 4, GAME_WIDTH - 8, GAME_HEIGHT - 8).setOrigin(0).setStrokeStyle(8, 0xd01818, 1).setScrollFactor(0).setDepth(9999).setVisible(false);
     // the lunchbox: one button per packed dish under the way home (the dish at one game pixel per art pixel)
     this.huntData.lunchbox.forEach(({ dish, heal }, i) => {
       const bubble = kitSlice(this, 0, 0, "bubble_plain", 50, 48, 3, 3, 3, 3);
@@ -231,13 +253,16 @@ export class HuntScene extends Phaser.Scene {
       button.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.eat(i));
       this.lunch.push({ dish, heal, button, eaten: false });
     });
-    // lunches already eaten on this hunt before a reload stay eaten
-    for (const i of this.eatenBefore()) {
+    // lunches eaten on an earlier floor, or before a reload, stay eaten
+    for (const i of this.eatenBefore()) if (i < this.run.eaten.length) this.run.eaten[i] = true;
+    this.run.eaten.forEach((gone, i) => {
       const l = this.lunch[i];
-      if (!l) continue;
+      if (!gone || !l) return;
       l.eaten = true;
       l.button.setAlpha(0.3).disableInteractive();
-    }
+    });
+    this.cameras.main.fadeIn(300, 0, 0, 0);
+    this.floorCard();
   }
 
   update(_time: number, rawDt: number) {
@@ -247,6 +272,10 @@ export class HuntScene extends Phaser.Scene {
       this.hitStopMs -= dt;
       if (this.hitStopMs <= 0) this.anims.resumeAll();
       return;
+    }
+    if (!this.player.down) {
+      this.run.stamina = drainStamina(this.run.stamina, dt, this.run.floor);
+      if (this.run.stamina === 0) this.knockOut();
     }
     if (!this.player.down) this.updatePlayer(dt);
     this.updateHarpoon(dt);
@@ -282,7 +311,7 @@ export class HuntScene extends Phaser.Scene {
     slash.setInteractive(new Phaser.Geom.Circle(SLASH_BTN.radius, SLASH_BTN.radius, SLASH_BTN.radius + 6), Phaser.Geom.Circle.Contains);
     slash.on("pointerdown", () => (this.slashQueued = true));
     this.gatherButton = ui(this.add.circle(GATHER_BTN.x, GATHER_BTN.y, GATHER_BTN.radius, 0x30a050, 0.6).setStrokeStyle(1, 0xffffff, 0.8)).setVisible(false);
-    this.gatherButtonLabel = label(GATHER_BTN, t("hunt.gatherButton")).setVisible(false);
+    this.gatherButtonLabel = label(GATHER_BTN, t("hunt.useButton")).setVisible(false);
     this.gatherButton.setInteractive(new Phaser.Geom.Circle(GATHER_BTN.radius, GATHER_BTN.radius, GATHER_BTN.radius + 6), Phaser.Geom.Circle.Contains);
     this.gatherButton.on("pointerdown", () => (this.gatherQueued = true));
 
@@ -354,7 +383,6 @@ export class HuntScene extends Phaser.Scene {
 
     const k = this.keys;
     const JD = Phaser.Input.Keyboard.JustDown;
-    if (JD(k.R)) return this.endHunt(false);
     if (JD(k.Z) || JD(k.J)) this.slashQueued = true;
     if (JD(k.X) || JD(k.K)) this.shotQueued = { x: p.pos.x + p.aim.x * 100, y: p.pos.y + p.aim.y * 100 - H.harpoon.handHeight };
     if (JD(k.E)) this.gatherQueued = true;
@@ -368,11 +396,12 @@ export class HuntScene extends Phaser.Scene {
       p.aim = unit({ x: aim.x - p.pos.x, y: aim.y - (p.pos.y - H.harpoon.handHeight) }, p.aim);
     }
 
-    const near = this.nearestNode();
-    this.gatherHint.setVisible(!!near && !this.gathering && !this.touch);
-    if (near) this.gatherHint.setPosition(near.node.x, near.node.y - 34);
-    this.gatherButton?.setVisible(!!near);
-    this.gatherButtonLabel?.setVisible(!!near);
+    const use = this.nearestUse();
+    const at = use?.kind === "node" ? use.node.node : use?.kind === "exit" ? this.floorDef.exits.find((e) => e.id === use.id)! : use ? this.floorDef.down! : null;
+    this.gatherHint.setVisible(!!at && !this.gathering && !this.touch);
+    if (at) this.gatherHint.setText(t(use!.kind === "exit" ? "hunt.useExit" : use!.kind === "down" ? "hunt.useDown" : "hunt.gather")).setPosition(at.x, at.y - 34);
+    this.gatherButton?.setVisible(!!use);
+    this.gatherButtonLabel?.setVisible(!!use);
 
     // a swing finishes before the hunter moves or swings again
     if (p.swingMs > 0) return;
@@ -394,7 +423,9 @@ export class HuntScene extends Phaser.Scene {
     }
     if (this.gatherQueued) {
       this.gatherQueued = false;
-      if (near && !this.gathering) this.gathering = { node: near, ms: 0 };
+      if (use?.kind === "exit") return this.endHunt(false, use.id);
+      if (use?.kind === "down") return this.goDown();
+      if (use?.kind === "node" && !this.gathering) this.gathering = { node: use.node, ms: 0 };
     }
 
     const move = this.readMove();
@@ -451,7 +482,7 @@ export class HuntScene extends Phaser.Scene {
 
   // A press on the HUD (the way home, a lunch) is not a shot or a slash.
   private overHud(over: Phaser.GameObjects.GameObject[]) {
-    return over.includes(this.returnButton) || this.lunch.some((l) => over.includes(l.button));
+    return this.lunch.some((l) => over.includes(l.button));
   }
 
   // Lunch from the box: health back by the dish's worth, and a quick step for a few dishes.
@@ -460,10 +491,11 @@ export class HuntScene extends Phaser.Scene {
     const p = this.player;
     if (!l || l.eaten || p.down || this.ended) return;
     l.eaten = true;
+    this.run.eaten[i] = true;
     l.button.setAlpha(0.3).disableInteractive();
     this.rememberEaten();
     const heal = l.heal;
-    p.hp = Math.min(this.maxHp, p.hp + heal);
+    this.run.stamina = Math.min(this.maxStamina, this.run.stamina + heal);
     this.popText(p.pos.x, p.pos.y - 32, `+${heal}`, "#7fe07f");
     if (BALANCE.lunch.speedDishes.includes(l.dish)) {
       this.speedUntil = this.time.now + BALANCE.lunch.speedMs;
@@ -478,7 +510,7 @@ export class HuntScene extends Phaser.Scene {
   private hurtPlayer(damage: number, dir: Vec) {
     const p = this.player;
     if (p.down) return;
-    p.hp = Math.max(0, p.hp - damage);
+    this.run.stamina = Math.max(0, this.run.stamina - damage);
     p.pos = clampToField(pushOutOfRects({ x: p.pos.x + dir.x * 24, y: p.pos.y + dir.y * 24 }, this.obstacles, H.player.radius), this.floorDef.field);
     p.swingMs = 0;
     this.gathering = null;
@@ -486,19 +518,54 @@ export class HuntScene extends Phaser.Scene {
     this.time.delayedCall(150, () => this.hunter.clearTint());
     this.cameras.main.shake(100, 0.01);
     this.popText(p.pos.x, p.pos.y - 32, `-${damage}`, "#ff6060");
-    if (p.hp === 0) {
-      p.down = true;
-      this.harpoon = null;
-      this.reeling = null;
-      this.hunter.anims.stop();
-      this.hunter.setTint(0x777777).setAngle(-90);
-      this.add
-        .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, t("hunt.ko"), { ...TEXT, fontStyle: "bold" })
-        .setOrigin(0.5)
-        .setScrollFactor(0)
-        .setDepth(10001);
-      this.time.delayedCall(1500, () => this.endHunt(true));
-    }
+    if (this.run.stamina === 0) this.knockOut();
+  }
+
+  // Out of stamina (worn out, or one hit too many): down, then home with half the bag (the server halves
+  // it too).
+  private knockOut() {
+    const p = this.player;
+    if (p.down) return;
+    p.down = true;
+    this.harpoon = null;
+    this.reeling = null;
+    this.hunter.anims.stop();
+    this.hunter.setTint(0x777777).setAngle(-90);
+    this.add
+      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, t("hunt.ko"), { ...TEXT, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(10001);
+    this.time.delayedCall(1500, () => this.endHunt(true, null));
+  }
+
+  // What E (or the action button) would use here: an exit, the way down, else a gathering spot.
+  private nearestUse(): { kind: "exit"; id: string } | { kind: "down" } | { kind: "node"; node: Node } | null {
+    const p = this.player.pos;
+    const exit = this.floorDef.exits.find((e) => distance(p, e) <= USE_RANGE);
+    if (exit) return { kind: "exit", id: exit.id };
+    if (this.floorDef.down && distance(p, this.floorDef.down) <= USE_RANGE) return { kind: "down" };
+    const node = this.nearestNode();
+    return node ? { kind: "node", node } : null;
+  }
+
+  // The way down: the report's line, then the next floor with the same Run (stamina, bag, report).
+  private goDown() {
+    const next = this.run.floor + 1;
+    if (!this.floorDef.down || !isFloorId(next) || this.ended) return;
+    this.run.report.push({ down: next });
+    this.ended = true;
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.restart({ ...this.huntData, run: { ...this.run, floor: next } }));
+  }
+
+  // "Floor 2 · Deep forest" sliding across on arrival (hunt v3 design 5.1).
+  private floorCard() {
+    const name = t("hunt.floorCard", { n: this.run.floor, name: t(`floor.${this.run.floor}` as StringKey) });
+    const label = this.add.text(0, -1, name, { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
+    const plate = kitSlice(this, 0, 0, "topbar", Math.ceil(label.width) + 40, 26, 5, 5, 2, 1);
+    const card = this.add.container(GAME_WIDTH / 2 - 40, 70, [plate, label]).setScrollFactor(0).setDepth(10002).setAlpha(0);
+    this.tweens.add({ targets: card, alpha: 1, x: GAME_WIDTH / 2, duration: 250, ease: "Cubic.easeOut", hold: 1300, yoyo: true, onComplete: () => card.destroy() });
   }
 
   // ---------------------------------------------------------------- gathering
@@ -523,14 +590,14 @@ export class HuntScene extends Phaser.Scene {
     if (g.ms < GATHER_MS) return;
     this.gathering = null;
     const key = itemKey(g.node.node.item);
-    const r = addToBag(this.bag, key, this.bagSlots);
+    const r = addToBag(this.run.bag, key, this.bagSlots);
     if (!r.added) {
       this.popText(this.player.pos.x, this.player.pos.y - 42, t("hunt.bagFull"), "#ffb0b0", 1200);
       return;
     }
-    this.bag = r.bag;
+    this.run.bag = r.bag;
     g.node.taken = true;
-    this.report.push({ gather: g.node.node.id });
+    this.run.report.push({ gather: g.node.node.id });
     this.tweens.add({ targets: g.node.sprite, alpha: 0, y: g.node.sprite.y - 6, duration: 300, onComplete: () => g.node.sprite.destroy() });
     this.popItem(g.node.node.x, g.node.node.y - 30, key);
   }
@@ -642,11 +709,11 @@ export class HuntScene extends Phaser.Scene {
     if (this.reeling === m) this.reeling = null;
     const grade = meatGrade(m.hits, H.premiumMaxRangedHits);
     const key = itemKey(dropFor(this.huntData.seed, m.spawn), grade);
-    this.report.push({ kill: m.spawn.id, grade });
-    const r = addToBag(this.bag, key, this.bagSlots);
+    this.run.report.push({ kill: m.spawn.id, grade });
+    const r = addToBag(this.run.bag, key, this.bagSlots);
     const at = mobPos(m);
     if (r.added) {
-      this.bag = r.bag;
+      this.run.bag = r.bag;
       this.popItem(at.x, at.y - 38, key);
     } else this.popText(at.x, at.y - 38, t("hunt.bagFull"), "#ffb0b0", 1200);
     this.tweens.killTweensOf(m.sprite);
@@ -791,17 +858,42 @@ export class HuntScene extends Phaser.Scene {
   }
 
   private drawHud() {
-    const p = this.player;
-    this.hpGauge.set(p.hp / this.maxHp);
-    this.bagText.setText(t("hud.bag", { n: bagCount(this.bag), max: this.bagSlots }));
+    const frac = this.run.stamina / this.maxStamina;
+    this.hpGauge.set(frac);
+    this.bagText.setText(`${t("hunt.floorShort", { n: this.run.floor })} · ${t("hud.bag", { n: bagCount(this.run.bag), max: this.bagSlots })}`);
+    const low = frac < LOW_STAMINA && !this.player.down;
+    this.lowGlow.setVisible(low);
+    if (low) this.lowGlow.setAlpha(0.8 + 0.2 * Math.sin(this.time.now / 180));
+    this.drawExitArrow();
   }
 
-  // Back to the shop: the report goes to the day flow (half the bag is lost after a knockout, the
-  // server applies that too).
-  private endHunt(ko: boolean) {
+  // The nearest cart: an arrow beside the hunter pointing at it, pushed in to the screen's edge when the
+  // cart is out of sight. Shown when the cart is out of sight, and always when the bag is full or stamina
+  // runs low.
+  private drawExitArrow() {
+    const p = this.player.pos;
+    const e = nearestExit(p, this.run.floor);
+    const cam = this.cameras.main;
+    const urgent = bagCount(this.run.bag) >= this.bagSlots || this.run.stamina / this.maxStamina < LOW_STAMINA;
+    const off = !cam.worldView.contains(e.x, e.y);
+    const near = distance(p, e) <= USE_RANGE * 2;
+    this.exitArrow.setVisible(!this.player.down && !near && (off || urgent));
+    if (!this.exitArrow.visible) return;
+    const a = Math.atan2(e.y - p.y, e.x - p.x);
+    // from the hunter's place on screen (his middle, not his feet), 40 px toward the cart, kept 16 px inside
+    const sx = p.x - cam.worldView.x;
+    const sy = p.y - 14 - cam.worldView.y;
+    const x = Phaser.Math.Clamp(sx + Math.cos(a) * 40, 16, GAME_WIDTH - 16);
+    const y = Phaser.Math.Clamp(sy + Math.sin(a) * 40, 16, GAME_HEIGHT - 16);
+    this.exitArrow.setPosition(x, y).setRotation(a);
+  }
+
+  // Home: through a cart (its exit id), or knocked out (null). The report goes to the day flow; the server
+  // follows it floor by floor and applies the knockout's half bag too.
+  private endHunt(ko: boolean, exit: string | null) {
     if (this.ended) return;
     this.ended = true;
-    const result: HuntResult = { events: [...this.report], exit: null, ko };
+    const result: HuntResult = { events: [...this.run.report], exit, ko };
     this.game.events.emit("hunt:end", result);
     this.scene.pause();
   }

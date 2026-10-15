@@ -47,7 +47,7 @@ export const FLOORS: Record<FloorId, FloorDef> = {
     field: FIELD,
     start: { x: 128, y: 128 },
     exits: [
-      { id: "1-e0", x: 96, y: 72 },
+      { id: "1-e0", x: 300, y: 150 },
       { id: "1-e1", x: 1420, y: 180 },
       { id: "1-e2", x: 760, y: 960 },
     ],

@@ -1,0 +1,8 @@
+Use your image generation tool (do not write code to draw) to create ONE image, 1024x512: two objects side by side on a perfectly flat solid magenta #FF00FF background (no glow, no shadow, no floor), each centred in its half, nothing touching the edges. No text.
+
+Style: the same chunky quarter-view (high top-down, about 60 degrees) pixel art as the attached forest objects — every art pixel a solid 8x8 block, 1-art-pixel dark outline, flat shading with 2-3 tones per material, the same palette, no gradients, no glow, no anti-aliasing.
+
+left: "Bandal's cart" — a small wooden hand cart with two wheels, a red-and-cream striped cloth (the colours of Bandal's bandana) over a stack of crates and a little hanging lantern, the place the hunter leaves the forest from. About 40 x 32 art pixels.
+right: "the way down" — a dark hole in the forest floor ringed by mossy stones and roots, with rough log steps going down into darkness. About 44 x 30 art pixels.
+
+Save as art-src/codex/raw/hunt_exit_stairs.png. Reply only with the saved file path.
