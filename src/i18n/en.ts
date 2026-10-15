@@ -135,6 +135,7 @@ export const en: Record<keyof typeof ko, string> = {
   "upgrade.group.hunt": "Hunt",
   "upgrade.group.kitchen": "Kitchen",
   "upgrade.group.shop": "Shop",
+  "upgrade.group.gear": "Gear",
   "upgrade.level": "{lv}/{max}",
   "upgrade.buy": "{cost} gold",
   "upgrade.max": "Max",

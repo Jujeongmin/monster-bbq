@@ -134,6 +134,7 @@ export const ko = {
   "upgrade.group.hunt": "사냥",
   "upgrade.group.kitchen": "주방",
   "upgrade.group.shop": "가게",
+  "upgrade.group.gear": "장비",
   "upgrade.level": "{lv}/{max}",
   "upgrade.buy": "{cost}골드",
   "upgrade.max": "최대",

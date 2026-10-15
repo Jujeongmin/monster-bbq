@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시험용 세이브 (강화·재료)</title>
+<!-- Check page only: puts a local test save (version 7, at lunch, with deep-floor materials) into this browser's storage and
+     opens the game in local mode. ?tab=menu|upgrade|lunch picks nothing yet; the game opens on the cookbook. -->
+<script>
+  const save = {
+    version: 7, day: 5, stage: "lunch", gold: 2400,
+    items: { "boar_belly:normal": 4, "boar_belly:premium": 1, "boar_neck:normal": 3, wild_garlic: 2, shiitake: 2, perilla: 1, frog_skin: 4, snake_scale: 2, glow_mushroom: 1 },
+    hunt: null,
+    seenItems: ["boar_belly", "boar_neck", "wild_garlic", "shiitake"],
+    dishes: { grilled_belly: 2, shiitake_grill: 1 },
+    menu: [{ dish: "grilled_belly", sets: 2 }],
+    reputation: 5, upgrades: { boots: 1 }, lunchbox: [], service: null, lastService: null,
+  };
+  localStorage.setItem("monster-bbq:save", JSON.stringify(save));
+  location.replace("/?local");
+</script>
+</head>
+<body></body>
+</html>

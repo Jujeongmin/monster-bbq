@@ -4,8 +4,8 @@
 
 Nothing is drawn: magenta keyed out, each grid cell cropped to its picture, box-shrunk by 8 (the sheets are
 drawn on an 8 px grid), alpha snapped on/off. The ground sheet's two halves (swamp, cave) are shrunk by 8 into
-tiles. Output: art-src/codex/out/deep/{items,objects,bg}/ and art-src/preview/deep_props.png. Approved files are
-copied to art/test/{items,objects,bg}.
+tiles; the gear sheet (boots, lantern, stamina tank) into upgrade pictures. Output: art-src/codex/out/deep/{items,objects,gear,bg}/ and art-src/preview/deep_props.png. Approved files are
+copied to art/test/{items,objects,ui,bg}.
 """
 from pathlib import Path
 
@@ -21,6 +21,7 @@ ITEMS = [
     ["icon_bat_wing", "icon_crab_meat", "icon_crab_shell", "icon_glow_mushroom"],
     ["icon_iron_ore", "node_glow_mushroom", "node_iron_ore", None],
 ]
+GEAR = [["upg_boots", "upg_lantern", "upg_tank"]]
 OBJECTS = [["reeds", "lily_pond", "mossy_log"], ["stalagmite", "crystals", "cave_rock"]]
 
 
@@ -61,6 +62,7 @@ def cut(sheet: Image.Image, names, out: Path):
 def main():
     items = cut(key(Image.open(RAW / "deep_items.png")), ITEMS, OUT / "items")
     objects = cut(key(Image.open(RAW / "deep_objects.png")), OBJECTS, OUT / "objects")
+    gear = cut(key(Image.open(RAW / "deep_gear.png")), GEAR, OUT / "gear")
     (OUT / "bg").mkdir(parents=True, exist_ok=True)
     ground = Image.open(RAW / "deep_ground.png").convert("RGBA")
     half = ground.width // 2
@@ -87,13 +89,13 @@ def main():
             out.alpha_composite(big, (x, 300 - big.height))
             x += big.width + 20
     x, y = 10, 410
-    for it in items:
+    for it in items + gear:
         big = it.resize((it.width * S, it.height * S), Image.NEAREST)
         if x + big.width > W:
             x, y = 10, y + 110
         out.alpha_composite(big, (x, y))
         x += big.width + 14
-    out.crop((0, 0, W, 620)).save(ROOT / "art-src/preview/deep_props.png")
+    out.crop((0, 0, W, 760)).save(ROOT / "art-src/preview/deep_props.png")
 
 
 if __name__ == "__main__":

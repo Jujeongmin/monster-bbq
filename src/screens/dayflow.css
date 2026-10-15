@@ -36,6 +36,12 @@
 .upgrade-name { font-weight: 700; color: var(--ink); }
 .upgrade-fx { grid-column: 2 / 4; font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
 .upgrade-row .ui-btn { grid-column: 3; grid-row: 1; font: var(--fs-small) "Galmuri9", monospace; }
+/* the gear's materials: owned, and what the next level takes (red when short) */
+.upgrade-mats { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: calc(4px * var(--s)); }
+.upgrade-owned { display: flex; flex-wrap: wrap; align-items: center; gap: calc(4px * var(--s)); margin-bottom: calc(2px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
+.upgrade-mat { display: inline-flex; align-items: center; gap: calc(1px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; color: var(--ink); white-space: nowrap; }
+.upgrade-mat img { height: calc(10px * var(--s)); image-rendering: pixelated; }
+.upgrade-mat.short { color: var(--red); }
 .upgrades > .ui-btn { align-self: center; padding-left: calc(16px * var(--s)); padding-right: calc(16px * var(--s)); }
 
 /* setting out: the side weapon cards (hunt v3 design 4.4) */
