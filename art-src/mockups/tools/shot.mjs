@@ -20,7 +20,7 @@ await call("Page.navigate", { url: `http://localhost:5190/art-src/mockups/${proc
 await sleep(6000);
 let n = 0;
 for (const js of steps) {
-  const r = await call("Runtime.evaluate", { expression: js, returnByValue: true });
+  const r = await call("Runtime.evaluate", { expression: js, returnByValue: true, awaitPromise: true });
   console.log(n, JSON.stringify(r.result?.result?.value ?? r.result?.exceptionDetails?.text));
   await sleep(800);
   const shot = await call("Page.captureScreenshot", { format: "png" });
