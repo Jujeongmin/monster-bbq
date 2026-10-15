@@ -4,6 +4,9 @@
 .dayflow-bar {
   position: absolute; left: 50%; bottom: calc(4px * var(--s)); transform: translateX(-50%);
   display: flex; align-items: center; gap: calc(10px * var(--s)); white-space: nowrap; pointer-events: none;
+  padding: 0 calc(6px * var(--s));
+  /* over the settle and service screens, which fill the frame */
+  z-index: 5;
 }
 .dayflow-bar span { display: inline-flex; align-items: center; gap: calc(3px * var(--s)); }
 .dayflow-phase { color: var(--brass); }

@@ -99,8 +99,13 @@ canvas { image-rendering: pixelated; display: block; }
   color: var(--ink);
 }
 .ui-bar {
-  border: calc(3 * var(--k)) calc(5 * var(--k)) solid transparent;
-  border-image: url("../art/test/ui2/topbar.png") 3 5 fill / calc(3 * var(--k)) calc(5 * var(--k)) stretch;
+  /* the border shorthand takes one width only: two widths dropped the whole line, the border was 0 and the
+     brass caps were painted over the icon and the words. The face starts 2 art px down and ends 1 up,
+     4 px in from each 5 px cap. */
+  border-style: solid;
+  border-color: transparent;
+  border-width: calc(2 * var(--k)) calc(5 * var(--k)) var(--k);
+  border-image: url("../art/test/ui2/topbar.png") 2 5 1 fill / calc(2 * var(--k)) calc(5 * var(--k)) var(--k) stretch;
   image-rendering: pixelated;
   color: var(--cream);
   /* the bold cut with the buttons' dark drop: the regular cut drew thin and blurry here (user, 2026-10-15) */
@@ -121,7 +126,9 @@ canvas { image-rendering: pixelated; display: block; }
   color: #4a2a12; font-weight: 700;
 }
 .ui-ribbon {
-  border: calc(3 * var(--k)) calc(6 * var(--k)) solid transparent;
+  border-style: solid;
+  border-color: transparent;
+  border-width: calc(3 * var(--k)) calc(6 * var(--k));
   border-image: url("../art/test/ui2/ribbon.png") 3 6 fill / calc(3 * var(--k)) calc(6 * var(--k)) stretch;
   image-rendering: pixelated;
   color: var(--cream); font-weight: 700;
