@@ -18,7 +18,7 @@ describe("itemKey / parseItemKey", () => {
 });
 
 const FRESH = {
-  version: 5,
+  version: 6,
   day: 1,
   stage: "hunt",
   gold: 0,
@@ -40,9 +40,9 @@ describe("newSave", () => {
   });
 });
 
-describe("readSave (version 5)", () => {
+describe("readSave (version 6)", () => {
   const valid = {
-    version: 5,
+    version: 6,
     day: 4,
     stage: "kitchen",
     gold: 120,
@@ -107,7 +107,7 @@ describe("readSave (from version 4 and older)", () => {
   };
   it("opens found recipes at level 1, sees their ingredients and what is in the fridge, keeps the menu as one set each", () => {
     const r = readSave(v4);
-    expect(r.version).toBe(5);
+    expect(r.version).toBe(6);
     expect(r.dishes).toEqual({ grilled_belly: 1, garlic_neck: 1 });
     expect([...r.seenItems].sort()).toEqual(["boar_belly", "boar_neck", "perilla", "wild_garlic"]);
     expect(r.menu).toEqual([{ dish: "grilled_belly", sets: 1 }]);
@@ -140,5 +140,25 @@ describe("refundRetired", () => {
     expect(refundRetired({ pot: 0, grillQuality: 1, melee: 4 })).toBe(0);
     expect(refundRetired({ pot: 7, grillQuality: "x" })).toBe(600);
     expect(refundRetired(null)).toBe(0);
+  });
+});
+
+describe("save version 6 (hunt v3: two hunts a day)", () => {
+  it("starts a new save at version 6, before the morning hunt", () => {
+    expect(newSave()).toMatchObject({ version: 6, stage: "hunt", hunt: null });
+  });
+  it("keeps the lunch stage and a hunt's time of day", () => {
+    const s = readSave({ ...newSave(), stage: "lunch", hunt: { id: "h1", seed: 3, zone: "forest", period: "afternoon", startedAt: 5 } });
+    expect(s.stage).toBe("lunch");
+    expect(s.hunt).toEqual({ id: "h1", seed: 3, zone: "forest", period: "afternoon", startedAt: 5 });
+  });
+  it("reads a version 5 save as version 6, a hunt in progress as the morning hunt", () => {
+    const v5 = { ...newSave(), version: 5, stage: "hunt", hunt: { id: "h1", seed: 3, zone: "forest", startedAt: 5 } };
+    const s = readSave(v5);
+    expect(s.version).toBe(6);
+    expect(s.hunt?.period).toBe("morning");
+  });
+  it("reads an unknown time of day as the morning", () => {
+    expect(readSave({ ...newSave(), hunt: { id: "h1", seed: 3, zone: "forest", period: "midnight", startedAt: 5 } }).hunt?.period).toBe("morning");
   });
 });

@@ -2,16 +2,19 @@ import { isDishId, type DishId } from "./content/dishes";
 import { isItemId, parseItemKey, type ItemId } from "./content/items";
 import { RECIPES } from "./content/recipes";
 import { BALANCE } from "./balance";
+import type { Period } from "./content/floors";
 import { isUpgradeId, type UpgradeId } from "./content/upgrades";
 import { MAX_DISH_LEVEL, MAX_SETS, type MenuLine, type TonightDish } from "./kitchen/dish";
 
 export type Zone = "forest";
 
-// A hunt the server has started and not yet settled: its seed decides the whole hunting ground.
+// A hunt the server has started and not yet settled: its seed decides every floor's monsters and
+// gathering spots; `period` is the morning or the afternoon hunt (hunt v3 design 3).
 export interface PendingHunt {
   id: string;
   seed: number;
   zone: Zone;
+  period: Period;
   startedAt: number;
 }
 
@@ -35,13 +38,16 @@ export interface ServiceSummary {
   repDelta: number;
 }
 
-// Where the day is: the server moves it along (hunt settled -> kitchen, service settled -> settle,
-// next day -> hunt), so a reload cannot skip ahead or hunt twice in one day.
-export type Stage = "hunt" | "kitchen" | "settle";
+// Where the day is (hunt v3 design 3): the morning hunt, lunch (after it; the afternoon hunt starts from
+// here), the evening kitchen, the settle screen. The server moves it along, so a reload cannot skip ahead
+// or hunt a third time in one day.
+export type Stage = "hunt" | "lunch" | "kitchen" | "settle";
+
+const isStage = (v: unknown): v is Stage => v === "hunt" || v === "lunch" || v === "kitchen" || v === "settle";
 
 // The whole save of one account, kept in its Global User State under "save" (spec 7).
 export interface SaveData {
-  version: 5;
+  version: 6;
   day: number;
   stage: Stage;
   gold: number;
@@ -65,7 +71,7 @@ export interface SaveData {
 
 export function newSave(): SaveData {
   return {
-    version: 5,
+    version: 6,
     day: 1,
     stage: "hunt",
     gold: 0,
@@ -103,7 +109,9 @@ function readHunt(raw: unknown): PendingHunt | null {
   const h = raw as Partial<PendingHunt> | null;
   if (!h || typeof h !== "object") return null;
   if (typeof h.id !== "string" || typeof h.seed !== "number" || h.zone !== "forest" || typeof h.startedAt !== "number") return null;
-  return { id: h.id, seed: h.seed, zone: h.zone, startedAt: h.startedAt };
+  // a hunt saved before hunt v3 (or with an unknown time of day) is the morning hunt
+  const period = h.period === "afternoon" ? "afternoon" : "morning";
+  return { id: h.id, seed: h.seed, zone: h.zone, period, startedAt: h.startedAt };
 }
 
 // A list of known values, each once, in stored order.
@@ -197,7 +205,7 @@ function fromV4(r: Record<string, unknown>): Record<string, unknown> {
   const items = readItems(r.items);
   const seen = new Set<ItemId>([...Object.keys(items).map((k) => parseItemKey(k)!.id), ...found.flatMap((d) => RECIPES[d].items)]);
   const open = !!r.service && typeof r.service === "object";
-  const stage = open ? "kitchen" : r.stage === "hunt" || r.stage === "kitchen" || r.stage === "settle" ? r.stage : "hunt";
+  const stage = open ? "kitchen" : isStage(r.stage) ? r.stage : "hunt";
   return {
     version: 5,
     day: r.day,
@@ -235,12 +243,14 @@ export function readSave(raw: unknown): SaveData {
     });
   }
   if (r.version === 2 || r.version === 3 || r.version === 4) return readSave(fromV4(r));
-  if (r.version !== 5) return newSave();
+  // version 6 (hunt v3) only adds the lunch stage and the hunt's time of day, both read with defaults
+  if (r.version === 5) return readSave({ ...r, version: 6 });
+  if (r.version !== 6) return newSave();
   const dishes = readDishes(r.dishes);
   return {
-    version: 5,
+    version: 6,
     day: count(r.day, 1),
-    stage: r.stage === "hunt" || r.stage === "kitchen" || r.stage === "settle" ? r.stage : "hunt",
+    stage: isStage(r.stage) ? r.stage : "hunt",
     gold: count(r.gold),
     items: readItems(r.items),
     hunt: readHunt(r.hunt),
