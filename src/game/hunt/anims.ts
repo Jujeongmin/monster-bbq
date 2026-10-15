@@ -9,6 +9,11 @@ const ROWS = {
   rabbit: ["side", "down", "up", "special"],
   bee: ["side", "down", "up", "attack"],
   chicken: ["side", "down", "up", "peck"],
+  // the deep floors (plan 08c): walk rows, then the special move
+  frog: ["side", "down", "up", "special"],
+  snake: ["side", "down", "up", "special"],
+  bat: ["side", "down", "up", "special"],
+  crab: ["side", "down", "up", "special"],
 } as const;
 
 export type Who = keyof typeof ROWS;
@@ -50,6 +55,7 @@ export function createCharacterAnims(scene: Phaser.Scene) {
     A.create({ key: `bee_walk_${look}`, frames: frames(`bee_${look}`, all), frameRate: 14, repeat: -1 });
     A.create({ key: `chicken_walk_${look}`, frames: frames(`chicken_${look}`, all), frameRate: 8, repeat: -1 });
     A.create({ key: `chicken_run_${look}`, frames: frames(`chicken_${look}`, all), frameRate: 14, repeat: -1 });
+    for (const who of ["frog", "snake", "bat", "crab"]) A.create({ key: `${who}_walk_${look}`, frames: frames(`${who}_${look}`, all), frameRate: who === "bat" ? 12 : 7, repeat: -1 });
   }
   A.create({ key: "hunter_slash", frames: frames("hunter_slash", all), frameRate: Math.round(4000 / H.weapons.melee.swingMs) });
   A.create({ key: "hunter_throw", frames: frames("hunter_throw", all), frameRate: 18 });

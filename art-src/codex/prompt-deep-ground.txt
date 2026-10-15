@@ -1,0 +1,8 @@
+Use your image generation tool (do not write code to draw) to create ONE image, 1024x512: two square ground tiles side by side (each 512x512), seamless (tileable on all four sides), top-down view, no objects, no text.
+
+STYLE: real low-resolution pixel art matching the attached forest objects — every art pixel a solid 8x8 block, flat 2-3 tones, no gradients, no blur, the same warm cozy palette.
+
+left tile "misty swamp floor": dark olive mud with patches of murky green-brown water, small reeds stubs and pebbles, a few tiny lily-pad dots.
+right tile "mossy cave floor": dark blue-grey stone floor with cracks, patches of soft green moss and a few faint cyan glowing specks.
+
+Save as art-src/codex/raw/deep_ground.png. Reply only with the saved file path.

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
-import { ammoOf, bagSlots, huntStats, level, seatBonus, sleepFallMs } from "../../shared/growth";
+import { ammoOf, bagSlots, huntStats, level, lightRadius, seatBonus, sleepFallMs } from "../../shared/growth";
 import type { HuntEvent } from "../../shared/actions";
 import type { SideWeaponId } from "../../shared/content/sideWeapons";
 import { BALANCE } from "../../shared/balance";
@@ -110,7 +110,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
       {phase === "hunt" && save.hunt && (
         <PhaserGame
           key={save.hunt.id}
-          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, side: save.hunt.side, ammo: ammoOf(save, save.hunt.side), harpoonLevel: level(save, "ranged"), sleepFallMs: sleepFallMs(save), stats: huntStats(save), bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
+          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, side: save.hunt.side, ammo: ammoOf(save, save.hunt.side), harpoonLevel: level(save, "ranged"), sleepFallMs: sleepFallMs(save), stats: huntStats(save), gear: { boots: level(save, "boots") >= 1, light: lightRadius(save) }, bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
           onHuntEnd={(r: HuntResult) => {
             const before = save.items;
             void act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, exit: r.exit, ko: r.ko }, save.hunt!.period === "morning" ? "lunch" : "kitchen").then((ok) => ok && setSummary({ events: r.events, ko: r.ko, before }));

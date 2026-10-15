@@ -10,6 +10,7 @@ import type { FloorPlan } from "../../../shared/hunt/plan";
 import { newShooter, updateShooter, type ShooterState, type Shot } from "../../../shared/hunt/shooter";
 import { FREE, isHeld, stepStatus, wake, type MobStatus } from "../../../shared/hunt/status";
 import { isTuskVulnerable, newTusk, updateTusk, type TuskState } from "../../../shared/hunt/tusk";
+import { angerSwarm, isLurkerOpen, isLurkerTargetable, isShellOpen, isSwarmOpen, isTongueOpen, newLurker, newShell, newSwarm, newTongue, updateLurker, updateShell, updateSwarm, updateTongue, type LurkerState, type ShellState, type SwarmState, type TongueState } from "../../../shared/hunt/deepMonsters";
 import type { Field, Vec } from "../../../shared/hunt/types";
 import { lookOf, stepBob } from "./anims";
 
@@ -18,7 +19,7 @@ import { lookOf, stepBob } from "./anims";
 // its sprite. The tusk boss is drawn with the boar's frames at twice the size until its own art.
 const H = BALANCE.hunt;
 // Where the feet are inside each sheet's cells (measured when slicing).
-const FEET: Record<MonsterId, number> = { boar: 0.92, rabbit: 0.885, bee: 0.885, chicken: 0.89, tusk: 0.92 };
+const FEET: Record<MonsterId, number> = { boar: 0.92, rabbit: 0.885, bee: 0.885, chicken: 0.89, tusk: 0.92, frog: 0.975, snake: 0.979, bat: 0.974, crab: 0.981 };
 // whose frames a monster is drawn with
 export const artOf = (monster: MonsterId): string => (monster === "tusk" ? "boar" : monster);
 
@@ -28,7 +29,11 @@ export type MobAI =
   | { kind: "fleer"; s: FleerState }
   | { kind: "shooter"; s: ShooterState }
   | { kind: "pack"; s: PackMemberState }
-  | { kind: "boss"; s: TuskState };
+  | { kind: "boss"; s: TuskState }
+  | { kind: "tongue"; s: TongueState }
+  | { kind: "lurker"; s: LurkerState }
+  | { kind: "swarm"; s: SwarmState }
+  | { kind: "shell"; s: ShellState };
 
 export interface Mob {
   spawn: Spawn;
@@ -56,7 +61,15 @@ export function createMob(scene: Phaser.Scene, spawn: Spawn): Mob {
           ? { kind, s: newShooter(pos) }
           : kind === "boss"
             ? { kind, s: newTusk(pos) }
-            : { kind, s: newPackMember(pos) };
+            : kind === "tongue"
+              ? { kind, s: newTongue(pos) }
+              : kind === "lurker"
+                ? { kind, s: newLurker(pos) }
+                : kind === "swarm"
+                  ? { kind, s: newSwarm(pos) }
+                  : kind === "shell"
+                    ? { kind, s: newShell(pos) }
+                    : { kind, s: newPackMember(pos) };
   const big = kind === "boss" ? 2 : 1;
   const sprite = scene.add.sprite(pos.x, pos.y, `${artOf(spawn.monster)}_side_0`).setOrigin(0.5, FEET[spawn.monster]).setScale(CHAR_SCALE * big).setDepth(pos.y);
   sprite.setAlpha(0);
@@ -86,8 +99,19 @@ export function isMobVulnerable(m: Mob): boolean {
       return m.ai.s.phase === "recover";
     case "boss":
       return isTuskVulnerable(m.ai.s);
+    case "tongue":
+      return isTongueOpen(m.ai.s);
+    case "lurker":
+      return isLurkerOpen(m.ai.s);
+    case "swarm":
+      return isSwarmOpen(m.ai.s);
+    case "shell":
+      return isShellOpen(m.ai.s);
   }
 }
+
+// A water snake under the mud cannot be hit by anything (harpoon, darts, slash).
+export const isTargetable = (m: Mob): boolean => !(m.ai.kind === "lurker" && !isLurkerTargetable(m.ai.s));
 
 // Reeled in by the harpoon: dazed for dazeMs in the kind's open phase (started early).
 export function dazeMob(m: Mob, toward: Vec) {
@@ -105,7 +129,7 @@ export function dazeMob(m: Mob, toward: Vec) {
     case "pack":
       m.ai = { kind: "pack", s: { ...m.ai.s, phase: "recover", phaseMs: H.chicken.recoverMs - d, facing: toward } };
       break;
-    case "boss":
+    default:
       break;
   }
 }
@@ -119,8 +143,10 @@ export function mobWasHit(m: Mob) {
 
 export function angerFlock(mobs: Mob[], flock: string) {
   for (const m of mobs) {
-    if (m.dead || m.ai.kind !== "pack" || m.spawn.flock !== flock) continue;
-    m.ai = { kind: "pack", s: angerPack([m.ai.s])[0] };
+    if (m.dead || m.spawn.flock !== flock) continue;
+    if (m.ai.kind === "pack") m.ai = { kind: "pack", s: angerPack([m.ai.s])[0] };
+    // a bat hit: the whole flock folds to dive
+    if (m.ai.kind === "swarm") m.ai = { kind: "swarm", s: angerSwarm([m.ai.s])[0] };
   }
 }
 
@@ -129,6 +155,8 @@ export interface MobStep {
   shot?: Shot;
   // the tusk boss pinned the hunter, or slammed the ground here
   grabbed?: boolean;
+  // the frog general's tongue pulls the hunter toward it this far
+  pull?: number;
   slam?: Vec;
   // the side weapons' effects: fell asleep, woke up
   statusEvent?: "fell_asleep" | "woke" | null;
@@ -136,7 +164,8 @@ export interface MobStep {
 }
 
 // One frame of the monster's behaviour, kept out of trees and rocks. `player` null = knocked out.
-export function stepMob(m: Mob, dt: number, player: Vec | null, field: Field, obstacles: Rect[]): MobStep {
+// `light`: the lantern's radius around the hunter in the cave (bats keep out of it), 0 elsewhere.
+export function stepMob(m: Mob, dt: number, player: Vec | null, field: Field, obstacles: Rect[], light = 0): MobStep {
   const seen = player ?? { x: -99999, y: -99999 };
   const before = m.ai.s.phase;
   const st = stepStatus(m.status, dt);
@@ -174,6 +203,31 @@ export function stepMob(m: Mob, dt: number, player: Vec | null, field: Field, ob
       if (r.slam) out.slam = r.slam;
       break;
     }
+    case "tongue": {
+      const r = updateTongue(m.ai.s, seen, dt, field, Math.random);
+      m.ai = { kind: "tongue", s: r.state };
+      if (r.hurt) out.hurt = { damage: r.hurt.damage, dir: r.state.lashDir };
+      if (r.pull) out.pull = r.pull;
+      break;
+    }
+    case "lurker": {
+      const r = updateLurker(m.ai.s, seen, dt, field, Math.random);
+      m.ai = { kind: "lurker", s: r.state };
+      if (r.hurt) out.hurt = { damage: r.hurt.damage, dir: r.state.facing };
+      break;
+    }
+    case "swarm": {
+      const r = updateSwarm(m.ai.s, seen, dt, field, light);
+      m.ai = { kind: "swarm", s: r.state };
+      if (r.hurt) out.hurt = { damage: r.hurt.damage, dir: r.state.diveDir };
+      break;
+    }
+    case "shell": {
+      const r = updateShell(m.ai.s, seen, dt, field, Math.random);
+      m.ai = { kind: "shell", s: r.state };
+      if (r.hurt) out.hurt = { damage: r.hurt.damage, dir: r.state.facing };
+      break;
+    }
   }
   // pushed back by a tree or rock: a stroll toward that spot would never arrive, so pick another
   const s = m.ai.s;
@@ -209,6 +263,10 @@ export function drawMob(scene: Phaser.Scene, m: Mob, phaseChanged: boolean, shou
     if (m.ai.kind === "shooter" && m.ai.s.phase === "aim") warn(0xffb040, H.bee.aimMs);
     if (m.ai.kind === "pack" && m.ai.s.phase === "windup") warn(0xff7070, H.chicken.windupMs);
     if (m.ai.kind === "boss" && (m.ai.s.phase === "telegraph" || m.ai.s.phase === "slamWindup" || m.ai.s.phase === "rush")) warn(0xff4040, H.tusk.telegraphMs);
+    if (m.ai.kind === "tongue" && m.ai.s.phase === "puff") warn(0xff6060, H.deep.frog.puffMs);
+    if (m.ai.kind === "lurker" && m.ai.s.phase === "ripple") shout(pos.x, pos.y - 20, "!", "#ff5050", H.deep.snake.rippleMs);
+    if (m.ai.kind === "swarm" && m.ai.s.phase === "fold") warn(0xff6060, H.deep.bat.foldMs);
+    if (m.ai.kind === "shell" && m.ai.s.phase === "claw") warn(0xff6060, H.deep.crab.clawMs);
   }
 
   let key: string | null = null;
@@ -262,6 +320,45 @@ export function drawMob(scene: Phaser.Scene, m: Mob, phaseChanged: boolean, shou
       if (p === "recover" || p === "grab" || p === "gap" || p === "slam") still = `boar_${look}_0`;
       else if (p === "charge" || p === "rush") key = look === "side" ? "boar_charge" : `boar_run_${look}`;
       else ((key = `boar_walk_${look}`), (bob = true));
+      break;
+    }
+    // the deep monsters: their walk while moving, a frame of the special row for each move
+    case "tongue": {
+      const p = m.ai.s.phase;
+      if (p !== "wander") dir = m.ai.s.lashDir;
+      if (p === "puff") still = "frog_special_0";
+      else if (p === "lash") still = "frog_special_2";
+      else if (p === "retract") still = "frog_special_3";
+      else ((key = `frog_walk_${lookOf(dir)}`), (bob = true));
+      if (p !== "wander") dir = { x: dir.x || 1, y: 0 };
+      break;
+    }
+    case "lurker": {
+      const p = m.ai.s.phase;
+      if (p === "hidden") still = "snake_special_0";
+      else if (p === "ripple") still = "snake_special_1";
+      else if (m.ai.s.phaseMs < 400) still = "snake_special_2";
+      else still = "snake_special_3";
+      dir = { x: dir.x || 1, y: 0 };
+      break;
+    }
+    case "swarm": {
+      const p = m.ai.s.phase;
+      if (p === "dive") dir = m.ai.s.diveDir;
+      if (p === "fold") still = "bat_special_0";
+      else if (p === "dive") still = m.ai.s.phaseMs < 250 ? "bat_special_1" : "bat_special_2";
+      else if (p === "dazed") still = "bat_special_3";
+      else key = `bat_walk_${lookOf(dir)}`;
+      if (p !== "hover") dir = { x: dir.x || 1, y: 0 };
+      break;
+    }
+    case "shell": {
+      const p = m.ai.s.phase;
+      if (p === "claw") still = "crab_special_0";
+      else if (p === "snap") still = "crab_special_1";
+      else if (p === "flipped") still = "crab_special_3";
+      else ((key = `crab_walk_${lookOf(dir)}`), (bob = true));
+      if (p !== "wander") dir = { x: dir.x || 1, y: 0 };
       break;
     }
     case "pack": {

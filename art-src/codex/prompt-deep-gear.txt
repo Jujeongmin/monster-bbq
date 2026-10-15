@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image: three gear icons for a cute pixel-art hunting game, side by side. Match the attached reference icons exactly in style: chunky pixel art drawn on an 8 px grid, dark 1-pixel outline, warm saturated palette, simple readable shapes, comic and cute, not realistic. Slight three-quarter top-down view like the reference.
+
+Save as art-src/codex/raw/deep_gear.png — a WIDE image exactly 3 times as wide as it is tall (for example 1536x512): 3 equal square cells side by side, one object centred in each cell, all three about the same size (filling about 60% of the cell). Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no frame. Nothing touches its cell edge.
+
+cell 1 (swamp boots): a pair of tall dark-green rubber wading boots with brown leather straps at the top, a few drops of swamp mud on the toes.
+cell 2 (lantern): a small iron hand lantern with a ring handle on top and a warm yellow-orange flame glowing inside its glass.
+cell 3 (stamina tank): a round brass canteen in a leather harness with shoulder straps, a little green gauge window on its front and a small red heart stamped on the cap.
+
+Reply only with the saved file path.

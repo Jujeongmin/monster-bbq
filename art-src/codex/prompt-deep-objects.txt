@@ -1,0 +1,8 @@
+Use your image generation tool (do not write code to draw) to create ONE image, 1536x1024: six map objects in a strict grid of 3 columns x 2 rows of equal 512x512 cells on a perfectly flat solid magenta #FF00FF background (no glow, no shadow), each centred and sitting on the cell's bottom area, nothing touching the cell edges. No text.
+
+STYLE: the same chunky quarter-view (high top-down) pixel art as the attached forest objects (tree, rock, bush) — every art pixel a solid 4x4 block, 1-art-pixel dark outline, 2-3 flat tones, same palette, about the same sizes as the attached ones.
+
+row 1 (swamp): a tall clump of reeds and cattails (tree-sized), a murky water puddle with lily pads (bush-sized, flat), a rotten mossy fallen log (rock-sized)
+row 2 (cave): a tall stalagmite rock spire with moss at its base (tree-sized), a cluster of glowing pale-cyan crystals (bush-sized), a dark cave boulder with moss (rock-sized)
+
+Save as art-src/codex/raw/deep_objects.png. Reply only with the saved file path.

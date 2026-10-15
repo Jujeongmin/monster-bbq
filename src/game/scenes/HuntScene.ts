@@ -12,6 +12,7 @@ import { startCapture, stepCapture, tapCapture, type Capture } from "../../../sh
 import { bind, dart, stun } from "../../../shared/hunt/status";
 import { starsOf, takeYield, type TakeHow } from "../../../shared/hunt/stars";
 import { mashTusk } from "../../../shared/hunt/tusk";
+import { flipShell, shellDamageMul } from "../../../shared/hunt/deepMonsters";
 import { dropFor } from "../../../shared/hunt/drops";
 import { clampToField, distance, moveByInput, pushOutOfRects, unit, type Rect } from "../../../shared/hunt/geometry";
 import { fireHarpoon, harpoonDone, harpoonHit, reelStep, stepHarpoon, type Harpoon } from "../../../shared/hunt/harpoon";
@@ -22,10 +23,10 @@ import type { Vec } from "../../../shared/hunt/types";
 import type { Zone } from "../../../shared/save";
 import { FLOORS, isFloorId, nearestExit, type FloorDef, type FloorId, type Period } from "../../../shared/content/floors";
 import { itemName, t, type StringKey } from "../../i18n";
-import { artUrl } from "../art";
+import { artUrl, hasArt } from "../art";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 import { createCharacterAnims, loadCharacterArt, lookOf, stepBob } from "../hunt/anims";
-import { angerFlock, CHAR_SCALE, createMob, drawMob, isMobVulnerable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
+import { angerFlock, CHAR_SCALE, createMob, drawMob, isMobVulnerable, isTargetable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { fleerHit } from "../../../shared/hunt/fleer";
 import { joystickVector } from "../joystick";
 import { addButton, addGauge, KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiButton, type UiGauge } from "../ui";
@@ -55,6 +56,8 @@ const SLASH_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.8, radius: 28 };
 const GATHER_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.58, radius: 22 };
 const SIDE_BTN = { x: GAME_WIDTH * 0.76, y: GAME_HEIGHT * 0.86, radius: 22 };
 // a mash every this often while auto-mash is on (pause menu)
+// the deep floors' ground tiles (art/test/bg/<ground>.png), loaded only on their own floor
+const DEEP_GROUNDS = ["swamp", "cave"] as const;
 const AUTO_MASH_MS = 120;
 const AUTO_MASH_KEY = "monster-bbq:autoMash";
 // a missed harpoon reels back this long before it can fly again (hunt v3 design 4.2)
@@ -68,7 +71,11 @@ export interface HuntData {
   period: Period;
   // from the upgrades (shared/growth): what the hunter hits for, how far the harpoon flies, how much
   // health, how big the bag
-  stats: { meleeDamage: number; rangedDamage: number; rangedRange: number; maxHp: number };
+  // damageTaken: the apron armour's share of each hit that gets through (save v7)
+  stats: { meleeDamage: number; rangedDamage: number; rangedRange: number; maxHp: number; damageTaken: number };
+  // the gear that opens the deep floors (hunt v3 design 4.6): boots for the swamp, the lantern's light
+  // radius in the cave (0 without one)
+  gear: { boots: boolean; light: number };
   bagSlots: number;
   // dishes packed for this hunt and the health each gives back (its level price, shared/kitchen/dish): eat one
   // with its button (or keys 1-3)
@@ -208,6 +215,8 @@ export class HuntScene extends Phaser.Scene {
   // what a side weapon has done to each monster, shown above its head (Zzz, z, @@, #)
   private statusLabels = new Map<Mob, Phaser.GameObjects.Text>();
   private slamRing: { at: Vec; ms: number } | null = null;
+  // the cave's dark with the lantern's hole around the hunter
+  private dark: Phaser.GameObjects.RenderTexture | null = null;
 
   constructor() {
     super("hunt");
@@ -260,6 +269,7 @@ export class HuntScene extends Phaser.Scene {
     this.bossSeen = false;
     this.statusLabels = new Map();
     this.slamRing = null;
+    this.dark = null;
     try {
       this.autoMash = localStorage.getItem(AUTO_MASH_KEY) === "1";
     } catch {
@@ -269,6 +279,7 @@ export class HuntScene extends Phaser.Scene {
 
   preload() {
     this.load.image("grass", artUrl("test/bg/grass.png"));
+    for (const g of DEEP_GROUNDS) if (this.floorDef.ground === g && hasArt(`test/bg/${g}.png`)) this.load.image(g, artUrl(`test/bg/${g}.png`));
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
     for (const k of ["ring_empty", "ring_full", "face_fine", "face_tired"]) this.load.image(`stamina_${k}`, artUrl(`test/ui/stamina/${k}.png`));
     this.load.image(`side_${this.huntData.side}`, artUrl(`test/ui/side/${this.huntData.side}.png`));
@@ -283,7 +294,8 @@ export class HuntScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.tileSprite(0, 0, this.floorDef.world.w, this.floorDef.world.h, "grass").setOrigin(0).setDepth(-1000);
+    this.add.tileSprite(0, 0, this.floorDef.world.w, this.floorDef.world.h, this.textures.exists(this.floorDef.ground) ? this.floorDef.ground : "grass").setOrigin(0).setDepth(-1000);
+    if (this.floorDef.ground === "cave") this.makeDark();
     for (const o of this.plan.objects) {
       const sprite = this.add.image(o.x, o.y, `obj_${o.kind}`).setOrigin(0.5, 1).setDepth(o.y);
       this.obstacles.push(o.foot);
@@ -385,6 +397,7 @@ export class HuntScene extends Phaser.Scene {
     this.drawStatusLabels();
     this.fadeCanopies();
     this.drawFx(dt);
+    this.drawDark();
     this.drawHud();
   }
 
@@ -541,7 +554,8 @@ export class HuntScene extends Phaser.Scene {
     const use = this.nearestUse();
     const at = use?.kind === "node" ? use.node.node : use?.kind === "sleeper" ? mobPos(use.mob) : use?.kind === "exit" ? this.floorDef.exits.find((e) => e.id === use.id)! : use ? this.floorDef.down! : null;
     this.gatherHint.setVisible(!!at && !this.gathering && !this.touch);
-    if (at) this.gatherHint.setText(t(use!.kind === "exit" ? "hunt.useExit" : use!.kind === "down" ? "hunt.useDown" : use!.kind === "sleeper" ? "hunt.take" : "hunt.gather")).setPosition(at.x, at.y - 34);
+    const need = use?.kind === "down" ? this.downNeed() : null;
+    if (at) this.gatherHint.setText(t(use!.kind === "exit" ? "hunt.useExit" : use!.kind === "down" ? (need === "boots" ? "hunt.needBoots" : need === "lantern" ? "hunt.needLantern" : "hunt.useDown") : use!.kind === "sleeper" ? "hunt.take" : "hunt.gather")).setPosition(at.x, at.y - 34);
     this.gatherButton?.setVisible(!!use);
     this.gatherButtonLabel?.setVisible(!!use);
 
@@ -659,6 +673,7 @@ export class HuntScene extends Phaser.Scene {
   private hurtPlayer(damage: number, dir: Vec) {
     const p = this.player;
     if (p.down) return;
+    damage = Math.max(1, Math.round(damage * this.huntData.stats.damageTaken));
     this.run.stamina = Math.max(0, this.run.stamina - damage);
     p.pos = clampToField(pushOutOfRects({ x: p.pos.x + dir.x * 24, y: p.pos.y + dir.y * 24 }, this.obstacles, H.player.radius), this.floorDef.field);
     p.swingMs = 0;
@@ -708,10 +723,24 @@ export class HuntScene extends Phaser.Scene {
   private goDown() {
     const next = this.run.floor + 1;
     if (!this.floorDef.down || !isFloorId(next) || this.ended) return;
+    const need = this.downNeed();
+    if (need) {
+      this.popText(this.player.pos.x, this.player.pos.y - 44, t(need === "boots" ? "hunt.needBoots" : "hunt.needLantern"), "#ff8080", 900);
+      return;
+    }
     this.run.report.push({ down: next });
     this.ended = true;
     this.cameras.main.fadeOut(300, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => this.scene.restart({ ...this.huntData, run: { ...this.run, floor: next } }));
+  }
+
+  // The next floor's gear the hunter lacks (the server refuses such a report too), or null.
+  private downNeed(): "boots" | "lantern" | null {
+    const next = this.run.floor + 1;
+    const need = isFloorId(next) ? FLOORS[next].needs : null;
+    if (need === "boots" && !this.huntData.gear.boots) return "boots";
+    if (need === "lantern" && this.huntData.gear.light <= 0) return "lantern";
+    return null;
   }
 
   // "Floor 2 · Deep forest" sliding across on arrival (hunt v3 design 5.1).
@@ -771,7 +800,7 @@ export class HuntScene extends Phaser.Scene {
   private updateHarpoon(dt: number) {
     if (this.harpoon) {
       const h = stepHarpoon(this.harpoon, H.harpoon.speed, dt);
-      const live = this.mobs.filter((m) => !m.dead).map((m) => ({ pos: mobPos(m), mob: m }));
+      const live = this.mobs.filter((m) => !m.dead && isTargetable(m)).map((m) => ({ pos: mobPos(m), mob: m }));
       const struck = harpoonHit(h.tip, live, H.harpoon.bodyOffsetY, H.harpoon.hitRadius)?.mob;
       if (struck) {
         this.harpoon = null;
@@ -835,7 +864,7 @@ export class HuntScene extends Phaser.Scene {
   private landSlash(comboStep: number, aim: Vec) {
     const p = this.player;
     if (p.down || this.ended) return;
-    const live = this.mobs.filter((m) => !m.dead && m !== this.reeling).map((m) => ({ pos: mobPos(m), mob: m }));
+    const live = this.mobs.filter((m) => !m.dead && m !== this.reeling && isTargetable(m)).map((m) => ({ pos: mobPos(m), mob: m }));
     const struck = coneTargets(p.pos, aim, live, this.melee.range, H.slashHalfAngle).map((x) => x.mob);
     this.slashArc = { at: p.pos, aim, ms: 120 };
     if (struck.length === 0) return;
@@ -847,13 +876,28 @@ export class HuntScene extends Phaser.Scene {
       const away = unit({ x: at.x - p.pos.x, y: at.y - p.pos.y }, aim);
       setMobPos(m, clampToField(pushOutOfRects({ x: at.x + away.x * hit.knockback, y: at.y + away.y * hit.knockback }, this.obstacles, mobRadius(m)), this.floorDef.field));
       this.applyHit(m, "melee", hit.damage, [hit.counter && "카운터!", hit.backAttack && "백어택!", hit.finisher && "막타!"]);
+      if (hit.finisher) this.flip(m);
     }
     // game feel: one freeze per swing, longer and with a shake on big hits
     this.hitStop(big ? H.hitStopMs * 2 : H.hitStopMs);
     if (big) this.cameras.main.shake(120, 0.012);
   }
 
+  // The glow-shroom crab turned on its back (a finisher or a firecracker): soft all over for a while.
+  private flip(m: Mob) {
+    if (m.dead || m.ai.kind !== "shell" || m.ai.s.phase === "flipped") return;
+    m.ai = { kind: "shell", s: flipShell(m.ai.s) };
+    const at = mobPos(m);
+    this.popText(at.x, at.y - 40, t("hunt.flipped"), "#ffd166", 900);
+  }
+
   private applyHit(m: Mob, kind: WeaponKind, damage: number, tagList: (string | false)[]) {
+    // the crab's shell takes most of a hit from the front
+    if (m.ai.kind === "shell") {
+      const mul = shellDamageMul(m.ai.s, this.player.pos);
+      damage = Math.max(1, Math.round(damage * mul));
+      if (mul < 1) tagList = [...tagList, t("hunt.shell")];
+    }
     m.hp -= damage;
     m.hits = recordHit(m.hits, kind);
     mobWasHit(m);
@@ -998,7 +1042,7 @@ export class HuntScene extends Phaser.Scene {
     this.darts = this.darts.filter((d) => {
       const h = stepHarpoon(d.h, H.sling.speed, dt);
       d.sprite.setPosition(h.tip.x, h.tip.y).setRotation(Math.atan2(h.dir.y, h.dir.x));
-      const live = this.mobs.filter((m) => !m.dead && m !== this.capturing?.mob).map((m) => ({ pos: mobPos(m), mob: m }));
+      const live = this.mobs.filter((m) => !m.dead && m !== this.capturing?.mob && isTargetable(m)).map((m) => ({ pos: mobPos(m), mob: m }));
       const struck = harpoonHit(h.tip, live, H.harpoon.bodyOffsetY, H.harpoon.hitRadius)?.mob;
       if (struck) {
         d.sprite.destroy();
@@ -1043,6 +1087,7 @@ export class HuntScene extends Phaser.Scene {
       for (const m of this.mobs) {
         if (m.dead || distance(mobPos(m), b.at) > H.firecracker.radius) continue;
         m.status = stun(m.status, H.firecracker.stunMs);
+        this.flip(m);
         if (m.ai.kind === "pack") {
           const away = unit({ x: mobPos(m).x - b.at.x, y: mobPos(m).y - b.at.y });
           setMobPos(m, clampToField(pushOutOfRects({ x: mobPos(m).x + away.x * 30, y: mobPos(m).y + away.y * 30 }, this.obstacles, mobRadius(m)), this.floorDef.field));
@@ -1099,6 +1144,8 @@ export class HuntScene extends Phaser.Scene {
     const cam = this.cameras.main;
     const target = { x: cam.worldView.x + RING.x + RING.r + 30, y: cam.worldView.y + RING.y - 6 };
     for (let i = 0; i < count; i++) {
+      // the deep floors' item icons come once their art is approved
+      if (!this.textures.exists(`icon_${item.id}`)) break;
       const icon = this.add.image(at.x, at.y - 30, `icon_${item.id as ItemId}`).setDepth(9800);
       this.tweens.add({ targets: icon, x: target.x, y: target.y, scale: 0.6, delay: 120 * i, duration: 600, ease: "Cubic.easeIn", onComplete: () => icon.destroy() });
     }
@@ -1150,8 +1197,15 @@ export class HuntScene extends Phaser.Scene {
     for (const m of this.mobs) {
       if (m.dead || m === this.reeling) continue;
       if (m === this.capturing?.mob) continue;
-      const step = stepMob(m, dt, seen, this.floorDef.field, this.obstacles);
+      const step = stepMob(m, dt, seen, this.floorDef.field, this.obstacles, this.dark ? this.huntData.gear.light : 0);
       if (step.hurt) this.hurtPlayer(step.hurt.damage, step.hurt.dir);
+      if (step.pull && !this.player.down) {
+        // the frog's tongue reels the hunter in
+        const p = this.player;
+        const to = unit({ x: mobPos(m).x - p.pos.x, y: mobPos(m).y - p.pos.y }, p.aim);
+        p.pos = clampToField(pushOutOfRects({ x: p.pos.x + to.x * step.pull, y: p.pos.y + to.y * step.pull }, this.obstacles, H.player.radius), this.floorDef.field);
+        this.hunter.setPosition(p.pos.x, p.pos.y);
+      }
       if (step.grabbed && !this.player.down) {
         // pinned under the tusk boss: mash to break free
         this.pinned = m;
@@ -1301,6 +1355,33 @@ export class HuntScene extends Phaser.Scene {
     }
   }
 
+  // The cave (hunt v3 design 3): dark but for the lantern's light around the hunter, soft at its edge.
+  private makeDark() {
+    const r = Math.max(1, this.huntData.gear.light);
+    const key = `light_${r}`;
+    if (!this.textures.exists(key)) {
+      const size = Math.ceil(r * 2.5);
+      const tex = this.textures.createCanvas(key, size, size)!;
+      const c = tex.getContext();
+      const g = c.createRadialGradient(size / 2, size / 2, r * 0.6, size / 2, size / 2, size / 2);
+      g.addColorStop(0, "rgba(255,255,255,1)");
+      g.addColorStop(1, "rgba(255,255,255,0)");
+      c.fillStyle = g;
+      c.fillRect(0, 0, size, size);
+      tex.refresh();
+    }
+    this.dark = this.add.renderTexture(0, 0, GAME_WIDTH, GAME_HEIGHT).setOrigin(0).setScrollFactor(0).setDepth(9400);
+  }
+
+  private drawDark() {
+    if (!this.dark) return;
+    const key = `light_${Math.max(1, this.huntData.gear.light)}`;
+    const size = this.textures.get(key).getSourceImage().width;
+    const view = this.cameras.main.worldView;
+    const at = { x: this.hunter.x - view.x, y: this.hunter.y - view.y - 16 };
+    this.dark.clear().fill(0x07060c, 0.92).erase(key, at.x - size / 2, at.y - size / 2);
+  }
+
   private hitStop(ms: number) {
     this.hitStopMs = Math.max(this.hitStopMs, ms);
     this.anims.pauseAll();
@@ -1317,7 +1398,7 @@ export class HuntScene extends Phaser.Scene {
     if (!item) return;
     const name = itemName(key);
     const color = item.grade === "premium" ? "#ffd166" : "#ffffff";
-    const icon = this.add.image(x - 2, y, `icon_${item.id as ItemId}`).setOrigin(1, 0.5).setDepth(9001);
+    const icon = this.add.image(x - 2, y, this.textures.exists(`icon_${item.id}`) ? `icon_${item.id as ItemId}` : "__DEFAULT").setOrigin(1, 0.5).setDepth(9001);
     const label = this.add.text(x, y, name, { ...TEXT_SMALL, color }).setOrigin(0, 0.5).setDepth(9001);
     this.tweens.add({ targets: [icon, label], y: y - 16, alpha: 0, delay: 500, duration: 900, ease: "Cubic.easeOut", onComplete: () => (icon.destroy(), label.destroy()) });
   }

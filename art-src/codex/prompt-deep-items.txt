@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image, 1536x1152: twelve item icons in a strict grid of 4 columns x 3 rows of equal 384x384 cells on a perfectly flat solid magenta #FF00FF background (no glow, no shadow), each centred in its cell, nothing touching the cell edges. No text.
+
+STYLE: real low-resolution pixel art matching the attached item icons exactly — every art pixel a solid 8x8 block, 1-art-pixel dark outline, 2-3 flat tones per material, no gradients, no glow, no anti-aliasing, same warm palette. Each icon about 21 x 20 art pixels (the size of the attached meat and mushroom icons).
+
+row 1: frog leg (a plump raw green-skinned frog leg), frog skin (a folded green spotted hide), raw snake meat (a coiled pale pink fillet), snake scales (a small pile of olive-green scales)
+row 2: bat wing (a leathery purple bat wing), raw crab meat (white-and-orange crab meat chunks), crab shell (an orange bumpy crab shell piece), glow mushroom (a pale cyan glowing mushroom)
+row 3: iron ore (a grey rock with rusty-orange and silver ore flecks), a ground spot of glow mushrooms growing from moss (gathering spot, a bit bigger, about 28 x 22 art pixels), a ground spot of iron ore jutting from a mossy rock (gathering spot, about 28 x 22 art pixels), cell left empty magenta
+
+Save as art-src/codex/raw/deep_items.png. Reply only with the saved file path.

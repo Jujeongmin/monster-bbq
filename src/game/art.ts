@@ -14,3 +14,6 @@ export function artUrl(path: string): string {
   const v = artVersions[path];
   return v ? `${src}${src.includes("?") ? "&" : "?"}v=${v}` : src;
 }
+
+// Whether art/<path> is in the game yet (new art goes in only once approved).
+export const hasArt = (path: string): boolean => `../../art/${path}` in URLS;
