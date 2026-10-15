@@ -1,43 +1,62 @@
 import { describe, expect, it } from "vitest";
+import { FLOORS } from "../content/floors";
 import { MONSTERS } from "../content/monsters";
-import { HUNT_START, planHunt } from "./plan";
+import { planFloor, type FloorPlan } from "./plan";
 
-const footOverlaps = (plan: ReturnType<typeof planHunt>, x: number, y: number, r: number) =>
+const footOverlaps = (plan: FloorPlan, x: number, y: number, r: number) =>
   plan.objects.some((o) => x > o.foot.x0 - r && x < o.foot.x1 + r && y > o.foot.y0 - r && y < o.foot.y1 + r);
 
-describe("planHunt", () => {
-  it("lays out the same hunting ground for the same seed", () => {
-    expect(planHunt(42, "forest")).toEqual(planHunt(42, "forest"));
+describe("planFloor", () => {
+  it("lays out the same floor for the same seed", () => {
+    expect(planFloor(42, 1, "morning")).toEqual(planFloor(42, 1, "morning"));
   });
-  it("lays out a different ground for a different seed", () => {
-    expect(planHunt(42, "forest").spawns).not.toEqual(planHunt(43, "forest").spawns);
+  it("keeps the ground of a floor fixed and moves only who and what is on it", () => {
+    const a = planFloor(42, 1, "morning");
+    const b = planFloor(43, 1, "morning");
+    expect(a.objects).toEqual(b.objects);
+    expect(a.spawns).not.toEqual(b.spawns);
+    expect(a.nodes).not.toEqual(b.nodes);
   });
-  it("gives every spawn and gathering spot its own id", () => {
-    const p = planHunt(7, "forest");
-    const ids = [...p.spawns.map((s) => s.id), ...p.nodes.map((n) => n.id)];
-    expect(new Set(ids).size).toBe(ids.length);
+  it("gives each floor its own ground", () => {
+    expect(planFloor(42, 1, "morning").objects).not.toEqual(planFloor(42, 2, "morning").objects);
   });
-  it("starts with the forest roster and keeps two refill waves of it", () => {
-    const p = planHunt(7, "forest");
-    const wave0 = p.spawns.filter((s) => s.wave === 0);
-    const count = (m: string) => wave0.filter((s) => s.monster === m).length;
-    expect([count("boar"), count("rabbit"), count("bee"), count("chicken")]).toEqual([3, 3, 2, 6]);
-    expect(p.spawns.filter((s) => s.wave === 1).length).toBe(wave0.length);
-    expect(p.spawns.filter((s) => s.wave === 2).length).toBe(wave0.length);
-    expect(p.nodes.length).toBe(10);
+  it("names every spawn and gathering spot after its floor, each once", () => {
+    for (const floor of [1, 2] as const) {
+      const p = planFloor(7, floor, "morning");
+      const ids = [...p.spawns.map((s) => s.id), ...p.nodes.map((n) => n.id)];
+      expect(new Set(ids).size).toBe(ids.length);
+      for (const id of ids) expect(id.startsWith(`${floor}-`)).toBe(true);
+    }
   });
-  it("keeps monsters and gathering spots off tree bases and out of the start area", () => {
-    for (const seed of [1, 2, 3]) {
-      const p = planHunt(seed, "forest");
-      for (const s of p.spawns) {
-        expect(footOverlaps(p, s.x, s.y, MONSTERS[s.monster].radius)).toBe(false);
-        expect(Math.hypot(s.x - HUNT_START.x, s.y - HUNT_START.y)).toBeGreaterThanOrEqual(150);
+  it("brings the floor's roster for the time of day, with its refill waves", () => {
+    const count = (p: FloorPlan, m: string, wave = 0) => p.spawns.filter((s) => s.wave === wave && s.monster === m).length;
+    const m1 = planFloor(7, 1, "morning");
+    expect([count(m1, "rabbit"), count(m1, "chicken"), count(m1, "boar")]).toEqual([3, 6, 0]);
+    const a1 = planFloor(7, 1, "afternoon");
+    expect([count(a1, "rabbit"), count(a1, "chicken")]).toEqual([4, 3]);
+    const m2 = planFloor(7, 2, "morning");
+    expect([count(m2, "boar"), count(m2, "bee"), count(m2, "rabbit"), count(m2, "chicken")]).toEqual([3, 2, 1, 0]);
+    const wave0 = m1.spawns.filter((s) => s.wave === 0).length;
+    expect(m1.spawns.filter((s) => s.wave === 2).length).toBe(wave0);
+    expect(m1.nodes.length).toBe(8);
+  });
+  it("keeps monsters, gathering spots and trees clear of the start, the exits and the way down", () => {
+    for (const floor of [1, 2] as const) {
+      const f = FLOORS[floor];
+      const keep = [f.start, ...f.exits, ...(f.down ? [f.down] : [])];
+      for (const seed of [1, 2, 3]) {
+        const p = planFloor(seed, floor, "morning");
+        for (const s of p.spawns) {
+          expect(footOverlaps(p, s.x, s.y, MONSTERS[s.monster].radius)).toBe(false);
+          expect(Math.hypot(s.x - f.start.x, s.y - f.start.y)).toBeGreaterThanOrEqual(150);
+        }
+        for (const n of p.nodes) expect(footOverlaps(p, n.x, n.y, 6)).toBe(false);
+        for (const k of keep) expect(footOverlaps(p, k.x, k.y, 24)).toBe(false);
       }
-      for (const n of p.nodes) expect(footOverlaps(p, n.x, n.y, 6)).toBe(false);
     }
   });
   it("keeps a chicken flock together", () => {
-    const p = planHunt(9, "forest");
+    const p = planFloor(9, 1, "morning");
     const flocks = new Map<string, { x: number; y: number }[]>();
     for (const s of p.spawns.filter((s) => s.flock)) flocks.set(s.flock!, [...(flocks.get(s.flock!) ?? []), s]);
     expect(flocks.size).toBe(6);

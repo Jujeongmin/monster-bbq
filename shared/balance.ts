@@ -6,13 +6,10 @@ import type { HitTuning, WeaponKind, WeaponStats } from "./hunt/combat";
 import type { DishId } from "./content/dishes";
 import type { ItemId } from "./content/items";
 import type { UpgradeId } from "./content/upgrades";
-import type { Field } from "./hunt/types";
 
 // Every hunting number lives here. Prototype values from plan 01; tuned in the playtest.
 export const BALANCE: {
   hunt: {
-    world: { w: number; h: number };
-    field: Field;
     premiumMaxRangedHits: number;
     player: { maxHp: number; speed: number; depthSpeedRatio: number; radius: number };
     weapons: Record<WeaponKind, WeaponStats>;
@@ -36,7 +33,8 @@ export const BALANCE: {
     chicken: PackTuning & { peckDamage: number };
     // a hunt report needs at least this long per kill (server check, spec 7)
     minMsPerKill: number;
-    boarCount: number;
+    // a hunt report needs at least this long per way down taken (server check, hunt v3 design 5.3)
+    minMsPerFloor: number;
     bagSlots: number;
   };
   economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
@@ -76,9 +74,6 @@ export const BALANCE: {
   };
 } = {
   hunt: {
-    // top-down forest made of the 256 px ground tile, mirrored
-    world: { w: 1536, h: 1024 },
-    field: { minX: 16, maxX: 1520, minY: 24, maxY: 1008 },
     premiumMaxRangedHits: 2,
     player: { maxHp: 100, speed: 85, depthSpeedRatio: 0.9, radius: 6 },
     weapons: {
@@ -123,7 +118,8 @@ export const BALANCE: {
     bee: { speed: 55, keepDistance: 120, range: 160, aimMs: 650, cooldownMs: 1400, shotSpeed: 210, shotLifeMs: 1100, shotDamage: 12, shotRadius: 9 },
     chicken: { wanderSpeed: 16, wanderRadius: 40, chaseSpeed: 72, peckRange: 18, windupMs: 380, peckMs: 160, recoverMs: 750, hitRadius: 18, peckDamage: 8 },
     minMsPerKill: 1500,
-    boarCount: 8,
+    // the world and its walkable ground are per floor now (shared/content/floors.ts)
+    minMsPerFloor: 8000,
     bagSlots: 12,
   },
   // what each item is worth raw (premium parts pay double); lunches and the retired item shop priced by it
