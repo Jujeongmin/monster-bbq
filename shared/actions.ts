@@ -19,7 +19,7 @@ export type Action =
   | { type: "startHunt"; zone: Zone }
   | { type: "finishHunt"; huntId: string; events: HuntEvent[]; ko: boolean }
   | { type: "research"; dish: string }
-  | { type: "upgradeDish"; dish: string }
+  | { type: "upgradeDish"; dish: string; from?: number }
   | { type: "openShop"; menu: { dish: string; sets: number }[] }
   | { type: "finishService"; serviceId: string; served: { customer: string; dish: string }[]; left: string[] }
   | { type: "buyUpgrade"; id: string }
@@ -122,11 +122,11 @@ function payLevel(save: SaveData, dish: DishId, target: number): { save: SaveDat
 }
 
 // Research (restaurant v2 design 3): a dish opens once every ingredient of it has been brought home.
-// A second press finds it known and changes nothing.
+// A second press (or a retry after a lost reply) finds it known and changes nothing.
 function research(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
   if (!isDishId(a.dish)) return { save, error: "bad_action" };
   if (save.stage !== "kitchen") return { save, error: "wrong_stage" };
-  if (save.dishes[a.dish]) return { save, error: "known" };
+  if (save.dishes[a.dish]) return { save };
   if (!RECIPES[a.dish].items.every((id) => save.seenItems.includes(id))) return { save, error: "unseen" };
   return payLevel(save, a.dish, 1);
 }
@@ -136,6 +136,12 @@ function upgradeDish(save: SaveData, a: Record<string, unknown>): { save: SaveDa
   if (save.stage !== "kitchen") return { save, error: "wrong_stage" };
   const lv = save.dishes[a.dish];
   if (!lv) return { save, error: "unknown_dish" };
+  // `from` is the level the client saw: a retry after a lost reply finds the dish already past it and
+  // changes nothing, so a slow network never pays for two levels
+  if (a.from !== undefined) {
+    if (typeof a.from !== "number" || !Number.isInteger(a.from) || a.from > lv) return { save, error: "bad_action" };
+    if (a.from < lv) return { save };
+  }
   return payLevel(save, a.dish, lv + 1);
 }
 
@@ -143,7 +149,9 @@ function upgradeDish(save: SaveData, a: Record<string, unknown>): { save: SaveDa
 // 1..MAX_SETS sets each. The sets come out of the fridge now and become tonight's plates; what is left
 // at closing is thrown away. The server's seed brings the customers.
 function openShop(save: SaveData, a: Record<string, unknown>, ctx: ActionContext): { save: SaveData; error?: string } {
-  if (save.stage !== "kitchen" || save.service) return { save, error: "wrong_stage" };
+  if (save.stage !== "kitchen") return { save, error: "wrong_stage" };
+  // already open (a retry after a lost reply): tonight stands as it was opened, nothing taken twice
+  if (save.service) return { save };
   const m = a.menu;
   if (!Array.isArray(m) || m.length === 0) return { save, error: "no_menu" };
   const bad = { save, error: "bad_menu" };

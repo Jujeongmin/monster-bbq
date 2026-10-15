@@ -49,7 +49,7 @@ export function DishUpgrade({ save, busy, act }: { save: SaveData; busy: boolean
             ) : (
               <span className="upgrade-max">{t("upgrade.max")}</span>
             )}
-            <button className="ui-btn" disabled={busy || why !== null} onClick={() => act({ type: "upgradeDish", dish: id })}>
+            <button className="ui-btn" disabled={busy || why !== null} onClick={() => act({ type: "upgradeDish", dish: id, from: lv })}>
               {why ?? t("kitchen.upgradeBuy")}
             </button>
           </div>

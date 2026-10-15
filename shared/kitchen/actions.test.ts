@@ -14,10 +14,10 @@ describe("research", () => {
     expect(r.save.gold).toBe(800);
     expect(r.save.items).toEqual({ "boar_belly:normal": 1 });
   });
-  it("refuses a second research of the same dish (a double click pays once)", () => {
+  it("takes a resent research (a double click, or a retry after a lost reply) as done, paying once", () => {
     const once = applyAction(ready, { type: "research", dish: "grilled_belly" }, ctx()).save;
     const twice = applyAction(once, { type: "research", dish: "grilled_belly" }, ctx());
-    expect(twice.error).toBe("known");
+    expect(twice.error).toBeUndefined();
     expect(twice.save).toBe(once);
   });
   it("needs every ingredient seen, the gold and a set in the fridge", () => {
@@ -45,6 +45,14 @@ describe("upgradeDish", () => {
     const twice = applyAction(once, { type: "upgradeDish", dish: "grilled_belly" }, ctx());
     expect(twice.save.dishes).toEqual({ grilled_belly: 3 });
     expect(twice.save.gold).toBe(4400 - 1200);
+  });
+  it("takes an upgrade resent from a level already passed (a retry after a lost reply) as done, charging once", () => {
+    const once = applyAction(owned, { type: "upgradeDish", dish: "grilled_belly", from: 1 }, ctx()).save;
+    const resent = applyAction(once, { type: "upgradeDish", dish: "grilled_belly", from: 1 }, ctx());
+    expect(resent.error).toBeUndefined();
+    expect(resent.save).toBe(once);
+    expect(applyAction(once, { type: "upgradeDish", dish: "grilled_belly", from: 2 }, ctx()).save.dishes).toEqual({ grilled_belly: 3 });
+    expect(applyAction(once, { type: "upgradeDish", dish: "grilled_belly", from: 3 }, ctx()).error).toBe("bad_action");
   });
   it("refuses dishes not researched, the top level, no gold and no ingredients", () => {
     expect(applyAction(owned, { type: "upgradeDish", dish: "baeksuk" }, ctx()).error).toBe("unknown_dish");
@@ -87,10 +95,13 @@ describe("openShop", () => {
     expect(applyAction(stocked, { type: "openShop", menu: [{ dish: "baeksuk", sets: 1 }] }, ctx()).error).toBe("bad_menu");
     for (const sets of [0, 1.5, 100, "2"]) expect(applyAction(stocked, { type: "openShop", menu: [{ dish: "grilled_belly", sets }] }, ctx()).error).toBe("bad_menu");
   });
-  it("opens only from the kitchen and only once", () => {
+  it("opens only from the kitchen, and only once", () => {
     expect(applyAction({ ...stocked, stage: "settle" }, { type: "openShop", menu }, ctx()).error).toBe("wrong_stage");
     const open = applyAction(stocked, { type: "openShop", menu: [{ dish: "grilled_belly", sets: 1 }] }, ctx()).save;
-    expect(applyAction(open, { type: "openShop", menu: [{ dish: "grilled_belly", sets: 1 }] }, ctx()).error).toBe("wrong_stage");
+    // resent after it opened (a lost reply): the open service stands, nothing is taken twice
+    const again = applyAction(open, { type: "openShop", menu: [{ dish: "grilled_belly", sets: 1 }] }, ctx());
+    expect(again.error).toBeUndefined();
+    expect(again.save).toBe(open);
   });
 });
 
