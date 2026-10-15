@@ -1,0 +1,11 @@
+Use your image generation tool (do not write code to draw) to create ONE image, 1536x768: one panel.
+
+The character is Bandal exactly as he looks in the attached in-game sprites (shown enlarged 8x): a big round Asian black bear cook with a white crescent on the chest, a red-and-cream bandana, a cream apron, small dark eyes, stern but kind. 
+
+STYLE IS THE MOST IMPORTANT RULE: real low-resolution pixel art that matches those sprites. Draw on a coarse grid where every art pixel is a solid 8x8 block of one flat colour (so a 1536-wide panel is 192 art pixels wide). Bandal is about 80 art pixels tall, so he is only about twice his in-game size. Use the same limited palette as the sprites (about 20 colours: the black-brown fur shades, cream, the bandana reds, a little blush pink), a 1-art-pixel dark outline, flat shading with 2-3 tones per material, NO gradients, NO soft painting, NO glow, NO anti-aliasing, NO fine fur texture, NO tiny details smaller than one 8x8 block. It must look hand-made like the sprites, not like an illustration.
+
+Background of every panel: a flat dark warm brown, with a few chunky pixel speed lines in two darker/lighter browns radiating from behind him, nothing else. No text, no letters, no speech bubbles.
+
+panel "secret smile": Bandal from the chest up, turned a little aside, eyes closed in a happy curve, pink blush on his cheeks, one paw shyly adjusting his bandana, two or three chunky pixel sparkles around him.
+
+Save as art-src/codex/raw/cutin2_c.png. Reply only with the saved file path.
