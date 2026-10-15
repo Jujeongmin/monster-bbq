@@ -88,10 +88,51 @@ def blobs(im: Image.Image, min_px: int):
     return keep
 
 
+def dark(p) -> bool:
+    return max(p[:3]) < 70
+
+
+def grey(p) -> bool:
+    return max(p[:3]) - min(p[:3]) < 24 and not dark(p)
+
+
+def clean_edges(im: Image.Image) -> int:
+    # Specks and stray shadow lines Codex left around the pieces (user-approved cleanup 2026-10-15:
+    # pixels are only erased, never drawn): grey pixels on a piece's outside edge, and pixels hanging on
+    # by at most one neighbour or sitting on the outline with nothing but outline around. Repeated until nothing changes.
+    px = im.load()
+    erased = 0
+
+    def opaque(x, y):
+        return 0 <= x < im.width and 0 <= y < im.height and px[x, y][3] > 0
+
+    while True:
+        doomed = []
+        for y in range(im.height):
+            for x in range(im.width):
+                p = px[x, y]
+                if p[3] == 0:
+                    continue
+                n = sum(opaque(nx, ny) for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+                near = [px[nx, ny] for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)) if opaque(nx, ny)]
+                # a coloured speck sitting on the outline: only outline pixels around it
+                speck = n < 4 and not dark(p) and all(dark(q) for q in near)
+                # Codex's stray bright-red dots (one exact colour) on the outer edge
+                speck = speck or (n < 4 and p[:3] == (241, 45, 63))
+                if n <= 1 or (n < 4 and grey(p)) or speck:
+                    doomed.append((x, y))
+        if not doomed:
+            return erased
+        for x, y in doomed:
+            px[x, y] = (0, 0, 0, 0)
+        erased += len(doomed)
+
+
 def main():
     src = Image.open(SRC).convert("RGB")
     off = best_offset(src)
     small = sample(src, off)
+    print("erased outside the outlines:", clean_edges(small))
     pieces = blobs(small, 4)
     boxes = []
     for pts in pieces:

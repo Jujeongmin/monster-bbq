@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>주방 시안 · 메뉴판</title>
+<!-- Mock-up only: tonight's menu board. Left: researched dishes to pick from; right: the board with its
+     menu slots (2 open, the rest locked until the menu-slot upgrade), each line with sets -/+ and what it makes. -->
+<link rel="stylesheet" href="kit.css">
+<style>
+  .pick { position: absolute; left: 12px; top: 36px; width: 520px; display: grid; gap: 10px; }
+  .pick .card { height: 104px; display: flex; align-items: center; gap: 12px; padding: 0 4px; }
+  .pick .card > * { margin: -8px 0; }
+  .pick .card.on { opacity: 0.45; }
+  .pick .info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .pick .card .btn { width: 108px; }
+  .board { position: absolute; left: 552px; top: 30px; width: 628px; }
+  .board h3 { margin: 0 0 8px 8px; color: var(--brass); font-size: 24px; }
+  .line { height: 132px; margin-bottom: 12px; display: grid; grid-template-columns: 96px 1fr 168px; align-items: center; column-gap: 12px; padding: 0 4px; }
+  .line > * { margin: -8px 0; }
+  .line .what { display: flex; flex-direction: column; gap: 2px; }
+  .line .sets { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+  .line .n { width: 44px; text-align: center; font-weight: 700; font-size: 24px; }
+  .made { color: var(--good); font-weight: 700; }
+  .locked { height: 72px; display: flex; align-items: center; justify-content: center; color: #b89a74; }
+  .locked span { margin: -8px 0; }
+  .sum { margin: 4px 8px 0; display: flex; justify-content: space-between; color: var(--cream); }
+  .sum b { color: var(--brass); }
+</style>
+</head>
+<body>
+<div class="frame">
+  <img class="bg" src="../pixellab/shop2/bg_320_faithful.png" alt="">
+  <div class="dim"></div>
+  <div class="plate slice"><span>할매 돌판집 · 저녁 주방</span></div>
+  <div class="top slice">
+    <span><img src="../../art/test/ui/icon_day.png" alt="">2일째</span>
+    <span><img src="../../art/test/ui/icon_gold.png" alt="">500</span>
+  </div>
+  <div class="tabs">
+    <div class="tab off slice"><span>도감</span></div>
+    <div class="tab on slice"><span>메뉴판</span></div>
+    <div class="tab off slice"><span>강화</span></div>
+    <div class="tab off slice"><span>도시락</span></div>
+  </div>
+
+  <div class="panel slice">
+    <div class="pick">
+      <div class="card slice on">
+        <img class="dish" src="../../art/test/dishes/grilled_belly.png" alt="">
+        <div class="info"><span class="name">삼겹살 구이 · Lv 2</span><span class="small soft">46골드 · 4그릇</span></div>
+        <div class="btn off slice"><span>올림</span></div>
+      </div>
+      <div class="card slice">
+        <img class="dish" src="../../art/test/dishes/shiitake_grill.png" alt="">
+        <div class="info"><span class="name">표고구이 · Lv 1</span><span class="small soft">18골드 · 3그릇 · 재료 2세트</span></div>
+        <div class="btn slice"><span>올리기</span></div>
+      </div>
+      <div class="card slice">
+        <img class="dish" src="../../art/test/dishes/garlic_neck.png" alt="">
+        <div class="info"><span class="name">마늘 목살구이 · Lv 1</span><span class="small soft">50골드 · 3그릇 · 재료 1세트</span></div>
+        <div class="btn slice"><span>올리기</span></div>
+      </div>
+    </div>
+
+    <div class="board">
+      <h3>오늘 메뉴판 1/2</h3>
+      <div class="card slice line">
+        <img class="dish" src="../../art/test/dishes/grilled_belly.png" alt="">
+        <div class="what">
+          <span class="name">삼겹살 구이</span>
+          <span class="made">그릇 8개 · 51골드</span>
+          <span class="small soft">1세트 더 가능 · 특급 섞임 +10%</span>
+        </div>
+        <div class="sets">
+          <div class="sq slice"><span>−</span></div>
+          <span class="n">2</span>
+          <div class="sq slice"><span>+</span></div>
+        </div>
+      </div>
+      <div class="card slice locked soft"><span>빈 칸 · 왼쪽에서 요리를 올려 주세요</span></div>
+      <div class="card slice locked soft"><span>잠김 · 메뉴판 업그레이드로 열림</span></div>
+      <div class="sum"><span>오늘 밤 그릇 <b>8</b>개</span><span>다 팔면 <b>408</b>골드</span></div>
+    </div>
+  </div>
+
+  <div class="btn ready slice"><span>장사 시작</span></div>
+</div>
+</body>
+</html>

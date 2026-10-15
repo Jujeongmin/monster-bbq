@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>주방 시안 · 강화</title>
+<!-- Mock-up only: dish upgrades. One row a researched dish: its level as five brass pips, what the next
+     level brings (price, plates a set), what it costs (gold and sets of its own ingredients), the button. -->
+<link rel="stylesheet" href="kit.css">
+<style>
+  .rows { position: absolute; left: 12px; right: 12px; top: 36px; display: grid; gap: 12px; }
+  .row { height: 132px; display: grid; grid-template-columns: 96px 280px 1fr 300px 168px; align-items: center; column-gap: 12px; padding: 0 4px; }
+  .row > * { margin: -8px 0; }
+  .who { display: flex; flex-direction: column; gap: 6px; }
+  .pips { display: flex; gap: 4px; }
+  .pips b { width: 20px; height: 20px; border-style: solid; border-color: transparent; border-width: calc(3 * var(--k));
+    border-image: url("../ui-kit-pixel/out/btn_small.png") 3 fill / 8px stretch; }
+  .pips b.no { filter: grayscale(1) brightness(0.55); }
+  .next { display: flex; flex-direction: column; gap: 4px; }
+  .up { color: var(--good); font-weight: 700; }
+  .cost { display: flex; align-items: center; gap: 8px; }
+  .cost .slot { width: 52px; height: 52px; }
+  .cost .slot img { width: 42px; }
+  .row .btn { width: 168px; }
+  .max { color: var(--brass); font-weight: 700; text-align: center; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <img class="bg" src="../pixellab/shop2/bg_320_faithful.png" alt="">
+  <div class="dim"></div>
+  <div class="plate slice"><span>할매 돌판집 · 저녁 주방</span></div>
+  <div class="top slice">
+    <span><img src="../../art/test/ui/icon_day.png" alt="">2일째</span>
+    <span><img src="../../art/test/ui/icon_gold.png" alt="">1,250</span>
+  </div>
+  <div class="tabs">
+    <div class="tab off slice"><span>도감</span></div>
+    <div class="tab off slice"><span>메뉴판</span></div>
+    <div class="tab on slice"><span>강화</span></div>
+    <div class="tab off slice"><span>도시락</span></div>
+  </div>
+
+  <div class="panel slice">
+    <div class="rows">
+      <div class="card slice row">
+        <img class="dish" src="../../art/test/dishes/grilled_belly.png" alt="">
+        <div class="who"><span class="name">삼겹살 구이</span><span class="pips"><b></b><b></b><b class="no"></b><b class="no"></b><b class="no"></b></span></div>
+        <div class="next"><span class="up">가격 46 → 52</span><span class="up">세트당 4 → 4그릇</span></div>
+        <div class="cost"><span class="small">1,200골드 +</span><div class="slot slice"><img src="../../art/test/items/icon_boar_belly.png" alt=""></div><span class="small">×2</span></div>
+        <div class="btn slice"><span>강화</span></div>
+      </div>
+      <div class="card slice row">
+        <img class="dish" src="../../art/test/dishes/shiitake_grill.png" alt="">
+        <div class="who"><span class="name">표고구이</span><span class="pips"><b></b><b class="no"></b><b class="no"></b><b class="no"></b><b class="no"></b></span></div>
+        <div class="next"><span class="up">가격 18 → 21</span><span class="up">세트당 3 → 4그릇</span></div>
+        <div class="cost"><span class="small">270골드 +</span><div class="slot slice"><img src="../../art/test/items/icon_shiitake.png" alt=""></div><span class="small">×1</span></div>
+        <div class="btn slice"><span>강화</span></div>
+      </div>
+      <div class="card slice row">
+        <img class="dish" src="../../art/test/dishes/garlic_neck.png" alt="">
+        <div class="who"><span class="name">마늘 목살구이</span><span class="pips"><b></b><b class="no"></b><b class="no"></b><b class="no"></b><b class="no"></b></span></div>
+        <div class="next"><span class="up">가격 50 → 58</span><span class="up">세트당 3 → 4그릇</span></div>
+        <div class="cost"><span class="small">750골드 +</span><div class="slot slice"><img src="../../art/test/items/icon_boar_neck.png" alt=""></div><div class="slot slice"><img src="../../art/test/items/icon_wild_garlic.png" alt=""></div><span class="small">×1</span></div>
+        <div class="btn off slice"><span>재료 부족</span></div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="btn ready slice"><span>장사 시작</span></div>
+</div>
+</body>
+</html>
