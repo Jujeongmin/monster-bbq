@@ -162,8 +162,12 @@ export class ServiceScene extends Phaser.Scene {
     for (const g of this.guests) this.stepGuest(g, dt);
     const left = [...this.plates.values()].reduce((a, b) => a + b, 0);
     this.tally.setText(`${t("service.tally", { served: this.served.length, total: this.customers.length, gold: this.earned })} · ${t("service.platesLeft", { n: left })}`);
-    // the last plate is gone: no one else comes in (the ones inside still wait for theirs)
-    if (left === 0 && !this.ordersClosed) this.close();
+    // the last plate is gone: no one else comes in, and whoever is still seated without a plate goes home
+    // calmly (not angry: the server does not count them as left either)
+    if (left === 0) {
+      if (!this.ordersClosed) this.close();
+      for (const g of this.guests) if (g.phase === "seated") this.goHome(g);
+    }
     // done when everyone who came has gone, and either everyone came or the doors were closed
     const allCame = this.guests.length === this.customers.length || this.ordersClosed;
     if (!this.ended && (this.customers.length > 0 || this.ordersClosed) && allCame && this.guests.every((g) => g.phase === "gone")) {
@@ -211,7 +215,7 @@ export class ServiceScene extends Phaser.Scene {
     g.bubble.removeAll(true);
     const bubble = kitSlice(this, 0, 0, "bubble_plain", 56, 50, 3, 3, 3, 3);
     const dish = this.add.image(1, -4, `dish_${g.c.dish}`);
-    g.gauge = addGauge(this, 0, 32);
+    g.gauge = addGauge(this, 0, 32, 48);
     g.bubble.add([bubble, dish, g.gauge.box]);
     g.bubble.setSize(56, 50).setInteractive({ useHandCursor: true }).on("pointerdown", () => this.serve(g));
   }
@@ -275,6 +279,14 @@ export class ServiceScene extends Phaser.Scene {
         break;
     }
     if (g.phase !== "gone") s.setDepth(SEAT_Y);
+  }
+
+  // Sold out before their plate came: walks back out the door, no fuss.
+  private goHome(g: Guest) {
+    g.phase = "leaving";
+    g.angry = true; // only the direction: back to the door
+    g.bubble.setVisible(false);
+    g.sprite.setFlipX(true).play(`${STAND_IN[g.c.kind]}_walk_side`);
   }
 
   // Out of patience: storms out, and the shop's reputation suffers.

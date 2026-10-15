@@ -209,7 +209,7 @@ export class HuntScene extends Phaser.Scene {
     const hudStyle = TEXT_SMALL;
     if (!this.touch) this.add.text(6, 4, t("hunt.help"), hudStyle).setScrollFactor(0).setDepth(10000);
     // health in a brass gauge, the bag count under it, the way home top right (UI kit A)
-    this.hpGauge = addGauge(this, 40, 26);
+    this.hpGauge = addGauge(this, 56, 26);
     this.hpGauge.box.setScrollFactor(0).setDepth(10000);
     this.bagText = this.add.text(8, 40, "", hudStyle).setScrollFactor(0).setDepth(10000);
     this.gatherHint = this.add.text(0, 0, t("hunt.gather"), hudStyle).setOrigin(0.5).setDepth(9500).setVisible(false);

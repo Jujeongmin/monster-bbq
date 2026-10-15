@@ -75,19 +75,20 @@ export interface UiGauge {
   set(fraction: number): void;
 }
 
-// A brass-capped bar; the warm fill is the full picture cropped to the fraction.
-export function addGauge(scene: Phaser.Scene, x: number, y: number): UiGauge {
-  const empty = scene.add.image(0, 0, "ui_gauge_empty").setOrigin(0, 0.5).setScale(KIT);
-  const full = scene.add.image(0, 0, "ui_gauge_full").setOrigin(0, 0.5).setScale(KIT);
-  const box = scene.add.container(x - empty.displayWidth / 2, y, [empty, full]);
-  const w = full.width;
-  const h = full.height;
+// A brass-capped bar `width` game pixels wide (default 96); both the track and the warm fill are kit
+// 9-slices, so the brass caps keep their size at any width and the fill grows from the left.
+export function addGauge(scene: Phaser.Scene, x: number, y: number, width = 96): UiGauge {
+  const empty = kitSlice(scene, 0, 0, "gauge_empty", width, 14, 3, 3, 2, 2).setOrigin(0, 0.5);
+  const full = kitSlice(scene, 0, 0, "gauge_full", width, 14, 3, 3, 2, 2).setOrigin(0, 0.5);
+  const box = scene.add.container(x - width / 2, y, [empty, full]);
+  const art = Math.round(width / KIT);
   return {
     box,
     set(f: number) {
-      // the brass caps (3 art pixels each side) stay; only the inside fills
-      const inner = Math.round(3 + (w - 6) * Math.max(0, Math.min(1, f)));
-      full.setCrop(0, 0, f <= 0 ? 0 : inner, h);
+      const c = Math.max(0, Math.min(1, f));
+      // the caps (3 art pixels each side) always show; only the middle grows
+      full.setVisible(c > 0);
+      if (c > 0) full.setSize(Math.round(6 + (art - 6) * c), 7);
     },
   };
 }
