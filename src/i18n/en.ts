@@ -147,4 +147,5 @@ export const en: Record<keyof typeof ko, string> = {
   "where.shiitake": "Shiitake grows on the forest floor. Look under the trees.",
   "where.wild_garlic": "Wild garlic hides in the grass. Follow your nose.",
   "where.perilla": "Perilla grows at the forest's edge. Look for the shining leaves.",
+  "cutin.new": "New dish!",
 };

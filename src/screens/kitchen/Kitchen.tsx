@@ -9,6 +9,7 @@ import { Cookbook } from "./Cookbook";
 import { DishUpgrade } from "./DishUpgrade";
 import { LunchPick } from "./LunchPick";
 import { MenuPick } from "./MenuPick";
+import { ResearchCutIn } from "./ResearchCutIn";
 import "./kitchen.css";
 
 // The evening kitchen (restaurant v2 design 5, mock-ups approved 2026-10-15): the shop behind, dimmed; the
@@ -34,7 +35,8 @@ export function Kitchen({
   const [menu, setMenu] = useState<MenuLine[]>(() => fitMenu(save.items, save.dishes, save.menu));
   // the dish whose research was just asked for: the cut-in plays once the save has it (Task 8)
   const [asked, setAsked] = useState<DishId | null>(null);
-  void asked;
+  // the cut-in plays once the server has opened the dish that was asked for
+  const landed = asked && save.dishes[asked] ? asked : null;
   return (
     <div className="kitchen" style={{ backgroundImage: `url(${artUrl("test/shop/bg.png")})` }}>
       <div className="kitchen-dim" />
@@ -65,6 +67,7 @@ export function Kitchen({
       <button className="ui-btn kitchen-ready" disabled={busy || menu.length === 0} onClick={() => onReady(menu)}>
         {t("kitchen.ready")}
       </button>
+      {landed && <ResearchCutIn key={landed} dish={landed} onDone={() => setAsked(null)} />}
     </div>
   );
 }
