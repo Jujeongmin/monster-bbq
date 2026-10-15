@@ -2,7 +2,7 @@ import { BALANCE } from "./balance";
 import { UPGRADE_IDS, type UpgradeId } from "./content/upgrades";
 import type { SaveData } from "./save";
 
-// Upgrade levels (growth design 2): gear starts at level 1, cooking tools at 0 (not owned).
+// Upgrade levels (growth design 2): everything starts at level 1.
 export { UPGRADE_IDS };
 export type { UpgradeId };
 
@@ -35,5 +35,3 @@ export const bagSlots = (save: Pick<SaveData, "upgrades">) => at(E.bag, level(sa
 export const menuSlots = (save: Pick<SaveData, "upgrades">) => at(E.menu, level(save, "menu"));
 export const seatBonus = (save: Pick<SaveData, "upgrades">) => at(E.seats, level(save, "seats"));
 export const lunchSlots = (save: Pick<SaveData, "upgrades">) => at(E.lunch, level(save, "lunchbox"));
-// how forgiving a station is: burning and boiling over come this many times later
-export const toolQuality = (save: Pick<SaveData, "upgrades">, method: "grill" | "boil") => at(E.quality, level(save, method === "grill" ? "grillQuality" : "potQuality"));

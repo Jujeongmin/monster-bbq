@@ -63,7 +63,7 @@ export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 
 function asSave(reply: unknown): SaveData {
   const r = reply as SaveData | null;
-  if (!r || typeof r !== "object" || r.version !== 4) throw new Error("bad_reply");
+  if (!r || typeof r !== "object" || r.version !== 5) throw new Error("bad_reply");
   return readSave(r);
 }
 

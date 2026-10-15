@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { itemKey, parseItemKey } from "./content/items";
-import { newSave, readSave } from "./save";
+import { newSave, readSave, refundRetired } from "./save";
 
 describe("itemKey / parseItemKey", () => {
   it("keys monster parts by grade and forage without one", () => {
@@ -17,93 +17,128 @@ describe("itemKey / parseItemKey", () => {
   });
 });
 
-const EMPTY_KITCHEN = { cookbook: {}, hints: [], menu: [], tools: ["grill"], lastCook: null };
-const NO_SERVICE = { stage: "hunt", reputation: 0, upgrades: {}, lunchbox: [], service: null, lastService: null };
+const FRESH = {
+  version: 5,
+  day: 1,
+  stage: "hunt",
+  gold: 0,
+  items: {},
+  hunt: null,
+  seenItems: [],
+  dishes: {},
+  menu: [],
+  reputation: 0,
+  upgrades: {},
+  lunchbox: [],
+  service: null,
+  lastService: null,
+};
 
 describe("newSave", () => {
-  it("starts on day 1 with nothing, no hunt going on and only the grill", () => {
-    expect(newSave()).toEqual({ version: 4, day: 1, gold: 0, items: {}, hunt: null, ...EMPTY_KITCHEN, ...NO_SERVICE });
+  it("starts on day 1 with nothing researched and nothing seen", () => {
+    expect(newSave()).toEqual(FRESH);
   });
 });
 
-describe("readSave", () => {
+describe("readSave (version 5)", () => {
   const valid = {
-    version: 4,
+    version: 5,
     day: 4,
     stage: "kitchen",
     gold: 120,
     items: { "boar_belly:premium": 2, shiitake: 1 },
-    hunt: { id: "h1", seed: 7, zone: "forest", startedAt: 1000 },
-    cookbook: { grilled_belly: { method: "grill", items: ["boar_belly"] } },
-    hints: ["rib_stew"],
-    menu: ["grilled_belly"],
-    tools: ["grill", "boil"],
-    lastCook: { attemptId: "a1", outcome: { kind: "near", hint: "missing", taste: "veg" } },
+    hunt: null,
+    seenItems: ["boar_belly", "shiitake"],
+    dishes: { grilled_belly: 2, shiitake_grill: 1 },
+    menu: [{ dish: "grilled_belly", sets: 2 }],
     reputation: 12,
     upgrades: { melee: 2 },
     lunchbox: ["grilled_belly"],
-    service: { id: "s1", seed: 9, startedAt: 2000, menu: ["grilled_belly"] },
-    lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 15, happy: 2, repDelta: 0 },
+    service: { id: "s1", seed: 9, startedAt: 2000, dishes: [{ dish: "grilled_belly", plates: 8, price: 46 }] },
+    lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 0, happy: 3, repDelta: 1 },
   };
   it("keeps a valid save as it is", () => {
     expect(readSave(valid)).toEqual(valid);
-  });
-  it("moves a version 2 save to version 3 with an empty kitchen, keeping items and the hunt", () => {
-    const v2 = { version: 2, day: 4, gold: 120, items: { shiitake: 1 }, hunt: { id: "h1", seed: 7, zone: "forest", startedAt: 1000 } };
-    expect(readSave(v2)).toEqual({ ...v2, version: 4, ...EMPTY_KITCHEN, ...NO_SERVICE });
-  });
-  it("moves a version 1 save's meat into items without losing any", () => {
-    expect(readSave({ version: 1, day: 3, gold: 50, meat: { premium: 2, normal: 5 } })).toEqual({
-      version: 4,
-      day: 3,
-      gold: 50,
-      items: { "boar_belly:premium": 2, "boar_belly:normal": 5 },
-      hunt: null,
-      ...EMPTY_KITCHEN,
-      ...NO_SERVICE,
-    });
   });
   it("starts fresh for nothing, garbage or an unknown version", () => {
     expect(readSave(undefined)).toEqual(newSave());
     expect(readSave("nope")).toEqual(newSave());
     expect(readSave({ version: 99, day: 5 })).toEqual(newSave());
   });
-  it("drops broken item entries and a broken hunt instead of failing", () => {
-    expect(
-      readSave({ version: 4, day: -3, gold: "x", items: { "boar_belly:normal": 2.7, shiitake: -1, "dragon:premium": 4, perilla: "2" }, hunt: { id: 5 } }),
-    ).toEqual({ version: 4, day: 1, gold: 0, items: { "boar_belly:normal": 2 }, hunt: null, ...EMPTY_KITCHEN, ...NO_SERVICE });
-  });
-  it("moves a version 3 save to version 4 with no reputation and no service", () => {
-    const v3 = { ...valid, version: 3, stage: undefined, reputation: undefined, upgrades: undefined, lunchbox: undefined, service: undefined, lastService: undefined };
-    expect(readSave(v3)).toEqual({ ...valid, ...NO_SERVICE });
+  it("drops broken dishes, menu lines, seen items and tonight's dishes instead of failing", () => {
+    const r = readSave({
+      ...valid,
+      seenItems: ["boar_belly", "boar_belly", "unicorn", 3],
+      dishes: { grilled_belly: 2, dragon_steak: 1, rib_stew: 0, baeksuk: 9, garlic_neck: 1.5 },
+      menu: [{ dish: "grilled_belly", sets: 2 }, { dish: "grilled_belly", sets: 1 }, { dish: "baeksuk", sets: 1 }, { dish: "grilled_belly" }, "x"],
+      service: { ...valid.service, dishes: [{ dish: "grilled_belly", plates: 8, price: 46 }, { dish: "moon_cake", plates: 1, price: 1 }, { dish: "grilled_belly", plates: -2, price: 5 }] },
+    });
+    expect(r.seenItems).toEqual(["boar_belly"]);
+    expect(r.dishes).toEqual({ grilled_belly: 2 });
+    expect(r.menu).toEqual([{ dish: "grilled_belly", sets: 2 }]);
+    expect(r.service?.dishes).toEqual([{ dish: "grilled_belly", plates: 8, price: 46 }]);
   });
   it("drops a broken service, summary or reputation instead of failing", () => {
     const r = readSave({ ...valid, reputation: -5, service: { id: 3 }, lastService: { id: "x", served: "lots" } });
     expect(r.reputation).toBe(0);
     expect(r.service).toBeNull();
     expect(r.lastService).toBeNull();
-    expect(readSave({ ...valid, service: { ...valid.service, menu: ["grilled_belly", "moon_cake"] } }).service?.menu).toEqual(["grilled_belly"]);
   });
-  it("drops broken kitchen entries instead of failing", () => {
-    const r = readSave({
-      ...valid,
-      cookbook: {
-        grilled_belly: { method: "grill", items: ["boar_belly"] },
-        dragon_steak: { method: "grill", items: ["boar_belly"] },
-        rib_stew: { method: "melt", items: ["boar_rib"] },
-        baeksuk: { method: "boil", items: [] },
-        belly_ssam: { method: "grill", items: ["boar_belly", "perilla", "wild_garlic", "shiitake"] },
-        garlic_neck: { method: "grill", items: ["boar_neck", "unicorn"] },
-      },
-      hints: ["rib_stew", "rib_stew", "moon_cake", 3],
-      menu: ["grilled_belly", "nope"],
-      tools: ["laser"],
-      lastCook: { attemptId: "a1", outcome: { kind: "magic" } },
-    });
-    expect(r.cookbook).toEqual({ grilled_belly: { method: "grill", items: ["boar_belly"] } });
-    expect(r.hints).toEqual(["rib_stew"]);
-    expect(r.menu).toEqual(["grilled_belly"]);
-    expect(r.tools).toEqual(["grill"]);
-    expect(r.lastCook).toBeNull();
+});
+
+describe("readSave (from version 4 and older)", () => {
+  const v4 = {
+    version: 4,
+    day: 4,
+    stage: "settle",
+    gold: 100,
+    items: { "boar_neck:normal": 2, perilla: 1 },
+    hunt: null,
+    cookbook: { grilled_belly: { method: "grill", items: ["boar_belly"] }, garlic_neck: { method: "grill", items: ["boar_neck", "wild_garlic"] } },
+    hints: ["rib_stew"],
+    menu: ["grilled_belly", "rib_stew"],
+    tools: ["grill", "boil"],
+    lastCook: null,
+    reputation: 7,
+    upgrades: { melee: 2, pot: 1, grillQuality: 3 },
+    lunchbox: [],
+    service: null,
+    lastService: null,
+  };
+  it("opens found recipes at level 1, sees their ingredients and what is in the fridge, keeps the menu as one set each", () => {
+    const r = readSave(v4);
+    expect(r.version).toBe(5);
+    expect(r.dishes).toEqual({ grilled_belly: 1, garlic_neck: 1 });
+    expect([...r.seenItems].sort()).toEqual(["boar_belly", "boar_neck", "perilla", "wild_garlic"]);
+    expect(r.menu).toEqual([{ dish: "grilled_belly", sets: 1 }]);
+    expect(r).not.toHaveProperty("cookbook");
+    expect(r).not.toHaveProperty("tools");
+    expect(r).not.toHaveProperty("hints");
+    expect(r).not.toHaveProperty("lastCook");
+  });
+  it("gives back the gold spent on the cooking tools and their quality, keeps the rest of the upgrades", () => {
+    const r = readSave(v4);
+    // pot level 1 = 600, grill quality 1 -> 3 = 500 + 2000
+    expect(r.gold).toBe(100 + 600 + 2500);
+    expect(r.upgrades).toEqual({ melee: 2 });
+  });
+  it("closes a service that was open (no ingredients were taken yet in version 4) and goes back to the kitchen", () => {
+    const r = readSave({ ...v4, stage: "kitchen", service: { id: "s1", seed: 9, startedAt: 2000, menu: ["grilled_belly"] } });
+    expect(r.service).toBeNull();
+    expect(r.stage).toBe("kitchen");
+    expect(r.items).toEqual(v4.items);
+  });
+  it("moves a version 1 save's meat into items and sees it", () => {
+    const r = readSave({ version: 1, day: 3, gold: 50, meat: { premium: 2, normal: 5 } });
+    expect(r).toEqual({ ...FRESH, day: 3, gold: 50, items: { "boar_belly:premium": 2, "boar_belly:normal": 5 }, seenItems: ["boar_belly"] });
+  });
+});
+
+describe("refundRetired", () => {
+  it("adds up what each bought level of a removed upgrade cost", () => {
+    expect(refundRetired({ pot: 1, wok: 1, fryer: 1, board: 1, grillQuality: 2, potQuality: 3 })).toBe(600 + 1500 + 3000 + 5000 + 500 + 2500);
+    expect(refundRetired({ pot: 0, grillQuality: 1, melee: 4 })).toBe(0);
+    expect(refundRetired({ pot: 7, grillQuality: "x" })).toBe(600);
+    expect(refundRetired(null)).toBe(0);
   });
 });

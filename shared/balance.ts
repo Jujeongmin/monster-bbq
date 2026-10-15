@@ -72,7 +72,7 @@ export const BALANCE: {
     bagSlots: number;
   };
   economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
-  kitchen: { menuSlots: number; maxIngredients: number };
+  kitchen: { menuSlots: number };
   // dish levels (restaurant v2 design 3): row i is level i+1 — its price multiplier, plates per set of
   // ingredients, and the cost to reach it (gold = times the dish's base price, sets of its own
   // ingredients; level 1's cost is the research). A set with a premium part sells for premiumBonus more.
@@ -91,7 +91,6 @@ export const BALANCE: {
     maxHp: number[];
     bag: number[];
     menu: number[];
-    quality: number[];
     seats: number[];
     lunch: number[];
   };
@@ -188,7 +187,7 @@ export const BALANCE: {
     maxMeatPerHunt: 20,
   },
   // research kitchen and menu (spec 4); menu slots grow with upgrades (plan 06)
-  kitchen: { menuSlots: 2, maxIngredients: 3 },
+  kitchen: { menuSlots: 2 },
   // user-approved draft numbers 2026-10-15, tuned in play
   dishes: {
     levels: [
@@ -207,12 +206,6 @@ export const BALANCE: {
     armor: { base: 1, costs: [300, 1000, 2800] },
     bag: { base: 1, costs: [200, 500, 1000, 2000] },
     menu: { base: 1, costs: [400, 1200, 3000] },
-    pot: { base: 0, costs: [600] },
-    wok: { base: 0, costs: [1500], locked: [1] },
-    fryer: { base: 0, costs: [3000], locked: [1] },
-    board: { base: 0, costs: [5000], locked: [1] },
-    grillQuality: { base: 1, costs: [500, 2000] },
-    potQuality: { base: 1, costs: [500, 2000] },
     seats: { base: 1, costs: [800, 1600, 3200, 6400] },
     lunchbox: { base: 1, costs: [300, 1500] },
   },
@@ -224,7 +217,6 @@ export const BALANCE: {
     maxHp: [100, 130, 170, 220],
     bag: [12, 15, 18, 21, 24],
     menu: [2, 3, 4, 5],
-    quality: [1, 1.15, 1.3],
     seats: [0, 1, 2, 3, 4],
     lunch: [1, 2, 3],
   },
