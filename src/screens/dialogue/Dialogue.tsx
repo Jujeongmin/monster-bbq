@@ -7,7 +7,7 @@ import "./dialogue.css";
 
 // The NPC dialogue box (like talking to an NPC in an MMORPG): the speaker's portrait at the left, a name
 // ribbon, the line typed out letter by letter. A click, tap, Space or Enter finishes the line, then
-// moves on; after the last line it closes. It covers the whole frame, so nothing underneath is pressed
+// moves on; after the last line it closes. The bar is the approved dark dialogue art (art/test/ui). It covers the whole frame, so nothing underneath is pressed
 // while someone is talking. Portraits: art/test/lid (approved 2026-10-15).
 export type Face = "normal" | "angry" | "smug" | "surprised";
 export interface DialogueLine {
@@ -58,9 +58,8 @@ export function Dialogue({ lines, onDone }: { lines: DialogueLine[]; onDone: () 
   const out = state.shown >= line.text.length;
   return createPortal(
     <div className="dialogue" role="dialog" aria-live="polite" onPointerDown={advance}>
-      <div className="dialogue-box ui-panel">
-        <img className="dialogue-face" src={artUrl(`test/lid/${line.face}.png`)} alt="" />
-        <span className="dialogue-name">{t(NAME[line.who])}</span>
+      <div className="dialogue-box">
+        <span className={`dialogue-name ${line.who}`}>{t(NAME[line.who])}</span>
         <p className="dialogue-text">
           {line.text.slice(0, state.shown)}
           {/* the rest of the line keeps its place, so the words already out do not jump */}
@@ -68,6 +67,7 @@ export function Dialogue({ lines, onDone }: { lines: DialogueLine[]; onDone: () 
         </p>
         {out && <span className="dialogue-more">▼</span>}
       </div>
+      <img className="dialogue-face" src={artUrl(`test/lid/${line.face}.png`)} alt="" />
       {/* every face loaded up front, so a change of face does not blink */}
       <div className="dialogue-preload" aria-hidden>
         {FACES.map((f) => (

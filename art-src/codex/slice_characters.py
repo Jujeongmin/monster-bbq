@@ -88,6 +88,8 @@ PIECES = [
     ("ui", "icon_day", "ui_kit_a.png", (458, 932, 678, 1188), 0.12),
     ("ui", "icon_pot", "ui_kit_a.png", (688, 958, 966, 1158), 0.12),
     ("ui", "icon_notebook", "ui_kit_a.png", (983, 922, 1222, 1178), 0.12),
+    # the dark NPC dialogue bar (approved 2026-10-15), a 9-slice
+    ("ui", "dialogue_bar", "dialogue_bar.png", (66, 226, 2091, 470), 0.25),
     ("cooking", "tongs", "cook_tools.png", (65, 55, 372, 368), 0.2),
     ("cooking", "scissors", "cook_tools.png", (445, 45, 812, 368), 0.2),
     ("cooking", "ladle", "cook_tools.png", (835, 32, 1170, 370), 0.2),
@@ -187,7 +189,7 @@ LID_FACES = [
     ("surprised", (1650, 255, 2150, 575), 1906),
 ]
 LID_WINDOW = (300, 150, 590)  # half width around the knob, top, bottom (raw pixels)
-LID_SCALE = 0.2
+LID_SCALE = 0.4
 
 
 def main():

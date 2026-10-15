@@ -1,5 +1,5 @@
-/* The NPC dialogue box: a kit A panel the full width of the screen along the bottom (like an MMORPG NPC
-   talk), the ribbon as the name plate, the portrait leaning out over the top. */
+/* The NPC dialogue box: the dark bar art the full width of the screen along the bottom (like an MMORPG NPC
+   talk), the name as plain lettering, the portrait leaning out over the top. */
 .dialogue {
   position: absolute; inset: 0; z-index: 50;
   display: flex; align-items: flex-end;
@@ -7,30 +7,40 @@
   cursor: pointer;
 }
 .dialogue-box {
-  position: relative;
+  position: relative; isolation: isolate;
   width: 100%;
-  min-height: calc(84px * var(--s));
-  padding-left: calc(108px * var(--s));
+  min-height: calc(64px * var(--s));
+  /* room at the left for the portrait (a fifth of the screen) */
+  padding: calc(12px * var(--s)) calc(18px * var(--s)) calc(12px * var(--s)) 22%;
 }
+/* the dark bar, a little see-through so the scene shows behind it (the words stay solid) */
+.dialogue-box::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  border: calc(16px * var(--s)) solid transparent;
+  border-image: url("../../../art/test/ui/dialogue_bar.png") 16 fill / calc(16px * var(--s)) stretch;
+  image-rendering: pixelated;
+  opacity: 0.9;
+}
+/* the portrait standing at the left over the top of the box, sized by the screen: the lid about a fifth
+   of its width (the picture has a little empty room round the lid) */
 .dialogue-face {
-  position: absolute; left: calc(-14px * var(--s)); bottom: calc(-8px * var(--s));
-  width: calc(120px * var(--s)); height: calc(88px * var(--s));
+  position: absolute; left: calc(2px * var(--s)); bottom: calc(30px * var(--s));
+  width: 23%; height: auto;
   image-rendering: pixelated; pointer-events: none;
 }
+/* the speaker's name as plain lettering, no plate */
 .dialogue-name {
-  position: absolute; left: calc(98px * var(--s)); top: calc(-44px * var(--s));
-  width: calc(66px * var(--s)); height: calc(32px * var(--s));
-  padding-top: calc(7px * var(--s));
-  text-align: center;
-  font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink);
-  background: url("../../../art/test/ui/ribbon.png") center / 100% 100% no-repeat;
-  image-rendering: pixelated;
+  display: block; margin-bottom: calc(2px * var(--s));
+  font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass);
+  text-shadow: var(--s) var(--s) 0 #2a160c;
 }
-.dialogue-text { margin: 0; font: var(--fs) / 1.6 "Galmuri11", monospace; color: var(--ink); white-space: pre-wrap; word-break: keep-all; }
+/* each speaker's name in a colour of their own art: the lid in the bronze of its iron rim */
+.dialogue-name.lid { color: #b1895c; text-shadow: var(--s) var(--s) 0 #1a1712; }
+.dialogue-text { margin: 0; font: var(--fs) / 1.6 "Galmuri11", monospace; color: var(--cream); white-space: pre-wrap; word-break: keep-all; }
 .dialogue-rest { visibility: hidden; }
 .dialogue-more {
-  position: absolute; right: 0; bottom: calc(-4px * var(--s));
-  font: var(--fs) "Galmuri11", monospace; color: var(--red);
+  position: absolute; right: calc(14px * var(--s)); bottom: calc(8px * var(--s));
+  font: var(--fs) "Galmuri11", monospace; color: #b1895c;
   animation: dialogue-blink 0.8s steps(2, jump-none) infinite;
 }
 @keyframes dialogue-blink { 50% { opacity: 0; } }
