@@ -1,0 +1,10 @@
+Use your image generation tool (do not write code to draw) to create ONE image, 1536x384: four item icons side by side in four equal 384x384 cells on a perfectly flat solid magenta #FF00FF background (no glow, no shadow), each centred, nothing touching the cell edges. No text.
+
+STYLE: real low-resolution pixel art matching the attached UI kit and item icons — every art pixel a solid 8x8 block of one flat colour, 1-art-pixel dark outline, 2-3 flat tones per material, no gradients, no glow, no anti-aliasing, the same warm palette. Each icon about 20 x 20 art pixels.
+
+cell 1 "slingshot": a wooden Y-shaped slingshot with a brown leather band and a small round pebble.
+cell 2 "sleep dart gun": a small brass-and-wood dart pistol with a fluffy pale-blue sleep dart, a tiny "z" curl of pale blue smoke at the muzzle (a shape, not a letter).
+cell 3 "net gun": a stubby wooden launcher with a folded rope net bulging from its wide mouth.
+cell 4 "firecracker": a red paper firecracker bundle tied with yellow string, a short lit fuse with one spark.
+
+Save as art-src/codex/raw/side_weapons.png. Reply only with the saved file path.
