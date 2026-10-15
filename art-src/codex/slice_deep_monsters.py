@@ -3,12 +3,18 @@
     python -I art-src/codex/slice_deep_monsters.py
 
 Same keying and shrinking as slice_characters.py (magenta out, premultiplied box shrink, alpha snapped);
-rows side, down, up, special. Scales put the frog general and the crab at the boar's size, the snake a
+rows side, down, up, special. Codex does not keep to its grid (a dive or a tongue crosses the cell lines,
+rows sit unevenly), so the poses are found as blobs (pieces close together, like a tongue's tip or
+dizzy stars, belong to one pose), put in reading order, and each is set on one canvas per sheet with its
+feet on a shared baseline — nothing is cut off. Scales put the frog general and the crab at the boar's size, the snake a
 little smaller, the bat at the bee's. Output: art-src/codex/out/deep/<who>/<row>_<n>.png (copied to
 art/test/<who> once approved) and a preview next to today's boar and rabbit in art-src/preview/deep_monsters.png.
 """
 import sys
 from pathlib import Path
+
+import numpy as np
+from scipy import ndimage
 
 from PIL import Image
 
@@ -26,19 +32,41 @@ def main():
     previews = []
     for who, scale in SHEETS:
         sheet = key_magenta(Image.open(RAW / f"{who}_sheet.png"))
-        cw, ch = sheet.width / 4, sheet.height / 4
+        alpha = np.array(sheet.getchannel("A")) >= 110
+        # pieces within 14 px of each other are one pose
+        labels, n = ndimage.label(ndimage.binary_dilation(alpha, iterations=14))
+        boxes = []
+        for i, sl in enumerate(ndimage.find_objects(labels)):
+            if sl is None:
+                continue
+            mask = (labels[sl] == i + 1) & alpha[sl]
+            if mask.sum() < 800:
+                continue
+            ys, xs = np.nonzero(mask)
+            boxes.append((sl[1].start + xs.min(), sl[0].start + ys.min(), sl[1].start + xs.max() + 1, sl[0].start + ys.max() + 1))
+        assert len(boxes) == 16, (who, len(boxes))
+        # reading order: four rows by height (centres), each left to right
+        boxes.sort(key=lambda b: (b[1] + b[3]) / 2)
+        ordered = []
+        for r in range(4):
+            ordered += sorted(boxes[r * 4:(r + 1) * 4], key=lambda b: b[0])
+        cw = max(b[2] - b[0] for b in ordered) + 16
+        ch = max(b[3] - b[1] for b in ordered) + 16
+        canvas = max(cw, ch, round(sheet.width / 4))
         out = OUT / who
         out.mkdir(parents=True, exist_ok=True)
-        size = (round(cw * scale), round(ch * scale))
+        size = (round(canvas * scale), round(canvas * scale))
         frames = []
-        for r, row in enumerate(ROWS):
-            for c in range(4):
-                cell = sheet.crop((round(c * cw), round(r * ch), round((c + 1) * cw), round((r + 1) * ch)))
-                small = cell.convert("RGBa").resize(size, Image.BOX).convert("RGBA")
-                rr, gg, bb, aa = small.split()
-                frame = Image.merge("RGBA", (rr, gg, bb, aa.point(lambda v: 255 if v >= 110 else 0)))
-                frame.save(out / f"{row}_{c}.png")
-                frames.append(frame)
+        for k, b in enumerate(ordered):
+            piece = sheet.crop(b)
+            cell = Image.new("RGBA", (canvas, canvas), (0, 0, 0, 0))
+            # centred, feet on a shared baseline near the bottom
+            cell.alpha_composite(piece, ((canvas - piece.width) // 2, canvas - 8 - piece.height))
+            small = cell.convert("RGBa").resize(size, Image.BOX).convert("RGBA")
+            rr, gg, bb, aa = small.split()
+            frame = Image.merge("RGBA", (rr, gg, bb, aa.point(lambda v: 255 if v >= 110 else 0)))
+            frame.save(out / f"{ROWS[k // 4]}_{k % 4}.png")
+            frames.append(frame)
         previews.append((who, frames))
         print(who, size)
     # one row per monster: the side walk then the special move, at 2x; today's boar and rabbit on the last row
