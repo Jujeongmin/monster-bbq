@@ -6,7 +6,7 @@ import { EMPTY_HIT_LOG, type HitLog } from "../../../shared/hunt/combat";
 import { fleerHit, newFleer, updateFleer, type FleerState } from "../../../shared/hunt/fleer";
 import { clampToField, pushOutOfRects, type Rect } from "../../../shared/hunt/geometry";
 import { angerPack, newPackMember, updatePackMember, type PackMemberState } from "../../../shared/hunt/pack";
-import type { HuntPlan } from "../../../shared/hunt/plan";
+import type { FloorPlan } from "../../../shared/hunt/plan";
 import { newShooter, updateShooter, type ShooterState, type Shot } from "../../../shared/hunt/shooter";
 import type { Field, Vec } from "../../../shared/hunt/types";
 import { lookOf, stepBob } from "./anims";
@@ -17,7 +17,7 @@ const H = BALANCE.hunt;
 // Where the feet are inside each sheet's cells (measured when slicing).
 const FEET: Record<MonsterId, number> = { boar: 0.92, rabbit: 0.885, bee: 0.885, chicken: 0.89 };
 
-export type Spawn = HuntPlan["spawns"][number];
+export type Spawn = FloorPlan["spawns"][number];
 export type MobAI =
   | { kind: "charger"; s: ChargerState }
   | { kind: "fleer"; s: FleerState }

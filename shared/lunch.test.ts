@@ -31,7 +31,7 @@ describe("packLunch", () => {
     ["more dishes than slots", () => pack(kitchen, ["grilled_belly", "garlic_neck"])],
     ["a dish without its ingredients", () => pack({ ...kitchen, items: {} }, ["grilled_belly"])],
     ["something that is not a list", () => pack(kitchen, "grilled_belly")],
-    ["packing during a hunt", () => pack({ ...kitchen, hunt: { id: "h", seed: 1, zone: "forest", startedAt: 0 } }, ["grilled_belly"])],
+    ["packing during a hunt", () => pack({ ...kitchen, hunt: { id: "h", seed: 1, zone: "forest", period: "morning", startedAt: 0 } }, ["grilled_belly"])],
   ];
   for (const [what, run] of refused) {
     it(`refuses ${what} and leaves the save alone`, () => {

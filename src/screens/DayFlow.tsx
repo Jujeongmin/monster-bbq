@@ -15,12 +15,13 @@ import { Upgrades } from "./Upgrades";
 import { artUrl } from "../game/art";
 import "./dayflow.css";
 
-// One day: hunt -> kitchen -> service -> settle -> next day. Every change goes through the transport
+// One day (hunt v3 design 3): morning hunt -> lunch -> afternoon hunt -> kitchen -> service -> settle -> next day. Every change goes through the transport
 // (the server's rules); the screen only moves on once the change is saved. Kitchen, service and
 // settle are placeholder screens until plans 04-05 (and their art in plan 08).
-type Phase = "hunt" | "kitchen" | "service" | "settle";
+type Phase = "hunt" | "lunch" | "kitchen" | "service" | "settle";
 const PHASE_NAME: Record<Phase, StringKey> = {
   hunt: "phase.hunt",
+  lunch: "phase.lunch",
   kitchen: "phase.kitchen",
   service: "phase.service",
   settle: "phase.settle",
@@ -44,14 +45,14 @@ export function DayFlow({ transport }: { transport: Transport }) {
     transport.load().then((s) => {
       setSave(s);
       // back where the server says the day is (a service opened and never settled: back into it)
-      setPhase(s.service ? "service" : s.stage);
+      setPhase(s.service ? "service" : s.hunt ? "hunt" : s.stage);
     }, () => setLoadFailed(true));
   }
   useEffect(load, [transport]);
 
   // the server opens every hunt (its seed decides the hunting ground): ask whenever a day's hunt starts
   useEffect(() => {
-    if (save && phase === "hunt" && !save.hunt && !failed) void act({ type: "startHunt", zone: "forest" }, "hunt");
+    if (save && phase === "hunt" && save.stage === "hunt" && !save.hunt && !failed) void act({ type: "startHunt", zone: "forest" }, "hunt");
   }, [save, phase, failed]);
 
   // true once the server saved it; on failure the banner offers a retry (or says what is missing)
@@ -98,13 +99,13 @@ export function DayFlow({ transport }: { transport: Transport }) {
       {phase === "hunt" && save.hunt && (
         <PhaserGame
           key={save.hunt.id}
-          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, stats: huntStats(save), bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
-          onHuntEnd={(r: HuntResult) => act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, ko: r.ko }, "kitchen")}
+          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, stats: huntStats(save), bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
+          onHuntEnd={(r: HuntResult) => act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, exit: r.exit, ko: r.ko }, save.hunt!.period === "morning" ? "lunch" : "kitchen")}
         />
       )}
 
       {/* the kitchen carries day and gold in its own bottom row */}
-      {phase !== "kitchen" && (
+      {phase !== "kitchen" && phase !== "lunch" && (
         <div className="dayflow-bar ui-bar">
           <span>
             <img className="ui-icon" src={artUrl("test/ui/icon_day.png")} alt="" />
@@ -120,6 +121,18 @@ export function DayFlow({ transport }: { transport: Transport }) {
         </div>
       )}
 
+      {phase === "lunch" && (
+        <Kitchen
+          mode="lunch"
+          save={save}
+          busy={busy}
+          act={(a) => void act(a, "lunch")}
+          onHunt={() => void act({ type: "startHunt", zone: "forest" }, "hunt")}
+          onSkip={() => void act({ type: "skipHunt" }, "kitchen")}
+          onUpgrades={() => setShopping(true)}
+        />
+      )}
+      {phase === "lunch" && shopping && <Upgrades save={save} busy={busy} act={(a) => void act(a, "lunch")} onClose={() => setShopping(false)} />}
       {phase === "kitchen" && <Kitchen save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} />}
       {phase === "service" && save.service && <Night save={save} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
       {phase === "settle" && (
@@ -148,7 +161,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
             <button className="ui-btn" disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("error.closeShop")}</button>
           ) : huntRefused(failed) ? (
             // the server would never take this report: come home empty-handed rather than stay stuck
-            <button className="ui-btn" disabled={busy} onClick={() => act({ type: "finishHunt", huntId: save.hunt?.id ?? "", events: [], ko: false }, "kitchen")}>{t("error.emptyHanded")}</button>
+            <button className="ui-btn" disabled={busy} onClick={() => act({ type: "finishHunt", huntId: save.hunt?.id ?? "", events: [], exit: null, ko: true }, save.hunt?.period === "afternoon" ? "kitchen" : "lunch")}>{t("error.emptyHanded")}</button>
           ) : (
             <button className="ui-btn" disabled={busy} onClick={() => act(failed.action, failed.next)}>↻</button>
           )}

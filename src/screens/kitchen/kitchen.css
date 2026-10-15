@@ -10,6 +10,8 @@
 .kitchen-body { position: absolute; left: calc(12px * var(--s)); right: calc(12px * var(--s)); top: calc(68px * var(--s)); bottom: calc(42px * var(--s)); overflow: auto; padding: calc(4px * var(--s)); }
 .kitchen-ready { position: absolute; left: 50%; bottom: calc(7px * var(--s)); transform: translateX(-50%); width: calc(160px * var(--s)); z-index: 2; }
 .kitchen-ready:active:not(:disabled) { transform: translate(-50%, var(--s)); }
+/* lunch: upgrades, rest, and the afternoon hunt in one row where the open button stands in the evening */
+.kitchen-lunch-actions { position: absolute; left: 50%; bottom: calc(7px * var(--s)); transform: translateX(-50%); display: flex; gap: calc(8px * var(--s)); z-index: 2; }
 .kitchen-empty { margin: calc(4px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; color: #d8c4a4; }
 .soft { color: var(--paper-ink-soft); }
 

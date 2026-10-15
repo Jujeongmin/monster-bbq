@@ -9,10 +9,11 @@ import { computeHit, coneTargets, meatGrade, nextComboStep, recordHit, type Weap
 import { dropFor } from "../../../shared/hunt/drops";
 import { clampToField, distance, moveByInput, pushOutOfRects, unit, type Rect } from "../../../shared/hunt/geometry";
 import { fireHarpoon, harpoonDone, harpoonHit, reelStep, stepHarpoon, type Harpoon } from "../../../shared/hunt/harpoon";
-import { HUNT_START, planHunt, type HuntPlan } from "../../../shared/hunt/plan";
+import { planFloor, type FloorPlan } from "../../../shared/hunt/plan";
 import { shotHits, stepShot, type Shot } from "../../../shared/hunt/shooter";
 import type { Vec } from "../../../shared/hunt/types";
 import type { Zone } from "../../../shared/save";
+import { FLOORS, type FloorDef, type Period } from "../../../shared/content/floors";
 import { itemName, t } from "../../i18n";
 import { artUrl } from "../art";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
@@ -25,7 +26,7 @@ import { addButton, addGauge, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiGaug
 // PC: WASD / arrows move, aim with the mouse, left click = harpoon, right click = slash, E = gather,
 //     R = back to the shop (keyboard only: Z = slash, X = harpoon straight ahead).
 // Touch: stick on the left; press on the right half to aim, release to fire; slash and gather buttons.
-// The hunting ground comes from the server's seed (planHunt); the scene reports what was taken, in
+// Each floor comes from the server's seed (planFloor); the scene reports what was taken, in
 // order, and the server decides the drops the same way (spec 7).
 const H = BALANCE.hunt;
 // A frame gap after the tab was hidden must not teleport anything (rules are also clamped).
@@ -43,6 +44,8 @@ export interface HuntData {
   huntId: string;
   seed: number;
   zone: Zone;
+  // the morning or the afternoon hunt (hunt v3 design 3): each brings its own monsters
+  period: Period;
   // from the upgrades (shared/growth): what the hunter hits for, how far the harpoon flies, how much
   // health, how big the bag
   stats: { meleeDamage: number; rangedDamage: number; rangedRange: number; maxHp: number };
@@ -52,9 +55,11 @@ export interface HuntData {
   lunchbox: { dish: DishId; heal: number }[];
 }
 
-// What the hunt hands to the day flow when it ends (PhaserGame forwards the "hunt:end" event).
+// What the hunt hands to the day flow when it ends (PhaserGame forwards the "hunt:end" event): what was
+// taken in order, the exit it left by (null when knocked out).
 export interface HuntResult {
   events: HuntEvent[];
+  exit: string | null;
   ko: boolean;
 }
 
@@ -75,7 +80,7 @@ interface Player {
 }
 
 interface Node {
-  node: HuntPlan["nodes"][number];
+  node: FloorPlan["nodes"][number];
   sprite: Phaser.GameObjects.Image;
   taken: boolean;
 }
@@ -90,7 +95,8 @@ export class HuntScene extends Phaser.Scene {
   private bagSlots: number = H.bagSlots;
   private lunch: { dish: DishId; heal: number; button: Phaser.GameObjects.Container; eaten: boolean }[] = [];
   private speedUntil = 0;
-  private plan!: HuntPlan;
+  private plan!: FloorPlan;
+  private floorDef!: FloorDef;
   private player!: Player;
   private hunter!: Phaser.GameObjects.Sprite;
   private mobs: Mob[] = [];
@@ -140,8 +146,9 @@ export class HuntScene extends Phaser.Scene {
     this.bagSlots = data.bagSlots;
     this.lunch = [];
     this.speedUntil = 0;
-    this.plan = planHunt(data.seed, data.zone);
-    this.player = { pos: { ...HUNT_START }, aim: { x: 1, y: 0 }, face: { x: 0, y: 1 }, hp: this.maxHp, cooldownMs: 0, harpoonCooldownMs: 0, swingMs: 0, comboStep: 0, msSinceSwing: Infinity, down: false };
+    this.floorDef = FLOORS[1];
+    this.plan = planFloor(data.seed, 1, data.period);
+    this.player = { pos: { ...this.floorDef.start }, aim: { x: 1, y: 0 }, face: { x: 0, y: 1 }, hp: this.maxHp, cooldownMs: 0, harpoonCooldownMs: 0, swingMs: 0, comboStep: 0, msSinceSwing: Infinity, down: false };
     this.mobs = [];
     this.refills = this.plan.spawns.filter((s) => s.wave > 0);
     this.nextRefill = 0;
@@ -178,7 +185,7 @@ export class HuntScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.tileSprite(0, 0, H.world.w, H.world.h, "grass").setOrigin(0).setDepth(-1000);
+    this.add.tileSprite(0, 0, this.floorDef.world.w, this.floorDef.world.h, "grass").setOrigin(0).setDepth(-1000);
     for (const o of this.plan.objects) {
       const sprite = this.add.image(o.x, o.y, `obj_${o.kind}`).setOrigin(0.5, 1).setDepth(o.y);
       this.obstacles.push(o.foot);
@@ -194,7 +201,7 @@ export class HuntScene extends Phaser.Scene {
     for (const s of this.plan.spawns.filter((s) => s.wave === 0)) this.mobs.push(createMob(this, s));
 
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, H.world.w, H.world.h);
+    cam.setBounds(0, 0, this.floorDef.world.w, this.floorDef.world.h);
     cam.startFollow(this.hunter, true, 0.12, 0.12);
 
     const keyboard = this.input.keyboard!;
@@ -395,8 +402,8 @@ export class HuntScene extends Phaser.Scene {
     if (moving) {
       this.gathering = null;
       const speed = H.player.speed * (this.time.now < this.speedUntil ? BALANCE.lunch.speedMul : 1);
-      const next = moveByInput(p.pos, move, speed, dt, H.field, H.player.depthSpeedRatio);
-      p.pos = clampToField(pushOutOfRects(next, this.obstacles, H.player.radius), H.field);
+      const next = moveByInput(p.pos, move, speed, dt, this.floorDef.field, H.player.depthSpeedRatio);
+      p.pos = clampToField(pushOutOfRects(next, this.obstacles, H.player.radius), this.floorDef.field);
       if (this.touch && this.aimPointer === null) p.aim = unit(move, p.aim);
       p.face = unit(move, p.face);
     }
@@ -472,7 +479,7 @@ export class HuntScene extends Phaser.Scene {
     const p = this.player;
     if (p.down) return;
     p.hp = Math.max(0, p.hp - damage);
-    p.pos = clampToField(pushOutOfRects({ x: p.pos.x + dir.x * 24, y: p.pos.y + dir.y * 24 }, this.obstacles, H.player.radius), H.field);
+    p.pos = clampToField(pushOutOfRects({ x: p.pos.x + dir.x * 24, y: p.pos.y + dir.y * 24 }, this.obstacles, H.player.radius), this.floorDef.field);
     p.swingMs = 0;
     this.gathering = null;
     this.hunter.setPosition(p.pos.x, p.pos.y).setTint(0xff8080);
@@ -555,7 +562,7 @@ export class HuntScene extends Phaser.Scene {
       this.reeling = null;
       return;
     }
-    const r = reelStep(mobPos(m), this.player.pos, H.harpoon.pullSpeed, dt, H.harpoon.pullStopDist, H.field);
+    const r = reelStep(mobPos(m), this.player.pos, H.harpoon.pullSpeed, dt, H.harpoon.pullStopDist, this.floorDef.field);
     setMobPos(m, r.pos);
     if (r.done) {
       this.reeling = null;
@@ -587,7 +594,7 @@ export class HuntScene extends Phaser.Scene {
     p.cooldownMs = weapon.cooldownMs;
     p.swingMs = weapon.swingMs;
     // step into each slash so the knockback never pushes the target out of reach mid-combo
-    p.pos = clampToField(pushOutOfRects({ x: p.pos.x + p.aim.x * H.hit.knockback, y: p.pos.y + p.aim.y * H.hit.knockback }, this.obstacles, H.player.radius), H.field);
+    p.pos = clampToField(pushOutOfRects({ x: p.pos.x + p.aim.x * H.hit.knockback, y: p.pos.y + p.aim.y * H.hit.knockback }, this.obstacles, H.player.radius), this.floorDef.field);
     this.hunter.setFlipX(p.aim.x < 0).setPosition(p.pos.x, p.pos.y).setDepth(p.pos.y).play("hunter_slash");
     const comboStep = p.comboStep;
     const aim = p.aim;
@@ -607,7 +614,7 @@ export class HuntScene extends Phaser.Scene {
       big ||= hit.finisher || hit.counter;
       const at = mobPos(m);
       const away = unit({ x: at.x - p.pos.x, y: at.y - p.pos.y }, aim);
-      setMobPos(m, clampToField(pushOutOfRects({ x: at.x + away.x * hit.knockback, y: at.y + away.y * hit.knockback }, this.obstacles, mobRadius(m)), H.field));
+      setMobPos(m, clampToField(pushOutOfRects({ x: at.x + away.x * hit.knockback, y: at.y + away.y * hit.knockback }, this.obstacles, mobRadius(m)), this.floorDef.field));
       this.applyHit(m, "melee", hit.damage, [hit.counter && "카운터!", hit.backAttack && "백어택!", hit.finisher && "막타!"]);
     }
     // game feel: one freeze per swing, longer and with a shake on big hits
@@ -663,7 +670,7 @@ export class HuntScene extends Phaser.Scene {
     const seen = this.player.down ? null : this.player.pos;
     for (const m of this.mobs) {
       if (m.dead || m === this.reeling) continue;
-      const step = stepMob(m, dt, seen, H.field, this.obstacles);
+      const step = stepMob(m, dt, seen, this.floorDef.field, this.obstacles);
       if (step.hurt) this.hurtPlayer(step.hurt.damage, step.hurt.dir);
       if (step.shot) this.shots.push({ shot: step.shot, sprite: this.add.image(step.shot.pos.x, step.shot.pos.y, "bee_stinger").setDepth(9000).setRotation(Math.atan2(step.shot.dir.y, step.shot.dir.x)) });
       drawMob(this, m, step.phaseChanged, (x, y, s, c, ms) => this.popText(x, y, s, c, ms));
@@ -794,7 +801,7 @@ export class HuntScene extends Phaser.Scene {
   private endHunt(ko: boolean) {
     if (this.ended) return;
     this.ended = true;
-    const result: HuntResult = { events: [...this.report], ko };
+    const result: HuntResult = { events: [...this.report], exit: null, ko };
     this.game.events.emit("hunt:end", result);
     this.scene.pause();
   }

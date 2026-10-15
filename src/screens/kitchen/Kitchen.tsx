@@ -15,22 +15,32 @@ import "./kitchen.css";
 // The evening kitchen (restaurant v2 design 5, mock-ups approved 2026-10-15): the shop behind, dimmed; the
 // shop's name plate at the top left, day and gold at the top right, four tabs, the walnut frame with the
 // cookbook / menu board / dish upgrades / lunchbox, and the open button at the bottom centre. Every change
-// goes through `act` (the server's rules); the screen shows what the save says.
+// goes through `act` (the server's rules); the screen shows what the save says. At lunch (hunt v3 design 3)
+// the same room shows only the lunchbox, the upgrades and the way back out to the afternoon hunt.
 type Tab = "cookbook" | "menu" | "upgrade" | "lunch";
 const TABS: Tab[] = ["cookbook", "menu", "upgrade", "lunch"];
 
 export function Kitchen({
+  mode = "evening",
   save,
   busy,
   act,
   onReady,
+  onHunt,
+  onSkip,
+  onUpgrades,
 }: {
+  mode?: "evening" | "lunch";
   save: SaveData;
   busy: boolean;
   act: (a: Action) => void;
-  onReady: (menu: MenuLine[]) => void;
+  onReady?: (menu: MenuLine[]) => void;
+  onHunt?: () => void;
+  onSkip?: () => void;
+  onUpgrades?: () => void;
 }) {
-  const [tab, setTab] = useState<Tab>("cookbook");
+  const tabs: Tab[] = mode === "lunch" ? ["lunch"] : TABS;
+  const [tab, setTab] = useState<Tab>(mode === "lunch" ? "lunch" : "cookbook");
   // starts from last night's menu, cut to what the fridge makes now
   const [menu, setMenu] = useState<MenuLine[]>(() => fitMenu(save.items, save.dishes, save.menu));
   // research, upgrades and lunches use ingredients: the board shrinks to what the fridge still makes
@@ -42,7 +52,7 @@ export function Kitchen({
   return (
     <div className="kitchen" style={{ backgroundImage: `url(${artUrl("test/shop/bg.png")})` }}>
       <div className="kitchen-dim" />
-      <div className="ui-plate kitchen-title">{t("kitchen.title")}</div>
+      <div className="ui-plate kitchen-title">{t(mode === "lunch" ? "lunch.title" : "kitchen.title")}</div>
       <div className="ui-bar kitchen-res">
         <span>
           <img className="ui-icon" src={artUrl("test/ui/icon_day.png")} alt="" />
@@ -54,7 +64,7 @@ export function Kitchen({
         </span>
       </div>
       <div className="kitchen-tabs">
-        {TABS.map((k) => (
+        {tabs.map((k) => (
           <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
             {t(`kitchen.tab.${k}` as StringKey)}
           </button>
@@ -66,9 +76,17 @@ export function Kitchen({
         {tab === "upgrade" && <DishUpgrade save={save} busy={busy} act={act} />}
         {tab === "lunch" && <LunchPick save={save} busy={busy} act={act} />}
       </div>
-      <button className="ui-btn kitchen-ready" disabled={busy || !canOpen(save.items, save.dishes, menu)} onClick={() => onReady(menu)}>
-        {t("kitchen.ready")}
-      </button>
+      {mode === "lunch" ? (
+        <div className="kitchen-lunch-actions">
+          <button className="ui-btn" disabled={busy} onClick={onUpgrades}>{t("lunch.upgrades")}</button>
+          <button className="ui-btn" disabled={busy} onClick={onSkip}>{t("lunch.skip")}</button>
+          <button className="ui-btn" disabled={busy} onClick={onHunt}>{t("lunch.goHunt")}</button>
+        </div>
+      ) : (
+        <button className="ui-btn kitchen-ready" disabled={busy || !canOpen(save.items, save.dishes, menu)} onClick={() => onReady?.(menu)}>
+          {t("kitchen.ready")}
+        </button>
+      )}
       {landed && <ResearchCutIn key={landed} dish={landed} onDone={() => setAsked(null)} />}
     </div>
   );

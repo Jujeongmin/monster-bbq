@@ -27,7 +27,7 @@ export function LunchPick({ save, busy, act }: { save: SaveData; busy: boolean; 
     <div className="lunch-pick">
       <h3 className="cookbook-count">{t("lunch.box", { n: save.lunchbox.length + picked.length, max: slots })}</h3>
       <div className="ui-box lunch-tray">
-        <span className="lunch-tray-title">{t("lunch.tray")}</span>
+        <span className="lunch-tray-title">{t(save.stage === "lunch" ? "lunch.trayAfternoon" : "lunch.tray")}</span>
         <div className="lunch-box">
           {Array.from({ length: slots }, (_, i) => {
             if (i < save.lunchbox.length)
