@@ -1,19 +1,11 @@
-import { useState } from "react";
+import Text from "./locales/ko.json";
 import "./App.css";
-function App() {
-  const [count, setCount] = useState(1);
 
+function App() {
   return (
-    <>
-      <div className="card">
-        <button
-          onClick={() => setCount((count) => count + 1)}
-          className="bg-blue-500 text-white p-2 rounded-md"
-        >
-          Count is {count}
-        </button>
-      </div>
-    </>
+    <main className="placeholder">
+      <h1>{Text.ui.comingSoon}</h1>
+    </main>
   );
 }
 

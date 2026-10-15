@@ -1,8 +1,8 @@
-# Context — basic-vite-react
+# Context — 몬스터 고깃집
 
 ## Project Overview
 
-Minimal React + TypeScript scaffold built with Vite and Tailwind CSS. `App.tsx` renders a single counter button wired to `useState`; `main.tsx` mounts it with `createRoot` under `StrictMode`. No 3D, no game engine, no networking — this is the baseline that every other template in the repo is derived from.
+Minimal Vite + React + TypeScript starting point for the Korean 2D web game project "몬스터 고깃집". The visible page intentionally contains only the localized placeholder "준비 중". Gameplay is not implemented in this project scaffold; the game code is expected to be pushed from an external repository.
 
 ## Tech Stack
 
@@ -10,10 +10,11 @@ _Exact versions are in `package.json`._
 
 - **Framework**: React, React DOM
 - **Build / Lang**: Vite, TypeScript
-- **Styling**: Tailwind CSS, PostCSS (autoprefixer)
-- **Icons**: `lucide-react`
-- **Multiplayer (unwired)**: `@agent8/gameserver`
+- **Styling**: Tailwind CSS, PostCSS (autoprefixer), small custom CSS
+- **Game server**: Agent8 GameServer SDK 2.x with the structured TypeScript project in `server/`
+- **Player-facing strings**: `src/locales/ko.json`
 
 ## Critical Memory
 
-No template-specific runtime invariants. Standard React + Vite conventions apply.
+- Keep the initial screen as a placeholder until game code is supplied from the external repository.
+- Agent8 server functions must remain exported methods on `server/src/server.ts`.
