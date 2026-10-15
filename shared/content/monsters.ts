@@ -7,6 +7,8 @@ export const MONSTERS = {
   rabbit: { kind: "fleer", maxHp: 25, radius: 8, drops: [["rabbit_leg", 1]] },
   bee: { kind: "shooter", maxHp: 30, radius: 8, drops: [["honeycomb", 1]] },
   chicken: { kind: "pack", maxHp: 20, radius: 7, drops: [["chicken_thigh", 1], ["chicken_breast", 1]] },
-} as const satisfies Record<string, { kind: "charger" | "fleer" | "shooter" | "pack"; maxHp: number; radius: number; drops: readonly (readonly [ItemId, number])[] }>;
+  // the tusk boss (hunt v3 design 4.7): a big boar, floor 2 on some hunts; its parts count twice
+  tusk: { kind: "boss", maxHp: 240, radius: 18, drops: [["boar_belly", 5], ["boar_neck", 3], ["boar_rib", 2]] },
+} as const satisfies Record<string, { kind: "charger" | "fleer" | "shooter" | "pack" | "boss"; maxHp: number; radius: number; drops: readonly (readonly [ItemId, number])[] }>;
 
 export type MonsterId = keyof typeof MONSTERS;

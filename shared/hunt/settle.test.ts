@@ -29,7 +29,7 @@ describe("finishHunt on the forest floors", () => {
   it("comes home without an exit only when knocked out, with half the bag", () => {
     const s = started();
     const plan = planFloor(s.hunt!.seed, 1, "morning");
-    const four = plan.spawns.filter((x) => x.wave === 0).slice(0, 4).map((x): HuntEvent => ({ kill: x.id, grade: "normal" }));
+    const four = plan.spawns.filter((x) => x.wave === 0).slice(0, 4).map((x): HuntEvent => ({ take: x.id, how: "down" }));
     const ko = finish(s, four, null, true);
     expect(ko.error).toBeUndefined();
     expect(count(ko.save.items)).toBeLessThanOrEqual(2);
@@ -38,8 +38,8 @@ describe("finishHunt on the forest floors", () => {
   it("takes floor 2 monsters only after going down, and the way out is then on floor 2", () => {
     const s = started();
     const two = planFloor(s.hunt!.seed, 2, "morning").spawns[0];
-    expect(finish(s, [{ kill: two.id, grade: "normal" }], "1-e0").error).toBe("bad_hunt");
-    const ok = finish(s, [{ down: 2 }, { kill: two.id, grade: "normal" }], "2-e1");
+    expect(finish(s, [{ take: two.id, how: "down" }], "1-e0").error).toBe("bad_hunt");
+    const ok = finish(s, [{ down: 2 }, { take: two.id, how: "down" }], "2-e1");
     expect(ok.error).toBeUndefined();
     expect(count(ok.save.items)).toBe(1);
     expect(finish(s, [{ down: 2 }], "1-e0").error).toBe("bad_hunt");
@@ -47,14 +47,14 @@ describe("finishHunt on the forest floors", () => {
   it("refuses a floor-1 monster after going down, a skipped floor and a way down that is not there", () => {
     const s = started();
     const one = planFloor(s.hunt!.seed, 1, "morning").spawns[0];
-    expect(finish(s, [{ down: 2 }, { kill: one.id, grade: "normal" }], "2-e0").error).toBe("bad_hunt");
+    expect(finish(s, [{ down: 2 }, { take: one.id, how: "down" }], "2-e0").error).toBe("bad_hunt");
     expect(finish(s, [{ down: 3 as never }], "1-e0").error).toBe("bad_hunt");
     expect(finish(s, [{ down: 2 }, { down: 3 as never }], "2-e0").error).toBe("bad_hunt");
   });
   it("needs time for every way down and every monster taken", () => {
     const s = started();
     const two = planFloor(s.hunt!.seed, 2, "morning").spawns[0];
-    const events: HuntEvent[] = [{ down: 2 }, { kill: two.id, grade: "normal" }];
+    const events: HuntEvent[] = [{ down: 2 }, { take: two.id, how: "down" }];
     const need = H.minMsPerFloor + H.minMsPerKill;
     expect(finish(s, events, "2-e0", false, T0 + need - 1).error).toBe("bad_hunt");
     expect(finish(s, events, "2-e0", false, T0 + need).error).toBeUndefined();
@@ -63,9 +63,9 @@ describe("finishHunt on the forest floors", () => {
     const s = started();
     const p1 = planFloor(s.hunt!.seed, 1, "morning");
     const firstRefill = p1.spawns.find((x) => x.wave > 0)!;
-    expect(finish(s, [{ kill: firstRefill.id, grade: "normal" }], "1-e0").error).toBe("bad_hunt");
+    expect(finish(s, [{ take: firstRefill.id, how: "down" }], "1-e0").error).toBe("bad_hunt");
     const w0 = p1.spawns.find((x) => x.wave === 0)!;
-    expect(finish(s, [{ kill: w0.id, grade: "normal" }, { kill: firstRefill.id, grade: "normal" }], "1-e0").error).toBeUndefined();
+    expect(finish(s, [{ take: w0.id, how: "down" }, { take: firstRefill.id, how: "down" }], "1-e0").error).toBeUndefined();
   });
   it("lists the floors' exits the way the scene shows them", () => {
     expect(FLOORS[1].exits.length).toBe(3);
@@ -88,7 +88,7 @@ describe("two hunts a day", () => {
     const afternoon = started(finish(started(), [], "1-e0").save);
     const p = planFloor(afternoon.hunt!.seed, 1, "afternoon");
     const rabbits = p.spawns.filter((x) => x.wave === 0 && x.monster === "rabbit");
-    const r = finish(afternoon, rabbits.map((x): HuntEvent => ({ kill: x.id, grade: "normal" })), "1-e0");
+    const r = finish(afternoon, rabbits.map((x): HuntEvent => ({ take: x.id, how: "down" })), "1-e0");
     expect(r.error).toBeUndefined();
     expect(rabbits.length).toBe(4);
   });
@@ -137,4 +137,43 @@ describe("the side weapon taken out", () => {
     expect(applyAction(newSave(), { type: "startHunt", zone: "forest", side: "bazooka" }, ctx()).error).toBe("bad_action");
     expect(applyAction(newSave(), { type: "startHunt", zone: "forest" }, ctx()).error).toBe("bad_action");
   });
+});
+
+describe("taking monsters by stars", () => {
+  const out = (side: "sling" | "sleepGun" | "netGun", upgrades = {}) =>
+    applyAction({ ...newSave(), upgrades: { sleepGun: 1, netGun: 1, ...upgrades } }, { type: "startHunt", zone: "forest", side }, ctx()).save;
+  const wave0 = (s: SaveData) => planFloor(s.hunt!.seed, 1, "morning").spawns.filter((x) => x.wave === 0);
+  const later = T0 + 600_000;
+  it("brings home 1 regular part for a knock-down, 2 for a capture, 2 premium for sleep", () => {
+    const s = out("sleepGun");
+    const [a, b, c] = wave0(s);
+    const r = finish(s, [{ take: a.id, how: "down" }, { take: b.id, how: "capture" }, { take: c.id, how: "sleep" }], "1-e0", false, later);
+    expect(r.error).toBeUndefined();
+    const items = r.save.items;
+    const premium = Object.entries(items).filter(([k]) => k.endsWith(":premium")).reduce((n, [, v]) => n + v, 0);
+    expect([count(items), premium]).toEqual([5, 2]);
+  });
+  it("refuses sleep without the sleep dart gun, and the net without the net gun", () => {
+    const [a] = wave0(out("sling"));
+    expect(finish(out("sling"), [{ take: a.id, how: "sleep" }], "1-e0", false, later).error).toBe("bad_hunt");
+    expect(finish(out("sleepGun"), [{ take: a.id, how: "net" }], "1-e0", false, later).error).toBe("bad_hunt");
+  });
+  it("refuses more sleeping monsters than the darts could have put down", () => {
+    const s = out("sleepGun");
+    const five = wave0(s).filter((x) => x.monster !== "boar").slice(0, 5);
+    expect(finish(s, five.map((x): HuntEvent => ({ take: x.id, how: "sleep" })), "1-e0", false, later).error).toBe("bad_hunt");
+    expect(finish(s, five.slice(0, 4).map((x): HuntEvent => ({ take: x.id, how: "sleep" })), "1-e0", false, later).error).toBeUndefined();
+  });
+  it("refuses a capture faster than the gauge can fill", () => {
+    const s = out("sling");
+    const [a] = wave0(s);
+    const need = BALANCE.hunt.minMsPerKill + BALANCE.hunt.capture.minMs;
+    expect(finish(s, [{ take: a.id, how: "capture" }], "1-e0", false, T0 + need - 1).error).toBe("bad_hunt");
+    expect(finish(s, [{ take: a.id, how: "capture" }], "1-e0", false, T0 + need).error).toBeUndefined();
+  });
+  it("refuses an unknown way of taking", () => {
+    const s = out("sling");
+    expect(finish(s, [{ take: wave0(s)[0].id, how: "bribe" as never }], "1-e0", false, later).error).toBe("bad_hunt");
+  });
+  it.todo("doubles the tusk boss's parts (turned on in Task 6)");
 });

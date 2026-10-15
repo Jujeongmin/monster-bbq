@@ -91,10 +91,3 @@ export function recordHit(log: HitLog, kind: WeaponKind): HitLog {
     ? { ...log, meleeHits: log.meleeHits + 1, lastHit: kind }
     : { ...log, rangedHits: log.rangedHits + 1, lastHit: kind };
 }
-
-export type MeatGrade = "premium" | "normal";
-
-// Spec 3: premium when the killing blow was melee and it took at most `maxRangedHits` ranged hits.
-export function meatGrade(log: HitLog, maxRangedHits: number): MeatGrade {
-  return log.lastHit === "melee" && log.rangedHits <= maxRangedHits ? "premium" : "normal";
-}

@@ -5,13 +5,13 @@ import type { ShooterTuning } from "./hunt/shooter";
 import type { HitTuning, WeaponKind, WeaponStats } from "./hunt/combat";
 import type { DishId } from "./content/dishes";
 import type { ItemId } from "./content/items";
+import type { MonsterId } from "./content/monsters";
 import type { UpgradeId } from "./content/upgrades";
 import type { SideWeaponId } from "./content/sideWeapons";
 
 // Every hunting number lives here. Prototype values from plan 01; tuned in the playtest.
 export const BALANCE: {
   hunt: {
-    premiumMaxRangedHits: number;
     player: { maxHp: number; speed: number; depthSpeedRatio: number; radius: number };
     weapons: Record<WeaponKind, WeaponStats>;
     // half the opening angle of the slash cone, in radians
@@ -36,6 +36,18 @@ export const BALANCE: {
     minMsPerKill: number;
     // a hunt report needs at least this long per way down taken (server check, hunt v3 design 5.3)
     minMsPerFloor: number;
+    // stars (hunt v3 design 4.2): what each way of taking a monster gives; the tusk boss gives bossMul times
+    stars: Record<"down" | "capture" | "sleep" | "net", { count: number; grade: "normal" | "premium" }> & { bossMul: number };
+    // the capture gauge: where it starts, each tap by harpoon level, its drain, the fastest a capture can be
+    capture: { start: number; tap: number[]; decayPerSec: number; minMs: number };
+    // sleep-dart hits that put each monster to sleep, and how long it then sleeps
+    sleepHits: Record<MonsterId, number>;
+    sleepMs: number;
+    // monsters this small (radius) are caught outright by the net; bigger ones are only tied up
+    netSmallMaxRadius: number;
+    netBindMs: number;
+    sling: { damage: number; stunMs: number; range: number; speed: number };
+    firecracker: { radius: number; stunMs: number; range: number };
     bagSlots: number;
   };
   economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
@@ -78,7 +90,6 @@ export const BALANCE: {
   };
 } = {
   hunt: {
-    premiumMaxRangedHits: 2,
     player: { maxHp: 100, speed: 85, depthSpeedRatio: 0.9, radius: 6 },
     weapons: {
       melee: { kind: "melee", range: 32, damage: 10, cooldownMs: 550, swingMs: 450 },
@@ -124,6 +135,15 @@ export const BALANCE: {
     minMsPerKill: 1500,
     // the world and its walkable ground are per floor now (shared/content/floors.ts)
     minMsPerFloor: 8000,
+    // user-approved drafts (plan 08b), tuned in play
+    stars: { down: { count: 1, grade: "normal" }, capture: { count: 2, grade: "normal" }, sleep: { count: 2, grade: "premium" }, net: { count: 2, grade: "premium" }, bossMul: 2 },
+    capture: { start: 0.35, tap: [0.09, 0.1, 0.11], decayPerSec: 0.25, minMs: 1200 },
+    sleepHits: { rabbit: 1, chicken: 1, bee: 1, boar: 2, tusk: 5 },
+    sleepMs: 15000,
+    netSmallMaxRadius: 8,
+    netBindMs: 3000,
+    sling: { damage: 3, stunMs: 1200, range: 200, speed: 320 },
+    firecracker: { radius: 60, stunMs: 1500, range: 150 },
     bagSlots: 12,
   },
   // what each item is worth raw (premium parts pay double); lunches and the retired item shop priced by it

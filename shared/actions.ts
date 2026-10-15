@@ -2,7 +2,8 @@ import { BALANCE } from "./balance";
 import { isDishId, type DishId } from "./content/dishes";
 import { isUpgradeId } from "./content/upgrades";
 import { RECIPES } from "./content/recipes";
-import { bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost, ownsSide } from "./growth";
+import { ammoOf, bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost, ownsSide, sleepFallMs } from "./growth";
+import { TAKE_HOWS, takeYield, type TakeHow } from "./hunt/stars";
 import { isSideWeaponId, type SideWeaponId } from "./content/sideWeapons";
 import { itemKey, parseItemKey, type ItemId } from "./content/items";
 import { addToBag } from "./hunt/bag";
@@ -13,10 +14,10 @@ import { levelCost, MAX_SETS, planShop, takeSets, type MenuLine } from "./kitche
 import { settleService } from "./service/settle";
 import type { SaveData, Zone } from "./save";
 
-// What a hunt report lists, in the order things happened (hunt v3 design 5.3: the client says what it
-// took and where it went, the server re-creates each floor from the seed to check it and decides the
-// drops itself). `down` is taking the way down to that floor.
-export type HuntEvent = { kill: string; grade: "premium" | "normal" } | { gather: string } | { down: FloorId };
+// What a hunt report lists, in the order things happened (hunt v3 design 5.3): each monster taken and how
+// (the server turns that into parts by stars), each gathering spot, each way down to that floor. The
+// server re-creates each floor from the seed to check it and decides the drops itself.
+export type HuntEvent = { take: string; how: TakeHow } | { gather: string } | { down: FloorId };
 
 export type Action =
   | { type: "startHunt"; zone: Zone; side: SideWeaponId }
@@ -49,7 +50,9 @@ const MAX_EVENTS = 200;
 // floor the hunter is on to the next one that exists; every kill a real spawn of the current floor, taken
 // once, the floor's r-th refill only after r+1 kills on that floor; every gathering spot of the current
 // floor, taken once; home through an exit of the last floor (or knocked out, with no exit); not faster
-// than minMsPerKill a kill and minMsPerFloor a way down. Items go into the bag in report order until it
+// than minMsPerKill a kill and minMsPerFloor a way down. Monsters come by how they were taken (stars):
+// sleep and the net only with that gun taken out and within its shots, and a capture or a sleep only as
+// fast as the gauge fills or the dart works. Items go into the bag in report order until it
 // is full. Returns the items gained, or null for a report that cannot be true.
 function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Record<string, number> | null {
   const hunt = save.hunt;
@@ -62,25 +65,40 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
   const killsOn = new Map<FloorId, number>();
   let kills = 0;
   let descents = 0;
+  let captures = 0;
+  let sleeps = 0;
+  let dartsUsed = 0;
+  let netsUsed = 0;
   let bag: Record<string, number> = {};
   for (const raw of a.events as unknown[]) {
-    const e = raw as { kill?: unknown; grade?: unknown; gather?: unknown; down?: unknown } | null;
+    const e = raw as { take?: unknown; how?: unknown; gather?: unknown; down?: unknown } | null;
     if (!e || typeof e !== "object") return null;
     const plan = planOf(floor);
     if (e.down !== undefined) {
       if (!FLOORS[floor].down || e.down !== floor + 1 || !isFloorId(e.down)) return null;
       floor = e.down;
       descents++;
-    } else if (typeof e.kill === "string") {
-      const spawn = plan.spawns.find((s) => s.id === e.kill);
-      if (!spawn || taken.has(e.kill) || (e.grade !== "premium" && e.grade !== "normal")) return null;
+    } else if (typeof e.take === "string") {
+      const spawn = plan.spawns.find((s) => s.id === e.take);
+      if (!spawn || taken.has(e.take) || !TAKE_HOWS.includes(e.how as TakeHow)) return null;
+      const how = e.how as TakeHow;
+      // sleeping and netting need that gun taken out, and only as many as its shots allow
+      if (how === "sleep") {
+        if (hunt.side !== "sleepGun") return null;
+        dartsUsed += BALANCE.hunt.sleepHits[spawn.monster];
+        if (dartsUsed > ammoOf(save, "sleepGun")) return null;
+      }
+      if (how === "net" && (hunt.side !== "netGun" || ++netsUsed > ammoOf(save, "netGun"))) return null;
       const refill = plan.spawns.filter((s) => s.wave > 0).indexOf(spawn);
       const onFloor = killsOn.get(floor) ?? 0;
       if (refill >= 0 && onFloor < refill + 1) return null;
-      taken.add(e.kill);
+      taken.add(e.take);
       killsOn.set(floor, onFloor + 1);
       kills++;
-      bag = addToBag(bag, itemKey(dropFor(hunt.seed, spawn), e.grade), bagSlots(save)).bag;
+      if (how === "capture") captures++;
+      if (how === "sleep") sleeps++;
+      const y = takeYield(how, spawn.monster === "tusk");
+      for (let i = 0; i < y.count; i++) bag = addToBag(bag, itemKey(dropFor(hunt.seed, spawn), y.grade), bagSlots(save)).bag;
     } else if (typeof e.gather === "string") {
       const node = plan.nodes.find((n) => n.id === e.gather);
       if (!node || taken.has(e.gather)) return null;
@@ -89,7 +107,8 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
     } else return null;
   }
   if (!a.ko && !FLOORS[floor].exits.some((x) => x.id === a.exit)) return null;
-  if (now - hunt.startedAt < kills * BALANCE.hunt.minMsPerKill + descents * BALANCE.hunt.minMsPerFloor) return null;
+  const minMs = kills * BALANCE.hunt.minMsPerKill + descents * BALANCE.hunt.minMsPerFloor + captures * BALANCE.hunt.capture.minMs + sleeps * sleepFallMs(save);
+  if (now - hunt.startedAt < minMs) return null;
   return a.ko ? koPenalty(bag) : bag;
 }
 

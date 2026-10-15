@@ -63,7 +63,7 @@ describe("upgrade effects", () => {
   it("lets the server take a 15-item haul once the bag is upgraded", () => {
     const start = applyAction({ ...newSave(), upgrades: { bag: 2 } }, { type: "startHunt", zone: "forest", side: "sling" }, { ...ctx, now: 1_000_000 }).save;
     const plan = planFloor(start.hunt!.seed, 1, "morning");
-    const kills = [...plan.spawns.filter((s) => s.wave === 0), ...plan.spawns.filter((s) => s.wave === 1)].slice(0, 15).map((s) => ({ kill: s.id, grade: "normal" }));
+    const kills = [...plan.spawns.filter((s) => s.wave === 0), ...plan.spawns.filter((s) => s.wave === 1)].slice(0, 15).map((s) => ({ take: s.id, how: "down" }));
     const r = applyAction(start, { type: "finishHunt", huntId: start.hunt!.id, events: kills, exit: "1-e0", ko: false }, { ...ctx, now: 1_000_000 + 15 * BALANCE.hunt.minMsPerKill });
     expect(Object.values(r.save.items).reduce((a, b) => a + b, 0)).toBe(15);
   });

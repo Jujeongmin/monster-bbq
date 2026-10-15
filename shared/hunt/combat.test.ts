@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_HIT_LOG, computeHit, coneTargets, meatGrade, nextComboStep, recordHit, type HitTuning, type WeaponStats } from "./combat";
+import { EMPTY_HIT_LOG, computeHit, coneTargets, nextComboStep, recordHit, type HitTuning, type WeaponStats } from "./combat";
 
 const melee: WeaponStats = { kind: "melee", range: 30, damage: 10, cooldownMs: 550, swingMs: 450 };
 const ranged: WeaponStats = { kind: "ranged", range: 140, damage: 5, cooldownMs: 700, swingMs: 450 };
@@ -71,20 +71,5 @@ describe("computeHit", () => {
   });
   it("never makes a ranged hit a finisher", () => {
     expect(computeHit({ ...base, weapon: ranged, comboStep: 3 }, tuning).finisher).toBe(false);
-  });
-});
-
-describe("meatGrade", () => {
-  it("is premium when a melee blow finished it and it took at most 2 ranged hits", () => {
-    const log = recordHit(recordHit(recordHit(EMPTY_HIT_LOG, "ranged"), "ranged"), "melee");
-    expect(meatGrade(log, 2)).toBe("premium");
-  });
-  it("is normal when a ranged hit finished it", () => {
-    expect(meatGrade(recordHit(recordHit(EMPTY_HIT_LOG, "melee"), "ranged"), 2)).toBe("normal");
-  });
-  it("is normal when it took 3 or more ranged hits even if melee finished it", () => {
-    let log = EMPTY_HIT_LOG;
-    for (let i = 0; i < 3; i++) log = recordHit(log, "ranged");
-    expect(meatGrade(recordHit(log, "melee"), 2)).toBe("normal");
   });
 });
