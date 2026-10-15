@@ -1,0 +1,18 @@
+Use your image generation tool (do not write code to draw) to create TWO monster sprite sheets for the same game as the attached boar sheet: cozy cartoon pixel art, top-down quarter view (camera about 45 degrees down), same palette style, same chunky pixel size, same dark outline, comical but a little dangerous.
+
+Layout rules for EVERY sheet: flat solid magenta (#FF00FF) background; a strict grid of 4 columns x 4 rows of equal square cells with NO borders or lines; exactly one pose centred in every cell, same size in every cell, feet (or the hover point) at the same baseline in every cell, nothing touching the cell edges; no text, no ground shadows. Walk cycles must have 4 clearly different poses, not 4 copies.
+
+These live in a misty swamp (floor 3 of the forest).
+
+1) Save as art-src/codex/raw/frog_sheet.png. "Frog General": a big squat green-and-olive bullfrog about the boar's size, wearing a tiny dented iron helmet with a red plume, puffed-up proud chest, wide grin.
+ row 1: hopping to the right (side view), 4 frames
+ row 2: hopping toward the camera, 4 frames
+ row 3: hopping away (back view), 4 frames
+ row 4: facing right: frame 1 cheeks puffing (warning), frame 2 mouth opening, frame 3 a long pink sticky tongue shooting far to the right, frame 4 tongue snapping back
+
+2) Save as art-src/codex/raw/snake_sheet.png. "Water snake": a long muddy-green water snake with a yellow belly and sly eyes, a little smaller than the boar.
+ row 1: slithering to the right (side view), 4 frames of an S-curve wave
+ row 2: slithering toward the camera, 4 frames
+ row 3: slithering away, 4 frames
+ row 4: facing right: frame 1 hidden in a small dark puddle with only its eyes showing, frame 2 the puddle rippling with rings (warning), frame 3 lunging up out of the puddle with fangs bared, frame 4 coiled back
+Reply only with the two saved file paths.
