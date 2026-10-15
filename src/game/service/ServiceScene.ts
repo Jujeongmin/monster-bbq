@@ -11,7 +11,9 @@ import { addButton, addGauge, loadUiArt, TEXT, type UiButton, type UiGauge } fro
 // shared/service/plan) come in at their time, sit at their table and show their order with a patience
 // bar. Tap an order: the view zooms into the cooking stage at that dish's station (the stage keeps
 // cooking either way). A served customer eats, pays and leaves; one who runs out of patience leaves
-// angry. When everyone is done: game.events "service:end" { served, left }.
+// angry. Closing (user, 2026-10-15): "close orders" lets no one else in; after it "close the hall" sends
+// whoever is still waiting home angry (they count as left). When everyone is done: game.events
+// "service:end" { served, left }.
 // Art: until the shop and customer pictures are approved (plan 05b Task 4), the approved hunt monsters
 // stand in for customers and the grill for tables.
 export interface ServiceData {
@@ -60,6 +62,9 @@ export class ServiceScene extends Phaser.Scene {
   private served: ServedReport[] = [];
   private left: string[] = [];
   private ended = false;
+  // orders closed: no more arrivals; the button then closes the hall
+  private ordersClosed = false;
+  private closeButton!: UiButton;
   private inCook = false;
   private pauseButton!: UiButton;
   private tally!: Phaser.GameObjects.Text;
@@ -80,6 +85,7 @@ export class ServiceScene extends Phaser.Scene {
     this.served = [];
     this.left = [];
     this.ended = false;
+    this.ordersClosed = this.resumedClosed();
     this.inCook = false;
     this.earned = 0;
   }
@@ -101,12 +107,40 @@ export class ServiceScene extends Phaser.Scene {
     this.tally = this.add.text(34, 16, "", label).setOrigin(0, 0.5).setDepth(1000);
     this.pauseButton = addButton(this, 596, 18, t("service.pause"), () => this.togglePause(), 64);
     this.pauseButton.box.setDepth(1000);
+    this.closeButton = addButton(this, 514, 18, t(this.ordersClosed ? "service.closeHall" : "service.closeOrders"), () => this.close(), 84);
+    this.closeButton.box.setDepth(1000);
     this.game.events.on("service:serve", (r: ServedReport) => this.onServed(r));
     this.game.events.on("service:shop", () => this.toShop());
     this.events.once("shutdown", () => {
       this.game.events.off("service:serve");
       this.game.events.off("service:shop");
     });
+  }
+
+  // First press: no one else comes in. Second press: the hall closes and whoever still waits leaves angry.
+  private close() {
+    if (this.ended) return;
+    if (!this.ordersClosed) {
+      this.ordersClosed = true;
+      try {
+        sessionStorage.setItem(`monster-bbq:service:${this.serviceId}:closed`, "1");
+      } catch {
+        // private mode: a reload opens the doors again, nothing worse
+      }
+      this.closeButton.setText(t("service.closeHall"));
+      this.pop(320, 70, t("service.ordersClosed"), "#ffd166");
+      return;
+    }
+    for (const g of this.guests) if (g.phase === "waiting" || g.phase === "walking" || g.phase === "seated") this.storm(g);
+    this.closeButton.setEnabled(false);
+  }
+
+  private resumedClosed(): boolean {
+    try {
+      return sessionStorage.getItem(`monster-bbq:service:${this.serviceId}:closed`) === "1";
+    } catch {
+      return false;
+    }
   }
 
   private togglePause() {
@@ -132,7 +166,7 @@ export class ServiceScene extends Phaser.Scene {
     }
     // arrivals: to their table, or queue at the door while it is taken
     for (const c of this.customers) {
-      if (c.arriveMs <= this.clock && !this.guests.some((g) => g.c.id === c.id)) this.guests.push(this.makeGuest(c));
+      if (!this.ordersClosed && c.arriveMs <= this.clock && !this.guests.some((g) => g.c.id === c.id)) this.guests.push(this.makeGuest(c));
     }
     for (const g of this.guests) this.stepGuest(g, dt);
     // waiting orders for the stage's chips: seated, not served yet, oldest first
@@ -141,7 +175,9 @@ export class ServiceScene extends Phaser.Scene {
       .map((g) => ({ customer: g.c.id, dish: g.c.dish, patience: Math.max(0, 1 - g.waitedMs / g.c.patienceMs) }));
     this.registry.set("orders", orders);
     this.tally.setText(t("service.tally", { served: this.served.length, total: this.customers.length, gold: this.earned }));
-    if (!this.ended && this.customers.length > 0 && this.guests.length === this.customers.length && this.guests.every((g) => g.phase === "gone")) {
+    // done when everyone who came has gone, and either everyone came or the doors were closed
+    const allCame = this.guests.length === this.customers.length || this.ordersClosed;
+    if (!this.ended && (this.customers.length > 0 || this.ordersClosed) && allCame && this.guests.every((g) => g.phase === "gone")) {
       this.ended = true;
       this.time.delayedCall(800, () => this.game.events.emit("service:end", { served: this.served, left: this.left }));
     }

@@ -134,7 +134,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
       ladle: this.add.image(392, 72, "ladle").setInteractive({ useHandCursor: true }),
     };
     for (const k of TOOLS) this.toolIcons[k].on("pointerdown", () => this.pickTool(k));
-    this.cursor = this.add.image(0, 0, "scissors").setScale(0.7).setAngle(-30).setDepth(90).setVisible(false);
+    this.cursor = this.add.image(-100, -100, "scissors").setScale(0.7).setAngle(-30).setDepth(90).setVisible(false);
 
     // which station is in front: the other keeps cooking where it is
     // the station tabs at the top left, over the station they switch (user, 2026-10-15)
@@ -145,7 +145,7 @@ export class CookStage extends Phaser.Scene implements CookHost {
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
       this.ghost?.img.setPosition(p.x, p.y);
       this.plateDrag?.setPosition(p.x, p.y);
-      if (this.tool !== "tongs") this.cursor.setPosition(p.x + 8, p.y - 8);
+      this.cursor.setPosition(p.x + 8, p.y - 8);
     });
     this.input.on("pointerup", (p: Phaser.Input.Pointer) => {
       this.dropGhost(p);
@@ -274,7 +274,8 @@ export class CookStage extends Phaser.Scene implements CookHost {
   private pickTool(tool: "tongs" | "scissors" | "salt" | "ladle") {
     this.tool = tool;
     for (const k of TOOLS) this.toolIcons[k].setScale(k === tool ? 1.15 : 0.9).setAlpha(k === tool ? 1 : 0.6);
-    this.cursor.setTexture(tool === "salt" ? "salt_shaker" : tool).setAngle(tool === "salt" ? 160 : -30).setVisible(tool !== "tongs");
+    // the tool in hand follows the pointer, the tongs too (user, 2026-10-15)
+    this.cursor.setTexture(tool === "salt" ? "salt_shaker" : tool).setAngle(tool === "salt" ? 160 : -30).setVisible(true);
   }
 
   private show(station: Station) {
