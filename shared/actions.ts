@@ -1,14 +1,13 @@
 import { BALANCE } from "./balance";
-import { isMethod, type DishId } from "./content/dishes";
-import { isUpgradeId, TOOL_UPGRADES } from "./content/upgrades";
-import { bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost, seatBonus } from "./growth";
+import { isDishId, type DishId } from "./content/dishes";
+import { isUpgradeId } from "./content/upgrades";
+import { RECIPES } from "./content/recipes";
+import { bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost } from "./growth";
 import { itemKey, parseItemKey, type ItemId } from "./content/items";
 import { addToBag } from "./hunt/bag";
 import { dropFor } from "./hunt/drops";
 import { planHunt } from "./hunt/plan";
-import { hintsFor, judgeCook, servings, type Recipe } from "./kitchen/cook";
-import { planService } from "./service/plan";
-import { dishScore, serveValue } from "./service/settle";
+import { levelCost, MAX_SETS, planShop, takeSets, type MenuLine } from "./kitchen/dish";
 import type { SaveData, Zone } from "./save";
 
 // What a hunt report lists, in the order things happened (spec 7: the client says what it took,
@@ -18,21 +17,19 @@ export type HuntEvent = { kill: string; grade: "premium" | "normal" } | { gather
 export type Action =
   | { type: "startHunt"; zone: Zone }
   | { type: "finishHunt"; huntId: string; events: HuntEvent[]; ko: boolean }
-  | { type: "cook"; attemptId: string; items: string[]; method: string }
-  | { type: "setMenu"; dishes: string[] }
-  | { type: "startService" }
-  | { type: "finishService"; serviceId: string; served: { customer: string; keys: string[]; accuracy: number }[]; left: string[] }
+  | { type: "research"; dish: string }
+  | { type: "upgradeDish"; dish: string }
+  | { type: "openShop"; menu: { dish: string; sets: number }[] }
+  | { type: "finishService"; serviceId: string; served: { customer: string; dish: string }[]; left: string[] }
   | { type: "buyUpgrade"; id: string }
   | { type: "packLunch"; dishes: string[] }
   | { type: "sellAll" }
   | { type: "endDay" };
 
-// What only the server may decide or know: its clock, its dice and the recipe answers (null where the
-// table is not available, e.g. a production build without the server: cooking is then refused).
+// What only the server may decide: its clock and its dice.
 export interface ActionContext {
   now: number;
   random: () => number;
-  recipes: Record<DishId, Recipe> | null;
 }
 
 // What each stack fetches at the temporary shop (BALANCE.economy.itemPrice; premium parts their own
@@ -97,125 +94,70 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
   return a.ko ? koPenalty(bag) : bag;
 }
 
-// One try in the research kitchen: up to maxIngredients items of different kinds the player has, and a
-// method. Each item is used up whatever comes out (spec 4). A resent try (same attemptId as the last
-// one) changes nothing, so a lost reply never costs the ingredients twice.
-function cook(save: SaveData, a: Record<string, unknown>, recipes: Record<DishId, Recipe> | null): { save: SaveData; error?: string } {
-  if (!recipes) return { save, error: "unavailable" };
-  const { attemptId, items: keys, method } = a;
-  if (typeof attemptId !== "string" || attemptId.length < 1 || attemptId.length > 40) return { save, error: "bad_cook" };
-  if (save.lastCook?.attemptId === attemptId) return { save };
-  if (!Array.isArray(keys) || keys.length < 1 || keys.length > BALANCE.kitchen.maxIngredients || !isMethod(method)) return { save, error: "bad_cook" };
-  const ids: ItemId[] = [];
-  for (const key of keys) {
-    const item = typeof key === "string" ? parseItemKey(key) : null;
-    if (!item || ids.includes(item.id) || (save.items[key as string] ?? 0) < 1) return { save, error: "bad_cook" };
-    ids.push(item.id);
-  }
-  const items = { ...save.items };
-  for (const key of keys as string[]) {
-    items[key] -= 1;
-    if (items[key] === 0) delete items[key];
-  }
-  const outcome = judgeCook(ids, method, recipes, save.cookbook);
-  const found = outcome.kind === "new" ? outcome.dish : null;
-  return {
-    save: {
-      ...save,
-      items,
-      cookbook: found ? { ...save.cookbook, [found]: recipes[found] } : save.cookbook,
-      hints: found ? save.hints.filter((h) => h !== found) : save.hints,
-      lastCook: { attemptId, outcome },
-    },
-  };
-}
-
-const MAX_SERVED = 60;
-
-// The night's report checked against the customers the seed brought (cooking-service design 5): each
-// served customer real, once, already arrived, given their order made of ingredients the player has;
-// accuracy 0..1 (the server cannot see the cooking); not faster than minMsPerServe a plate. Pays,
-// takes the ingredients, moves reputation (customers not served count as gone) and keeps a summary.
-// The same report sent again after it was settled changes nothing.
-function finishService(save: SaveData, a: Record<string, unknown>, now: number, recipes: Record<DishId, Recipe> | null): { save: SaveData; error?: string } {
-  if (!recipes) return { save, error: "unavailable" };
-  if (typeof a.serviceId === "string" && a.serviceId === save.lastService?.id) return { save };
-  const svc = save.service;
-  const bad = { save, error: "bad_service" };
-  if (!svc || a.serviceId !== svc.id || !Array.isArray(a.served) || !Array.isArray(a.left) || a.served.length > MAX_SERVED || a.left.length > MAX_SERVED) return bad;
-  const customers = new Map(planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.menu, seats: seatBonus(save) }).map((c) => [c.id, c]));
-  const elapsed = now - svc.startedAt;
-  const seen = new Set<string>();
-  const used: Record<string, number> = {};
-  let sales = 0;
-  let tips = 0;
-  let happy = 0;
-  let latest = 0;
-  for (const raw of a.served as unknown[]) {
-    const e = raw as { customer?: unknown; keys?: unknown; accuracy?: unknown } | null;
-    if (!e || typeof e !== "object" || typeof e.customer !== "string" || seen.has(e.customer)) return bad;
-    const c = customers.get(e.customer);
-    if (!c || !Array.isArray(e.keys) || typeof e.accuracy !== "number" || !(e.accuracy >= 0 && e.accuracy <= 1)) return bad;
-    const ids: ItemId[] = [];
-    for (const key of e.keys as unknown[]) {
-      const item = typeof key === "string" ? parseItemKey(key) : null;
-      if (!item || ids.includes(item.id)) return bad;
-      ids.push(item.id);
-      used[key as string] = (used[key as string] ?? 0) + 1;
-    }
-    const recipe = recipes[c.dish].items;
-    if (ids.length !== recipe.length || !recipe.every((id) => ids.includes(id))) return bad;
-    seen.add(e.customer);
-    latest = Math.max(latest, c.arriveMs);
-    const v = serveValue(c.dish, dishScore(e.accuracy, e.keys as string[]));
-    sales += v.gold;
-    tips += v.tip;
-    if (v.happy) happy++;
-  }
-  for (const id of a.left as unknown[]) {
-    if (typeof id !== "string" || !customers.has(id) || seen.has(id)) return bad;
-  }
-  if (new Set(a.left as string[]).size !== (a.left as string[]).length) return bad;
-  if (elapsed < latest || elapsed < seen.size * BALANCE.service.minMsPerServe) return bad;
-  const items = { ...save.items };
-  for (const [k, n] of Object.entries(used)) {
-    if ((items[k] ?? 0) < n) return bad;
-    items[k] -= n;
-    if (items[k] === 0) delete items[k];
-  }
-  const gone = customers.size - seen.size;
-  const reputation = Math.max(0, save.reputation + happy * BALANCE.service.rep.happy + gone * BALANCE.service.rep.left);
-  return {
-    save: {
-      ...save,
-      items,
-      gold: save.gold + sales + tips,
-      reputation,
-      stage: "settle",
-      service: null,
-      lastService: { id: svc.id, served: seen.size, left: gone, sales, tips, happy, repDelta: reputation - save.reputation },
-    },
-  };
-}
-
 // Lunchboxes (growth design 2): found dishes packed from real ingredients (regular grade first, so the
 // premium meat stays for paying guests), up to the box's slots, never during a hunt.
 function packLunch(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
   const bad = { save, error: "bad_lunch" };
   const d = a.dishes;
   if (save.hunt || !Array.isArray(d) || d.length === 0 || save.lunchbox.length + d.length > lunchSlots(save)) return bad;
-  const items = { ...save.items };
+  let items = save.items;
   for (const dish of d as unknown[]) {
-    const recipe = typeof dish === "string" ? save.cookbook[dish as DishId] : undefined;
-    if (!recipe) return bad;
-    for (const id of recipe.items) {
-      const key = [itemKey(id, "normal"), itemKey(id, "premium"), id].find((k) => parseItemKey(k) && (items[k] ?? 0) > 0);
-      if (!key) return bad;
-      items[key] -= 1;
-      if (items[key] === 0) delete items[key];
-    }
+    if (!isDishId(dish) || !save.dishes[dish]) return bad;
+    const took = takeSets(items, dish, 1);
+    if (!took) return bad;
+    items = took.items;
   }
   return { save: { ...save, items, lunchbox: [...save.lunchbox, ...(d as DishId[])] } };
+}
+
+// Pays for a dish's next level (1 = research): gold and sets of its own ingredients (regular first).
+function payLevel(save: SaveData, dish: DishId, target: number): { save: SaveData; error?: string } {
+  const cost = levelCost(dish, target);
+  if (!cost) return { save, error: "max_level" };
+  if (save.gold < cost.gold) return { save, error: "no_gold" };
+  const took = takeSets(save.items, dish, cost.sets);
+  if (!took) return { save, error: "no_ingredients" };
+  return { save: { ...save, gold: save.gold - cost.gold, items: took.items, dishes: { ...save.dishes, [dish]: target } } };
+}
+
+// Research (restaurant v2 design 3): a dish opens once every ingredient of it has been brought home.
+// A second press finds it known and changes nothing.
+function research(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
+  if (!isDishId(a.dish)) return { save, error: "bad_action" };
+  if (save.stage !== "kitchen") return { save, error: "wrong_stage" };
+  if (save.dishes[a.dish]) return { save, error: "known" };
+  if (!RECIPES[a.dish].items.every((id) => save.seenItems.includes(id))) return { save, error: "unseen" };
+  return payLevel(save, a.dish, 1);
+}
+
+function upgradeDish(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
+  if (!isDishId(a.dish)) return { save, error: "bad_action" };
+  if (save.stage !== "kitchen") return { save, error: "wrong_stage" };
+  const lv = save.dishes[a.dish];
+  if (!lv) return { save, error: "unknown_dish" };
+  return payLevel(save, a.dish, lv + 1);
+}
+
+// Tonight's menu board (restaurant v2 design 3): researched dishes, each once, up to the menu slots,
+// 1..MAX_SETS sets each. The sets come out of the fridge now and become tonight's plates; what is left
+// at closing is thrown away. The server's seed brings the customers.
+function openShop(save: SaveData, a: Record<string, unknown>, ctx: ActionContext): { save: SaveData; error?: string } {
+  if (save.stage !== "kitchen" || save.service) return { save, error: "wrong_stage" };
+  const m = a.menu;
+  if (!Array.isArray(m) || m.length === 0) return { save, error: "no_menu" };
+  const bad = { save, error: "bad_menu" };
+  if (m.length > menuSlots(save)) return bad;
+  const lines: MenuLine[] = [];
+  for (const raw of m as { dish?: unknown; sets?: unknown }[]) {
+    if (!raw || typeof raw !== "object" || !isDishId(raw.dish) || !save.dishes[raw.dish] || lines.some((l) => l.dish === raw.dish)) return bad;
+    if (typeof raw.sets !== "number" || !Number.isInteger(raw.sets) || raw.sets < 1 || raw.sets > MAX_SETS) return bad;
+    lines.push({ dish: raw.dish, sets: raw.sets });
+  }
+  const plan = planShop(save.items, save.dishes, lines);
+  if (!plan) return { save, error: "no_ingredients" };
+  const seed = Math.floor(ctx.random() * 2 ** 31);
+  const id = `s${ctx.now.toString(36)}${Math.floor(ctx.random() * 1e9).toString(36)}`;
+  return { save: { ...save, items: plan.items, menu: lines, service: { id, seed, startedAt: ctx.now, dishes: plan.dishes } } };
 }
 
 // The server's rules for every change to a save (the in-page LocalTransport runs the same code).
@@ -236,45 +178,26 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       if (!gained) return { save, error: "bad_hunt" };
       const items = { ...save.items };
       for (const [k, n] of Object.entries(gained)) items[k] = (items[k] ?? 0) + n;
-      // a related ingredient in hand opens a dish's cookbook hint (spec 4)
+      // what came home shows on the cookbook's silhouettes from now on (restaurant v2 design 3)
       const ids = Object.keys(gained).map((k) => parseItemKey(k)!.id);
-      const hints = ctx.recipes ? hintsFor(ids, ctx.recipes, save.cookbook, save.hints) : save.hints;
-      return { save: { ...save, items, hunt: null, hints, stage: "kitchen", lunchbox: [] } };
+      const seenItems = [...new Set<ItemId>([...save.seenItems, ...ids])];
+      return { save: { ...save, items, hunt: null, seenItems, stage: "kitchen", lunchbox: [] } };
     }
-    case "cook":
-      return cook(save, a, ctx.recipes);
-    case "setMenu": {
-      const d = a.dishes;
-      const ok =
-        Array.isArray(d) &&
-        d.length <= menuSlots(save) &&
-        new Set(d).size === d.length &&
-        d.every((id) => {
-          const r = typeof id === "string" ? save.cookbook[id as DishId] : undefined;
-          return r !== undefined && save.tools.includes(r.method);
-        });
-      if (!ok) return { save, error: "bad_menu" };
-      return { save: { ...save, menu: [...(d as DishId[])] } };
-    }
-    case "startService": {
-      if (save.stage !== "kitchen") return { save, error: "wrong_stage" };
-      if (save.menu.length === 0) return { save, error: "no_menu" };
-      if (!save.menu.some((d) => save.cookbook[d] && servings(save.cookbook[d]!, save.items) > 0)) return { save, error: "no_ingredients" };
-      const seed = Math.floor(ctx.random() * 2 ** 31);
-      const id = `s${ctx.now.toString(36)}${Math.floor(ctx.random() * 1e9).toString(36)}`;
-      return { save: { ...save, service: { id, seed, startedAt: ctx.now, menu: [...save.menu] } } };
-    }
+    case "research":
+      return research(save, a);
+    case "upgradeDish":
+      return upgradeDish(save, a);
+    case "openShop":
+      return openShop(save, a, ctx);
     case "finishService":
-      return finishService(save, a, ctx.now, ctx.recipes);
+      return { save, error: "bad_service" };
     case "buyUpgrade": {
       if (!isUpgradeId(a.id)) return { save, error: "bad_action" };
       const cost = nextCost(save, a.id);
       if (cost === null) return { save, error: "max_level" };
       if (isLocked(save, a.id)) return { save, error: "locked" };
       if (save.gold < cost) return { save, error: "no_gold" };
-      const method = TOOL_UPGRADES[a.id];
-      const tools = method && !save.tools.includes(method) ? [...save.tools, method] : save.tools;
-      return { save: { ...save, gold: save.gold - cost, upgrades: { ...save.upgrades, [a.id]: level(save, a.id) + 1 }, tools } };
+      return { save: { ...save, gold: save.gold - cost, upgrades: { ...save.upgrades, [a.id]: level(save, a.id) + 1 } } };
     }
     case "packLunch":
       return packLunch(save, a);

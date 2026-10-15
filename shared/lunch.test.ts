@@ -1,19 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { applyAction, type ActionContext } from "./actions";
-import type { DishId } from "./content/dishes";
-import type { Recipe } from "./kitchen/cook";
 import { newSave, readSave, type SaveData } from "./save";
 
 // Lunchboxes (growth design 2): dishes packed in the kitchen from real ingredients, eaten on the next hunt.
-const ctx = (now = 1_000_000): ActionContext => ({ now, random: () => 0.3, recipes: null });
-const cookbook = {
-  grilled_belly: { method: "grill", items: ["boar_belly"] },
-  garlic_neck: { method: "grill", items: ["boar_neck", "wild_garlic"] },
-} as Partial<Record<DishId, Recipe>>;
+const ctx = (now = 1_000_000): ActionContext => ({ now, random: () => 0.3 });
 const kitchen: SaveData = {
   ...newSave(),
   stage: "kitchen",
-  cookbook,
+  dishes: { grilled_belly: 1, garlic_neck: 1 },
   items: { "boar_belly:premium": 1, "boar_belly:normal": 1, "boar_neck:normal": 1, wild_garlic: 1 },
 };
 const pack = (s: SaveData, dishes: unknown) => applyAction(s, { type: "packLunch", dishes }, ctx());

@@ -1,22 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { applyAction, koPenalty, saleLines, type ActionContext } from "./actions";
 import { BALANCE } from "./balance";
-import type { DishId } from "./content/dishes";
 import { itemKey } from "./content/items";
-import type { Recipe } from "./kitchen/cook";
 import { dropFor } from "./hunt/drops";
 import { planHunt } from "./hunt/plan";
 import { newSave, type SaveData } from "./save";
 
-// A small made-up recipe table (the real one is the server's).
-const TABLE = {
-  grilled_belly: { method: "grill", items: ["boar_belly"] },
-  belly_ssam: { method: "grill", items: ["boar_belly", "perilla", "wild_garlic"] },
-  rib_stew: { method: "boil", items: ["boar_rib", "shiitake"] },
-  shiitake_grill: { method: "grill", items: ["shiitake"] },
-} as Record<DishId, Recipe>;
-
-const ctx = (now: number, recipes: Record<DishId, Recipe> | null = TABLE): ActionContext => ({ now, random: () => 0.25, recipes });
+const ctx = (now: number): ActionContext => ({ now, random: () => 0.25 });
 
 function started(now = 1_000_000): SaveData {
   const r = applyAction(newSave(), { type: "startHunt", zone: "forest" }, ctx(now));
@@ -55,6 +45,7 @@ describe("finishHunt", () => {
     bump(itemKey(dropFor(s0.hunt!.seed, wave0[1]), "normal"));
     expect(r.save.items).toEqual(expected);
     expect(r.save.hunt).toBeNull();
+    expect([...r.save.seenItems].sort()).toEqual([...new Set(Object.keys(r.save.items).map((k) => k.split(":")[0]))].sort());
   });
 
   it("keeps items in the order they were taken until the bag is full", () => {
@@ -132,95 +123,3 @@ describe("saleLines", () => {
   });
 });
 
-describe("finishHunt opens cookbook hints", () => {
-  const s0 = started();
-  const plan = planHunt(s0.hunt!.seed, "forest");
-  const report = (events: unknown[], ko = false) => ({ type: "finishHunt", huntId: s0.hunt!.id, events, ko });
-  const shiitake = plan.nodes.filter((n) => n.item === "shiitake");
-
-  it("opens the hints of dishes using what was gained", () => {
-    const r = applyAction(s0, report([{ gather: shiitake[0].id }, { gather: shiitake[1].id }]), ctx(s0.hunt!.startedAt));
-    expect(r.save.hints).toEqual(["rib_stew", "shiitake_grill"]);
-  });
-  it("opens nothing for an item lost to a knockout", () => {
-    const r = applyAction(s0, report([{ gather: shiitake[0].id }], true), ctx(s0.hunt!.startedAt));
-    expect(r.save.items).toEqual({});
-    expect(r.save.hints).toEqual([]);
-  });
-});
-
-describe("cook", () => {
-  const fridge = { ...newSave(), items: { "boar_belly:premium": 1, "boar_belly:normal": 2, perilla: 1, wild_garlic: 1, shiitake: 3 } };
-  const cook = (items: unknown, method: unknown = "grill", attemptId: unknown = "a1") => ({ type: "cook", attemptId, items, method });
-
-  it("finds a dish, uses one of each item and adds the recipe to the cookbook", () => {
-    const s = { ...fridge, hints: ["belly_ssam" as DishId, "rib_stew" as DishId] };
-    const r = applyAction(s, cook(["boar_belly:premium", "perilla", "wild_garlic"]), ctx(0));
-    expect(r.error).toBeUndefined();
-    expect(r.save.items).toEqual({ "boar_belly:normal": 2, shiitake: 3 });
-    expect(r.save.cookbook).toEqual({ belly_ssam: TABLE.belly_ssam });
-    expect(r.save.hints).toEqual(["rib_stew"]);
-    expect(r.save.lastCook).toEqual({ attemptId: "a1", outcome: { kind: "new", dish: "belly_ssam" } });
-  });
-  it("uses the items on a failed try too", () => {
-    const r = applyAction(fridge, cook(["shiitake", "perilla"], "fry"), ctx(0));
-    expect(r.save.items).toEqual({ ...fridge.items, shiitake: 2, perilla: undefined });
-    expect(r.save.lastCook?.outcome).toEqual({ kind: "fail", method: "fry" });
-  });
-  it("does not cook a resent try twice", () => {
-    const once = applyAction(fridge, cook(["shiitake"]), ctx(0)).save;
-    const again = applyAction(once, cook(["shiitake"]), ctx(0));
-    expect(again.error).toBeUndefined();
-    expect(again.save).toEqual(once);
-  });
-  it("is unavailable without the server's recipe table", () => {
-    const r = applyAction(fridge, cook(["shiitake"]), ctx(0, null));
-    expect(r.error).toBe("unavailable");
-    expect(r.save).toEqual(fridge);
-  });
-  const refused: [string, unknown][] = [
-    ["the same item in two grades", cook(["boar_belly:premium", "boar_belly:normal"])],
-    ["an item not in the fridge", cook(["boar_rib:normal"])],
-    ["an unknown item key", cook(["dragon:premium"])],
-    ["four items", cook(["boar_belly:premium", "perilla", "wild_garlic", "shiitake"])],
-    ["no items", cook([])],
-    ["items that are not a list", cook("shiitake")],
-    ["an unknown method", cook(["shiitake"], "microwave")],
-    ["no attempt id", cook(["shiitake"], "grill", null)],
-    ["a huge attempt id", cook(["shiitake"], "grill", "x".repeat(41))],
-  ];
-  for (const [what, action] of refused) {
-    it(`refuses ${what} and leaves the save alone`, () => {
-      const r = applyAction(fridge, action, ctx(0));
-      expect(r.error).toBe("bad_cook");
-      expect(r.save).toEqual(fridge);
-    });
-  }
-});
-
-describe("setMenu", () => {
-  const s = {
-    ...newSave(),
-    cookbook: { grilled_belly: TABLE.grilled_belly, belly_ssam: TABLE.belly_ssam, rib_stew: TABLE.rib_stew, shiitake_grill: TABLE.shiitake_grill },
-  };
-  it("sets tonight's menu", () => {
-    expect(applyAction(s, { type: "setMenu", dishes: ["belly_ssam", "grilled_belly"] }, ctx(0)).save.menu).toEqual(["belly_ssam", "grilled_belly"]);
-  });
-  it("allows an empty menu", () => {
-    expect(applyAction(s, { type: "setMenu", dishes: [] }, ctx(0)).error).toBeUndefined();
-  });
-  const refused: [string, unknown][] = [
-    ["a dish not found yet", ["baeksuk"]],
-    ["a dish without its tool", ["rib_stew"]],
-    ["more dishes than menu slots", ["grilled_belly", "belly_ssam", "shiitake_grill"]],
-    ["the same dish twice", ["grilled_belly", "grilled_belly"]],
-    ["something that is not a list", "grilled_belly"],
-  ];
-  for (const [what, dishes] of refused) {
-    it(`refuses ${what}`, () => {
-      const r = applyAction(s, { type: "setMenu", dishes }, ctx(0));
-      expect(r.error).toBe("bad_menu");
-      expect(r.save).toEqual(s);
-    });
-  }
-});

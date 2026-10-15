@@ -6,7 +6,7 @@ import { planHunt } from "./hunt/plan";
 import { planService } from "./service/plan";
 import { newSave, readSave } from "./save";
 
-const ctx: ActionContext = { now: 0, random: () => 0.5, recipes: null };
+const ctx: ActionContext = { now: 0, random: () => 0.5 };
 const U = BALANCE.upgrades;
 const buy = (s: ReturnType<typeof newSave>, id: string) => applyAction(s, { type: "buyUpgrade", id }, ctx);
 
@@ -35,7 +35,6 @@ describe("buyUpgrade", () => {
     expect(buy(maxed, "ranged")).toEqual({ save: maxed, error: "max_level" });
     const atLock = { ...newSave(), gold: 99_999, upgrades: { melee: 3 } };
     expect(buy(atLock, "melee")).toEqual({ save: atLock, error: "locked" });
-    expect(buy({ ...newSave(), gold: 99_999 }, "wok").error).toBe("locked");
     expect(buy({ ...newSave(), gold: 99_999 }, "rocket").error).toBe("bad_action");
   });
   it("has a cost for every level step it offers", () => {
@@ -69,11 +68,12 @@ describe("upgrade effects", () => {
     expect(Object.values(r.save.items).reduce((a, b) => a + b, 0)).toBe(15);
   });
   it("lets tonight's menu hold more dishes after the menu upgrade", () => {
-    const cookbook = { grilled_belly: { method: "grill" as const, items: ["boar_belly" as const] }, garlic_neck: { method: "grill" as const, items: ["boar_neck" as const] }, shiitake_grill: { method: "grill" as const, items: ["shiitake" as const] } };
-    const three = { type: "setMenu", dishes: ["grilled_belly", "garlic_neck", "shiitake_grill"] };
-    expect(applyAction({ ...newSave(), cookbook }, three, ctx).error).toBe("bad_menu");
-    expect(applyAction({ ...newSave(), cookbook, upgrades: { menu: 2 } }, three, ctx).error).toBeUndefined();
+    const kitchen = { ...newSave(), stage: "kitchen" as const, dishes: { grilled_belly: 1, garlic_neck: 1, shiitake_grill: 1 }, items: { "boar_belly:normal": 1, "boar_neck:normal": 1, wild_garlic: 1, shiitake: 1 } };
+    const three = { type: "openShop", menu: [{ dish: "grilled_belly", sets: 1 }, { dish: "garlic_neck", sets: 1 }, { dish: "shiitake_grill", sets: 1 }] };
+    expect(applyAction(kitchen, three, ctx).error).toBe("bad_menu");
+    expect(applyAction({ ...kitchen, upgrades: { menu: 2 } }, three, ctx).error).toBeUndefined();
   });
+
   it("brings one more guest a night per seat level, the same way for the server and the page", () => {
     const opts = { day: 1, reputation: 0, menu: ["grilled_belly" as const] };
     expect(planService(5, { ...opts, seats: 1 })).toHaveLength(planService(5, opts).length + 1);
