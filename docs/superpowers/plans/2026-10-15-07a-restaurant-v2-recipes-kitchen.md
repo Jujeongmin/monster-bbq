@@ -1509,7 +1509,7 @@ git commit -m "chore: the recipe table is public; no server-only answers, no bun
 | `where.chicken_breast` | 닭가슴살도 숲 닭이껑. 한 마리씩 떼어 내 잡껑. | Chicken breast too. Pick them off one at a time. |
 | `where.shiitake` | 표고는 숲 바닥에서 줍껑. 나무 밑을 잘 보껑. | Shiitake grows on the forest floor. Look under the trees. |
 | `where.wild_garlic` | 산마늘은 풀숲에 숨어 있껑. 냄새로 찾껑. | Wild garlic hides in the grass. Follow your nose. |
-| `where.perilla` | 깻잎은 숲에서 줍껑. 잘 안 보이면 E를 눌러 보껑. | Perilla is picked in the forest. Press E when you're near. |
+| `where.perilla` | 깻잎은 숲 가장자리에서 줍껑. 반짝이는 풀을 잘 보껑. | Perilla grows at the forest's edge. Look for the shining leaves. |
 
 - [ ] **Step 2: 도감**
 
