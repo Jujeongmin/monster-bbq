@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create ONE image.
+
+Style: EXACTLY the flat, hand-placed retro pixel-art style of the attached lid_faces.png and rabbit_sheet.png (chunky visible square pixels, small logical resolution, at most 12-14 flat colours per figure, 2-3 tone cel shading, clean 1-pixel dark outline, NO gradients, NO glossy shine, NO fur/moss/grain texture noise, NO glow, NO airbrush). It must not look AI-made: simple readable shapes, charm from pose and expression.
+
+Save as art-src/codex/raw/customers_yokai.png — a SQUARE image, flat solid magenta (#FF00FF) background, a 4 columns x 4 rows grid. Each ROW is one regular customer of a grandmother's Korean BBQ restaurant at night. They are SCARY Korean yokai (big, menacing, spooky) but drawn comic and chibi, and inside the shop they are terrified of the grandmother, so they behave like the most polite, obedient customers ever: stiff straight backs, nervous sweat drops, small bows. All facing RIGHT, seen from the side, all the same size class (about as tall as a child standing behind a low table), each drawn COMPLETELY with its dark outline closed all the way round, small enough to leave wide empty magenta space on every side, nowhere near another figure or the image edge. No text anywhere.
+
+Columns: walking in (left foot forward, a little nervous), walking in (right foot forward), sitting and waiting very politely (hands on knees, holding chopsticks upright, a sweat drop), happily eating with a little heart above its head.
+
+ row 1: a one-eyed dokkaebi goblin — red skin, one big eye, one horn, wild hair, tiger-skin loincloth, a spiked club (bangmangi) tucked away behind its back in walk frames only, not in the sitting/eating frames.
+ row 2: a gumiho nine-tailed fox in a hanbok — white fox with sharp eyes, but only FOUR fluffy tails left (and she pretends not to care).
+ row 3: a jeoseungsaja grim reaper — black hanbok robe and the tall black gat hat, very pale face, a small black ledger book tucked under one arm in the walk frames.
+ row 4: a mulgwishin water ghost — long wet black hair over half her face, pale skin, a white ragged hanbok, little water drips falling from her hair and sleeves.
+
+Reply only with the saved file path.

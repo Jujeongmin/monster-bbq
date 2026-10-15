@@ -1,15 +1,16 @@
-/* The NPC dialogue box: kit A panel, the ribbon as the name plate, the portrait leaning out over the top. */
+/* The NPC dialogue box: a kit A panel the full width of the screen along the bottom (like an MMORPG NPC
+   talk), the ribbon as the name plate, the portrait leaning out over the top. */
 .dialogue {
   position: absolute; inset: 0; z-index: 50;
-  display: flex; align-items: flex-end; justify-content: center;
-  padding-bottom: calc(6px * var(--s));
+  display: flex; align-items: flex-end;
+  padding: 0 calc(4px * var(--s)) calc(4px * var(--s));
   cursor: pointer;
 }
 .dialogue-box {
   position: relative;
-  width: min(calc(560px * var(--s)), 96%);
-  min-height: calc(70px * var(--s));
-  padding-left: calc(104px * var(--s));
+  width: 100%;
+  min-height: calc(84px * var(--s));
+  padding-left: calc(108px * var(--s));
 }
 .dialogue-face {
   position: absolute; left: calc(-14px * var(--s)); bottom: calc(-8px * var(--s));
