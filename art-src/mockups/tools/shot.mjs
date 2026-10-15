@@ -16,7 +16,7 @@ let id = 0; const wait = new Map();
 ws.onmessage = (m) => { const d = JSON.parse(m.data); if (wait.has(d.id)) { wait.get(d.id)(d); wait.delete(d.id); } };
 const call = (method, params = {}) => new Promise((r) => { const n = ++id; wait.set(n, r); ws.send(JSON.stringify({ id: n, method, params })); });
 await call("Emulation.setDeviceMetricsOverride", { width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });
-await call("Page.navigate", { url: "http://localhost:5190/art-src/mockups/seed-kitchen.html" });
+await call("Page.navigate", { url: `http://localhost:5190/art-src/mockups/${process.env.SEED ?? "seed-kitchen"}.html` });
 await sleep(6000);
 let n = 0;
 for (const js of steps) {
