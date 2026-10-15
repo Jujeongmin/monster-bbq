@@ -8,6 +8,7 @@ import { addToBag } from "./hunt/bag";
 import { dropFor } from "./hunt/drops";
 import { planHunt } from "./hunt/plan";
 import { levelCost, MAX_SETS, planShop, takeSets, type MenuLine } from "./kitchen/dish";
+import { settleService } from "./service/settle";
 import type { SaveData, Zone } from "./save";
 
 // What a hunt report lists, in the order things happened (spec 7: the client says what it took,
@@ -190,7 +191,7 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
     case "openShop":
       return openShop(save, a, ctx);
     case "finishService":
-      return { save, error: "bad_service" };
+      return settleService(save, a, ctx.now);
     case "buyUpgrade": {
       if (!isUpgradeId(a.id)) return { save, error: "bad_action" };
       const cost = nextCost(save, a.id);

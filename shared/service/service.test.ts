@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { BALANCE } from "../balance";
 import type { DishId } from "../content/dishes";
 import { planService } from "./plan";
-import { dishScore, serveValue } from "./settle";
 
 const SV = BALANCE.service;
 const menu: DishId[] = ["grilled_belly", "garlic_neck"];
@@ -35,23 +34,5 @@ describe("planService", () => {
   });
   it("has nobody to serve with an empty menu", () => {
     expect(planService(1, { day: 1, reputation: 0, menu: [] })).toEqual([]);
-  });
-});
-
-describe("dishScore and serveValue", () => {
-  it("rewards premium meat in proportion to the parts used", () => {
-    expect(dishScore(0.8, ["boar_belly:normal"])).toBeCloseTo(0.8);
-    expect(dishScore(0.8, ["boar_belly:premium"])).toBeCloseTo(0.8 * (1 + SV.premiumBonus));
-    expect(dishScore(0.8, ["boar_belly:premium", "wild_garlic", "boar_neck:normal"])).toBeCloseTo(0.8 * (1 + SV.premiumBonus / 2));
-  });
-  it("pays most of the price for any plate, the rest for skill, and tips only great plates", () => {
-    const price = SV.dishPrice.garlic_neck;
-    expect(serveValue("garlic_neck", 0)).toEqual({ gold: Math.round(price * 0.6), tip: 0, happy: false });
-    expect(serveValue("garlic_neck", 0.8).tip).toBe(0);
-    const great = serveValue("garlic_neck", 1.25);
-    expect(great.gold).toBe(price);
-    expect(great.tip).toBe(Math.round(price * SV.tipRate));
-    expect(great.happy).toBe(true);
-    expect(serveValue("garlic_neck", SV.happyAt).happy).toBe(true);
   });
 });

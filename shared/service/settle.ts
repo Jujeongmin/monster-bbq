@@ -1,21 +1,59 @@
 import { BALANCE } from "../balance";
-import type { DishId } from "../content/dishes";
-import { ITEMS, parseItemKey } from "../content/items";
+import { isDishId, type DishId } from "../content/dishes";
+import { seatBonus } from "../growth";
+import type { SaveData } from "../save";
+import { planService } from "./plan";
 
-// What a served plate is worth (design 4: dish score = cooking accuracy x meat grade).
 const SV = BALANCE.service;
+const MAX_SERVED = 60;
 
-// Cooking accuracy lifted by the share of premium parts among the monster parts on the plate.
-export function dishScore(accuracy: number, keys: string[]): number {
-  const parts = keys.map(parseItemKey).filter((i) => i && ITEMS[i.id].kind === "part");
-  const premium = parts.filter((i) => i!.grade === "premium").length;
-  return accuracy * (1 + (parts.length ? (SV.premiumBonus * premium) / parts.length : 0));
-}
-
-// Most of the price for any plate, the rest for skill; tips only for great plates.
-export function serveValue(dish: DishId, score: number): { gold: number; tip: number; happy: boolean } {
-  const price = SV.dishPrice[dish];
-  const gold = Math.round(price * (0.6 + 0.4 * Math.min(1, Math.max(0, score))));
-  const tip = Math.round(price * SV.tipRate * Math.min(1, Math.max(0, (score - 0.8) / 0.45)));
-  return { gold, tip, happy: score >= SV.happyAt };
+// The night's report checked against the customers the seed brought (restaurant v2, stage 1: a plate
+// goes out the moment its order is tapped). Each served customer real, once, already arrived, given a
+// dish cooked tonight, no more plates of a dish than were made; not faster than minMsPerServe a plate.
+// Pays tonight's price per plate (no tips until the waiter serves by hand, stage 2). Every plate served
+// is a happy customer; customers who went without while there were plates to give count as gone (those
+// after the last plate do not). The same report sent again after it was settled changes nothing.
+export function settleService(save: SaveData, a: Record<string, unknown>, now: number): { save: SaveData; error?: string } {
+  if (typeof a.serviceId === "string" && a.serviceId === save.lastService?.id) return { save };
+  const svc = save.service;
+  const bad = { save, error: "bad_service" };
+  if (!svc || a.serviceId !== svc.id || !Array.isArray(a.served) || !Array.isArray(a.left) || a.served.length > MAX_SERVED || a.left.length > MAX_SERVED) return bad;
+  const menu = svc.dishes.map((d) => d.dish);
+  const customers = new Map(planService(svc.seed, { day: save.day, reputation: save.reputation, menu, seats: seatBonus(save) }).map((c) => [c.id, c]));
+  const plates = new Map(svc.dishes.map((d) => [d.dish, d.plates]));
+  const price = new Map(svc.dishes.map((d) => [d.dish, d.price]));
+  const seen = new Set<string>();
+  let sales = 0;
+  let latest = 0;
+  for (const raw of a.served as unknown[]) {
+    const e = raw as { customer?: unknown; dish?: unknown } | null;
+    if (!e || typeof e !== "object" || typeof e.customer !== "string" || seen.has(e.customer) || !isDishId(e.dish)) return bad;
+    const c = customers.get(e.customer);
+    const left = plates.get(e.dish as DishId) ?? 0;
+    if (!c || left < 1) return bad;
+    plates.set(e.dish, left - 1);
+    seen.add(e.customer);
+    latest = Math.max(latest, c.arriveMs);
+    sales += price.get(e.dish)!;
+  }
+  for (const id of a.left as unknown[]) {
+    if (typeof id !== "string" || !customers.has(id) || seen.has(id)) return bad;
+  }
+  if (new Set(a.left as string[]).size !== (a.left as string[]).length) return bad;
+  const elapsed = now - svc.startedAt;
+  if (elapsed < latest || elapsed < seen.size * SV.minMsPerServe) return bad;
+  const made = svc.dishes.reduce((n, d) => n + d.plates, 0);
+  const gone = Math.max(0, Math.min(customers.size, made) - seen.size);
+  const happy = seen.size;
+  const reputation = Math.max(0, save.reputation + happy * SV.rep.happy + gone * SV.rep.left);
+  return {
+    save: {
+      ...save,
+      gold: save.gold + sales,
+      reputation,
+      stage: "settle",
+      service: null,
+      lastService: { id: svc.id, served: seen.size, left: gone, sales, tips: 0, happy, repDelta: reputation - save.reputation },
+    },
+  };
 }

@@ -22,7 +22,7 @@ describe("the day's stage", () => {
     expect(s.stage).toBe("kitchen");
     expect(applyAction(s, { type: "startHunt", zone: "forest" }, ctx()).error).toBe("wrong_stage");
   });
-  it.skip("opens the shop only from the kitchen, and settles to the settle stage", () => {
+  it("opens the shop only from the kitchen, and settles to the settle stage", () => {
     expect(applyAction({ ...newSave(), dishes: { grilled_belly: 1 }, items: { "boar_belly:normal": 1 } }, { type: "openShop", menu: [{ dish: "grilled_belly", sets: 1 }] }, ctx()).error).toBe("wrong_stage");
     const k = { ...hunted(), dishes: { grilled_belly: 1 }, items: { "boar_belly:normal": 1 } };
     const open = applyAction(k, { type: "openShop", menu: [{ dish: "grilled_belly", sets: 1 }] }, ctx()).save;

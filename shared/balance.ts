@@ -104,10 +104,6 @@ export const BALANCE: {
     patienceMs: [number, number];
     seats: number;
     minMsPerServe: number; // no faster than this per plate (server check)
-    dishPrice: Record<DishId, number>;
-    premiumBonus: number; // dish score lift when every part on the plate is premium
-    tipRate: number;
-    happyAt: number;
     rep: { happy: number; left: number };
   };
   cooking: {
@@ -231,19 +227,6 @@ export const BALANCE: {
     patienceMs: [45000, 60000],
     seats: 4,
     minMsPerServe: 4000,
-    dishPrice: {
-      grilled_belly: 40,
-      garlic_neck: 50,
-      belly_ssam: 65,
-      honey_rabbit: 70,
-      shiitake_grill: 18,
-      rib_stew: 80,
-      baeksuk: 90,
-      chicken_perilla: 55,
-    },
-    premiumBonus: 0.25,
-    tipRate: 0.3,
-    happyAt: 0.75,
     rep: { happy: 1, left: -2 },
   },
   // hands-on cooking (cooking-service design 2); first guesses, tuned in play
