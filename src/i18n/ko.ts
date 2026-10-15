@@ -12,7 +12,6 @@ export const ko = {
   "lunch.goHunt": "오후 사냥 나가기",
   "lunch.skip": "오후는 쉬기",
   "lunch.upgrades": "업그레이드",
-  "hunt.stamina": "기력",
   "hunt.useExit": "E 반달이 수레로 나가기",
   "hunt.useDown": "E 아래층으로",
   "hunt.useButton": "쓰기",

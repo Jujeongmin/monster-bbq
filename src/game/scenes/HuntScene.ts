@@ -21,7 +21,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 import { createCharacterAnims, loadCharacterArt, lookOf, stepBob } from "../hunt/anims";
 import { angerFlock, CHAR_SCALE, createMob, dazeMob, drawMob, isMobVulnerable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { joystickVector } from "../joystick";
-import { addGauge, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiGauge } from "../ui";
+import { KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL } from "../ui";
 
 // The forest hunt (plan 03), quarter view, Dave-the-Diver controls.
 // PC: WASD / arrows move, aim with the mouse, left click = harpoon, right click = slash, E = gather, go
@@ -36,8 +36,8 @@ const HUNTER_FEET = 0.92;
 const GATHER_RANGE = 26;
 // how close the hunter must stand to a cart or the way down to use it with E
 const USE_RANGE = 28;
-// the stamina gauge's width in game pixels
-const STAMINA_W = 180;
+// the round stamina gauge: its centre and radius in game pixels (40 art pixels across, drawn KIT times bigger)
+const RING = { x: 50, y: 48, r: 40 };
 const GATHER_MS = 1000;
 const REFILL_DELAY_MS = 2500;
 // Touch controls, in screen pixels of the game, placed relative to its size.
@@ -130,7 +130,11 @@ export class HuntScene extends Phaser.Scene {
   private slashArc: { at: Vec; aim: Vec; ms: number } | null = null;
   private hitStopMs = 0;
   private ended = false;
-  private hpGauge!: UiGauge;
+  // the round stamina gauge (Dave the Diver's oxygen, art approved 2026-10-15): the full ring shows only
+  // over the share that is left, through a pie mask; the face tires when stamina runs low
+  private ringMask!: Phaser.GameObjects.Graphics;
+  private face!: Phaser.GameObjects.Image;
+  private shownStamina = -1;
   private fx!: Phaser.GameObjects.Graphics;
   private bagText!: Phaser.GameObjects.Text;
   private gatherHint!: Phaser.GameObjects.Text;
@@ -193,6 +197,7 @@ export class HuntScene extends Phaser.Scene {
   preload() {
     this.load.image("grass", artUrl("test/bg/grass.png"));
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
+    for (const k of ["ring_empty", "ring_full", "face_fine", "face_tired"]) this.load.image(`stamina_${k}`, artUrl(`test/ui/stamina/${k}.png`));
     this.load.image("exit", artUrl("test/hunt/exit.png"));
     this.load.image("stairs", artUrl("test/hunt/stairs.png"));
     loadCharacterArt(this);
@@ -237,14 +242,17 @@ export class HuntScene extends Phaser.Scene {
 
     const hudStyle = TEXT_SMALL;
     // no key list on screen: the controls come with the tutorial (user, 2026-10-15)
-    // stamina big and plain at the top left — its name, a long brass gauge and what is left in numbers
-    // (user, 2026-10-15: it was hard to see) — the floor and the bag under it; no way home but the carts
-    const row = 30;
-    this.add.text(8, row, t("hunt.stamina"), { ...TEXT, fontStyle: "bold" }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(10000);
-    this.hpGauge = addGauge(this, 46 + STAMINA_W / 2, row, STAMINA_W);
-    this.hpGauge.box.setScrollFactor(0).setDepth(10000);
-    this.staminaText = this.add.text(52 + STAMINA_W, row, "", { ...TEXT, fontStyle: "bold" }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(10000);
-    this.bagText = this.add.text(8, row + 18, "", hudStyle).setScrollFactor(0).setDepth(10000);
+    // stamina in the round gauge at the top left with what is left under it (user, 2026-10-15: the bar was
+    // hard to see), the floor and the bag beside it; no way home but the carts
+    const hud = <T extends Phaser.GameObjects.Image | Phaser.GameObjects.Text>(o: T): T => o.setScrollFactor(0).setDepth(10000) as T;
+    hud(this.add.image(RING.x, RING.y, "stamina_ring_empty").setScale(KIT));
+    const full = hud(this.add.image(RING.x, RING.y, "stamina_ring_full").setScale(KIT));
+    this.ringMask = this.make.graphics({}, false).setScrollFactor(0);
+    full.setMask(this.ringMask.createGeometryMask());
+    this.face = hud(this.add.image(RING.x, RING.y, "stamina_face_fine").setScale(KIT));
+    this.staminaText = hud(this.add.text(RING.x, RING.y + RING.r + 8, "", { ...TEXT, fontStyle: "bold" }).setOrigin(0.5));
+    this.shownStamina = -1;
+    this.bagText = hud(this.add.text(RING.x + RING.r + 10, RING.y - 6, "", hudStyle).setOrigin(0, 0.5));
     this.gatherHint = this.add.text(0, 0, "", hudStyle).setOrigin(0.5).setDepth(9500).setVisible(false);
     // which way the nearest cart is, at the screen's edge when it is out of sight (or always, when the bag
     // is full or stamina runs low)
@@ -866,8 +874,14 @@ export class HuntScene extends Phaser.Scene {
 
   private drawHud() {
     const frac = this.run.stamina / this.maxStamina;
-    this.hpGauge.set(frac);
-    this.staminaText.setText(`${Math.ceil(this.run.stamina)}/${this.maxStamina}`).setColor(frac < LOW_STAMINA ? "#ff7070" : "#fff3d8");
+    const shown = Math.ceil(this.run.stamina);
+    if (shown !== this.shownStamina) {
+      this.shownStamina = shown;
+      // the ring that is left, clockwise from the top
+      this.ringMask.clear().fillStyle(0xffffff).slice(RING.x, RING.y, RING.r + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.0001, frac), false).fillPath();
+      this.staminaText.setText(String(shown)).setColor(frac < LOW_STAMINA ? "#ff7070" : "#fff3d8");
+      this.face.setTexture(frac < LOW_STAMINA ? "stamina_face_tired" : "stamina_face_fine");
+    }
     this.bagText.setText(`${t("hunt.floorShort", { n: this.run.floor })} · ${t("hud.bag", { n: bagCount(this.run.bag), max: this.bagSlots })}`);
     const low = frac < LOW_STAMINA && !this.player.down;
     this.lowGlow.setVisible(low);
