@@ -3,8 +3,8 @@
     python -I art-src/walk-check/check.py art-src/codex/raw/walk4_side.png side
 
 Nothing is drawn; the strip is only measured.
-- front/back/diagonal facings: in each step frame, which half of the body (image-left or image-right)
-  has the lower boot. Frames 1 and 3 must disagree.
+- front/back/diagonal facings: in each step frame, which side of the torso (image-left or image-right)
+  the lowest boot sits on. Frames 1 and 3 must disagree.
 - side facing: the leading (rightmost) foot is the near, lighter leg in one step frame and the far,
   darker leg in the other, so its brightness must differ clearly between frames 1 and 3.
 - every facing: the step frames' stride (width of the feet row) must be wider than the passing frames'.
@@ -20,8 +20,9 @@ def key(im: Image.Image) -> Image.Image:
     px = im.load()
     for y in range(im.height):
         for x in range(im.width):
-            r, g, b, _ = px[x, y]
-            if (r > 150 and b > 150 and g < 120) or (r > 80 and b > 80 and min(r, b) - g > 50):
+            r, g, b, a = px[x, y]
+            # magenta (and its purple fringe), and the faint half-transparent dust some strips arrive with
+            if a < 128 or (r > 150 and b > 150 and g < 120) or (r > 80 and b > 80 and min(r, b) - g > 50):
                 px[x, y] = (0, 0, 0, 0)
     return im
 
@@ -46,13 +47,17 @@ def lum(p) -> float:
     return 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]
 
 
-def lower_side(c: Image.Image) -> tuple[str, int]:
-    mid = c.width / 2
-    pts = feet(c)
-    left = max((y for x, y, _ in pts if x < mid), default=-1)
-    right = max((y for x, y, _ in pts if x >= mid), default=-1)
-    gap = left - right
-    return ("L" if gap > 1 else "R" if gap < -1 else "="), gap
+def lower_side(c: Image.Image) -> tuple[str, float]:
+    # where the lowest boot sits against the torso: the bottom 6% of the body (the boot nearest the
+    # viewer) left or right of the head-and-torso centre. On a diagonal facing both boots can touch the
+    # bottom row, so a plain left-half/right-half test reads them as level.
+    px = c.load()
+    torso = [x for y in range(int(c.height * 0.55)) for x in range(c.width) if px[x, y][3] > 0]
+    low = [x for y in range(int(c.height * 0.94), c.height) for x in range(c.width) if px[x, y][3] > 0]
+    if not torso or not low:
+        return "=", 0.0
+    gap = sum(low) / len(low) - sum(torso) / len(torso)
+    return ("L" if gap < -1.5 else "R" if gap > 1.5 else "="), round(gap, 1)
 
 
 def stride(c: Image.Image) -> int:
@@ -75,8 +80,11 @@ def main():
     ok = True
     st = [stride(c) for c in fr]
     wide = min(st[0], st[2]) > max(st[1], st[3])
-    print(f"stride step/pass: {st} -> {'ok' if wide else 'step frames not wider'}")
-    ok &= wide
+    # the stride shows as width only from the side; front, back and diagonal steps show as height, so
+    # there the stride line is only advice
+    print(f"stride step/pass: {st} -> {'ok' if wide else 'step frames not wider'}{'' if facing == 'side' else ' (advice only)'}")
+    if facing == "side":
+        ok &= wide
     if facing == "side":
         a, b = front_foot_lum(fr[0]), front_foot_lum(fr[2])
         alt = abs(a - b) >= 12

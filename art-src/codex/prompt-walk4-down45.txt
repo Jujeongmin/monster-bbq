@@ -2,7 +2,7 @@ Use your image generation tool (do not write code to draw) to create ONE image: 
 
 Save as art-src/codex/raw/walk4_down45.png — a WIDE image exactly 4 times as wide as it is tall (for example 1024x256): 4 equal square cells side by side, left to right, one full-body pose centred in each cell, all poses the same size with the feet on the same baseline. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no motion lines, no dust, nothing outside the character. No pose touches its cell edge.
 
-FACING for every frame: three-quarter front view, turned 45 degrees toward camera-right (walking down and to the right).
+FACING for every frame — copy the attached standing pose's angle EXACTLY: a THREE-QUARTER FRONT view, the body turned 45 degrees toward camera-right, walking down and to the right. In the attached pose: the face looks down-right (both eyes visible, the nose and mouth sit right of the face's centre, the image-right cheek is narrow); the harpoon and the coiled rope stand on the image-LEFT side of the body over his right shoulder, which is nearer the viewer and larger; the cleaver hangs at the image-right hip. Every frame must keep this exact turn. A previous try drifted to a straight front view (face centred, shoulders equal) — that is WRONG; if the face looks straight at the viewer the frame is wrong.
 
 The four frames must be clearly DIFFERENT poses — this is the most important rule:
 frame 1 (step): the leg on the IMAGE-LEFT side steps forward, its boot clearly LOWER in the picture; the image-right leg is back.

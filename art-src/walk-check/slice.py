@@ -25,8 +25,9 @@ def key(im: Image.Image) -> Image.Image:
     px = im.load()
     for y in range(im.height):
         for x in range(im.width):
-            r, g, b, _ = px[x, y]
-            if (r > 150 and b > 150 and g < 120) or (r > 80 and b > 80 and min(r, b) - g > 50):
+            r, g, b, a = px[x, y]
+            # magenta (and its purple fringe), and the faint half-transparent dust some strips arrive with
+            if a < 128 or (r > 150 and b > 150 and g < 120) or (r > 80 and b > 80 and min(r, b) - g > 50):
                 px[x, y] = (0, 0, 0, 0)
     return im
 
