@@ -1,3 +1,4 @@
+import { BALANCE } from "../balance";
 import { FLOORS, type FloorId, type Period } from "../content/floors";
 import type { ItemId } from "../content/items";
 import { MONSTERS, type MonsterId } from "../content/monsters";
@@ -84,6 +85,12 @@ export function planFloor(seed: number, floor: FloorId, period: Period): FloorPl
   const forage = roster.forage.flatMap(([item, c]) => Array.from({ length: c }, () => item));
   const nodeSpots = spots(s0 + 300, forage.length, 70, 6);
   const nodes = forage.map((item, i) => ({ id: `${floor}-n${i}`, item, x: nodeSpots[i % nodeSpots.length].x, y: nodeSpots[i % nodeSpots.length].y }));
+
+  // the tusk boss (hunt v3 design 4.7): some hunts only, on floor 2, somewhere away from the arrival
+  if (floor === 2 && rand() < BALANCE.hunt.tusk.chance) {
+    const at = spots(s0 + 400, 1, 0, 24)[0];
+    if (at) spawns.push({ id: "2-boss", monster: "tusk", x: at.x, y: at.y, wave: 0 });
+  }
 
   return { floor, objects, spawns, nodes };
 }

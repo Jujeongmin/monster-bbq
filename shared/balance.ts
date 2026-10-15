@@ -48,6 +48,29 @@ export const BALANCE: {
     netBindMs: number;
     sling: { damage: number; stunMs: number; range: number; speed: number };
     firecracker: { radius: number; stunMs: number; range: number };
+    // the tusk boss (hunt v3 design 4.7): how often it is on floor 2, how it moves, its three patterns
+    tusk: {
+      chance: number;
+      wanderSpeed: number;
+      aggroRange: number;
+      chargeSpeed: number;
+      telegraphMs: number;
+      chargeMs: number;
+      charges: number;
+      chargeGapMs: number;
+      slamTelegraphMs: number;
+      slamRadius: number;
+      slamDamage: number;
+      grabRange: number;
+      grabRushSpeed: number;
+      grabRushMs: number;
+      grabMashes: number;
+      grabMs: number;
+      grabDamage: number;
+      recoverMs: number;
+      contactDamage: number;
+      angryMul: number;
+    };
     bagSlots: number;
   };
   economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
@@ -144,6 +167,28 @@ export const BALANCE: {
     netBindMs: 3000,
     sling: { damage: 3, stunMs: 1200, range: 200, speed: 320 },
     firecracker: { radius: 60, stunMs: 1500, range: 150 },
+    tusk: {
+      chance: 0.6,
+      wanderSpeed: 22,
+      aggroRange: 150,
+      chargeSpeed: 210,
+      telegraphMs: 700,
+      chargeMs: 650,
+      charges: 3,
+      chargeGapMs: 450,
+      slamTelegraphMs: 900,
+      slamRadius: 70,
+      slamDamage: 20,
+      grabRange: 24,
+      grabRushSpeed: 150,
+      grabRushMs: 1200,
+      grabMashes: 12,
+      grabMs: 2500,
+      grabDamage: 35,
+      recoverMs: 2000,
+      contactDamage: 22,
+      angryMul: 1.3,
+    },
     bagSlots: 12,
   },
   // what each item is worth raw (premium parts pay double); lunches and the retired item shop priced by it

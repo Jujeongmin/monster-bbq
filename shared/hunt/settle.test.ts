@@ -175,5 +175,14 @@ describe("taking monsters by stars", () => {
     const s = out("sling");
     expect(finish(s, [{ take: wave0(s)[0].id, how: "bribe" as never }], "1-e0", false, later).error).toBe("bad_hunt");
   });
-  it.todo("doubles the tusk boss's parts (turned on in Task 6)");
+  it("doubles the tusk boss's parts", () => {
+    let s: SaveData | null = null;
+    for (let r = 0; r < 1 && !s; r += 0.01) {
+      const tried = applyAction(newSave(), { type: "startHunt", zone: "forest", side: "sling" }, { now: T0, random: () => r }).save;
+      if (planFloor(tried.hunt!.seed, 2, "morning").spawns.some((x) => x.monster === "tusk")) s = tried;
+    }
+    const res = finish(s!, [{ down: 2 }, { take: "2-boss", how: "down" }], "2-e0", false, T0 + 600_000);
+    expect(res.error).toBeUndefined();
+    expect(count(res.save.items)).toBe(2);
+  });
 });
