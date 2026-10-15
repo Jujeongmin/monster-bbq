@@ -20,7 +20,7 @@ Verse8 횡스크롤 사냥 + 고깃집 경영 게임 (Vite + React + TypeScript,
 - PixelLab `create_image_pixflux(no_background=True)`로 만든 큰 배경 레이어는 실제로 투명하지 않다. `art-src/test/keyfix.py`로 배경을 지운 뒤 `art/`에 넣는다. 원본은 `art-src/`에 둔다.
 - 그림은 `art/` 아래에 두고 `src/game/art.ts`의 `artUrl("경로")`로 불러온다.
 - 개발 서버 포트는 5190(`npm run dev`). 5173은 grove hunters, 5180은 myeongtoe-hero, 5199는 day-hero-night-demon이 쓴다.
-- GitLab(Verse8 배포) 연동 완료(2026-10-15): 원격 `gitlab`, 브랜치 `develop`(푸시 = 자동 배포). 작업이 끝날 때마다 docs/VERSE8.md 점검표를 돌리고 자동 푸시한다. 토큰은 `.git/config`에만 둔다.
+- GitLab(Verse8 배포) 연동 완료(2026-10-15): 원격 `gitlab`, 브랜치 `develop`(푸시 = 자동 배포). 작업이 끝날 때마다 docs/VERSE8.md 점검표를 돌리고 GitLab `develop`과 GitHub `main`(공개, github.com/Jujeongmin/monster-bbq)에 함께 자동 푸시한다. 영어 이름은 Monster BBQ. 토큰은 `.git/config`에만 둔다.
 - 설계: [docs/superpowers/specs/2026-10-14-monster-bbq-design.md](docs/superpowers/specs/2026-10-14-monster-bbq-design.md)
 - **아래 규칙 3과 다른 결정:** 재화(골드, 황금 숯)를 포함한 세이브 전체를 Global User State 하나에 두고 `$lock` 안에서 한 번에 바꾼다. `$asset`은 쓰지 않는다(이유는 설계 문서 7장, 2026-10-14 사용자 결정).
 - 레시피 정답 표는 `server/src/recipes.ts`에만 둔다(클라이언트 번들 금지). 로컬 모드는 개발 빌드에서만 동적 import로 읽는다. 빌드 후 `npm run check:bundle`로 정답이 번들에 없는지 확인한다.

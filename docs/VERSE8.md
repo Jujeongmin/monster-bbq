@@ -7,9 +7,10 @@
 | 원격 | 브랜치 | 용도 |
 |---|---|---|
 | `gitlab` (gitlab.verse8.io/anjshdkdl99/game-yzrr) | `develop` | Verse8 배포용이자 지금의 작업 브랜치. **푸시하면 자동 배포된다** |
+| `github` (github.com/Jujeongmin/monster-bbq, 공개) | `main` | 공개 저장소. `develop`을 그대로 `main`으로 올린다(`git push github develop:main`). GitHub에는 `main` 브랜치만 둔다 |
 
 - `develop`은 Verse8 템플릿(에디터 첫 커밋)에서 시작해 우리 기록(`feat/service`까지)을 `--allow-unrelated-histories`로 합쳤다. 템플릿의 `.env`, `.agent8.lock`, `PROJECT/`, `committedAt`은 그대로 두고 Tailwind/PostCSS와 자리표시 앱은 뺐다.
-- 사용자 지시(2026-10-15): 작업이 하나 끝날 때마다 점검표를 돌리고 `develop`에 자동 푸시한다.
+- 사용자 지시(2026-10-15): 작업이 하나 끝날 때마다 점검표를 돌리고 GitLab `develop`과 GitHub `main`에 함께 자동 푸시한다.
 - 원격 주소의 토큰은 `.git/config`에만 둔다. 새 컴퓨터에서는 `git remote add gitlab https://oauth2:<GitLab 토큰>@gitlab.verse8.io/anjshdkdl99/game-yzrr.git`.
 - Git Bash에서 `git show <브랜치>:<경로>`는 `MSYS_NO_PATHCONV=1`을 붙인다.
 
@@ -18,7 +19,7 @@
 1. `npm test`, `npm run typecheck`, `npm --prefix server run typecheck`
 2. `npm run check:bundle` (레시피 정답이 번들에 없는지), `dist/index.html`에 `GAME_SIZE_RESPONSE`가 있는지
 3. 서버 코드를 바꿨으면 `npm run test:server` (Windows에서 isolated-vm 오류 창이 뜰 수 있어 사용자에게 미리 알린다)
-4. `git push gitlab develop`, 에디터 미리보기에서 콘솔 오류와 서버 저장(새로고침 후 유지)을 확인
+4. `git push gitlab develop` 그리고 `git push github develop:main`, 에디터 미리보기에서 콘솔 오류와 서버 저장(새로고침 후 유지)을 확인
 
 ## 지우면 안 되는 것
 
