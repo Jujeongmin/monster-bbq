@@ -1,9 +1,10 @@
 /* The evening kitchen (restaurant v2 design 5, mock-ups approved 2026-10-15). Sizes in game pixels times
    --s; the kit frames come from index.css (ui-frame, ui-box, ui-btn, ui-slot, ui-plate, ui-ribbon, ui-sq). */
+.kitchen *, .kitchen *::before, .kitchen *::after { box-sizing: border-box; }
 .kitchen { position: absolute; inset: 0; background: center / 100% 100% no-repeat; image-rendering: pixelated; font-size: var(--fs); color: var(--cream); }
 .kitchen-dim { position: absolute; inset: 0; background: rgb(14 8 5 / 0.55); }
 .kitchen-title { position: absolute; left: calc(12px * var(--s)); top: calc(10px * var(--s)); padding: 0 calc(6px * var(--s)); line-height: calc(10px * var(--s)); }
-.kitchen-res { position: absolute; right: calc(12px * var(--s)); top: calc(13px * var(--s)); display: flex; gap: calc(12px * var(--s)); align-items: center; white-space: nowrap; }
+.kitchen-res { position: absolute; right: calc(12px * var(--s)); top: calc(13px * var(--s)); padding: 0 calc(10px * var(--s)) 0 calc(4px * var(--s)); display: flex; gap: calc(12px * var(--s)); align-items: center; white-space: nowrap; }
 .kitchen-res span { display: inline-flex; align-items: center; gap: calc(4px * var(--s)); }
 .kitchen-tabs { position: absolute; left: calc(20px * var(--s)); top: calc(44px * var(--s)); display: flex; gap: calc(4px * var(--s)); z-index: 2; }
 .kitchen-body { position: absolute; left: calc(12px * var(--s)); right: calc(12px * var(--s)); top: calc(68px * var(--s)); bottom: calc(42px * var(--s)); overflow: auto; padding: calc(4px * var(--s)); }
@@ -21,8 +22,8 @@
 
 /* cookbook */
 .cookbook-count { position: absolute; right: calc(14px * var(--s)); top: calc(-1px * var(--s)); margin: 0; font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); }
-.cookbook-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(8px * var(--s)); margin-top: calc(10px * var(--s)); }
-.dish-card { position: relative; height: calc(101px * var(--s)); display: flex; flex-direction: column; align-items: center; padding: 0; font: inherit; background: none; color: var(--ink); }
+.cookbook-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(8px * var(--s)); margin-top: calc(8px * var(--s)); }
+.dish-card { position: relative; height: calc(98px * var(--s)); display: flex; flex-direction: column; align-items: center; padding: 0; font: inherit; background: none; color: var(--ink); }
 .dish-card.closed { cursor: pointer; }
 .dish-card.can { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(var(--k) 0 0 #ffd65a) drop-shadow(calc(-1 * var(--k)) 0 0 #ffd65a) drop-shadow(0 var(--k) 0 #ffd65a) drop-shadow(0 calc(-1 * var(--k)) 0 #ffd65a); }
 .dish-card .dish-icon { margin-top: calc(-2px * var(--s)); }
@@ -31,7 +32,8 @@
 .dish-slots { display: flex; gap: calc(3px * var(--s)); margin-top: calc(2px * var(--s)); }
 .dish-slot { width: calc(28px * var(--s)); height: calc(28px * var(--s)); }
 .dish-slot .item-icon img { margin: calc(-6px * var(--s)); }
-.dish-lv { position: absolute; right: calc(-4px * var(--s)); top: calc(-4px * var(--s)); padding: 0 calc(4px * var(--s)); line-height: calc(10px * var(--s)); }
+/* the ribbon at its own height (11 art pixels), wide enough that the notched ends clear the words */
+.dish-lv { position: absolute; right: calc(-4px * var(--s)); top: calc(-4px * var(--s)); height: calc(22px * var(--s)); min-width: calc(60px * var(--s)); padding: 0 calc(2px * var(--s)); display: flex; align-items: center; justify-content: center; font-size: var(--fs-small); line-height: 1; white-space: nowrap; }
 .dish-can { position: absolute; right: calc(-5px * var(--s)); top: calc(-5px * var(--s)); padding: 0 calc(5px * var(--s)); line-height: calc(10px * var(--s)); font-size: var(--fs-small); white-space: nowrap; }
 
 /* research window */

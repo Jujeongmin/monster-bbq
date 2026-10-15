@@ -29,7 +29,7 @@ export const ko = {
   "item.wild_garlic": "산마늘",
   "item.perilla": "들깻잎",
   "kitchen.tab.cookbook": "도감",
-  "kitchen.tab.menu": "메뉴",
+  "kitchen.tab.menu": "메뉴판",
   "who.dokkaebi": "외눈 도깨비",
   "who.gumiho": "구미호",
   "who.reaper": "저승사자",

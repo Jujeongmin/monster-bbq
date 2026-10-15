@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시험용 세이브</title>
+<!-- Check page only: puts a local test save (version 5, in the kitchen) into this browser's storage and
+     opens the game in local mode. ?tab=menu|upgrade|lunch picks nothing yet; the game opens on the cookbook. -->
+<script>
+  const save = {
+    version: 5, day: 2, stage: "kitchen", gold: 1250,
+    items: { "boar_belly:normal": 4, "boar_belly:premium": 1, "boar_neck:normal": 3, wild_garlic: 2, shiitake: 2, perilla: 1 },
+    hunt: null,
+    seenItems: ["boar_belly", "boar_neck", "wild_garlic", "shiitake"],
+    dishes: { grilled_belly: 2, shiitake_grill: 1 },
+    menu: [{ dish: "grilled_belly", sets: 2 }],
+    reputation: 5, upgrades: {}, lunchbox: [], service: null, lastService: null,
+  };
+  localStorage.setItem("monster-bbq:save", JSON.stringify(save));
+  location.replace("/?local");
+</script>
+</head>
+<body></body>
+</html>

@@ -30,7 +30,7 @@ export const en: Record<keyof typeof ko, string> = {
   "item.wild_garlic": "Wild garlic",
   "item.perilla": "Perilla leaves",
   "kitchen.tab.cookbook": "Cookbook",
-  "kitchen.tab.menu": "Menu",
+  "kitchen.tab.menu": "Menu board",
   "who.dokkaebi": "One-eyed Dokkaebi",
   "who.gumiho": "Gumiho",
   "who.reaper": "Grim Reaper",
