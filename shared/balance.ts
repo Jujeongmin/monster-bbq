@@ -73,6 +73,10 @@ export const BALANCE: {
   };
   economy: { itemPrice: Record<ItemId, { normal: number; premium?: number }>; maxMeatPerHunt: number };
   kitchen: { menuSlots: number; maxIngredients: number };
+  // dish levels (restaurant v2 design 3): row i is level i+1 — its price multiplier, plates per set of
+  // ingredients, and the cost to reach it (gold = times the dish's base price, sets of its own
+  // ingredients; level 1's cost is the research). A set with a premium part sells for premiumBonus more.
+  dishes: { levels: { price: number; plates: number; gold: number; sets: number }[]; premiumBonus: number };
   // per upgrade: its starting level, the cost of each next level, and target levels locked until later
   // chapters (boss parts, story)
   upgrades: Record<UpgradeId, { base: 0 | 1; costs: number[]; locked?: number[] }>;
@@ -185,6 +189,17 @@ export const BALANCE: {
   },
   // research kitchen and menu (spec 4); menu slots grow with upgrades (plan 06)
   kitchen: { menuSlots: 2, maxIngredients: 3 },
+  // user-approved draft numbers 2026-10-15, tuned in play
+  dishes: {
+    levels: [
+      { price: 1, plates: 3, gold: 5, sets: 1 },
+      { price: 1.15, plates: 4, gold: 15, sets: 1 },
+      { price: 1.3, plates: 4, gold: 30, sets: 2 },
+      { price: 1.5, plates: 5, gold: 60, sets: 3 },
+      { price: 1.75, plates: 6, gold: 100, sets: 4 },
+    ],
+    premiumBonus: 0.2,
+  },
   // gold growth (growth design 2, user-approved draft numbers 2026-10-14)
   upgrades: {
     melee: { base: 1, costs: [300, 900, 2400], locked: [4] },

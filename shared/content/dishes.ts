@@ -1,5 +1,5 @@
-// The dishes anyone may know exist (names and cookbook hint lines are in i18n). What goes into them is
-// the server's secret: server/src/recipes.ts (spec 7).
+// The dishes anyone may know exist (names are in i18n). What goes into them and what they cost:
+// shared/content/recipes.ts.
 export const METHODS = ["grill", "boil", "stirfry", "fry", "season"] as const;
 export type Method = (typeof METHODS)[number];
 
