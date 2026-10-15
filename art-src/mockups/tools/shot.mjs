@@ -6,7 +6,7 @@ import { writeFileSync, rmSync } from "node:fs";
 const S = process.env.S;
 const [prefix, ...steps] = process.argv.slice(2);
 rmSync(`${S}/chrome-cdp`, { recursive: true, force: true });
-const chrome = spawn("C:/Program Files/Google/Chrome/Application/chrome.exe", ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1", "--window-size=1280,720", `--user-data-dir=${S}/chrome-cdp`, "--remote-debugging-port=9333", "about:blank"]);
+const chrome = spawn("C:/Program Files/Google/Chrome/Application/chrome.exe", ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1", `--window-size=${(process.env.SIZE ?? "1280x720").replace("x", ",")}`, `--user-data-dir=${S}/chrome-cdp`, "--remote-debugging-port=9333", "about:blank"]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let list;
 for (let i = 0; i < 50; i++) { try { list = await (await fetch("http://127.0.0.1:9333/json")).json(); if (list.find((t) => t.type === "page")) break; } catch {} await sleep(200); }
@@ -15,7 +15,8 @@ await new Promise((r) => (ws.onopen = r));
 let id = 0; const wait = new Map();
 ws.onmessage = (m) => { const d = JSON.parse(m.data); if (wait.has(d.id)) { wait.get(d.id)(d); wait.delete(d.id); } };
 const call = (method, params = {}) => new Promise((r) => { const n = ++id; wait.set(n, r); ws.send(JSON.stringify({ id: n, method, params })); });
-await call("Emulation.setDeviceMetricsOverride", { width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });
+const [VW, VH] = (process.env.SIZE ?? "1280x720").split("x").map(Number);
+await call("Emulation.setDeviceMetricsOverride", { width: VW, height: VH, deviceScaleFactor: 1, mobile: false });
 await call("Page.navigate", { url: `http://localhost:5190/art-src/mockups/${process.env.SEED ?? "seed-kitchen"}.html` });
 await sleep(Number(process.env.WAIT ?? 6000));
 let n = 0;

@@ -103,6 +103,10 @@ button.lunch-slot { cursor: pointer; }
 .lunch-hint { flex: 1; font: var(--fs-small) "Galmuri9", monospace; }
 .lunch-go { margin-left: auto; }
 .lunch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(8px * var(--s)); }
-.lunch-card { height: calc(112px * var(--s)); justify-content: center; gap: 0; cursor: pointer; }
+/* every line stays on the card's cream face: the frame's 5 art px are margin, names break by word */
+.lunch-card { height: calc(124px * var(--s)); justify-content: center; gap: 0; padding: 0 calc(4px * var(--s)); overflow: hidden; cursor: pointer; }
+.lunch-card .dish-name, .lunch-card .dish-shape { max-width: 100%; text-align: center; word-break: keep-all; line-height: 1.25; }
+.lunch-card .dish-icon { flex: none; }
+.lunch-speed { color: var(--good); }
 .lunch-card:disabled { cursor: default; filter: grayscale(0.8) brightness(0.85); }
 .lunch-heal { font-weight: 700; color: var(--good); }

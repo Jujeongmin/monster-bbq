@@ -69,10 +69,9 @@ export function LunchPick({ save, busy, act }: { save: SaveData; busy: boolean; 
               <span className="lunch-heal">
                 {t("lunch.heal", { hp: Math.round(dishPrice(id, save.dishes[id]!) * BALANCE.lunch.healPerGold) })}
               </span>
-              <span className="dish-shape">
-                {t("lunch.sets", { n: left })}
-                {BALANCE.lunch.speedDishes.includes(id) ? ` · ${t("lunch.speed")}` : ""}
-              </span>
+              <span className="dish-shape">{t("lunch.sets", { n: left })}</span>
+              {/* the quick-step dishes say so on their own line, inside the card */}
+              {BALANCE.lunch.speedDishes.includes(id) && <span className="dish-shape lunch-speed">{t("lunch.speed")}</span>}
             </button>
           );
         })}
