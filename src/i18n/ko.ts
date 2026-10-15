@@ -63,6 +63,7 @@ export const ko = {
   "kitchen.unknown": "???",
   "kitchen.menuEmpty": "아직 연구한 요리가 없다. 도감에서 연구해 보자.",
   "kitchen.ready": "장사 시작",
+  "kitchen.rest": "오늘은 쉬기",
   "service.closeOrders": "주문 마감",
   "service.closeHall": "홀 마감",
   "service.ordersClosed": "주문 마감! 남은 손님만 받아요",

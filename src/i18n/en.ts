@@ -64,6 +64,7 @@ export const en: Record<keyof typeof ko, string> = {
   "kitchen.unknown": "???",
   "kitchen.menuEmpty": "No dishes researched yet. Research one in the cookbook.",
   "kitchen.ready": "Open the shop",
+  "kitchen.rest": "Rest tonight",
   "service.closeOrders": "Last orders",
   "service.closeHall": "Close hall",
   "service.ordersClosed": "Last orders! Only those inside now",

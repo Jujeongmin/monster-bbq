@@ -26,6 +26,7 @@ export function Kitchen({
   busy,
   act,
   onReady,
+  onRest,
   onHunt,
   onSkip,
   onUpgrades,
@@ -35,6 +36,8 @@ export function Kitchen({
   busy: boolean;
   act: (a: Action) => void;
   onReady?: (menu: MenuLine[]) => void;
+  // the evening: keep the shop shut tonight and go on to tomorrow
+  onRest?: () => void;
   onHunt?: () => void;
   onSkip?: () => void;
   onUpgrades?: () => void;
@@ -83,9 +86,14 @@ export function Kitchen({
           <button className="ui-btn" disabled={busy} onClick={onHunt}>{t("lunch.goHunt")}</button>
         </div>
       ) : (
-        <button className="ui-btn kitchen-ready" disabled={busy || !canOpen(save.items, save.dishes, menu)} onClick={() => onReady?.(menu)}>
-          {t("kitchen.ready")}
-        </button>
+        <div className="kitchen-lunch-actions">
+          <button className="ui-btn" disabled={busy} onClick={onRest}>
+            {t("kitchen.rest")}
+          </button>
+          <button className="ui-btn kitchen-open" disabled={busy || !canOpen(save.items, save.dishes, menu)} onClick={() => onReady?.(menu)}>
+            {t("kitchen.ready")}
+          </button>
+        </div>
       )}
       {landed && <ResearchCutIn key={landed} dish={landed} onDone={() => setAsked(null)} />}
     </div>

@@ -147,7 +147,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
         />
       )}
       {phase === "lunch" && shopping && <Upgrades save={save} busy={busy} act={(a) => void act(a, "lunch")} onClose={() => setShopping(false)} />}
-      {phase === "kitchen" && <Kitchen save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} />}
+      {phase === "kitchen" && <Kitchen save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} />}
       {phase === "service" && save.service && <Night save={save} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
       {phase === "settle" && (
         <Panel title={t("settle.title")} body={t("settle.body", { day: save.day, gold: save.gold })}>
