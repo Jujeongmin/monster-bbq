@@ -1,0 +1,5 @@
+Use your image generation tool (do not write code to draw) to create ONE image, in the style of the attached UI kit (flat hand-placed pixel art, chunky visible square pixels, clean dark outline, warm walnut wood, brass, charcoal; NO gradients, NO glossy shine, NO texture noise, NO glow).
+
+Save as art-src/codex/raw/dialogue_bar.png — a WIDE image (for example 1536x320), flat solid magenta (#FF00FF) background, with ONE long horizontal dialogue-box frame in the middle, like the NPC dialogue bar along the bottom of the screen in a Korean MMORPG: a plain, very dark charcoal-brown flat panel (almost black, one flat colour inside so text reads well on it), bordered by a thin double brass line all the way round, with a small brass corner stud or tiny ornament at each of the four corners. The four edges must be straight and even along their whole length (it will be stretched as a 9-slice). Leave wide empty magenta space around it. No text, no portrait, nothing inside the panel.
+
+Reply only with the saved file path.

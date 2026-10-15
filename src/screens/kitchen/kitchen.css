@@ -1,0 +1,69 @@
+/* The evening kitchen on UI kit A: wooden tabs, hanji panels, lacquered buttons. Sizes in multiples of
+   the Galmuri pixel grid (see src/index.css). */
+.kitchen { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--wood-dark); overflow: hidden; }
+.kitchen-foot { display: flex; align-items: center; gap: calc(6px * var(--s)); padding: 0 calc(6px * var(--s)) calc(2px * var(--s)); }
+.kitchen-tabs { display: flex; align-items: flex-end; gap: calc(3px * var(--s)); }
+.kitchen-res { display: flex; gap: calc(8px * var(--s)); align-items: center; white-space: nowrap; }
+.kitchen-res span { display: inline-flex; align-items: center; gap: calc(3px * var(--s)); }
+.kitchen-foot .kitchen-ready { margin-left: auto; white-space: nowrap; }
+.kitchen-body { flex: 1; min-height: 0; overflow: auto; padding: calc(4px * var(--s)) calc(6px * var(--s)); }
+.kitchen-body.full { padding: 0; overflow: hidden; }
+.kitchen-empty { margin: calc(2px * var(--s)) 0; font-size: var(--fs-small); font-family: "Galmuri9", monospace; color: var(--paper-ink-soft); }
+
+/* research: the cooking stage, with the verdict over it */
+.research { position: relative; display: block; }
+.research { height: 100%; }
+.cook-stage { width: 100%; height: 100%; margin: 0 auto; background: var(--wood-dark); }
+.cook-result-wrap { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); min-width: calc(180px * var(--s)); max-width: 90%; text-align: center; animation: cook-pop 0.35s ease-out; }
+.cook-result p { margin: calc(2px * var(--s)) 0 0; color: var(--paper-ink-soft); }
+.cook-banner { font-weight: 700; color: var(--good); }
+.cook-dish { font-weight: 700; color: var(--ink); }
+.cook-result.fail .cook-dish { color: var(--paper-ink-soft); }
+.cook-result.near { text-align: left; }
+.lid-name { font-weight: 700; color: var(--red); }
+.lid-bubble { margin: calc(2px * var(--s)) 0 0; }
+.cook-skill { margin: calc(4px * var(--s)) 0 0; color: var(--ink); }
+.cook-stars { color: #d08a10; }
+.cook-again { margin-top: calc(4px * var(--s)); }
+@keyframes cook-pop { from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+@keyframes cook-bounce { 0% { transform: translateY(8px) scale(0.6); } 60% { transform: translateY(-6px) scale(1.15); } 100% { transform: none; } }
+
+/* item and dish pictures, at whole pixel multiples */
+.item-icon { position: relative; display: inline-flex; }
+.item-icon img { width: calc(20px * var(--s)); height: auto; image-rendering: pixelated; }
+.item-star { position: absolute; left: calc(-2px * var(--s)); top: calc(-4px * var(--s)); font-size: var(--fs-small); color: var(--brass); text-shadow: 0 0 2px #000; }
+.dish-icon { display: block; height: auto; image-rendering: pixelated; }
+.dish-icon.silhouette { filter: brightness(0); opacity: 0.3; }
+.cook-result .dish-icon { margin: calc(2px * var(--s)) auto; }
+.cook-result.new .dish-icon { animation: cook-bounce 0.6s ease-out; }
+
+/* cookbook */
+.cookbook-count { margin: 0 0 calc(4px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); }
+.cookbook-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(4px * var(--s)); }
+.dish-card { min-height: calc(60px * var(--s)); text-align: center; }
+.dish-card .dish-icon { margin: 0 auto calc(2px * var(--s)); }
+.dish-card .dish-name { font-weight: 700; color: var(--ink); }
+.dish-card .dish-name.unknown { color: var(--paper-ink-soft); }
+.dish-recipe { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: calc(2px * var(--s)); margin-top: calc(2px * var(--s)); }
+.dish-method { font-size: var(--fs-small); font-family: "Galmuri9", monospace; color: var(--red); }
+.dish-hint { margin: calc(2px * var(--s)) 0 0; font-size: var(--fs-small); font-family: "Galmuri9", monospace; color: var(--paper-ink-soft); }
+
+/* menu */
+.menu-pick { display: grid; grid-template-columns: repeat(2, 1fr); gap: calc(3px * var(--s)); align-content: start; }
+.menu-pick .cookbook-count, .menu-pick .kitchen-empty { grid-column: 1 / -1; }
+.menu-row { display: flex; justify-content: space-between; align-items: center; font: inherit; text-align: left; cursor: pointer; background: none; }
+.menu-row:disabled { cursor: default; opacity: 0.55; }
+.menu-row.on { filter: drop-shadow(0 0 calc(2px * var(--s)) var(--brass)); }
+.menu-row .dish-name { font-weight: 700; color: var(--ink); }
+.menu-row.on .dish-name::before { content: "✔ "; color: var(--good); }
+.menu-info { color: var(--paper-ink-soft); }
+.menu-dish { display: flex; align-items: center; gap: calc(4px * var(--s)); }
+
+/* lunchbox */
+.lunch-pick { display: flex; flex-direction: column; gap: calc(3px * var(--s)); height: 100%; }
+/* keeps its height when empty, so the list below never jumps under a finger */
+.lunch-box { display: flex; gap: calc(3px * var(--s)); min-height: calc(50px * var(--s)); }
+.lunch-slot { display: inline-flex; padding: 0; background: none; cursor: pointer; }
+.lunch-slot.packed { cursor: default; filter: saturate(0.6); }
+.lunch-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: calc(3px * var(--s)); flex: 1; min-height: 0; overflow: auto; align-content: start; }
+.lunch-pick > .ui-btn { align-self: flex-start; }

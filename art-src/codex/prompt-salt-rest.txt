@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image in the art style of the attached cooking tools sheet (cozy, comic, cute cartoon pixel art, same palette, same chunky pixel size, same dark outline), seen from the same high angle (almost straight down, slight tilt).
+
+Save as art-src/codex/raw/cook_salt_rest.png — a SQUARE image, flat solid magenta (#FF00FF) background, a 2 columns x 2 rows layout, no text, no shadows, no lines or borders. VERY IMPORTANT: every object is drawn COMPLETELY with its dark outline closed all the way around, small enough to leave wide empty magenta space on every side, nowhere near another object or the image edge.
+ top left: a glass salt shaker with a metal cap with holes, tilted as if shaking
+ top right: a small wooden bowl full of coarse white sea salt
+ bottom left: an empty rectangular wooden cutting board for resting grilled meat (light wood, a small handle at one end, a little juice groove around the edge)
+ bottom right: a tiny pinch of coarse salt crystals (a small scattered cluster of white flakes)
+
+Reply only with the saved file path.

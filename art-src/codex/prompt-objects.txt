@@ -1,0 +1,7 @@
+Use your image generation tool to create TWO images in the exact art style of the attached reference image (cozy cartoon pixel art for a top-down quarter-view MMORPG forest, same palette, same chunky pixel size). Do not write code to draw them; generate them as images.
+
+1) Save as art-src/codex/objects.png: a sprite sheet on a flat solid magenta (#FF00FF) background with clear empty magenta space between items: 3 different full trees (whole canopy and trunk with roots, seen from a slight high angle, each about the size of the trees in the reference), 2 round bushes with small flowers, 2 mossy rocks. Keep every item separate, no ground under them, no text.
+
+2) Save as art-src/codex/grass.png: a square seamless tileable grass ground texture matching the reference grass (bright green, small grass tufts, a few tiny flowers and pebbles), no trees, no bushes, no large objects.
+
+Reply only with the two saved file paths.

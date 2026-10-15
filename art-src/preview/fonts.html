@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>글꼴 비교</title>
+<style>
+  /* Font comparison on the chosen UI kit A (dev preview only, served by the Vite dev server). */
+  @font-face { font-family: "Galmuri11"; src: url("/fonts/Galmuri11.woff2") format("woff2"); }
+  @font-face { font-family: "Galmuri11B"; src: url("/fonts/Galmuri11-Bold.woff2") format("woff2"); }
+  @font-face { font-family: "Galmuri9"; src: url("/fonts/Galmuri9.woff2") format("woff2"); }
+  body { margin: 0; padding: 12px; background: #2b211c; color: #3a2414; image-rendering: pixelated; }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+  .card { width: 500px; }
+  .name { font: 13px monospace; color: #ffd166; margin: 0 0 4px; }
+  .panel {
+    border: 24px solid transparent;
+    border-image: url("/art/test/ui/panel.png") 12 fill / 24px stretch;
+    image-rendering: pixelated;
+    padding: 6px 10px;
+  }
+  .panel p { margin: 4px 0; -webkit-font-smoothing: none; font-smooth: never; }
+  .btn {
+    display: inline-block; margin-top: 6px; padding: 6px 18px; color: #fff3d8;
+    border: 16px solid transparent; border-image: url("/art/test/ui/btn_normal.png") 4 fill / 16px stretch;
+    text-shadow: 0 2px 0 #3a1408;
+  }
+  .g11 p, .g11 .btn { font-family: "Galmuri11"; font-size: 22px; }
+  .g11b p, .g11b .btn { font-family: "Galmuri11B"; font-size: 22px; }
+  .g9 p, .g9 .btn { font-family: "Galmuri9"; font-size: 18px; }
+  .neo p, .neo .btn { font-family: "NeoDGM"; font-size: 32px; }
+  .small { font-size: 0.75em !important; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="card g11"><div class="name">갈무리 11 (22px = 2배)</div><div class="panel">
+      <p>저녁 · 주방 — 오늘의 메뉴</p><p>삼겹살 구이 ★특급 ×2</p><p>겉은 바삭, 속은 촉촉!</p><p class="small">손님 3/4 · 120골드 · 평판 +2 · 1234567890</p><span class="btn">장사 준비</span></div></div>
+    <div class="card g11b"><div class="name">갈무리 11 굵게 (22px)</div><div class="panel">
+      <p>저녁 · 주방 — 오늘의 메뉴</p><p>삼겹살 구이 ★특급 ×2</p><p>겉은 바삭, 속은 촉촉!</p><p class="small">손님 3/4 · 120골드 · 평판 +2 · 1234567890</p><span class="btn">장사 준비</span></div></div>
+  </div>
+  <div class="row">
+    <div class="card g9"><div class="name">갈무리 9 (18px = 2배, 작은 글자용)</div><div class="panel">
+      <p>저녁 · 주방 — 오늘의 메뉴</p><p>삼겹살 구이 ★특급 ×2</p><p>겉은 바삭, 속은 촉촉!</p><p class="small">손님 3/4 · 120골드 · 평판 +2 · 1234567890</p><span class="btn">장사 준비</span></div></div>
+    <div class="card neo"><div class="name">Neo둥근모 (32px = 2배)</div><div class="panel">
+      <p>저녁 · 주방 — 오늘의 메뉴</p><p>삼겹살 구이 ★특급 ×2</p><p>겉은 바삭, 속은 촉촉!</p><p class="small">손님 3/4 · 120골드 · 평판 +2 · 1234567890</p><span class="btn">장사 준비</span></div></div>
+  </div>
+</body>
+</html>

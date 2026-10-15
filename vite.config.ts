@@ -1,21 +1,20 @@
-import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+import { artVersions } from "./vite-plugins/artVersions.ts";
+import { cssCacheBust } from "./vite-plugins/cssCacheBust.ts";
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  optimizeDeps: {
-    exclude: ["lucide-react"],
-  },
+  // cssCacheBust and artVersions: the editor container caches static files for hours; see the plugins.
+  plugins: [react(), cssCacheBust(), artVersions()],
+  // Verse8 serves the game from a sub-path; root-absolute URLs 404 there.
   base: "./",
-  build: {
-    outDir: "dist",
-    // Skip gzip-size reporting: our users don't optimize by bundle size,
-    // and it only slows the build. Output is byte-identical.
-    reportCompressedSize: false,
-    // Game bundles (three/phaser) legitimately ship 1-3MB single chunks, so
-    // the default 500 kB advisory fires on every build as noise. Keep the
-    // warning only for genuinely pathological (5MB+) chunks.
-    chunkSizeWarningLimit: 5000,
+  // Two React copies (SDK peer dep) cause "Invalid hook call"; pin one.
+  resolve: { dedupe: ["react", "react-dom"] },
+  optimizeDeps: {
+    include: ["@agent8/gameserver", "phaser", "react", "react-dom", "react/jsx-runtime"],
   },
+  server: {
+    watch: { ignored: ["**/.git/**", "**/node_modules/**", "**/dist/**", "**/.superpowers/**", "**/art-src/**"] },
+  },
+  build: { outDir: "dist", reportCompressedSize: false, chunkSizeWarningLimit: 5000 },
 });

@@ -1,0 +1,15 @@
+Use your image generation tool (do not write code to draw) to create ONE image.
+
+Keep EXACTLY the flat, hand-placed retro pixel-art style of the attached lid_portraits2.png (chunky visible square pixels, about 48x48 logical pixels per character, at most 10-12 flat colours, 2-3 tone cel shading, clean 1-pixel dark outline, NO gradients, NO glossy shine, NO texture noise, NO glow). The rabbit sheet shows the game's sprite style too.
+
+What was wrong last time: the lids were shaped like a tall Western serving cloche (a high round dome). The character must be a KOREAN GAMASOT LID (가마솥 뚜껑, the lid of a big traditional cast-iron rice cauldron): a very WIDE, LOW, almost flat round iron disc, much wider than tall (about 3 to 1), gently rising in a shallow curve toward the centre, with a thick overhanging rim lip around the edge, one or two raised concentric rings near the centre, and a small round knob on top. Matte black cast iron drawn with flat dark greys, a warm rusty-brown edge tone on the rim, maybe a few tiny soot specks. Seen from slightly above and in front, so the top surface of the disc is visible as a wide ellipse.
+
+Save as art-src/codex/raw/lid_portraits3.png — a WIDE image (for example 1536x640), flat solid magenta (#FF00FF) background, THREE candidate designs side by side in three equal columns, each an RPG dialogue portrait of the character, facing slightly right, with wide empty magenta space around it, nowhere near another figure or the image edge. No text anywhere.
+
+The character is "Ttukkeong-i": the grumpy, nagging but secretly caring kitchen partner of a grandmother. Keep the face SIMPLE like column 1 of lid_portraits2.png (small black bead eyes with one white highlight pixel, thick slanted eyebrows, a tiny wavy frowning mouth), drawn on the front slope of the disc.
+
+ column 1: the plain gamasot lid with the face, a little puff of steam (2-3 white pixel blobs) rising from the knob as if fuming.
+ column 2: the same lid tilted up a little on one side as if lifting its brim to talk, the rim lip clearly visible, a few soot specks, eyebrows raised in a nag.
+ column 3: the same lid with two tiny stubby iron hands sticking out from under the rim, one on its "hip" and one pointing, steam puff from the knob.
+
+Reply only with the saved file path.

@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image.
+
+The attached customers_yokai.png shows four APPROVED characters (one per row, seen from the side): row 1 a one-eyed red dokkaebi goblin with one horn, wild black hair and a tiger-skin loincloth; row 2 a white gumiho fox girl in a white jeogori and red skirt with only four tails; row 3 a jeoseungsaja grim reaper in a black robe and tall black gat hat, pale face, long black hair; row 4 a mulgwishin water ghost with long wet black hair over half her face, pale skin, ragged white hanbok and water drips.
+
+Draw each of those SAME four characters again — same colours, same outfits, same proportions, same flat hand-placed retro pixel-art style as the attached sheets (chunky visible square pixels, at most 12-14 flat colours each, 2-3 tone cel shading, clean 1-pixel dark outline, NO gradients, NO glossy shine, NO texture noise, NO glow) — but now FACING THE VIEWER (front view), as RPG dialogue portraits: head and upper body down to the waist, like the NPC portrait beside a dialogue box in a Korean MMORPG. Each looks scary at first glance, but with a small nervous sweat drop and a stiff, overly polite expression (they are afraid of the restaurant's grandmother). The dokkaebi holds no club.
+
+Save as art-src/codex/raw/yokai_faces.png — a WIDE image (for example 1792x640), flat solid magenta (#FF00FF) background, the FOUR portraits side by side in four equal columns in the order dokkaebi, gumiho, jeoseungsaja, mulgwishin, all the same size (the gat hat and the fox ears may rise higher), each with wide empty magenta space around it, nowhere near another figure or the image edge. No text anywhere.
+
+Reply only with the saved file path.

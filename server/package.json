@@ -1,7 +1,7 @@
 {
-  "name": "agent8-gameserver-node",
+  "name": "monster-bbq-server",
   "version": "0.1.0",
-  "description": "Agent8 GameServer",
+  "description": "몬스터 고깃집 Verse8 game server",
   "private": true,
   "scripts": {
     "build": "gameserver-node build",
@@ -10,9 +10,11 @@
     "test": "gameserver-node test",
     "test:dev": "gameserver-node test --no-minify",
     "dev": "gameserver-node dev",
-    "dev:readable": "gameserver-node dev --no-minify"
+    "dev:readable": "gameserver-node dev --no-minify",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
-    "@agent8/gameserver-node": "^2.0.1"
+    "@agent8/gameserver-node": "^2.0.1",
+    "typescript": "~5.7.3"
   }
 }

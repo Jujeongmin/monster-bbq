@@ -1,0 +1,10 @@
+Use your image generation tool (do not write code to draw) to create ONE image in the art style of the attached ingredient icons sheet (cozy, comic, cute cartoon pixel art, same palette, same chunky pixel size, same dark outline).
+
+Layout rules: flat solid magenta (#FF00FF) background; a strict grid of equal square cells with NO borders or lines; exactly one dish centred in every cell, nothing touching the cell edges; no text, no shadows on the background.
+
+Save as art-src/codex/raw/dishes.png — a 3 columns x 3 rows grid of finished Korean dishes, each served on its plate, bowl or pot, seen from a slight high angle (top-down quarter view, like looking at a restaurant table), steaming where hot, appetising and readable at small size:
+ row 1: grilled pork belly slices on a small round grill plate; grilled pork neck slices with roasted garlic cloves; pork belly wrapped in perilla leaves (ssam) on a wooden board
+ row 2: a glazed rabbit leg brushed with golden honey on a plate; grilled shiitake mushroom caps on a small plate; braised pork ribs (galbi-jjim) with mushrooms in a dark glossy sauce in a stone pot
+ row 3: baeksuk — a whole chicken in clear broth with garlic in an earthenware pot; shredded chicken breast tossed with perilla leaves in a bowl; a failed dish — a burnt black smoking lump on a plate with a comic little puff of smoke
+
+Reply only with the saved file path.
