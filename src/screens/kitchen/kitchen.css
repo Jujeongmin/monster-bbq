@@ -22,7 +22,8 @@
 
 /* cookbook */
 .cookbook-count { position: absolute; right: calc(14px * var(--s)); top: calc(-1px * var(--s)); margin: 0; font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); }
-.cookbook-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(8px * var(--s)); margin-top: calc(8px * var(--s)); }
+/* room above the cards for the found-dishes count: a card's "ready to research" plate pokes up past its top edge */
+.cookbook-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(8px * var(--s)); margin-top: calc(22px * var(--s)); }
 .dish-card { position: relative; height: calc(98px * var(--s)); display: flex; flex-direction: column; align-items: center; padding: 0; font: inherit; background: none; color: var(--ink); }
 .dish-card.closed { cursor: pointer; }
 .dish-card.can { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(var(--k) 0 0 #ffd65a) drop-shadow(calc(-1 * var(--k)) 0 0 #ffd65a) drop-shadow(0 var(--k) 0 #ffd65a) drop-shadow(0 calc(-1 * var(--k)) 0 #ffd65a); }
