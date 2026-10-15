@@ -8,4 +8,6 @@ Background of every panel: a flat dark warm brown, with a few chunky pixel speed
 
 panel "secret smile": Bandal from the chest up, turned a little aside, eyes closed in a happy curve, pink blush on his cheeks, one paw shyly adjusting his bandana, two or three chunky pixel sparkles around him.
 
+COLOUR RULE (a first try got this wrong): his fur must be the same near-black as the sprites (#231a1a with #3a2a26 highlights), much darker than the background, with a clean 1-art-pixel black outline all around him so he never melts into the background. The background is a medium warm brown clearly lighter than his fur.
+
 Save as art-src/codex/raw/cutin2_c.png. Reply only with the saved file path.
