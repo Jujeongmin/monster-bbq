@@ -29,7 +29,7 @@ describe("LocalTransport", () => {
   });
   it("throws on a rejected action and keeps the save", async () => {
     const t = new LocalTransport(memory());
-    await expect(t.act({ type: "finishHunt", huntId: "nope", events: [], ko: false })).rejects.toThrow("bad_hunt");
+    await expect(t.act({ type: "finishHunt", huntId: "nope", events: [], exit: "1-e0", ko: false })).rejects.toThrow("bad_hunt");
     expect((await t.load()).hunt).toBeNull();
   });
 });

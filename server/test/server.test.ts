@@ -13,7 +13,7 @@ describe("Server", () => {
 
   test("settles an empty hunt", async (server) => {
     const started = await server.act({ type: "startHunt", zone: "forest" });
-    const s = await server.act({ type: "finishHunt", huntId: started.hunt.id, events: [], ko: false });
+    const s = await server.act({ type: "finishHunt", huntId: started.hunt.id, events: [], exit: "1-e0", ko: false });
     expect(s.hunt).toBe(null);
   });
 
@@ -21,11 +21,20 @@ describe("Server", () => {
     let refused = false;
     try {
       await server.act({ type: "startHunt", zone: "forest" });
-      await server.act({ type: "finishHunt", huntId: "forged", events: [{ kill: "s0", grade: "premium" }], ko: false });
+      await server.act({ type: "finishHunt", huntId: "forged", events: [{ kill: "1-s0", grade: "premium" }], exit: "1-e0", ko: false });
     } catch {
       refused = true;
     }
     expect(refused).toBe(true);
+  });
+
+  test("goes out twice a day: morning, lunch, afternoon", async (server) => {
+    server.connect({ account: "two-hunts" });
+    const m = await server.act({ type: "startHunt", zone: "forest" });
+    const lunch = await server.act({ type: "finishHunt", huntId: m.hunt.id, events: [], exit: "1-e0", ko: false });
+    expect(lunch.stage).toBe("lunch");
+    const a = await server.act({ type: "startHunt", zone: "forest" });
+    expect(a.hunt.period).toBe("afternoon");
   });
 
   test("keeps each account's save apart", async (server) => {
