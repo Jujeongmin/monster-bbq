@@ -4,6 +4,7 @@ import type { TonightDish } from "../../../shared/kitchen/dish";
 import type { Customer } from "../../../shared/service/plan";
 import { t } from "../../i18n";
 import { artUrl } from "../art";
+import { loadServed, pickDish, platesLeft, saveServed, type ServedReport } from "./night";
 import { createCharacterAnims, loadCharacterArt } from "../hunt/anims";
 import { addButton, addGauge, kitSlice, loadUiArt, TEXT, type UiButton, type UiGauge } from "../ui";
 
@@ -24,10 +25,7 @@ export interface ServiceData {
   dishes: TonightDish[];
 }
 
-export interface ServedReport {
-  customer: string;
-  dish: DishId;
-}
+export type { ServedReport };
 
 const MAX_DT_MS = 50;
 const SEATS_X = [110, 250, 390, 530];
@@ -77,16 +75,17 @@ export class ServiceScene extends Phaser.Scene {
     this.customers = data.customers;
     this.serviceId = data.serviceId;
     this.savedAt = 0;
-    this.plates = new Map(data.dishes.map((d) => [d.dish, d.plates]));
+    // what was served before a reload stays served (the ingredients went when the shop opened)
+    this.served = loadServed(sessionStorage, data.serviceId);
+    this.plates = platesLeft(data.dishes, this.served);
     this.prices = new Map(data.dishes.map((d) => [d.dish, d.price]));
     this.guests = [];
     this.clock = this.resumedClock();
     this.paused = false;
-    this.served = [];
     this.left = [];
     this.ended = false;
     this.ordersClosed = this.resumedClosed();
-    this.earned = 0;
+    this.earned = this.served.reduce((n, s) => n + (this.prices.get(s.dish) ?? 0), 0);
   }
 
   preload() {
@@ -191,6 +190,13 @@ export class ServiceScene extends Phaser.Scene {
     const waited = Math.max(0, this.clock - c.arriveMs);
     const g: Guest = { c, phase: "waiting", sprite, bubble, gauge: null, waitedMs: waited, targetX: SEATS_X[c.seat], angry: false };
     this.makeBubble(g);
+    // served before a reload: already fed and gone
+    if (this.served.some((s) => s.customer === c.id)) {
+      g.phase = "gone";
+      sprite.destroy();
+      bubble.destroy();
+      return g;
+    }
     if (waited >= c.patienceMs) {
       g.phase = "gone";
       sprite.destroy();
@@ -231,7 +237,7 @@ export class ServiceScene extends Phaser.Scene {
         s.x = Math.min(g.targetX, s.x + (WALK_SPEED * 1.6 * dt) / 1000);
         if (s.x >= g.targetX) {
           // tonight's dish if plates are left, else any dish that still has some; none left: home, unbothered
-          const dish = (this.plates.get(g.c.dish) ?? 0) > 0 ? g.c.dish : [...this.plates.entries()].find(([, n]) => n > 0)?.[0];
+          const dish = pickDish(this.plates, g.c.dish);
           if (!dish) {
             g.phase = "leaving";
             s.setFlipX(true).play(`${who}_walk_side`);
@@ -288,6 +294,18 @@ export class ServiceScene extends Phaser.Scene {
     if (n < 1) return;
     this.plates.set(g.c.dish, n - 1);
     this.served.push({ customer: g.c.id, dish: g.c.dish });
+    saveServed(sessionStorage, this.serviceId, this.served);
+    // that was the last plate of this dish: everyone else seated waiting for it gets a dish still on the pass
+    if (n - 1 === 0)
+      for (const o of this.guests) {
+        if (o === g || o.phase !== "seated" || o.c.dish !== g.c.dish) continue;
+        const other = pickDish(this.plates, o.c.dish);
+        if (other) {
+          o.c = { ...o.c, dish: other };
+          this.makeBubble(o);
+          o.bubble.setPosition(o.sprite.x, SEAT_Y - 62).setVisible(true);
+        }
+      }
     g.phase = "eating";
     g.bubble.setVisible(false);
     const gold = this.prices.get(g.c.dish) ?? 0;
