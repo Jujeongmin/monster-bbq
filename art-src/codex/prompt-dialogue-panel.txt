@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image, in the style and colours of the attached approved dialogue bar (flat hand-placed pixel art, chunky visible square pixels, clean dark outline, very dark charcoal-brown fill, thin brass double line; NO gradients, NO glossy shine, NO texture noise, NO glow).
+
+Save as art-src/codex/raw/dialogue_panel.png — a WIDE image (for example 1536x1024), flat solid magenta (#FF00FF) background, with TWO separate UI pieces, far apart, each with wide empty magenta space around it. No text anywhere.
+
+ piece 1 (upper, large): a big dialogue window like the NPC talk window of a modern pixel-art game — a wide rectangle about 3 times as wide as tall, filled with ONE flat very dark charcoal-brown colour (text will be written on it), bordered by the thin brass double line all the way round. Its TOP-LEFT corner is cut off diagonally (a short 45-degree bevel); the other three corners are square with a tiny brass stud. All four edges must be perfectly straight and even along their whole length (it will be stretched as a 9-slice), and the bevel stays only in the top-left corner.
+
+ piece 2 (lower, small): a name plate — a short horizontal slanted parallelogram plate (both ends slanting the same way, like the name tag under a character portrait), filled with flat warm gold/brass with a slightly darker brass border and a dark outline, plain and empty in the middle where a name will be written in dark letters. Its long top and bottom edges perfectly straight (it will be stretched in width).
+
+Reply only with the saved file path.

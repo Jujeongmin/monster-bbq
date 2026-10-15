@@ -1,0 +1,16 @@
+{
+  "cell": { "width": 128, "height": 128 },
+  "fit": { "pixel_unfake": true, "palette_size": 40, "align_x": "foot-centroid", "align_y": "bottom" },
+  "directions": {
+    "set": ["down", "down45", "side", "up45", "up"],
+    "mirror": { "left": "side", "down45left": "down45", "up45left": "up45" },
+    "anchor_suffix": "idle"
+  },
+  "states": {
+    "down_walk":   { "frames": 6, "fps": 10, "loop": true, "action": "walk cycle toward the viewer (front view): left and right feet clearly alternate stepping forward, arms swing opposite to the legs, harpoon stays slung on the back, small body bob" },
+    "down45_walk": { "frames": 6, "fps": 10, "loop": true, "action": "walk cycle on the 45-degree diagonal toward camera-right and slightly toward the viewer (three-quarter-front): left and right feet clearly alternate, arms swing opposite to the legs, harpoon stays slung on the back" },
+    "side_walk":   { "frames": 6, "fps": 10, "loop": true, "action": "walk cycle to the right (pure side profile): left and right feet clearly alternate with a full stride, arms swing opposite to the legs, harpoon stays slung on the back" },
+    "up45_walk":   { "frames": 6, "fps": 10, "loop": true, "action": "walk cycle on the 45-degree diagonal away from the viewer toward camera-right (three-quarter-back): left and right feet clearly alternate, arms swing opposite to the legs, harpoon on the back visible" },
+    "up_walk":     { "frames": 6, "fps": 10, "loop": true, "action": "walk cycle away from the viewer (back view, no face visible): left and right feet clearly alternate, arms swing opposite to the legs, harpoon on the back visible" }
+  }
+}

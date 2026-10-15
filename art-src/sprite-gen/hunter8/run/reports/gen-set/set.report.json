@@ -1,0 +1,131 @@
+{
+  "kind": "sprite-gen-gen-set-report",
+  "run_dir": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run",
+  "states": [
+    "down_idle",
+    "down45_idle",
+    "side_idle",
+    "up45_idle",
+    "up_idle",
+    "down_walk",
+    "down45_walk",
+    "side_walk",
+    "up45_walk",
+    "up_walk"
+  ],
+  "ok": 10,
+  "failed": [],
+  "not_started": [],
+  "items": [
+    {
+      "state": "down_idle",
+      "out": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\raw\\down\\idle.png",
+      "report": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\reports\\gen-set\\down_idle.json",
+      "reused": true,
+      "provider": "codex",
+      "provider_resolved_from": "explicit",
+      "ok": true
+    },
+    {
+      "state": "down45_idle",
+      "out": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\raw\\down45\\idle.png",
+      "report": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\reports\\gen-set\\down45_idle.json",
+      "reused": true,
+      "provider": "codex",
+      "provider_resolved_from": "explicit",
+      "ok": true
+    },
+    {
+      "state": "side_idle",
+      "out": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\raw\\side\\idle.png",
+      "report": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\reports\\gen-set\\side_idle.json",
+      "reused": true,
+      "provider": "codex",
+      "provider_resolved_from": "explicit",
+      "ok": true
+    },
+    {
+      "state": "up45_idle",
+      "out": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\raw\\up45\\idle.png",
+      "report": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\reports\\gen-set\\up45_idle.json",
+      "reused": true,
+      "provider": "codex",
+      "provider_resolved_from": "explicit",
+      "ok": true
+    },
+    {
+      "state": "up_idle",
+      "out": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\raw\\up\\idle.png",
+      "report": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\reports\\gen-set\\up_idle.json",
+      "reused": true,
+      "provider": "codex",
+      "provider_resolved_from": "explicit",
+      "ok": true
+    },
+    {
+      "state": "down_walk",
+      "out": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\raw\\down\\walk.png",
+      "report": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\reports\\gen-set\\down_walk.json",
+      "refs": [
+        "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\references\\anchors\\down-anchor-x8.png",
+        "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\references\\layout-guides\\down\\walk.png"
+      ],
+      "provider": "codex",
+      "provider_resolved_from": "explicit",
+      "elapsed_seconds": 43.1,
+      "ok": true
+    },
+    {
+      "state": "down45_walk",
+      "out": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\raw\\down45\\walk.png",
+      "report": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\reports\\gen-set\\down45_walk.json",
+      "refs": [
+        "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\references\\anchors\\down45-anchor-x8.png",
+        "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\references\\layout-guides\\down45\\walk.png"
+      ],
+      "provider": "codex",
+      "provider_resolved_from": "explicit",
+      "elapsed_seconds": 49.0,
+      "ok": true
+    },
+    {
+      "state": "side_walk",
+      "out": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\raw\\side\\walk.png",
+      "report": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\reports\\gen-set\\side_walk.json",
+      "refs": [
+        "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\references\\anchors\\side-anchor-x8.png",
+        "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\references\\layout-guides\\side\\walk.png"
+      ],
+      "provider": "codex",
+      "provider_resolved_from": "explicit",
+      "elapsed_seconds": 50.7,
+      "ok": true
+    },
+    {
+      "state": "up45_walk",
+      "out": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\raw\\up45\\walk.png",
+      "report": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\reports\\gen-set\\up45_walk.json",
+      "refs": [
+        "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\references\\anchors\\up45-anchor-x8.png",
+        "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\references\\layout-guides\\up45\\walk.png"
+      ],
+      "provider": "codex",
+      "provider_resolved_from": "explicit",
+      "elapsed_seconds": 53.6,
+      "ok": true
+    },
+    {
+      "state": "up_walk",
+      "out": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\raw\\up\\walk.png",
+      "report": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\reports\\gen-set\\up_walk.json",
+      "refs": [
+        "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\references\\anchors\\up-anchor-x8.png",
+        "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run\\references\\layout-guides\\up\\walk.png"
+      ],
+      "provider": "codex",
+      "provider_resolved_from": "explicit",
+      "elapsed_seconds": 59.1,
+      "ok": true
+    }
+  ]
+}

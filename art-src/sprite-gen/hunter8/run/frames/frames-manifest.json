@@ -1,0 +1,1654 @@
+{
+  "ok": true,
+  "engine": "component-row",
+  "engine_revision": "ae0be5133902",
+  "extract_args": {},
+  "run_dir": "C:\\Users\\anjsh\\OneDrive\\Desktop\\monster-bbq\\art-src\\sprite-gen\\hunter8\\run",
+  "cell": {
+    "shape": "square",
+    "width": 128,
+    "height": 128,
+    "safe_margin_x": 12,
+    "safe_margin_y": 12,
+    "size": 128,
+    "safe_margin": 12
+  },
+  "chroma_key": {
+    "name": "cyan",
+    "hex": "#00FFFF",
+    "rgb": [
+      0,
+      255,
+      255
+    ],
+    "selection": "auto",
+    "score": 220.23,
+    "min_subject_distance": 211.21,
+    "background": {
+      "mode": "transparent",
+      "opaque_border_fraction": 0.0,
+      "subject_pixels": 7972
+    },
+    "candidates": [
+      {
+        "name": "magenta",
+        "hex": "#FF00FF",
+        "score": 210.39,
+        "min_subject_distance": 203.26,
+        "clears_erase_radius": true
+      },
+      {
+        "name": "green",
+        "hex": "#00FF00",
+        "score": 172.3,
+        "min_subject_distance": 168.88,
+        "clears_erase_radius": true
+      },
+      {
+        "name": "cyan",
+        "hex": "#00FFFF",
+        "score": 220.23,
+        "min_subject_distance": 211.21,
+        "clears_erase_radius": true
+      },
+      {
+        "name": "blue",
+        "hex": "#004DFF",
+        "score": 184.99,
+        "min_subject_distance": 162.88,
+        "clears_erase_radius": true
+      }
+    ],
+    "selection_reason": "highest 1st-percentile subject distance among the 4 candidate(s) clearing the 96 erase radius"
+  },
+  "rows": [
+    {
+      "state": "down_idle",
+      "frames": 4,
+      "method": "components",
+      "files": [
+        "frames/down/idle/frame-0.png",
+        "frames/down/idle/frame-1.png",
+        "frames/down/idle/frame-2.png",
+        "frames/down/idle/frame-3.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 6112,
+          "bbox": [
+            19,
+            3,
+            107,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "nontransparent_pixels": 5928,
+          "bbox": [
+            19,
+            7,
+            107,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "nontransparent_pixels": 6250,
+          "bbox": [
+            19,
+            0,
+            107,
+            116
+          ],
+          "edge_pixels": 10,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "nontransparent_pixels": 6007,
+          "bbox": [
+            19,
+            6,
+            107,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "ae0be5133902",
+      "plain_files": [
+        "frames/down/idle/frame-0.plain.png",
+        "frames/down/idle/frame-1.plain.png",
+        "frames/down/idle/frame-2.plain.png",
+        "frames/down/idle/frame-3.plain.png"
+      ],
+      "orig_files": [
+        "frames/down/idle/orig/frame-0.png",
+        "frames/down/idle/orig/frame-1.png",
+        "frames/down/idle/orig/frame-2.png",
+        "frames/down/idle/orig/frame-3.png"
+      ]
+    },
+    {
+      "state": "down45_idle",
+      "frames": 4,
+      "method": "components",
+      "files": [
+        "frames/down45/idle/frame-0.png",
+        "frames/down45/idle/frame-1.png",
+        "frames/down45/idle/frame-2.png",
+        "frames/down45/idle/frame-3.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 5952,
+          "bbox": [
+            19,
+            3,
+            105,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "nontransparent_pixels": 6112,
+          "bbox": [
+            19,
+            2,
+            105,
+            118
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "nontransparent_pixels": 5915,
+          "bbox": [
+            19,
+            6,
+            104,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "nontransparent_pixels": 5999,
+          "bbox": [
+            18,
+            1,
+            105,
+            116
+          ],
+          "edge_pixels": 5,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "ae0be5133902",
+      "plain_files": [
+        "frames/down45/idle/frame-0.plain.png",
+        "frames/down45/idle/frame-1.plain.png",
+        "frames/down45/idle/frame-2.plain.png",
+        "frames/down45/idle/frame-3.plain.png"
+      ],
+      "orig_files": [
+        "frames/down45/idle/orig/frame-0.png",
+        "frames/down45/idle/orig/frame-1.png",
+        "frames/down45/idle/orig/frame-2.png",
+        "frames/down45/idle/orig/frame-3.png"
+      ]
+    },
+    {
+      "state": "side_idle",
+      "frames": 4,
+      "method": "components",
+      "files": [
+        "frames/side/idle/frame-0.png",
+        "frames/side/idle/frame-1.png",
+        "frames/side/idle/frame-2.png",
+        "frames/side/idle/frame-3.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 5530,
+          "bbox": [
+            21,
+            3,
+            102,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "nontransparent_pixels": 5453,
+          "bbox": [
+            20,
+            5,
+            102,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "nontransparent_pixels": 5682,
+          "bbox": [
+            20,
+            0,
+            104,
+            116
+          ],
+          "edge_pixels": 11,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "nontransparent_pixels": 5532,
+          "bbox": [
+            21,
+            3,
+            102,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "ae0be5133902",
+      "plain_files": [
+        "frames/side/idle/frame-0.plain.png",
+        "frames/side/idle/frame-1.plain.png",
+        "frames/side/idle/frame-2.plain.png",
+        "frames/side/idle/frame-3.plain.png"
+      ],
+      "orig_files": [
+        "frames/side/idle/orig/frame-0.png",
+        "frames/side/idle/orig/frame-1.png",
+        "frames/side/idle/orig/frame-2.png",
+        "frames/side/idle/orig/frame-3.png"
+      ]
+    },
+    {
+      "state": "up45_idle",
+      "frames": 4,
+      "method": "components",
+      "files": [
+        "frames/up45/idle/frame-0.png",
+        "frames/up45/idle/frame-1.png",
+        "frames/up45/idle/frame-2.png",
+        "frames/up45/idle/frame-3.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 3598,
+          "bbox": [
+            36,
+            18,
+            95,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "nontransparent_pixels": 3660,
+          "bbox": [
+            35,
+            18,
+            94,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "nontransparent_pixels": 3631,
+          "bbox": [
+            35,
+            19,
+            95,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "nontransparent_pixels": 3667,
+          "bbox": [
+            36,
+            17,
+            94,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "ae0be5133902",
+      "plain_files": [
+        "frames/up45/idle/frame-0.plain.png",
+        "frames/up45/idle/frame-1.plain.png",
+        "frames/up45/idle/frame-2.plain.png",
+        "frames/up45/idle/frame-3.plain.png"
+      ],
+      "orig_files": [
+        "frames/up45/idle/orig/frame-0.png",
+        "frames/up45/idle/orig/frame-1.png",
+        "frames/up45/idle/orig/frame-2.png",
+        "frames/up45/idle/orig/frame-3.png"
+      ],
+      "input_grids": [
+        {
+          "x": [
+            36.0,
+            36.5,
+            37.3,
+            38.3,
+            39.2,
+            40.3,
+            41.2,
+            42.3,
+            43.3,
+            44.2,
+            45.3,
+            46.4,
+            47.3,
+            48.7,
+            49.6,
+            50.5,
+            51.6,
+            52.4,
+            53.5,
+            54.4,
+            55.3,
+            56.6,
+            57.6,
+            58.7,
+            59.8,
+            60.9,
+            61.7,
+            62.8,
+            63.9,
+            64.8,
+            65.7,
+            66.8,
+            67.8,
+            68.7,
+            69.6,
+            70.5,
+            71.6,
+            72.7,
+            73.7,
+            74.8,
+            75.9,
+            76.9,
+            77.8,
+            78.9,
+            80.0,
+            80.9,
+            81.9,
+            82.8,
+            83.9,
+            84.8,
+            85.7,
+            86.8,
+            87.8,
+            88.9,
+            90.0,
+            91.1,
+            92.1,
+            93.0,
+            94.1,
+            95.0
+          ],
+          "y": [
+            22.0,
+            22.9,
+            23.6,
+            24.9,
+            25.8,
+            26.6,
+            27.7,
+            28.6,
+            29.7,
+            30.4,
+            31.3,
+            32.2,
+            33.3,
+            34.0,
+            35.1,
+            35.9,
+            37.0,
+            37.9,
+            39.0,
+            39.9,
+            41.0,
+            41.8,
+            42.9,
+            44.0,
+            45.1,
+            46.0,
+            46.9,
+            47.9,
+            48.5,
+            49.4,
+            50.4,
+            51.3,
+            52.4,
+            53.5,
+            54.5,
+            55.6,
+            56.5,
+            57.2,
+            58.3,
+            59.2,
+            60.1,
+            61.2,
+            62.0,
+            63.1,
+            64.0,
+            64.9,
+            66.0,
+            66.9,
+            67.9,
+            69.0,
+            69.9,
+            70.8,
+            71.9,
+            72.8,
+            73.7,
+            74.7,
+            75.5,
+            76.5,
+            77.4,
+            78.3,
+            79.4,
+            80.3,
+            81.4,
+            82.3,
+            83.3,
+            84.2,
+            85.3,
+            86.2,
+            87.3,
+            88.2,
+            88.9,
+            89.8,
+            90.7,
+            91.7,
+            92.8,
+            93.7,
+            94.6,
+            95.7,
+            96.7,
+            97.6,
+            98.7,
+            99.6,
+            100.7,
+            101.6,
+            102.5,
+            103.5,
+            104.4,
+            105.3,
+            106.0,
+            107.3,
+            108.4,
+            108.9,
+            110.0,
+            110.9,
+            111.9,
+            112.8,
+            113.9,
+            114.8,
+            115.9
+          ]
+        },
+        {
+          "x": [
+            35.0,
+            35.2,
+            36.1,
+            37.0,
+            38.0,
+            39.1,
+            40.2,
+            41.1,
+            42.2,
+            43.2,
+            44.3,
+            45.2,
+            46.3,
+            47.2,
+            48.6,
+            49.5,
+            50.6,
+            51.5,
+            52.6,
+            53.7,
+            54.5,
+            55.6,
+            56.7,
+            57.6,
+            58.7,
+            59.6,
+            60.6,
+            61.5,
+            62.6,
+            63.7,
+            64.6,
+            65.7,
+            66.7,
+            67.6,
+            68.5,
+            69.4,
+            70.5,
+            71.6,
+            72.7,
+            73.7,
+            74.8,
+            75.7,
+            76.8,
+            77.9,
+            78.9,
+            79.7,
+            80.7,
+            81.6,
+            82.7,
+            83.8,
+            84.7,
+            85.8,
+            86.6,
+            87.7,
+            88.8,
+            89.9,
+            91.0,
+            92.0,
+            92.9,
+            94.0
+          ],
+          "y": [
+            22.0,
+            23.1,
+            24.2,
+            25.0,
+            25.9,
+            27.0,
+            27.9,
+            29.0,
+            29.9,
+            30.4,
+            31.9,
+            32.6,
+            33.5,
+            34.4,
+            35.3,
+            36.3,
+            37.2,
+            38.1,
+            39.2,
+            40.1,
+            41.2,
+            42.3,
+            43.2,
+            44.2,
+            45.1,
+            46.2,
+            47.3,
+            48.0,
+            48.7,
+            49.8,
+            50.7,
+            51.8,
+            52.7,
+            53.7,
+            54.8,
+            55.9,
+            56.8,
+            57.5,
+            58.6,
+            59.5,
+            60.4,
+            61.5,
+            62.3,
+            63.4,
+            64.3,
+            65.2,
+            66.3,
+            67.2,
+            68.3,
+            69.3,
+            70.2,
+            71.1,
+            72.2,
+            73.1,
+            74.0,
+            75.1,
+            75.8,
+            76.9,
+            77.6,
+            78.7,
+            79.6,
+            80.6,
+            81.7,
+            82.6,
+            83.7,
+            84.6,
+            85.7,
+            86.7,
+            87.6,
+            88.5,
+            89.6,
+            90.1,
+            91.0,
+            92.1,
+            93.2,
+            94.1,
+            95.0,
+            96.1,
+            97.1,
+            98.0,
+            99.1,
+            100.0,
+            101.1,
+            102.0,
+            102.9,
+            104.0,
+            104.9,
+            105.7,
+            106.5,
+            107.5,
+            108.4,
+            109.3,
+            110.6,
+            111.3,
+            112.4,
+            113.5,
+            114.4,
+            115.3,
+            116.3
+          ]
+        },
+        {
+          "x": [
+            35.0,
+            35.4,
+            36.6,
+            37.3,
+            38.2,
+            39.3,
+            40.6,
+            41.4,
+            42.5,
+            43.2,
+            44.3,
+            45.6,
+            46.6,
+            47.7,
+            48.6,
+            49.7,
+            50.8,
+            51.7,
+            52.7,
+            53.6,
+            54.7,
+            55.6,
+            56.5,
+            57.6,
+            58.6,
+            59.7,
+            60.6,
+            61.5,
+            62.8,
+            63.8,
+            64.7,
+            65.4,
+            66.5,
+            67.6,
+            68.5,
+            69.6,
+            70.6,
+            71.5,
+            73.0,
+            73.9,
+            74.9,
+            76.0,
+            76.9,
+            78.0,
+            78.9,
+            80.0,
+            81.0,
+            82.1,
+            83.0,
+            83.9,
+            84.8,
+            85.9,
+            86.9,
+            87.8,
+            89.1,
+            90.2,
+            91.1,
+            92.0,
+            93.0,
+            93.9,
+            95.0
+          ],
+          "y": [
+            23.0,
+            23.9,
+            24.8,
+            25.9,
+            26.8,
+            27.7,
+            28.7,
+            29.4,
+            30.7,
+            31.6,
+            32.3,
+            33.4,
+            34.1,
+            35.0,
+            36.1,
+            37.0,
+            37.9,
+            38.9,
+            39.8,
+            40.9,
+            41.8,
+            42.9,
+            44.0,
+            45.0,
+            45.9,
+            47.0,
+            47.7,
+            48.4,
+            49.5,
+            50.4,
+            51.5,
+            52.4,
+            53.4,
+            54.5,
+            55.6,
+            56.5,
+            57.2,
+            58.3,
+            59.2,
+            60.1,
+            61.1,
+            62.0,
+            63.1,
+            64.0,
+            64.9,
+            66.0,
+            66.9,
+            68.0,
+            69.0,
+            69.9,
+            70.8,
+            71.9,
+            72.8,
+            73.7,
+            74.8,
+            75.7,
+            76.6,
+            77.4,
+            78.3,
+            79.2,
+            80.3,
+            81.4,
+            82.3,
+            83.4,
+            84.3,
+            85.3,
+            86.4,
+            87.3,
+            88.2,
+            88.9,
+            89.8,
+            91.2,
+            91.8,
+            92.9,
+            93.7,
+            94.8,
+            95.7,
+            96.8,
+            97.7,
+            98.8,
+            99.7,
+            100.7,
+            101.6,
+            102.5,
+            103.6,
+            104.5,
+            105.4,
+            106.1,
+            107.2,
+            108.1,
+            109.0,
+            110.2,
+            110.9,
+            112.0,
+            112.9,
+            114.0,
+            114.9,
+            116.0
+          ]
+        },
+        {
+          "x": [
+            36.0,
+            36.2,
+            37.3,
+            38.0,
+            39.1,
+            40.3,
+            41.4,
+            42.1,
+            43.2,
+            44.1,
+            45.2,
+            46.1,
+            47.3,
+            48.4,
+            49.5,
+            50.4,
+            51.4,
+            52.5,
+            53.6,
+            54.5,
+            55.6,
+            56.5,
+            57.5,
+            58.6,
+            59.5,
+            60.6,
+            61.5,
+            62.4,
+            63.5,
+            64.4,
+            65.4,
+            66.3,
+            67.6,
+            68.5,
+            69.8,
+            70.7,
+            71.9,
+            72.5,
+            73.9,
+            75.0,
+            75.9,
+            76.9,
+            77.8,
+            78.6,
+            79.6,
+            80.7,
+            81.6,
+            82.7,
+            83.8,
+            84.7,
+            86.1,
+            86.8,
+            88.1,
+            88.8,
+            89.9,
+            90.8,
+            91.8,
+            92.9,
+            94.0
+          ],
+          "y": [
+            21.0,
+            22.1,
+            23.0,
+            24.1,
+            25.0,
+            26.0,
+            26.9,
+            28.0,
+            28.9,
+            29.8,
+            30.9,
+            31.8,
+            32.5,
+            33.4,
+            34.3,
+            35.2,
+            36.3,
+            37.2,
+            38.2,
+            39.1,
+            40.0,
+            41.1,
+            42.0,
+            43.1,
+            44.2,
+            45.2,
+            45.8,
+            47.2,
+            47.9,
+            49.2,
+            49.7,
+            50.6,
+            51.7,
+            52.6,
+            53.7,
+            54.8,
+            55.8,
+            56.7,
+            57.5,
+            58.5,
+            59.4,
+            60.3,
+            61.4,
+            62.3,
+            63.4,
+            64.3,
+            65.2,
+            66.3,
+            67.1,
+            68.2,
+            69.3,
+            70.2,
+            71.1,
+            72.2,
+            73.1,
+            74.0,
+            75.0,
+            75.8,
+            76.8,
+            77.6,
+            78.6,
+            79.5,
+            80.6,
+            81.7,
+            82.6,
+            83.7,
+            84.6,
+            85.6,
+            86.7,
+            87.6,
+            88.5,
+            89.2,
+            90.1,
+            91.2,
+            92.1,
+            93.2,
+            94.1,
+            95.2,
+            96.1,
+            97.1,
+            98.0,
+            99.1,
+            100.0,
+            101.1,
+            102.0,
+            102.9,
+            104.0,
+            104.9,
+            105.8,
+            106.5,
+            107.7,
+            108.6,
+            109.3,
+            110.6,
+            111.3,
+            112.4,
+            113.3,
+            114.4,
+            115.3,
+            116.3
+          ]
+        }
+      ]
+    },
+    {
+      "state": "up_idle",
+      "frames": 4,
+      "method": "components",
+      "files": [
+        "frames/up/idle/frame-0.png",
+        "frames/up/idle/frame-1.png",
+        "frames/up/idle/frame-2.png",
+        "frames/up/idle/frame-3.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 6402,
+          "bbox": [
+            20,
+            2,
+            108,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "nontransparent_pixels": 6355,
+          "bbox": [
+            21,
+            2,
+            108,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "nontransparent_pixels": 6347,
+          "bbox": [
+            22,
+            3,
+            108,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "nontransparent_pixels": 6413,
+          "bbox": [
+            22,
+            0,
+            108,
+            116
+          ],
+          "edge_pixels": 10,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "ae0be5133902",
+      "plain_files": [
+        "frames/up/idle/frame-0.plain.png",
+        "frames/up/idle/frame-1.plain.png",
+        "frames/up/idle/frame-2.plain.png",
+        "frames/up/idle/frame-3.plain.png"
+      ],
+      "orig_files": [
+        "frames/up/idle/orig/frame-0.png",
+        "frames/up/idle/orig/frame-1.png",
+        "frames/up/idle/orig/frame-2.png",
+        "frames/up/idle/orig/frame-3.png"
+      ]
+    },
+    {
+      "state": "down_walk",
+      "frames": 6,
+      "method": "components",
+      "files": [
+        "frames/down/walk/frame-0.png",
+        "frames/down/walk/frame-1.png",
+        "frames/down/walk/frame-2.png",
+        "frames/down/walk/frame-3.png",
+        "frames/down/walk/frame-4.png",
+        "frames/down/walk/frame-5.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 5917,
+          "bbox": [
+            24,
+            1,
+            108,
+            116
+          ],
+          "edge_pixels": 2,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "nontransparent_pixels": 5908,
+          "bbox": [
+            23,
+            0,
+            107,
+            116
+          ],
+          "edge_pixels": 8,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "nontransparent_pixels": 5995,
+          "bbox": [
+            23,
+            1,
+            108,
+            116
+          ],
+          "edge_pixels": 3,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "nontransparent_pixels": 5980,
+          "bbox": [
+            24,
+            0,
+            107,
+            116
+          ],
+          "edge_pixels": 7,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "nontransparent_pixels": 5982,
+          "bbox": [
+            23,
+            0,
+            108,
+            116
+          ],
+          "edge_pixels": 7,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "nontransparent_pixels": 5905,
+          "bbox": [
+            25,
+            1,
+            108,
+            116
+          ],
+          "edge_pixels": 3,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "ae0be5133902",
+      "plain_files": [
+        "frames/down/walk/frame-0.plain.png",
+        "frames/down/walk/frame-1.plain.png",
+        "frames/down/walk/frame-2.plain.png",
+        "frames/down/walk/frame-3.plain.png",
+        "frames/down/walk/frame-4.plain.png",
+        "frames/down/walk/frame-5.plain.png"
+      ],
+      "orig_files": [
+        "frames/down/walk/orig/frame-0.png",
+        "frames/down/walk/orig/frame-1.png",
+        "frames/down/walk/orig/frame-2.png",
+        "frames/down/walk/orig/frame-3.png",
+        "frames/down/walk/orig/frame-4.png",
+        "frames/down/walk/orig/frame-5.png"
+      ]
+    },
+    {
+      "state": "down45_walk",
+      "frames": 6,
+      "method": "components",
+      "files": [
+        "frames/down45/walk/frame-0.png",
+        "frames/down45/walk/frame-1.png",
+        "frames/down45/walk/frame-2.png",
+        "frames/down45/walk/frame-3.png",
+        "frames/down45/walk/frame-4.png",
+        "frames/down45/walk/frame-5.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 5747,
+          "bbox": [
+            24,
+            0,
+            104,
+            116
+          ],
+          "edge_pixels": 11,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "nontransparent_pixels": 5602,
+          "bbox": [
+            24,
+            0,
+            104,
+            116
+          ],
+          "edge_pixels": 11,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "nontransparent_pixels": 5548,
+          "bbox": [
+            24,
+            0,
+            104,
+            116
+          ],
+          "edge_pixels": 12,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "nontransparent_pixels": 5600,
+          "bbox": [
+            25,
+            1,
+            104,
+            116
+          ],
+          "edge_pixels": 5,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "nontransparent_pixels": 5594,
+          "bbox": [
+            24,
+            1,
+            104,
+            116
+          ],
+          "edge_pixels": 5,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "nontransparent_pixels": 5547,
+          "bbox": [
+            24,
+            0,
+            104,
+            116
+          ],
+          "edge_pixels": 12,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "ae0be5133902",
+      "plain_files": [
+        "frames/down45/walk/frame-0.plain.png",
+        "frames/down45/walk/frame-1.plain.png",
+        "frames/down45/walk/frame-2.plain.png",
+        "frames/down45/walk/frame-3.plain.png",
+        "frames/down45/walk/frame-4.plain.png",
+        "frames/down45/walk/frame-5.plain.png"
+      ],
+      "orig_files": [
+        "frames/down45/walk/orig/frame-0.png",
+        "frames/down45/walk/orig/frame-1.png",
+        "frames/down45/walk/orig/frame-2.png",
+        "frames/down45/walk/orig/frame-3.png",
+        "frames/down45/walk/orig/frame-4.png",
+        "frames/down45/walk/orig/frame-5.png"
+      ]
+    },
+    {
+      "state": "side_walk",
+      "frames": 6,
+      "method": "components",
+      "files": [
+        "frames/side/walk/frame-0.png",
+        "frames/side/walk/frame-1.png",
+        "frames/side/walk/frame-2.png",
+        "frames/side/walk/frame-3.png",
+        "frames/side/walk/frame-4.png",
+        "frames/side/walk/frame-5.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 5681,
+          "bbox": [
+            25,
+            1,
+            105,
+            117
+          ],
+          "edge_pixels": 5,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "nontransparent_pixels": 5775,
+          "bbox": [
+            25,
+            2,
+            105,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "nontransparent_pixels": 5598,
+          "bbox": [
+            25,
+            3,
+            104,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "nontransparent_pixels": 5654,
+          "bbox": [
+            25,
+            0,
+            104,
+            116
+          ],
+          "edge_pixels": 10,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "nontransparent_pixels": 5786,
+          "bbox": [
+            25,
+            0,
+            104,
+            116
+          ],
+          "edge_pixels": 10,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "nontransparent_pixels": 5652,
+          "bbox": [
+            25,
+            1,
+            104,
+            117
+          ],
+          "edge_pixels": 4,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "ae0be5133902",
+      "plain_files": [
+        "frames/side/walk/frame-0.plain.png",
+        "frames/side/walk/frame-1.plain.png",
+        "frames/side/walk/frame-2.plain.png",
+        "frames/side/walk/frame-3.plain.png",
+        "frames/side/walk/frame-4.plain.png",
+        "frames/side/walk/frame-5.plain.png"
+      ],
+      "orig_files": [
+        "frames/side/walk/orig/frame-0.png",
+        "frames/side/walk/orig/frame-1.png",
+        "frames/side/walk/orig/frame-2.png",
+        "frames/side/walk/orig/frame-3.png",
+        "frames/side/walk/orig/frame-4.png",
+        "frames/side/walk/orig/frame-5.png"
+      ]
+    },
+    {
+      "state": "up45_walk",
+      "frames": 6,
+      "method": "components",
+      "files": [
+        "frames/up45/walk/frame-0.png",
+        "frames/up45/walk/frame-1.png",
+        "frames/up45/walk/frame-2.png",
+        "frames/up45/walk/frame-3.png",
+        "frames/up45/walk/frame-4.png",
+        "frames/up45/walk/frame-5.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 4804,
+          "bbox": [
+            29,
+            1,
+            99,
+            116
+          ],
+          "edge_pixels": 5,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "nontransparent_pixels": 5001,
+          "bbox": [
+            28,
+            2,
+            99,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "nontransparent_pixels": 4772,
+          "bbox": [
+            31,
+            0,
+            99,
+            116
+          ],
+          "edge_pixels": 10,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "nontransparent_pixels": 4931,
+          "bbox": [
+            29,
+            2,
+            98,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "nontransparent_pixels": 4780,
+          "bbox": [
+            30,
+            1,
+            100,
+            116
+          ],
+          "edge_pixels": 4,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "nontransparent_pixels": 4905,
+          "bbox": [
+            29,
+            2,
+            98,
+            116
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "ae0be5133902",
+      "plain_files": [
+        "frames/up45/walk/frame-0.plain.png",
+        "frames/up45/walk/frame-1.plain.png",
+        "frames/up45/walk/frame-2.plain.png",
+        "frames/up45/walk/frame-3.plain.png",
+        "frames/up45/walk/frame-4.plain.png",
+        "frames/up45/walk/frame-5.plain.png"
+      ],
+      "orig_files": [
+        "frames/up45/walk/orig/frame-0.png",
+        "frames/up45/walk/orig/frame-1.png",
+        "frames/up45/walk/orig/frame-2.png",
+        "frames/up45/walk/orig/frame-3.png",
+        "frames/up45/walk/orig/frame-4.png",
+        "frames/up45/walk/orig/frame-5.png"
+      ]
+    },
+    {
+      "state": "up_walk",
+      "frames": 6,
+      "method": "components",
+      "files": [
+        "frames/up/walk/frame-0.png",
+        "frames/up/walk/frame-1.png",
+        "frames/up/walk/frame-2.png",
+        "frames/up/walk/frame-3.png",
+        "frames/up/walk/frame-4.png",
+        "frames/up/walk/frame-5.png"
+      ],
+      "frame_records": [
+        {
+          "index": 0,
+          "nontransparent_pixels": 5947,
+          "bbox": [
+            24,
+            0,
+            105,
+            116
+          ],
+          "edge_pixels": 9,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "nontransparent_pixels": 5845,
+          "bbox": [
+            24,
+            1,
+            105,
+            116
+          ],
+          "edge_pixels": 4,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "nontransparent_pixels": 5941,
+          "bbox": [
+            25,
+            1,
+            105,
+            116
+          ],
+          "edge_pixels": 4,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "nontransparent_pixels": 5987,
+          "bbox": [
+            24,
+            0,
+            105,
+            116
+          ],
+          "edge_pixels": 9,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "nontransparent_pixels": 5889,
+          "bbox": [
+            25,
+            0,
+            105,
+            116
+          ],
+          "edge_pixels": 10,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "nontransparent_pixels": 5891,
+          "bbox": [
+            24,
+            1,
+            106,
+            116
+          ],
+          "edge_pixels": 4,
+          "chroma_adjacent_pixels": 0
+        }
+      ],
+      "ok": true,
+      "engine_revision": "ae0be5133902",
+      "plain_files": [
+        "frames/up/walk/frame-0.plain.png",
+        "frames/up/walk/frame-1.plain.png",
+        "frames/up/walk/frame-2.plain.png",
+        "frames/up/walk/frame-3.plain.png",
+        "frames/up/walk/frame-4.plain.png",
+        "frames/up/walk/frame-5.plain.png"
+      ],
+      "orig_files": [
+        "frames/up/walk/orig/frame-0.png",
+        "frames/up/walk/orig/frame-1.png",
+        "frames/up/walk/orig/frame-2.png",
+        "frames/up/walk/orig/frame-3.png",
+        "frames/up/walk/orig/frame-4.png",
+        "frames/up/walk/orig/frame-5.png"
+      ]
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "down_idle: pitch disagreement — detect 1.00x1.00 (uniformity 145.9) vs runlen 4.98x4.93 (34.8); detect kept. large gap usually means the raw was drawn finer than the cell contract — reroll with a block-count hint",
+    "down_idle: native logical exceeds the physical cap 128x116 — capped frames (reroll candidates): 0:393x505, 1:394x487, 2:394x518, 3:394x489",
+    "down45_idle: pitch disagreement — detect 1.00x1.00 (uniformity 141.5) vs runlen 4.16x4.09 (28.8); detect kept. large gap usually means the raw was drawn finer than the cell contract — reroll with a block-count hint",
+    "down45_idle: native logical exceeds the physical cap 128x116 — capped frames (reroll candidates): 0:367x482, 1:367x496, 2:364x472, 3:370x490",
+    "side_idle: pitch disagreement — detect 1.00x1.00 (uniformity 132.8) vs runlen 5.03x5.10 (28.9); detect kept. large gap usually means the raw was drawn finer than the cell contract — reroll with a block-count hint",
+    "side_idle: native logical exceeds the physical cap 128x116 — capped frames (reroll candidates): 0:360x500, 1:362x490, 2:374x514, 3:357x501",
+    "up45_idle: frame 1 pitch detection inconclusive — consensus fallback 5.67x5.37",
+    "up45_idle: frame 2 pitch detection inconclusive — consensus fallback 5.67x5.37",
+    "up45_idle: frame 3 pitch detection inconclusive — consensus fallback 5.67x5.37",
+    "up_idle: pitch disagreement — detect 1.00x1.00 (uniformity 104.8) vs runlen 4.95x4.91 (24.2); detect kept. large gap usually means the raw was drawn finer than the cell contract — reroll with a block-count hint",
+    "up_idle: native logical exceeds the physical cap 128x116 — capped frames (reroll candidates): 0:378x494, 1:375x494, 2:370x489, 3:372x501",
+    "down_walk: pitch disagreement — detect 1.00x1.00 (uniformity 136.8) vs runlen 3.74x7.15 (37.6); detect kept. large gap usually means the raw was drawn finer than the cell contract — reroll with a block-count hint",
+    "down_walk: native logical exceeds the physical cap 128x116 — capped frames (reroll candidates): 0:340x466, 1:342x472, 2:344x469, 3:337x470, 4:346x472, 5:337x466",
+    "down45_walk: pitch disagreement — detect 1.00x1.00 (uniformity 142.1) vs runlen 4.93x4.99 (37.6); detect kept. large gap usually means the raw was drawn finer than the cell contract — reroll with a block-count hint",
+    "down45_walk: native logical exceeds the physical cap 128x116 — capped frames (reroll candidates): 0:330x474, 1:330x474, 2:329x476, 3:325x471, 4:327x470, 5:329x476",
+    "side_walk: pitch disagreement — detect 1.00x1.00 (uniformity 133.7) vs runlen 7.13x7.06 (41.1); detect kept. large gap usually means the raw was drawn finer than the cell contract — reroll with a block-count hint",
+    "side_walk: native logical exceeds the physical cap 128x116 — capped frames (reroll candidates): 0:322x467, 1:321x458, 2:319x454, 3:318x467, 4:320x465, 5:318x465",
+    "up45_walk: pitch disagreement — detect 1.00x1.00 (uniformity 118.3) vs runlen 4.83x4.72 (30.4); detect kept. large gap usually means the raw was drawn finer than the cell contract — reroll with a block-count hint",
+    "up45_walk: native logical exceeds the physical cap 128x116 — capped frames (reroll candidates): 0:309x505, 1:312x504, 2:301x511, 3:303x501, 4:310x508, 5:304x500",
+    "up_walk: pitch disagreement — detect 1.00x1.00 (uniformity 110.0) vs runlen 3.97x7.83 (32.2); detect kept. large gap usually means the raw was drawn finer than the cell contract — reroll with a block-count hint",
+    "up_walk: native logical exceeds the physical cap 128x116 — capped frames (reroll candidates): 0:342x490, 1:342x487, 2:338x485, 3:343x491, 4:339x490, 5:346x486",
+    "palette: pinned (40 colors, palette.lock.json)",
+    "pixel unfake: pitch=1.0,1.0,1.0,(5.67, 5.37),1.0,1.0,1.0,1.0,1.0,1.0 scale=1x logical<=128x128 palette=40"
+  ]
+}

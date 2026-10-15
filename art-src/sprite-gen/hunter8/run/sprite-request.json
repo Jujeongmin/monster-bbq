@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "kind": "sprite-gen-request",
+  "engine": "component-row",
+  "character": {
+    "id": "hunter",
+    "description": "chibi young hunter for a cozy Korean BBQ restaurant game: spiky black hair, red bandana, green hooded jacket, cream apron, brown gloves and boots, a harpoon with a coiled rope slung on the back, a small cleaver at the belt; comic cute pixel art, dark outline, quarter-view top-down RPG camera",
+    "base_image": "base-source.png"
+  },
+  "cell": {
+    "shape": "square",
+    "width": 128,
+    "height": 128,
+    "safe_margin_x": 12,
+    "safe_margin_y": 12,
+    "size": 128,
+    "safe_margin": 12
+  },
+  "chroma_key": {
+    "name": "cyan",
+    "hex": "#00FFFF",
+    "rgb": [
+      0,
+      255,
+      255
+    ],
+    "selection": "auto",
+    "score": 220.23,
+    "min_subject_distance": 211.21,
+    "background": {
+      "mode": "transparent",
+      "opaque_border_fraction": 0.0,
+      "subject_pixels": 7972
+    },
+    "candidates": [
+      {
+        "name": "magenta",
+        "hex": "#FF00FF",
+        "score": 210.39,
+        "min_subject_distance": 203.26,
+        "clears_erase_radius": true
+      },
+      {
+        "name": "green",
+        "hex": "#00FF00",
+        "score": 172.3,
+        "min_subject_distance": 168.88,
+        "clears_erase_radius": true
+      },
+      {
+        "name": "cyan",
+        "hex": "#00FFFF",
+        "score": 220.23,
+        "min_subject_distance": 211.21,
+        "clears_erase_radius": true
+      },
+      {
+        "name": "blue",
+        "hex": "#004DFF",
+        "score": 184.99,
+        "min_subject_distance": 162.88,
+        "clears_erase_radius": true
+      }
+    ],
+    "selection_reason": "highest 1st-percentile subject distance among the 4 candidate(s) clearing the 96 erase radius"
+  },
+  "states": {
+    "down_idle": {
+      "frames": 4,
+      "fps": 4,
+      "loop": true,
+      "action": "standing idle, facing the viewer (front view); subtle breathing; canonical direction anchor derived from the base"
+    },
+    "down45_idle": {
+      "frames": 4,
+      "fps": 4,
+      "loop": true,
+      "action": "standing idle, 45-degree three-quarter-front view; subtle breathing; canonical direction anchor derived from the base"
+    },
+    "side_idle": {
+      "frames": 4,
+      "fps": 4,
+      "loop": true,
+      "action": "standing idle, pure side profile view facing camera-right; subtle breathing; canonical direction anchor derived from the base"
+    },
+    "up45_idle": {
+      "frames": 4,
+      "fps": 4,
+      "loop": true,
+      "action": "standing idle, 45-degree three-quarter-back view; subtle breathing; canonical direction anchor derived from the base"
+    },
+    "up_idle": {
+      "frames": 4,
+      "fps": 4,
+      "loop": true,
+      "action": "standing idle, facing away from the viewer (back view, no visible face); subtle breathing; canonical direction anchor derived from the base"
+    },
+    "down_walk": {
+      "frames": 6,
+      "fps": 10,
+      "loop": true,
+      "action": "walk cycle toward the viewer (front view): left and right feet clearly alternate stepping forward, arms swing opposite to the legs, harpoon stays slung on the back, small body bob"
+    },
+    "down45_walk": {
+      "frames": 6,
+      "fps": 10,
+      "loop": true,
+      "action": "walk cycle on the 45-degree diagonal toward camera-right and slightly toward the viewer (three-quarter-front): left and right feet clearly alternate, arms swing opposite to the legs, harpoon stays slung on the back"
+    },
+    "side_walk": {
+      "frames": 6,
+      "fps": 10,
+      "loop": true,
+      "action": "walk cycle to the right (pure side profile): left and right feet clearly alternate with a full stride, arms swing opposite to the legs, harpoon stays slung on the back"
+    },
+    "up45_walk": {
+      "frames": 6,
+      "fps": 10,
+      "loop": true,
+      "action": "walk cycle on the 45-degree diagonal away from the viewer toward camera-right (three-quarter-back): left and right feet clearly alternate, arms swing opposite to the legs, harpoon on the back visible"
+    },
+    "up_walk": {
+      "frames": 6,
+      "fps": 10,
+      "loop": true,
+      "action": "walk cycle away from the viewer (back view, no face visible): left and right feet clearly alternate, arms swing opposite to the legs, harpoon on the back visible"
+    }
+  },
+  "style": "comic, cute, chunky pixel art with a dark outline, same as the base image",
+  "directions": {
+    "set": [
+      "down",
+      "down45",
+      "side",
+      "up45",
+      "up"
+    ],
+    "mirror": {
+      "left": "side",
+      "down45left": "down45",
+      "up45left": "up45"
+    },
+    "anchor_suffix": "idle"
+  },
+  "layout": "taxonomy/v1",
+  "fit": {
+    "pixel_unfake": true,
+    "palette_size": 40,
+    "align_x": "foot-centroid",
+    "align_y": "bottom"
+  },
+  "chroma": {
+    "mode": "rgb",
+    "unmix_reach": 4,
+    "spill_max_fraction": 0.005
+  }
+}

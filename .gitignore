@@ -5,3 +5,5 @@ server/dist/
 art-src/codex/log*.txt
 *.local
 *.log
+.ref/
+art-src/sprite-gen/**/.run.sg-rwlock
