@@ -82,7 +82,7 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
 function packLunch(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
   const bad = { save, error: "bad_lunch" };
   const d = a.dishes;
-  if (save.hunt || !Array.isArray(d) || d.length === 0 || save.lunchbox.length + d.length > lunchSlots(save)) return bad;
+  if (save.hunt || save.service || !Array.isArray(d) || d.length === 0 || save.lunchbox.length + d.length > lunchSlots(save)) return bad;
   let items = save.items;
   for (const dish of d as unknown[]) {
     if (!isDishId(dish) || !save.dishes[dish]) return bad;
@@ -107,7 +107,7 @@ function payLevel(save: SaveData, dish: DishId, target: number): { save: SaveDat
 // A second press (or a retry after a lost reply) finds it known and changes nothing.
 function research(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
   if (!isDishId(a.dish)) return { save, error: "bad_action" };
-  if (save.stage !== "kitchen") return { save, error: "wrong_stage" };
+  if (save.stage !== "kitchen" || save.service) return { save, error: "wrong_stage" };
   if (save.dishes[a.dish]) return { save };
   if (!RECIPES[a.dish].items.every((id) => save.seenItems.includes(id))) return { save, error: "unseen" };
   return payLevel(save, a.dish, 1);
@@ -115,7 +115,7 @@ function research(save: SaveData, a: Record<string, unknown>): { save: SaveData;
 
 function upgradeDish(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
   if (!isDishId(a.dish)) return { save, error: "bad_action" };
-  if (save.stage !== "kitchen") return { save, error: "wrong_stage" };
+  if (save.stage !== "kitchen" || save.service) return { save, error: "wrong_stage" };
   const lv = save.dishes[a.dish];
   if (!lv) return { save, error: "unknown_dish" };
   // `from` is the level the client saw: a retry after a lost reply finds the dish already past it and
@@ -193,8 +193,9 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
     case "packLunch":
       return packLunch(save, a);
     case "endDay":
-      // from the settle screen, or from the kitchen when the shop stays shut tonight; never mid-hunt
-      if (save.stage === "hunt") return { save, error: "wrong_stage" };
+      // from the settle screen, or from the kitchen when the shop stays shut tonight; never mid-hunt and
+      // never while tonight's service is still open
+      if (save.stage === "hunt" || save.service) return { save, error: "wrong_stage" };
       return { save: { ...save, day: save.day + 1, stage: "hunt" } };
     default:
       return { save, error: "bad_action" };

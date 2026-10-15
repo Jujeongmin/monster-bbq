@@ -113,3 +113,18 @@ describe("finishHunt sees what came home", () => {
     expect(applyAction(plain, { type: "finishHunt", huntId: s.hunt!.id, events: [], ko: false }, ctx()).save.seenItems).toEqual(["boar_belly"]);
   });
 });
+
+describe("while a service is open", () => {
+  const open = (): SaveData => {
+    const k = kitchen({ gold: 5000, seenItems: ["boar_belly", "shiitake"], dishes: { grilled_belly: 1 }, items: { "boar_belly:normal": 5, shiitake: 2 } });
+    return applyAction(k, { type: "openShop", menu: [{ dish: "grilled_belly", sets: 1 }] }, ctx()).save;
+  };
+  it("refuses research, dish upgrades, lunches and the next day until the night is settled", () => {
+    const s = open();
+    expect(s.service).not.toBeNull();
+    expect(applyAction(s, { type: "research", dish: "shiitake_grill" }, ctx()).error).toBe("wrong_stage");
+    expect(applyAction(s, { type: "upgradeDish", dish: "grilled_belly" }, ctx()).error).toBe("wrong_stage");
+    expect(applyAction(s, { type: "packLunch", dishes: ["grilled_belly"] }, ctx()).error).toBe("bad_lunch");
+    expect(applyAction(s, { type: "endDay" }, ctx()).error).toBe("wrong_stage");
+  });
+});

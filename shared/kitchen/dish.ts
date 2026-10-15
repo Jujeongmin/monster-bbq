@@ -103,3 +103,11 @@ export function fitMenu(items: Record<string, number>, levels: Partial<Record<Di
 export function canOpen(items: Record<string, number>, levels: Partial<Record<DishId, number>>, menu: MenuLine[]): boolean {
   return menu.length > 0 && planShop(items, levels, menu) !== null;
 }
+
+// The sets a dish still makes once the dishes already picked (a lunchbox being packed) took one set each,
+// in order: dishes that share an ingredient count against each other.
+export function setsAfter(items: Record<string, number>, picked: DishId[], dish: DishId): number {
+  let rest = items;
+  for (const p of picked) rest = takeSets(rest, p, 1)?.items ?? rest;
+  return setsAvailable(rest, dish);
+}

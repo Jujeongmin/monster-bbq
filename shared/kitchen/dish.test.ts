@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DISHES, type DishId } from "../content/dishes";
 import { isItemId } from "../content/items";
 import { RECIPES } from "../content/recipes";
-import { canOpen, dishPrice, fitMenu, levelCost, MAX_DISH_LEVEL, planShop, platesPerSet, setsAvailable, takeSets } from "./dish";
+import { canOpen, dishPrice, fitMenu, levelCost, setsAfter, MAX_DISH_LEVEL, planShop, platesPerSet, setsAvailable, takeSets } from "./dish";
 
 describe("RECIPES", () => {
   it("has every dish once, made of 1 to 3 different known items, with a price and a cooking time", () => {
@@ -95,5 +95,14 @@ describe("canOpen", () => {
     expect(canOpen({ "boar_belly:normal": 2 }, levels, [{ dish: "grilled_belly", sets: 2 }])).toBe(true);
     expect(canOpen({ "boar_belly:normal": 1 }, levels, [{ dish: "grilled_belly", sets: 2 }])).toBe(false);
     expect(canOpen({ "boar_belly:normal": 1 }, levels, [])).toBe(false);
+  });
+});
+
+describe("setsAfter", () => {
+  it("counts the sets a dish still makes after the picked dishes took theirs, shared ingredients included", () => {
+    const items = { "boar_belly:normal": 2, perilla: 1, wild_garlic: 1 };
+    expect(setsAfter(items, ["grilled_belly"], "belly_ssam")).toBe(1);
+    expect(setsAfter(items, ["grilled_belly", "grilled_belly"], "belly_ssam")).toBe(0);
+    expect(setsAfter(items, [], "grilled_belly")).toBe(2);
   });
 });

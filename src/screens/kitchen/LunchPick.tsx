@@ -3,7 +3,7 @@ import type { Action } from "../../../shared/actions";
 import { BALANCE } from "../../../shared/balance";
 import { DISHES, type DishId } from "../../../shared/content/dishes";
 import { lunchSlots } from "../../../shared/growth";
-import { dishPrice, setsAvailable } from "../../../shared/kitchen/dish";
+import { dishPrice, setsAfter } from "../../../shared/kitchen/dish";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
 import { DishIcon } from "./DishIcon";
@@ -37,7 +37,7 @@ export function LunchPick({ save, busy, act }: { save: SaveData; busy: boolean; 
       {known.length === 0 && <p className="kitchen-empty">{t("kitchen.menuEmpty")}</p>}
       <div className="lunch-list">
         {known.map((id) => {
-          const left = setsAvailable(save.items, id) - picked.filter((p) => p === id).length;
+          const left = setsAfter(save.items, picked, id);
           return (
             <button key={id} className="ui-box menu-row" disabled={left <= 0 || picked.length >= free} onClick={() => add(id)}>
               <span className="menu-dish">
