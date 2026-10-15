@@ -23,7 +23,7 @@ Verse8 횡스크롤 사냥 + 고깃집 경영 게임 (Vite + React + TypeScript,
 - GitLab(Verse8 배포) 연동 완료(2026-10-15): 원격 `gitlab`, 브랜치 `develop`(푸시 = 자동 배포). 작업이 끝날 때마다 docs/VERSE8.md 점검표를 돌리고 GitLab `develop`과 GitHub `main`(공개, github.com/Jujeongmin/monster-bbq)에 함께 자동 푸시한다. 영어 이름은 Monster BBQ. 토큰은 `.git/config`에만 둔다.
 - 설계: [docs/superpowers/specs/2026-10-14-monster-bbq-design.md](docs/superpowers/specs/2026-10-14-monster-bbq-design.md)
 - **아래 규칙 3과 다른 결정:** 재화(골드, 황금 숯)를 포함한 세이브 전체를 Global User State 하나에 두고 `$lock` 안에서 한 번에 바꾼다. `$asset`은 쓰지 않는다(이유는 설계 문서 7장, 2026-10-14 사용자 결정).
-- 레시피 정답 표는 `server/src/recipes.ts`에만 둔다(클라이언트 번들 금지). 로컬 모드는 개발 빌드에서만 동적 import로 읽는다. 빌드 후 `npm run check:bundle`로 정답이 번들에 없는지 확인한다.
+- 레시피 표는 공개 파일 `shared/content/recipes.ts` 하나(고깃집 개편, 2026-10-15). 맞히기가 없어져 숨기지 않는다.
 - 수익은 소수 고액 결제자의 IAP만 본다(광고 수익 0 기준, 무료 유저 완주 보장 안 함). VX 상품에는 실제 계산값으로 "효율 200%" 같은 강조 띠를 단다.
 
 ---

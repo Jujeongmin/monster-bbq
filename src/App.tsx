@@ -17,15 +17,8 @@ export function App() {
   );
 }
 
-// The recipe answers are the server's (spec 7). Only a development build pulls them into the page for
-// local play; in a production build this branch and the import vanish (npm run check:bundle checks).
-const localRecipes = import.meta.env.DEV ? import("../server/src/recipes").then((m) => m.RECIPES) : Promise.resolve(null);
-
 function LocalApp() {
-  const transport = useMemo(
-    () => new LocalTransport(window.localStorage, undefined, async () => ({ now: Date.now(), random: Math.random, recipes: await localRecipes })),
-    [],
-  );
+  const transport = useMemo(() => new LocalTransport(window.localStorage), []);
   return <DayFlow transport={transport} />;
 }
 

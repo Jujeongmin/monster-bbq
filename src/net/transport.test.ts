@@ -19,21 +19,13 @@ describe("LocalTransport", () => {
     store.setItem("monster-bbq:save", "{broken");
     expect((await new LocalTransport(store).load()).day).toBe(1);
   });
-  it("waits for a context that arrives later (the dev-only recipe table) and cooks with it", async () => {
+  it("runs the server's rules in the page and keeps the result", async () => {
     const store = memory();
-    store.setItem("monster-bbq:save", JSON.stringify({ ...newSave(), items: { shiitake: 1 } }));
-    const recipes = Promise.resolve({ shiitake_grill: { method: "grill", items: ["shiitake"] } } as never);
-    const t = new LocalTransport(store, undefined, async () => ({ now: 0, random: Math.random, recipes: await recipes }));
-    const s = await t.act({ type: "cook", attemptId: "a1", items: ["shiitake"], method: "grill" });
-    expect(s.lastCook?.outcome).toEqual({ kind: "new", dish: "shiitake_grill" });
-    expect((await t.load()).cookbook).toHaveProperty("shiitake_grill");
-  });
-  it("refuses cooking without the recipe table and keeps the ingredients", async () => {
-    const store = memory();
-    store.setItem("monster-bbq:save", JSON.stringify({ ...newSave(), items: { shiitake: 1 } }));
-    const t = new LocalTransport(store);
-    await expect(t.act({ type: "cook", attemptId: "a1", items: ["shiitake"], method: "grill" })).rejects.toThrow("unavailable");
-    expect((await t.load()).items).toEqual({ shiitake: 1 });
+    store.setItem("monster-bbq:save", JSON.stringify({ ...newSave(), stage: "kitchen", gold: 500, seenItems: ["shiitake"], items: { shiitake: 2 } }));
+    const t = new LocalTransport(store, undefined, () => ({ now: 0, random: Math.random }));
+    const s = await t.act({ type: "research", dish: "shiitake_grill" });
+    expect(s.dishes).toEqual({ shiitake_grill: 1 });
+    expect((await t.load()).dishes).toEqual({ shiitake_grill: 1 });
   });
   it("throws on a rejected action and keeps the save", async () => {
     const t = new LocalTransport(memory());
@@ -49,7 +41,7 @@ describe("Verse8Transport", () => {
     await expect(t.act({ type: "endDay" })).rejects.toThrow("bad_reply");
   });
   it("refuses a reply from a server still on an old save version", async () => {
-    const t = new Verse8Transport({ remoteFunction: async () => ({ ...newSave(), version: 3 }) });
+    const t = new Verse8Transport({ remoteFunction: async () => ({ ...newSave(), version: 4 }) });
     await expect(t.load()).rejects.toThrow("bad_reply");
   });
   it("gives up on a server that never answers", async () => {

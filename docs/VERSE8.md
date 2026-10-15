@@ -17,7 +17,7 @@
 ## 푸시 전 점검표
 
 1. `npm test`, `npm run typecheck`, `npm --prefix server run typecheck`
-2. `npm run check:bundle` (레시피 정답이 번들에 없는지), `dist/index.html`에 `GAME_SIZE_RESPONSE`가 있는지
+2. `npm run build` 후 `dist/index.html`에 `GAME_SIZE_RESPONSE`가 있는지
 3. 서버 코드를 바꿨으면 `npm run test:server` (Windows에서 isolated-vm 오류 창이 뜰 수 있어 사용자에게 미리 알린다)
 4. `git push gitlab develop` 그리고 `git push github develop:main`, 에디터 미리보기에서 콘솔 오류와 서버 저장(새로고침 후 유지)을 확인
 

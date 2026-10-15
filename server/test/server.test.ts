@@ -36,39 +36,22 @@ describe("Server", () => {
     expect(s.hunt).toBe(null);
   });
 
-  test("starts with only the grill", async (server) => {
-    server.connect({ account: "cook-a" });
-    const s = await server.load();
-    expect(s.tools).toEqual(["grill"]);
-  });
-
-  test("refuses cooking with ingredients the player does not have", async (server) => {
-    server.connect({ account: "cook-b" });
+  test("refuses research of a dish whose ingredients were never brought home", async (server) => {
+    server.connect({ account: "kitchen-a" });
     let refused = false;
     try {
-      await server.act({ type: "cook", attemptId: "a1", items: ["boar_belly:premium"], method: "grill" });
+      await server.act({ type: "research", dish: "grilled_belly" });
     } catch {
       refused = true;
     }
     expect(refused).toBe(true);
   });
 
-  test("refuses a menu of dishes not found yet", async (server) => {
-    server.connect({ account: "cook-c" });
+  test("refuses to open the shop with a dish not researched", async (server) => {
+    server.connect({ account: "kitchen-b" });
     let refused = false;
     try {
-      await server.act({ type: "setMenu", dishes: ["grilled_belly"] });
-    } catch {
-      refused = true;
-    }
-    expect(refused).toBe(true);
-  });
-
-  test("refuses to open a service without a menu", async (server) => {
-    server.connect({ account: "svc-a" });
-    let refused = false;
-    try {
-      await server.act({ type: "startService" });
+      await server.act({ type: "openShop", menu: [{ dish: "grilled_belly", sets: 1 }] });
     } catch {
       refused = true;
     }
@@ -79,7 +62,7 @@ describe("Server", () => {
     server.connect({ account: "svc-b" });
     let refused = false;
     try {
-      await server.act({ type: "finishService", serviceId: "forged", served: [{ customer: "c0", keys: ["boar_belly:premium"], accuracy: 1 }], left: [] });
+      await server.act({ type: "finishService", serviceId: "forged", served: [{ customer: "c0", dish: "grilled_belly" }], left: [] });
     } catch {
       refused = true;
     }

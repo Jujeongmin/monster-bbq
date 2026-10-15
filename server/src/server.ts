@@ -1,6 +1,5 @@
 import { applyAction } from "../../shared/actions";
 import { readSave, type SaveData } from "../../shared/save";
-import { RECIPES } from "./recipes";
 
 // Monster BBQ game server. The whole save lives in the account's Global User State under SAVE_KEY and
 // changes in one write under the account's lock (spec 7: no $asset, so currency and progress never
@@ -17,8 +16,8 @@ export class Server {
   async act(action: unknown): Promise<SaveData> {
     return $lock(`save:${$sender.account}`, async () => {
       const state = await $global.getMyState();
-      // the server alone decides the clock and the dice (hunt seeds, timing checks) and knows the recipes
-      const result = applyAction(readSave(state?.[SAVE_KEY]), action, { now: Date.now(), random: Math.random, recipes: RECIPES });
+      // the server alone decides the clock and the dice (hunt and service seeds, timing checks)
+      const result = applyAction(readSave(state?.[SAVE_KEY]), action, { now: Date.now(), random: Math.random });
       if (result.error) throw new Error(result.error);
       await $global.updateMyState({ [SAVE_KEY]: result.save });
       return result.save;

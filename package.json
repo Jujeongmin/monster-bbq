@@ -9,7 +9,6 @@
     "preview": "vite preview --port 5191 --strictPort",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check:bundle": "vite build && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-bundle.ts",
     "test:server": "npm --prefix server test",
     "server:typecheck": "npm --prefix server run typecheck"
   },
