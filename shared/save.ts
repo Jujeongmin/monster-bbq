@@ -37,8 +37,9 @@ export interface ServiceSummary {
   left: number;
   sales: number;
   tips: number;
-  // what the drinks brought in (plan 07b; older summaries read as 0)
+  // what the drinks brought in, grills scrubbed (plan 07b; older summaries read both as 0)
   drinks: number;
+  cleaned: number;
   happy: number;
   repDelta: number;
 }
@@ -176,8 +177,8 @@ function readSummary(raw: unknown): ServiceSummary | null {
   if (!r || typeof r !== "object" || typeof r.id !== "string") return null;
   const nums = ["served", "left", "sales", "tips", "happy", "repDelta"] as const;
   if (!nums.every((k) => typeof r[k] === "number" && Number.isFinite(r[k]))) return null;
-  const drinks = typeof r.drinks === "number" && Number.isFinite(r.drinks) ? r.drinks : 0;
-  return { id: r.id, served: r.served as number, left: r.left as number, sales: r.sales as number, tips: r.tips as number, drinks, happy: r.happy as number, repDelta: r.repDelta as number };
+  const opt = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+  return { id: r.id, served: r.served as number, left: r.left as number, sales: r.sales as number, tips: r.tips as number, drinks: opt(r.drinks), cleaned: opt(r.cleaned), happy: r.happy as number, repDelta: r.repDelta as number };
 }
 
 // The upgrades that went with hands-on cooking (restaurant v2) and what each of their levels cost.

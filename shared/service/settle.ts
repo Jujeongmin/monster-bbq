@@ -86,7 +86,7 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
       reputation,
       stage: "settle",
       service: null,
-      lastService: { id: svc.id, served: seen.size, left: gone, sales, tips, drinks, happy, repDelta: reputation - save.reputation },
+      lastService: { id: svc.id, served: seen.size, left: gone, sales, tips, drinks, cleaned: cleaned.length, happy, repDelta: reputation - save.reputation },
     },
   };
 }

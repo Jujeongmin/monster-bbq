@@ -5,7 +5,7 @@ import type { TonightDish } from "../../../shared/kitchen/dish";
 import type { Customer } from "../../../shared/service/plan";
 import type { ServedEntry } from "../../../shared/service/settle";
 import { t } from "../../i18n";
-import { artUrl } from "../art";
+import { artUrl, hasArt } from "../art";
 import { createCharacterAnims, loadCharacterArt } from "../hunt/anims";
 import { joystickVector } from "../joystick";
 import { addButton, addGauge, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiButton, type UiGauge } from "../ui";
@@ -19,8 +19,11 @@ import { LAYOUT, Shift, type Guest, type Target } from "./shift";
 // to take, serve, add charcoal, scrub (pressed) and pour (held). When everyone is done: game.events
 // "service:end" { served, left, cleaned }.
 // The shop is wider than the hunt (960x540) so the characters stand as small against it as in Dave.
-// Art: the shop, counter props and the yokai are approved (2026-10-16); the waiter's shop outfit is not
-// drawn yet, so the hunter stands in. The shop picture is 320x180 drawn 3x until its 480x270 conversion.
+// Art: the shop, counter props and the yokai are approved (2026-10-16). Pictures still to come drop in
+// by file, no code change: the 480x270 shop (test/shop/hall480.png, else the 320x180 one drawn 3x), the
+// shop's own small dishes (test/shop/dishes/<dish>.png, else the kitchen's icons shrunk), the waiter's
+// shop outfit (test/waiter/<pose>.png, see WAITER_FRAMES; else the hunter stands in). New grills replace
+// test/shop/grill_*.png.
 export interface ServiceData {
   serviceId: string;
   customers: Customer[];
@@ -34,12 +37,20 @@ export type ServedReport = ServedEntry;
 
 export const SHOP_WIDTH = 960;
 export const SHOP_HEIGHT = 540;
-const BG_SCALE = 3; // shop picture pixel -> game pixels
-const BG_W = 320;
-const BG_H = 180;
-const FRONT_ROW = 111; // the counter front and floor start here in the picture: drawn again over the waiter
+const BIG_HALL = hasArt("test/shop/hall480.png");
+const BG_W = BIG_HALL ? 480 : 320;
+const BG_H = BIG_HALL ? 270 : 180;
+const BG_SCALE = SHOP_WIDTH / BG_W; // shop picture pixel -> game pixels
+// the counter front and floor start here in the picture (row 111 of the 320 one): drawn again over the waiter
+const FRONT_ROW = Math.round((111 * BG_W) / 320);
 const S = 2; // characters and props: art pixel -> game pixels
-const WAITER_SCALE = 1.6; // the hunter standing in (finer art), as tall as the guests
+// The waiter's shop outfit, frame files under test/waiter/ (all of them, or the hunter stands in).
+const WAITER_FRAMES = { walk: 4, carry: 4, stand: 1, serve: 1, grind: 2, scrub: 2, pour: 1 } as const;
+type Pose = keyof typeof WAITER_FRAMES;
+const WAITER_ART = Object.entries(WAITER_FRAMES).every(([pose, n]) => Array.from({ length: n }, (_, i) => `test/waiter/${pose}_${i}.png`).every(hasArt));
+const WAITER_SCALE = WAITER_ART ? S : 1.6; // the hunter standing in is finer art: as tall as the guests
+// the shop's own small dishes when drawn, else the kitchen's icons shrunk
+const SHOP_DISHES = Object.keys(DISHES).every((id) => hasArt(`test/shop/dishes/${id}.png`));
 const MAX_DT_MS = 50;
 const COUNTER_TOP = 330; // the grills stand here
 const SEAT_FLOOR = 404; // the stools stand at the counter's foot
@@ -51,7 +62,7 @@ const YOKAI = ["dokkaebi", "gumiho", "reaper", "ghost"] as const;
 const POSES = ["walk_0", "walk_1", "sit", "eat", "happy", "angry"];
 const PROPS = ["grill_lit", "grill_dirty", "grill_off", "stool", "coal_box", "drink_cart", "tray", "cup_tea", "cup_cider", "bowl_sikhye", "plate", "plate_dirty"];
 const BANDAL = ["idle", "breathe", "grill", "turn", "serve", "smile"];
-const DISH_SCALE = 0.6;
+const DISH_SCALE = SHOP_DISHES ? S : 0.6;
 const STICK = { x: 110, y: 440, radius: 40, deadZone: 0.25 };
 const ACT_BTN = { x: 850, y: 470, radius: 34 };
 const drinkIcon = { tea: "prop_cup_tea", cider: "prop_cup_cider", sikhye: "prop_bowl_sikhye" } as const;
@@ -98,6 +109,9 @@ export class ServiceScene extends Phaser.Scene {
   private stickPointer: number | null = null;
   private stickX = 0;
   private stickKnob!: Phaser.GameObjects.Arc;
+  private pose: Pose | null = null;
+  private busyPose: Pose = "grind";
+  private poseUntil = 0;
 
   constructor() {
     super("shop");
@@ -121,20 +135,26 @@ export class ServiceScene extends Phaser.Scene {
     this.glowing = null;
     this.stickPointer = null;
     this.stickX = 0;
+    this.pose = null;
+    this.poseUntil = 0;
   }
 
   preload() {
     loadCharacterArt(this);
     loadUiArt(this);
-    this.load.image("hall", artUrl("test/shop/hall.png"));
+    this.load.image("hall", artUrl(BIG_HALL ? "test/shop/hall480.png" : "test/shop/hall.png"));
+    if (WAITER_ART) for (const [pose, n] of Object.entries(WAITER_FRAMES)) for (let i = 0; i < n; i++) this.load.image(`waiter_${pose}_${i}`, artUrl(`test/waiter/${pose}_${i}.png`));
     for (const p of PROPS) this.load.image(`prop_${p}`, artUrl(`test/shop/${p}.png`));
     for (const y of YOKAI) for (const p of POSES) this.load.image(`yk_${y}_${p}`, artUrl(`test/yokai/counter/${y}_${p}.png`));
     for (const b of BANDAL) this.load.image(`bandal_${b}`, artUrl(`test/bandal/${b}.png`));
-    for (const id of Object.keys(DISHES)) this.load.image(`dish_${id}`, artUrl(`test/dishes/${id}.png`));
+    for (const id of Object.keys(DISHES)) this.load.image(`dish_${id}`, artUrl(SHOP_DISHES ? `test/shop/dishes/${id}.png` : `test/dishes/${id}.png`));
   }
 
   create() {
     createCharacterAnims(this);
+    if (WAITER_ART && !this.anims.exists("waiter_walk"))
+      for (const [pose, rate] of [["walk", 8], ["carry", 8], ["grind", 8], ["scrub", 10]] as const)
+        this.anims.create({ key: `waiter_${pose}`, frames: Array.from({ length: WAITER_FRAMES[pose] }, (_, i) => ({ key: `waiter_${pose}_${i}` })), frameRate: rate, repeat: -1 });
     const s = this.shift.s;
     this.add.image(0, 0, "hall").setOrigin(0).setScale(BG_SCALE).setDepth(0);
     // Bandal in the kitchen window
@@ -145,7 +165,7 @@ export class ServiceScene extends Phaser.Scene {
       this.plaqueCounts.push(this.add.text(PLAQUES[i], 182, "", TEXT_SMALL).setOrigin(0.5).setDepth(4));
     });
     // the waiter walks behind the counter: the counter front and the floor are drawn again over the legs
-    this.waiter = this.add.sprite(s.x, WAITER_FEET, "hunter_side_1").setOrigin(0.5, 1).setScale(WAITER_SCALE).setDepth(10);
+    this.waiter = this.add.sprite(s.x, WAITER_FEET, WAITER_ART ? "waiter_stand_0" : "hunter_side_1").setOrigin(0.5, 1).setScale(WAITER_SCALE).setDepth(10);
     this.add.image(0, 0, "hall").setOrigin(0).setScale(BG_SCALE).setCrop(0, FRONT_ROW, BG_W, BG_H - FRONT_ROW).setDepth(20);
     for (const seat of s.seats) {
       this.grills.push(this.add.image(seat.x, COUNTER_TOP, "prop_grill_off").setOrigin(0.5, 1).setScale(S).setDepth(30));
@@ -264,7 +284,12 @@ export class ServiceScene extends Phaser.Scene {
   private handleEvents(time: number) {
     for (const e of this.shift.drain()) {
       switch (e.type) {
+        case "take":
+        case "drink":
+          this.poseUntil = time + 250;
+          break;
         case "served": {
+          this.poseUntil = time + 250;
           const v = this.views.get(e.guest);
           if (v) this.pop(v.sprite.x, BUBBLE_Y - 20, t("service.tip", { n: e.tip }), "#ffd166");
           this.bandal.setTexture("bandal_smile");
@@ -281,12 +306,14 @@ export class ServiceScene extends Phaser.Scene {
           break;
         }
         case "scrub":
+          this.busyPose = "scrub";
           if (e.done) this.pop(this.shift.s.seats[e.seat].x, COUNTER_TOP - 40, t("service.tip", { n: e.tip }), "#ffd166");
           break;
         case "pour":
           this.pop(LAYOUT.drinkCart, 348, t(`service.pour.${e.pour}`), e.pour === "perfect" ? "#ffd166" : e.pour === "good" ? "#bfe8a0" : "#ff8080");
           break;
         case "coal":
+          this.busyPose = "grind";
           this.pop(LAYOUT.coalBox, 364, `${Math.round(e.level)}%`, "#ffb070");
           break;
         case "noCoal":
@@ -307,15 +334,10 @@ export class ServiceScene extends Phaser.Scene {
   private draw(time: number, moveX: number) {
     const s = this.shift.s;
     // the waiter
-    const w = this.waiter;
-    w.x = s.x;
-    w.setFlipX(s.facing < 0);
-    if (moveX !== 0 && s.busyMs === 0 && !s.pouring) {
-      if (w.anims.currentAnim?.key !== "hunter_walk_side" || !w.anims.isPlaying) w.play("hunter_walk_side");
-    } else if (w.anims.isPlaying) {
-      w.stop();
-      w.setTexture("hunter_side_1");
-    }
+    this.waiter.x = s.x;
+    this.waiter.setFlipX(s.facing < 0);
+    const carrying = s.tray.length > 0;
+    this.setPose(s.pouring ? "pour" : s.busyMs > 0 ? this.busyPose : time < this.poseUntil ? "serve" : moveX !== 0 ? (carrying ? "carry" : "walk") : "stand");
     // what the waiter carries, held up above the head
     const item = s.tray[0];
     const key = item ? (item.kind === "dish" ? `dish_${item.dish}` : drinkIcon[item.drink]) : null;
@@ -360,6 +382,21 @@ export class ServiceScene extends Phaser.Scene {
     const sold = s.guests.filter((g) => g.servedMs !== null).length;
     this.tally.setText(`${t("service.tally", { served: sold, total: this.data0.customers.length, gold: this.shift.earned() })} · ${t("service.platesLeft", { n: this.shift.platesLeft() })}`);
     this.clock.setText(s.clock >= BALANCE.service.openMs ? t("service.closed") : clockText(s.clock));
+  }
+
+  // The waiter's pose: the outfit's frames, or the hunter's nearest ones while the outfit is not drawn.
+  private setPose(pose: Pose) {
+    if (pose === this.pose) return;
+    this.pose = pose;
+    const w = this.waiter;
+    const loop = pose === "walk" || pose === "carry" || pose === "grind" || pose === "scrub";
+    if (WAITER_ART) {
+      if (loop) w.play(`waiter_${pose}`);
+      else w.stop().setTexture(`waiter_${pose}_0`);
+      return;
+    }
+    if (loop) w.play(pose === "grind" || pose === "scrub" ? "hunter_slash" : "hunter_walk_side");
+    else w.stop().setTexture(pose === "serve" ? "hunter_throw_2" : pose === "pour" ? "hunter_throw_0" : "hunter_side_1");
   }
 
   private drawGuest(g: Guest, time: number) {

@@ -156,6 +156,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
             <ul className="dayflow-sold">
               <li>{t("settle.served", { served: save.lastService.served, left: save.lastService.left })}</li>
               <li>{t("settle.sales", { sales: save.lastService.sales, tips: save.lastService.tips, drinks: save.lastService.drinks })}</li>
+              {save.lastService.cleaned > 0 && <li>{t("settle.cleaned", { n: save.lastService.cleaned, gold: save.lastService.cleaned * BALANCE.service.cleanTip })}</li>}
               <li>{t("settle.happy", { happy: save.lastService.happy })}</li>
               <li>{t("settle.rep", { rep: save.reputation, delta: (save.lastService.repDelta >= 0 ? "+" : "") + save.lastService.repDelta })}</li>
             </ul>

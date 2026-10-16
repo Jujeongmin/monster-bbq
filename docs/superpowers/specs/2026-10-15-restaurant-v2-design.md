@@ -130,5 +130,6 @@ UI 요소는 지금 키트(키트 A + 갈무리)를 쓴다. 새 UI 그림이 필
 - 소품 `art-src/pixellab/shop2/props_196_faithful.png` — 식탁용이라 카운터 구조에 맞게 다시 뽑는다(카운터 불판 3상태·둥근 의자·숯통·음료 수레).
 - 카운터 소품(불판 3상태·의자·숯통·음료 수레·쟁반·음료·그릇) `art/test/shop/`, 요괴 손님 카운터용(걷기 2·앉은 뒷모습·먹기·하트·화남) `art/test/yokai/counter/` — **승인**(2026-10-16, 미리보기 `art-src/preview/shop3_props_on_bg.png`). 원본 `art-src/codex/raw/shop3_props.png`, `shop3_customers.png`, 도트 변환 `art-src/pixellab/shop3/`, 자르기 `slice_shop3.py`.
 - 손주 장사 복장, 반달이 컷인 그림 — 아직 없음.
+- **그림만 넣으면 바뀌는 자리(2026-10-16, 코드 수정 없음)**: 가게 480×270 `art/test/shop/hall480.png`(없으면 320×180을 3배), 가게용 작은 요리 `art/test/shop/dishes/<요리>.png` 8개(다 있어야 씀, 2배), 손주 장사 복장 `art/test/waiter/{walk_0..3, carry_0..3, stand_0, serve_0, grind_0..1, scrub_0..1, pour_0}.png`(다 있어야 씀, 2배, 없으면 사냥꾼이 대역), 새 화로는 `art/test/shop/grill_{lit,dirty,off}.png`를 덮어쓴다.
 - 원본: `art-src/codex/raw/shop_bg2.png`, `shop_props.png`, `bandal_sheet.png`. 예전 `shop_bg.png`는 폐기(파일 삭제).
 - 따로 기다리는 승인: 사냥꾼 8방향 걷기(`art-src/sprite-gen/hunter8/`, 뒤45 서 있기 다시 뽑기), 새 대화창 패널(`art-src/codex/raw/dialogue_panel.png` — 새 그림 방식으로 다시 맞춘 뒤 승인).
