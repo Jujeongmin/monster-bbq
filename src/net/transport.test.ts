@@ -24,8 +24,8 @@ describe("LocalTransport", () => {
     store.setItem("monster-bbq:save", JSON.stringify({ ...newSave(), stage: "kitchen", gold: 500, seenItems: ["shiitake"], items: { shiitake: 2 } }));
     const t = new LocalTransport(store, undefined, () => ({ now: 0, random: Math.random }));
     const s = await t.act({ type: "research", dish: "shiitake_grill" });
-    expect(s.dishes).toEqual({ shiitake_grill: 1 });
-    expect((await t.load()).dishes).toEqual({ shiitake_grill: 1 });
+    expect(s.dishes).toEqual({ chicken_perilla: 1, shiitake_grill: 1 });
+    expect((await t.load()).dishes).toEqual({ chicken_perilla: 1, shiitake_grill: 1 });
   });
   it("throws on a rejected action and keeps the save", async () => {
     const t = new LocalTransport(memory());

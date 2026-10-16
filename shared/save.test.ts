@@ -25,7 +25,7 @@ const FRESH = {
   items: {},
   hunt: null,
   seenItems: [],
-  dishes: {},
+  dishes: { chicken_perilla: 1 },
   menu: [],
   reputation: 0,
   upgrades: {},
@@ -41,7 +41,7 @@ const FRESH = {
 };
 
 describe("newSave", () => {
-  it("starts on day 1 with nothing researched and nothing seen", () => {
+  it("starts on day 1 knowing only the first dish and having seen nothing", () => {
     expect(newSave()).toEqual(FRESH);
   });
 });
@@ -187,5 +187,17 @@ describe("save version 6 (hunt v3: two hunts a day)", () => {
   });
   it("reads an unknown time of day as the morning", () => {
     expect(readSave({ ...newSave(), hunt: { id: "h1", seed: 3, zone: "forest", period: "midnight", startedAt: 5 } }).hunt?.period).toBe("morning");
+  });
+});
+
+// The only gold is the night's takings and every dish costs gold to learn, so a cook with no dish could
+// never earn any: everyone starts knowing chicken breast with perilla, from the first floor alone (user, 2026-10-16)
+describe("the first dish", () => {
+  it("is known from the start", () => {
+    expect(newSave().dishes).toEqual({ chicken_perilla: 1 });
+  });
+  it("is given to a save that knows no dish yet, and leaves a save that knows one alone", () => {
+    expect(readSave({ ...newSave(), dishes: {} }).dishes).toEqual({ chicken_perilla: 1 });
+    expect(readSave({ ...newSave(), dishes: { shiitake_grill: 2 } }).dishes).toEqual({ shiitake_grill: 2 });
   });
 });

@@ -10,7 +10,7 @@ describe("research", () => {
   it("opens a dish at level 1 for its gold and one set of its ingredients", () => {
     const r = applyAction(ready, { type: "research", dish: "grilled_belly" }, ctx());
     expect(r.error).toBeUndefined();
-    expect(r.save.dishes).toEqual({ grilled_belly: 1 });
+    expect(r.save.dishes).toEqual({ chicken_perilla: 1, grilled_belly: 1 });
     expect(r.save.gold).toBe(800);
     expect(r.save.items).toEqual({ "boar_belly:normal": 1 });
   });

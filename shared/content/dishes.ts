@@ -7,17 +7,21 @@ export function isMethod(v: unknown): v is Method {
   return typeof v === "string" && (METHODS as readonly string[]).includes(v);
 }
 
-// Cookbook order. A chapter's signature dish is never researched: it opens when its boss gives the
+// Cookbook order: by the floor where a dish's last ingredient first turns up, then by price (user,
+// 2026-10-16). A chapter's signature dish is never researched: it opens when its boss gives the
 // notebook page back (plan 08d).
 export const DISHES = {
+  // floor 1: rabbits, chickens, shiitake, wild garlic, perilla
+  shiitake_grill: { chapter: 1 },
+  chicken_perilla: { chapter: 1 },
+  baeksuk: { chapter: 1 },
+  // floor 2: boars and bees
   grilled_belly: { chapter: 1 },
   garlic_neck: { chapter: 1 },
   belly_ssam: { chapter: 1 },
   honey_rabbit: { chapter: 1 },
-  shiitake_grill: { chapter: 1 },
   rib_stew: { chapter: 1 },
-  baeksuk: { chapter: 1 },
-  chicken_perilla: { chapter: 1 },
+  // floor 5: the Charge King
   king_galbi: { chapter: 1, signature: true },
 } as const satisfies Record<string, { chapter: number; signature?: boolean }>;
 

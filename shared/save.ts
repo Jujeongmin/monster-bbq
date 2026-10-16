@@ -85,6 +85,10 @@ export interface SaveData {
   shop: { firstBuy: string[]; purchases: string[] };
 }
 
+// Everyone starts knowing chicken breast with perilla, made from the first floor alone (user, 2026-10-16):
+// the night's takings are the only gold and every dish costs gold to learn.
+const FIRST_DISH: Partial<Record<DishId, number>> = { chicken_perilla: 1 };
+
 export function newSave(): SaveData {
   return {
     version: 9,
@@ -94,7 +98,7 @@ export function newSave(): SaveData {
     items: {},
     hunt: null,
     seenItems: [],
-    dishes: {},
+    dishes: { ...FIRST_DISH },
     menu: [],
     reputation: 0,
     upgrades: {},
@@ -282,6 +286,8 @@ export function readSave(raw: unknown): SaveData {
   if (r.version === 8) return readSave({ ...r, version: 9 });
   if (r.version !== 9) return newSave();
   const dishes = readDishes(r.dishes);
+  // a cook who knows no dish could never earn the gold to learn one: the first dish comes free
+  if (Object.keys(dishes).length === 0) Object.assign(dishes, FIRST_DISH);
   const vip = (r.vip ?? {}) as { spent?: unknown; day?: unknown };
   const shop = (r.shop ?? {}) as { firstBuy?: unknown; purchases?: unknown };
   return {
