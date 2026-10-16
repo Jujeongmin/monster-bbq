@@ -1,140 +1,240 @@
 import Phaser from "phaser";
-import { DISHES, type DishId } from "../../../shared/content/dishes";
+import { BALANCE } from "../../../shared/balance";
+import { DISHES } from "../../../shared/content/dishes";
 import type { TonightDish } from "../../../shared/kitchen/dish";
 import type { Customer } from "../../../shared/service/plan";
+import type { ServedEntry } from "../../../shared/service/settle";
 import { t } from "../../i18n";
 import { artUrl } from "../art";
-import { loadServed, pickDish, platesLeft, saveServed, type ServedReport } from "./night";
 import { createCharacterAnims, loadCharacterArt } from "../hunt/anims";
-import { addButton, addGauge, kitSlice, loadUiArt, TEXT, type UiButton, type UiGauge } from "../ui";
+import { joystickVector } from "../joystick";
+import { addButton, addGauge, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiButton, type UiGauge } from "../ui";
+import { loadShift, saveShift } from "./night";
+import { LAYOUT, Shift, type Guest, type Target } from "./shift";
 
-// The shop at night (cooking-service design 5), seen from the side. Customers (the server's seed, see
-// shared/service/plan) come in at their time, sit at their table and show their order with a patience
-// bar. Tap an order: the plate goes out at once (restaurant v2 stage 1, until the waiter serves by hand).
-// When the last plate is gone the doors close by themselves. A served customer eats, pays and leaves; one who runs out of patience leaves
-// angry. Closing (user, 2026-10-15): "close orders" lets no one else in; after it "close the hall" sends
-// whoever is still waiting home angry (they count as left). When everyone is done: game.events
-// "service:end" { served, left }.
-// Art: until the shop and customer pictures are approved (plan 05b Task 4), the approved hunt monsters
-// stand in for customers and the grill for tables.
+// The shop at night (restaurant v2 design 4, plan 07b), like Dave the Diver's sushi bar: one long grill
+// counter, yokai on stools in front of it (seen from behind), the waiter walking the aisle behind it,
+// Bandal cooking in the kitchen window, a clock on the open hours. The rules are ./shift.ts; this scene
+// draws them and feeds them the keys: A/D or the stick to walk, Shift to run, Space or the action button
+// to take, serve, add charcoal, scrub (pressed) and pour (held). When everyone is done: game.events
+// "service:end" { served, left, cleaned }.
+// The shop is wider than the hunt (960x540) so the characters stand as small against it as in Dave.
+// Art: the shop, counter props and the yokai are approved (2026-10-16); the waiter's shop outfit is not
+// drawn yet, so the hunter stands in. The shop picture is 320x180 drawn 3x until its 480x270 conversion.
 export interface ServiceData {
-  // the service's id: the shop clock is kept per service so a reload resumes the night where it was
   serviceId: string;
   customers: Customer[];
-  // tonight's plates and prices (openShop)
   dishes: TonightDish[];
+  stools: number;
+  walkMul: number;
+  coalPerDish: number;
 }
 
-export type { ServedReport };
+export type ServedReport = ServedEntry;
 
+export const SHOP_WIDTH = 960;
+export const SHOP_HEIGHT = 540;
+const BG_SCALE = 3; // shop picture pixel -> game pixels
+const BG_W = 320;
+const BG_H = 180;
+const FRONT_ROW = 111; // the counter front and floor start here in the picture: drawn again over the waiter
+const S = 2; // characters and props: art pixel -> game pixels
+const WAITER_SCALE = 1.6; // the hunter standing in (finer art), as tall as the guests
 const MAX_DT_MS = 50;
-const SEATS_X = [110, 250, 390, 530];
-const SEAT_Y = 214;
-const DOOR_X = -30;
-const WALK_SPEED = 70; // px per second
-const STAND_IN = ["rabbit", "chicken", "boar", "bee"] as const;
-const label = TEXT;
+const COUNTER_TOP = 330; // the grills stand here
+const SEAT_FLOOR = 404; // the stools stand at the counter's foot
+const WALK_FLOOR = 448;
+const WAITER_FEET = 342;
+const BUBBLE_Y = 268;
+const PLAQUES = [352, 400, 448, 498, 548, 597];
+const YOKAI = ["dokkaebi", "gumiho", "reaper", "ghost"] as const;
+const POSES = ["walk_0", "walk_1", "sit", "eat", "happy", "angry"];
+const PROPS = ["grill_lit", "grill_dirty", "grill_off", "stool", "coal_box", "drink_cart", "tray", "cup_tea", "cup_cider", "bowl_sikhye", "plate", "plate_dirty"];
+const BANDAL = ["idle", "breathe", "grill", "turn", "serve", "smile"];
+const DISH_SCALE = 0.6;
+const STICK = { x: 110, y: 440, radius: 40, deadZone: 0.25 };
+const ACT_BTN = { x: 850, y: 470, radius: 34 };
+const drinkIcon = { tea: "prop_cup_tea", cider: "prop_cup_cider", sikhye: "prop_bowl_sikhye" } as const;
 
-type Phase = "waiting" | "walking" | "seated" | "eating" | "leaving" | "gone";
-
-interface Guest {
-  c: Customer;
-  phase: Phase;
-  sprite: Phaser.GameObjects.Sprite;
+interface GuestView {
+  sprite: Phaser.GameObjects.Image;
   bubble: Phaser.GameObjects.Container;
-  gauge: UiGauge | null;
-  waitedMs: number;
-  targetX: number;
-  angry: boolean;
+  icon: Phaser.GameObjects.Image;
+  fill: Phaser.GameObjects.Rectangle;
+}
+
+// The shop clock: 18:00 when the doors open, 22:00 at closing time, in ten-minute steps.
+export function clockText(ms: number): string {
+  const minutes = Math.min(240, Math.floor((ms / BALANCE.service.openMs) * 24) * 10);
+  return `${18 + Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
 }
 
 export class ServiceScene extends Phaser.Scene {
-  private customers: Customer[] = [];
-  private serviceId = "";
+  private data0!: ServiceData;
+  private shift!: Shift;
   private savedAt = 0;
-  private plates = new Map<DishId, number>();
-  private prices = new Map<DishId, number>();
-  private guests: Guest[] = [];
-  private clock = 0;
   private paused = false;
-  private served: ServedReport[] = [];
-  private left: string[] = [];
   private ended = false;
-  // orders closed: no more arrivals; the button then closes the hall
-  private ordersClosed = false;
+  private views = new Map<string, GuestView>();
+  private grills: Phaser.GameObjects.Image[] = [];
+  private stools: Phaser.GameObjects.Image[] = [];
+  private passPlates: Phaser.GameObjects.Image[] = [];
+  private carried: Phaser.GameObjects.Image | null = null;
+  private plaqueCounts: Phaser.GameObjects.Text[] = [];
+  private waiter!: Phaser.GameObjects.Sprite;
+  private bandal!: Phaser.GameObjects.Image;
+  private bandalBusyUntil = 0;
+  private cart!: Phaser.GameObjects.Image;
+  private coalBox!: Phaser.GameObjects.Image;
+  private coalGauge!: UiGauge;
+  private pourGauge!: UiGauge;
+  private pourMark!: Phaser.GameObjects.Text;
+  private glowing: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | null = null;
+  private tally!: Phaser.GameObjects.Text;
+  private clock!: Phaser.GameObjects.Text;
   private closeButton!: UiButton;
   private pauseButton!: UiButton;
-  private tally!: Phaser.GameObjects.Text;
-  private earned = 0;
+  private keys!: Record<"A" | "D" | "LEFT" | "RIGHT" | "SHIFT" | "SPACE", Phaser.Input.Keyboard.Key>;
+  private stickPointer: number | null = null;
+  private stickX = 0;
+  private stickKnob!: Phaser.GameObjects.Arc;
 
   constructor() {
     super("shop");
   }
 
   init(data: ServiceData) {
-    this.customers = data.customers;
-    this.serviceId = data.serviceId;
-    this.savedAt = 0;
-    // what was served before a reload stays served (the ingredients went when the shop opened)
-    this.served = loadServed(sessionStorage, data.serviceId);
-    this.plates = platesLeft(data.dishes, this.served);
-    this.prices = new Map(data.dishes.map((d) => [d.dish, d.price]));
-    this.guests = [];
-    this.clock = this.resumedClock();
+    this.data0 = data;
+    const cfg = { customers: data.customers, dishes: data.dishes, stools: data.stools, walkMul: data.walkMul, coalPerDish: data.coalPerDish };
+    // a reload picks the night up where it was (the ingredients went when the shop opened)
+    const saved = loadShift(sessionStorage, data.serviceId);
+    this.shift = new Shift(cfg, saved && saved.seats.length === data.stools ? saved : undefined);
+    this.savedAt = this.shift.s.clock;
     this.paused = false;
-    this.left = [];
     this.ended = false;
-    this.ordersClosed = this.resumedClosed();
-    this.earned = this.served.reduce((n, s) => n + (this.prices.get(s.dish) ?? 0), 0);
+    this.views = new Map();
+    this.grills = [];
+    this.stools = [];
+    this.passPlates = [];
+    this.carried = null;
+    this.plaqueCounts = [];
+    this.glowing = null;
+    this.stickPointer = null;
+    this.stickX = 0;
   }
 
   preload() {
     loadCharacterArt(this);
     loadUiArt(this);
-    // tables: the grill stands in until the new shop art goes in (stage 2)
-    this.load.image("grill", artUrl("test/cooking/grill.png"));
+    this.load.image("hall", artUrl("test/shop/hall.png"));
+    for (const p of PROPS) this.load.image(`prop_${p}`, artUrl(`test/shop/${p}.png`));
+    for (const y of YOKAI) for (const p of POSES) this.load.image(`yk_${y}_${p}`, artUrl(`test/yokai/counter/${y}_${p}.png`));
+    for (const b of BANDAL) this.load.image(`bandal_${b}`, artUrl(`test/bandal/${b}.png`));
     for (const id of Object.keys(DISHES)) this.load.image(`dish_${id}`, artUrl(`test/dishes/${id}.png`));
   }
 
   create() {
     createCharacterAnims(this);
-    this.cameras.main.setBackgroundColor("#3a2a20");
-    // tables: the grill stands in until the shop picture is approved
-    for (const x of SEATS_X) this.add.image(x, SEAT_Y + 34, "grill").setScale(0.3).setDepth(SEAT_Y + 40);
-    // tonight's tally on a wooden strip, and the pause button
-    kitSlice(this, 112, 16, "topbar", 212, 20, 5, 5, 3, 3).setDepth(999);
-    this.add.image(18, 16, "ui_icon_gold").setDepth(1000);
-    this.tally = this.add.text(34, 16, "", label).setOrigin(0, 0.5).setDepth(1000);
-    this.pauseButton = addButton(this, 596, 18, t("service.pause"), () => this.togglePause(), 64);
+    const s = this.shift.s;
+    this.add.image(0, 0, "hall").setOrigin(0).setScale(BG_SCALE).setDepth(0);
+    // Bandal in the kitchen window
+    this.bandal = this.add.image(849, 314, "bandal_idle").setOrigin(0.5, 1).setScale(S).setDepth(5);
+    // tonight's menu on the wall plaques: the dish and the plates still to order
+    this.data0.dishes.slice(0, PLAQUES.length).forEach((d, i) => {
+      this.add.image(PLAQUES[i], 152, `dish_${d.dish}`).setScale(DISH_SCALE).setDepth(4);
+      this.plaqueCounts.push(this.add.text(PLAQUES[i], 182, "", TEXT_SMALL).setOrigin(0.5).setDepth(4));
+    });
+    // the waiter walks behind the counter: the counter front and the floor are drawn again over the legs
+    this.waiter = this.add.sprite(s.x, WAITER_FEET, "hunter_side_1").setOrigin(0.5, 1).setScale(WAITER_SCALE).setDepth(10);
+    this.add.image(0, 0, "hall").setOrigin(0).setScale(BG_SCALE).setCrop(0, FRONT_ROW, BG_W, BG_H - FRONT_ROW).setDepth(20);
+    for (const seat of s.seats) {
+      this.grills.push(this.add.image(seat.x, COUNTER_TOP, "prop_grill_off").setOrigin(0.5, 1).setScale(S).setDepth(30));
+      this.stools.push(this.add.image(seat.x, SEAT_FLOOR, "prop_stool").setOrigin(0.5, 1).setScale(S).setDepth(40));
+    }
+    this.cart = this.add.image(LAYOUT.drinkCart, WALK_FLOOR, "prop_drink_cart").setOrigin(0.5, 1).setScale(S).setDepth(40);
+    this.coalBox = this.add.image(LAYOUT.coalBox, WALK_FLOOR, "prop_coal_box").setOrigin(0.5, 1).setScale(S).setDepth(40);
+    this.coalGauge = addGauge(this, LAYOUT.coalBox - 14, 382, 64);
+    this.coalGauge.box.setDepth(60);
+    this.add.image(LAYOUT.coalBox - 58, 382, "ui_icon_charcoal").setDepth(61);
+    this.pourGauge = addGauge(this, LAYOUT.drinkCart, 372, 72);
+    this.pourGauge.box.setDepth(60).setVisible(false);
+    this.pourMark = this.add.text(LAYOUT.drinkCart - 36 + 72 * BALANCE.service.drinks.line, 358, "▼", TEXT_SMALL).setOrigin(0.5).setDepth(61).setVisible(false);
+    // tonight's tally and the clock on a wooden strip, and the buttons
+    kitSlice(this, 220, 18, "topbar", 420, 22, 5, 5, 3, 3).setDepth(999);
+    this.add.image(22, 18, "ui_icon_gold").setDepth(1000);
+    this.tally = this.add.text(38, 18, "", TEXT).setOrigin(0, 0.5).setDepth(1000);
+    this.clock = this.add.text(420, 18, "", TEXT).setOrigin(1, 0.5).setDepth(1000);
+    this.pauseButton = addButton(this, 910, 20, t("service.pause"), () => this.togglePause(), 64);
     this.pauseButton.box.setDepth(1000);
-    this.closeButton = addButton(this, 514, 18, t(this.ordersClosed ? "service.closeHall" : "service.closeOrders"), () => this.close(), 84);
+    this.closeButton = addButton(this, 822, 20, t(s.ordersClosed ? "service.closeHall" : "service.closeOrders"), () => this.close(), 84);
     this.closeButton.box.setDepth(1000);
+
+    const kb = this.input.keyboard!;
+    this.keys = kb.addKeys("A,D,LEFT,RIGHT,SHIFT,SPACE") as typeof this.keys;
+    this.keys.SPACE.on("down", () => this.press());
+    this.keys.SPACE.on("up", () => this.release());
+    if (this.sys.game.device.input.touch || new URLSearchParams(location.search).has("touch")) this.createTouchControls();
   }
 
-  // First press: no one else comes in. Second press: the hall closes and whoever still waits leaves angry.
+  // Placeholder touch controls, as on the hunt (UI art later): a stick on the left, the action button
+  // on the right (press to act, hold at the drink cart to pour).
+  private createTouchControls() {
+    this.input.addPointer(2);
+    const ui = <T extends Phaser.GameObjects.Arc>(o: T) => o.setDepth(10000);
+    ui(this.add.circle(STICK.x, STICK.y, STICK.radius, 0x000000, 0.35).setStrokeStyle(1, 0xffffff, 0.6));
+    this.stickKnob = ui(this.add.circle(STICK.x, STICK.y, 16, 0xffffff, 0.6));
+    const act = ui(this.add.circle(ACT_BTN.x, ACT_BTN.y, ACT_BTN.radius, 0x30a050, 0.6).setStrokeStyle(1, 0xffffff, 0.8));
+    this.add.text(ACT_BTN.x, ACT_BTN.y, t("service.actButton"), TEXT_SMALL).setOrigin(0.5).setDepth(10001);
+    act.setInteractive(new Phaser.Geom.Circle(ACT_BTN.radius, ACT_BTN.radius, ACT_BTN.radius + 6), Phaser.Geom.Circle.Contains);
+    act.on("pointerdown", () => this.press());
+    act.on("pointerup", () => this.release());
+    act.on("pointerout", () => this.release());
+    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
+      if (p.x < SHOP_WIDTH * 0.45 && p.y > 60 && this.stickPointer === null) {
+        this.stickPointer = p.id;
+        this.updateStick(p);
+      }
+    });
+    this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
+      if (p.id === this.stickPointer) this.updateStick(p);
+    });
+    const up = (p: Phaser.Input.Pointer) => {
+      if (p.id !== this.stickPointer) return;
+      this.stickPointer = null;
+      this.stickX = 0;
+      this.stickKnob.setPosition(STICK.x, STICK.y);
+    };
+    this.input.on("pointerup", up);
+    this.input.on("pointerupoutside", up);
+  }
+
+  private updateStick(p: Phaser.Input.Pointer) {
+    const v = joystickVector(STICK, { x: p.x, y: p.y }, STICK.radius, STICK.deadZone);
+    this.stickX = v.x;
+    this.stickKnob.setPosition(STICK.x + v.x * STICK.radius, STICK.y);
+  }
+
+  private press() {
+    if (this.paused || this.ended) return;
+    if (this.shift.target()?.kind === "drinks") this.shift.pourStart();
+    else this.shift.act();
+  }
+
+  private release() {
+    if (this.shift.s.pouring) this.shift.pourEnd();
+  }
+
+  // First press: no one else comes in. Second press: whoever still waits for a dish leaves angry.
   private close() {
     if (this.ended) return;
-    if (!this.ordersClosed) {
-      this.ordersClosed = true;
-      try {
-        sessionStorage.setItem(`monster-bbq:service:${this.serviceId}:closed`, "1");
-      } catch {
-        // private mode: a reload opens the doors again, nothing worse
-      }
+    if (!this.shift.s.ordersClosed) {
+      this.shift.closeOrders();
       this.closeButton.setText(t("service.closeHall"));
-      this.pop(320, 70, t("service.ordersClosed"), "#ffd166");
+      this.pop(480, 90, t("service.ordersClosed"), "#ffd166");
       return;
     }
-    for (const g of this.guests) if (g.phase === "waiting" || g.phase === "walking" || g.phase === "seated") this.storm(g);
+    this.shift.closeHall();
     this.closeButton.setEnabled(false);
-  }
-
-  private resumedClosed(): boolean {
-    try {
-      return sessionStorage.getItem(`monster-bbq:service:${this.serviceId}:closed`) === "1";
-    } catch {
-      return false;
-    }
   }
 
   private togglePause() {
@@ -142,197 +242,211 @@ export class ServiceScene extends Phaser.Scene {
     this.pauseButton.setText(this.paused ? t("service.resume") : t("service.pause"));
   }
 
-  update(_time: number, rawDt: number) {
+  update(time: number, rawDt: number) {
     if (this.paused || this.ended) return;
     const dt = Math.min(rawDt, MAX_DT_MS);
-    this.clock += dt;
-    // remember how far into the night we are (a reload resumes there instead of starting over)
-    if (this.clock - this.savedAt > 1000) {
-      this.savedAt = this.clock;
-      try {
-        sessionStorage.setItem(`monster-bbq:service:${this.serviceId}`, String(Math.round(this.clock)));
-      } catch {
-        // private mode: a reload starts the night over, as before
-      }
+    const k = this.keys;
+    const x = Phaser.Math.Clamp((k.D.isDown || k.RIGHT.isDown ? 1 : 0) - (k.A.isDown || k.LEFT.isDown ? 1 : 0) + this.stickX, -1, 1);
+    this.shift.tick(dt, { x, run: k.SHIFT.isDown || Math.abs(this.stickX) > 0.9 });
+    if (this.shift.s.clock - this.savedAt > 1000) {
+      this.savedAt = this.shift.s.clock;
+      saveShift(sessionStorage, this.data0.serviceId, this.shift.s);
     }
-    // arrivals: to their table, or queue at the door while it is taken
-    for (const c of this.customers) {
-      if (!this.ordersClosed && c.arriveMs <= this.clock && !this.guests.some((g) => g.c.id === c.id)) this.guests.push(this.makeGuest(c));
-    }
-    for (const g of this.guests) this.stepGuest(g, dt);
-    const left = [...this.plates.values()].reduce((a, b) => a + b, 0);
-    this.tally.setText(`${t("service.tally", { served: this.served.length, total: this.customers.length, gold: this.earned })} · ${t("service.platesLeft", { n: left })}`);
-    // the last plate is gone: no one else comes in, and whoever is still seated without a plate goes home
-    // calmly (not angry: the server does not count them as left either)
-    if (left === 0) {
-      if (!this.ordersClosed) this.close();
-      for (const g of this.guests) if (g.phase === "seated") this.goHome(g);
-    }
-    // done when everyone who came has gone, and either everyone came or the doors were closed
-    const allCame = this.guests.length === this.customers.length || this.ordersClosed;
-    if (!this.ended && (this.customers.length > 0 || this.ordersClosed) && allCame && this.guests.every((g) => g.phase === "gone")) {
+    this.handleEvents(time);
+    this.draw(time, x);
+    if (this.shift.done) {
       this.ended = true;
-      this.time.delayedCall(800, () => this.game.events.emit("service:end", { served: this.served, left: this.left }));
+      saveShift(sessionStorage, this.data0.serviceId, this.shift.s);
+      this.time.delayedCall(800, () => this.game.events.emit("service:end", this.shift.report()));
     }
   }
 
-  private resumedClock(): number {
-    try {
-      const v = Number(sessionStorage.getItem(`monster-bbq:service:${this.serviceId}`));
-      return Number.isFinite(v) && v > 0 ? v : 0;
-    } catch {
-      return 0;
-    }
-  }
-
-  private makeGuest(c: Customer): Guest {
-    const who = STAND_IN[c.kind];
-    const sprite = this.add.sprite(DOOR_X, SEAT_Y, `${who}_side_0`).setOrigin(0.5, 0.9).setScale(1.3);
-    sprite.play(`${who}_walk_side`);
-    const bubble = this.add.container(0, 0).setVisible(false).setDepth(900);
-    // after a reload, guests who came in meanwhile have already been waiting; those out of patience are gone
-    const waited = Math.max(0, this.clock - c.arriveMs);
-    const g: Guest = { c, phase: "waiting", sprite, bubble, gauge: null, waitedMs: waited, targetX: SEATS_X[c.seat], angry: false };
-    this.makeBubble(g);
-    // served before a reload: already fed and gone
-    if (this.served.some((s) => s.customer === c.id)) {
-      g.phase = "gone";
-      sprite.destroy();
-      bubble.destroy();
-      return g;
-    }
-    if (waited >= c.patienceMs) {
-      g.phase = "gone";
-      sprite.destroy();
-      bubble.destroy();
-      this.left.push(c.id);
-    }
-    return g;
-  }
-
-  // The order above the customer: the dish in a speech bubble, patience in a gauge below it. Tap to serve.
-  private makeBubble(g: Guest) {
-    g.bubble.removeAll(true);
-    const bubble = kitSlice(this, 0, 0, "bubble_plain", 56, 50, 3, 3, 3, 3);
-    const dish = this.add.image(1, -4, `dish_${g.c.dish}`);
-    g.gauge = addGauge(this, 0, 32, 48);
-    g.bubble.add([bubble, dish, g.gauge.box]);
-    g.bubble.setSize(56, 50).setInteractive({ useHandCursor: true }).on("pointerdown", () => this.serve(g));
-  }
-
-  private stepGuest(g: Guest, dt: number) {
-    const s = g.sprite;
-    const who = STAND_IN[g.c.kind];
-    const seatTaken = () => this.guests.some((o) => o !== g && o.c.seat === g.c.seat && (o.phase === "walking" || o.phase === "seated" || o.phase === "eating"));
-    switch (g.phase) {
-      case "waiting":
-        // queue just inside the door until the table is free (patience already running)
-        g.waitedMs += dt;
-        if (s.x < 30) s.x += (WALK_SPEED * dt) / 1000;
-        else s.anims.stop();
-        if (!seatTaken()) {
-          g.phase = "walking";
-          s.play(`${who}_walk_side`);
+  private handleEvents(time: number) {
+    for (const e of this.shift.drain()) {
+      switch (e.type) {
+        case "served": {
+          const v = this.views.get(e.guest);
+          if (v) this.pop(v.sprite.x, BUBBLE_Y - 20, t("service.tip", { n: e.tip }), "#ffd166");
+          this.bandal.setTexture("bandal_smile");
+          this.bandalBusyUntil = time + 700;
+          break;
         }
-        break;
-      case "walking":
-        g.waitedMs += dt;
-        s.setFlipX(false);
-        s.x = Math.min(g.targetX, s.x + (WALK_SPEED * 1.6 * dt) / 1000);
-        if (s.x >= g.targetX) {
-          // tonight's dish if plates are left, else any dish that still has some; none left: home, unbothered
-          const dish = pickDish(this.plates, g.c.dish);
-          if (!dish) {
-            g.phase = "leaving";
-            s.setFlipX(true).play(`${who}_walk_side`);
-            g.angry = true;
-            break;
-          }
-          if (dish !== g.c.dish) {
-            g.c = { ...g.c, dish };
-            this.makeBubble(g);
-          }
-          g.phase = "seated";
-          s.anims.stop();
-          s.setTexture(`${who}_side_0`);
-          g.bubble.setPosition(s.x, SEAT_Y - 62).setVisible(true);
+        case "cooked":
+          this.bandal.setTexture("bandal_serve");
+          this.bandalBusyUntil = time + 500;
+          break;
+        case "angry": {
+          const v = this.views.get(e.guest);
+          if (v) this.pop(v.sprite.x, BUBBLE_Y - 20, t("service.angry"), "#ff8080");
+          break;
         }
-        break;
-      case "seated": {
-        g.waitedMs += dt;
-        const left = Math.max(0, 1 - g.waitedMs / g.c.patienceMs);
-        g.gauge?.set(left);
-        // impatient: a little jiggle when the bar runs red
-        g.bubble.setAngle(left < 0.25 ? Math.sin(this.clock / 60) * 6 : 0);
-        if (left <= 0) this.storm(g);
-        break;
+        case "scrub":
+          if (e.done) this.pop(this.shift.s.seats[e.seat].x, COUNTER_TOP - 40, t("service.tip", { n: e.tip }), "#ffd166");
+          break;
+        case "pour":
+          this.pop(LAYOUT.drinkCart, 348, t(`service.pour.${e.pour}`), e.pour === "perfect" ? "#ffd166" : e.pour === "good" ? "#bfe8a0" : "#ff8080");
+          break;
+        case "coal":
+          this.pop(LAYOUT.coalBox, 364, `${Math.round(e.level)}%`, "#ffb070");
+          break;
+        case "noCoal":
+          this.pop(LAYOUT.coalBox, 348, t("service.coalOut"), "#ff8080");
+          break;
+        case "soldOut":
+          this.closeButton.setText(t("service.closeHall"));
+          this.pop(480, 90, t("service.soldOut"), "#ffd166");
+          break;
+        case "closing":
+          this.closeButton.setText(t("service.closeHall"));
+          this.pop(480, 90, t("service.closing"), "#ffd166");
+          break;
       }
+    }
+  }
+
+  private draw(time: number, moveX: number) {
+    const s = this.shift.s;
+    // the waiter
+    const w = this.waiter;
+    w.x = s.x;
+    w.setFlipX(s.facing < 0);
+    if (moveX !== 0 && s.busyMs === 0 && !s.pouring) {
+      if (w.anims.currentAnim?.key !== "hunter_walk_side" || !w.anims.isPlaying) w.play("hunter_walk_side");
+    } else if (w.anims.isPlaying) {
+      w.stop();
+      w.setTexture("hunter_side_1");
+    }
+    // what the waiter carries, held up above the head
+    const item = s.tray[0];
+    const key = item ? (item.kind === "dish" ? `dish_${item.dish}` : drinkIcon[item.drink]) : null;
+    if (!key) {
+      this.carried?.destroy();
+      this.carried = null;
+    } else {
+      if (!this.carried || this.carried.texture.key !== key) {
+        this.carried?.destroy();
+        this.carried = this.add.image(0, 0, key).setDepth(90).setScale(key.startsWith("dish_") ? DISH_SCALE : S);
+      }
+      this.carried.setPosition(s.x, 246);
+    }
+    // Bandal: grilling while an order is on, a breath now and then otherwise
+    if (time > this.bandalBusyUntil) {
+      const cooking = s.kitchen[0]?.started;
+      this.bandal.setTexture(cooking ? (Math.floor(time / 300) % 2 ? "bandal_grill" : "bandal_turn") : Math.floor(time / 900) % 2 ? "bandal_breathe" : "bandal_idle");
+    }
+    // the pass
+    if (this.passPlates.length !== s.pass.length || this.passPlates.some((p, i) => p.texture.key !== `dish_${s.pass[i]}`)) {
+      this.passPlates.forEach((p) => p.destroy());
+      this.passPlates = s.pass.map((d, i) => this.add.image(790 + i * 32, COUNTER_TOP - 2, `dish_${d}`).setOrigin(0.5, 1).setScale(DISH_SCALE).setDepth(31));
+    }
+    // plaques: plates still to order
+    this.data0.dishes.slice(0, PLAQUES.length).forEach((d, i) => this.plaqueCounts[i].setText(`×${s.plates[d.dish] ?? 0}`));
+    // grills and stools
+    s.seats.forEach((seat, i) => {
+      const g = s.guests.find((x) => x.id === seat.guest);
+      this.grills[i].setTexture(seat.dirty ? "prop_grill_dirty" : g && g.phase !== "walk" ? "prop_grill_lit" : "prop_grill_off");
+      this.stools[i].setVisible(!g || g.phase === "walk");
+    });
+    // charcoal and the pour
+    this.coalGauge.set(s.coal / 100);
+    this.pourGauge.box.setVisible(!!s.pouring);
+    this.pourMark.setVisible(!!s.pouring);
+    if (s.pouring) this.pourGauge.set(s.pouring.fill);
+    // guests
+    for (const g of s.guests) this.drawGuest(g, time);
+    // the outline glow on what the action key would use
+    this.glow(this.glowTarget(this.shift.canAct() ? this.shift.target() : null));
+    // tally and clock
+    const sold = s.guests.filter((g) => g.servedMs !== null).length;
+    this.tally.setText(`${t("service.tally", { served: sold, total: this.data0.customers.length, gold: this.shift.earned() })} · ${t("service.platesLeft", { n: this.shift.platesLeft() })}`);
+    this.clock.setText(s.clock >= BALANCE.service.openMs ? t("service.closed") : clockText(s.clock));
+  }
+
+  private drawGuest(g: Guest, time: number) {
+    let v = this.views.get(g.id);
+    if (g.phase === "gone") {
+      if (v) {
+        v.sprite.destroy();
+        v.bubble.destroy();
+        this.views.delete(g.id);
+      }
+      return;
+    }
+    const who = YOKAI[g.kind];
+    if (!v) {
+      const sprite = this.add.image(g.x, WALK_FLOOR, `yk_${who}_walk_0`).setOrigin(0.5, 1).setScale(S).setDepth(45);
+      const back = kitSlice(this, 0, 0, "bubble_plain", 40, 38, 3, 3, 3, 3);
+      const fill = this.add.rectangle(0, 15, 32, 0, 0xd83a2a, 0.45).setOrigin(0.5, 1);
+      const icon = this.add.image(0, -2, `dish_${g.dish}`).setScale(DISH_SCALE);
+      const bubble = this.add.container(g.x, BUBBLE_Y, [back, fill, icon]).setDepth(80).setVisible(false);
+      v = { sprite, bubble, icon, fill };
+      this.views.set(g.id, v);
+    }
+    const step = Math.floor(time / 220) % 2;
+    const sp = v.sprite;
+    sp.x = g.x;
+    switch (g.phase) {
+      case "queue":
+      case "walk":
+        sp.setTexture(`yk_${who}_walk_${g.phase === "walk" ? step : 0}`).setFlipX(false).setY(WALK_FLOOR).setDepth(46);
+        break;
+      case "seated":
+        sp.setTexture(`yk_${who}_sit`).setFlipX(false).setY(SEAT_FLOOR).setDepth(45);
+        break;
       case "eating":
+        sp.setTexture(`yk_${who}_${Math.floor(time / 300) % 2 ? "eat" : "sit"}`).setY(SEAT_FLOOR);
+        break;
+      case "thirsty":
+        sp.setTexture(`yk_${who}_happy`).setY(SEAT_FLOOR);
         break;
       case "leaving":
-        s.x += (g.angry ? -1 : 1) * ((WALK_SPEED * 1.8 * dt) / 1000);
-        if (s.x < DOOR_X - 10 || s.x > 680) {
-          g.phase = "gone";
-          s.destroy();
-          g.bubble.destroy();
-        }
+        sp.setTexture(g.angry ? `yk_${who}_angry` : `yk_${who}_walk_${step}`).setFlipX(!g.angry).setY(WALK_FLOOR).setDepth(46);
         break;
     }
-    if (g.phase !== "gone") s.setDepth(SEAT_Y);
+    // the bubble: a dirty grill to scrub before ordering, the dish (patience rising red from the bottom),
+    // the tea asked for with it, the cider or sikhye after the meal
+    const seat = g.seat !== null ? this.shift.s.seats[g.seat] : null;
+    const dirty = g.phase === "seated" && !g.ordered && !!seat?.dirty;
+    const wantsDish = g.phase === "seated" && g.ordered && g.servedMs === null;
+    const wantsTea = g.drink === "tea" && !g.pour && g.ordered && (g.phase === "seated" || g.phase === "eating");
+    const wantsAfter = g.phase === "thirsty" && (g.drink === "cider" || g.drink === "sikhye");
+    const show = dirty || wantsDish || wantsTea || wantsAfter;
+    v.bubble.setVisible(show).setPosition(g.x, BUBBLE_Y);
+    if (!show) return;
+    const key = dirty ? "prop_plate_dirty" : wantsDish ? `dish_${g.dish}` : wantsTea ? drinkIcon.tea : drinkIcon[g.drink as "cider" | "sikhye"];
+    if (v.icon.texture.key !== key) v.icon.setTexture(key).setScale(key.startsWith("dish_") ? DISH_SCALE : 1);
+    const used = wantsDish || dirty ? g.waitedMs / g.patienceMs : 0;
+    v.fill.height = Math.round(30 * Math.min(1, used));
+    v.bubble.setAngle(used > 0.75 || dirty ? Math.sin(time / 60) * 6 : 0);
   }
 
-  // Sold out before their plate came: walks back out the door, no fuss.
-  private goHome(g: Guest) {
-    g.phase = "leaving";
-    g.angry = true; // only the direction: back to the door
-    g.bubble.setVisible(false);
-    g.sprite.setFlipX(true).play(`${STAND_IN[g.c.kind]}_walk_side`);
-  }
-
-  // Out of patience: storms out, and the shop's reputation suffers.
-  private storm(g: Guest) {
-    g.phase = "leaving";
-    g.angry = true;
-    g.bubble.setVisible(false);
-    this.left.push(g.c.id);
-    g.sprite.setTint(0xff7070).setFlipX(true).play(`${STAND_IN[g.c.kind]}_walk_side`);
-    this.pop(g.sprite.x, SEAT_Y - 70, t("service.angry"), "#ff8080");
-  }
-
-  // A tapped order goes out at once if a plate of it is left: the customer eats, pays and leaves.
-  private serve(g: Guest) {
-    if (this.paused || g.phase !== "seated") return;
-    const n = this.plates.get(g.c.dish) ?? 0;
-    if (n < 1) return;
-    this.plates.set(g.c.dish, n - 1);
-    this.served.push({ customer: g.c.id, dish: g.c.dish });
-    saveServed(sessionStorage, this.serviceId, this.served);
-    // that was the last plate of this dish: everyone else seated waiting for it gets a dish still on the pass
-    if (n - 1 === 0)
-      for (const o of this.guests) {
-        if (o === g || o.phase !== "seated" || o.c.dish !== g.c.dish) continue;
-        const other = pickDish(this.plates, o.c.dish);
-        if (other) {
-          o.c = { ...o.c, dish: other };
-          this.makeBubble(o);
-          o.bubble.setPosition(o.sprite.x, SEAT_Y - 62).setVisible(true);
-        }
+  private glowTarget(target: Target | null): Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | null {
+    if (!target) return null;
+    const s = this.shift.s;
+    switch (target.kind) {
+      case "pass":
+        return this.passPlates[0] ?? null;
+      case "drinks":
+        return this.cart;
+      case "coal":
+        return this.coalBox;
+      case "seat": {
+        const seat = s.seats[target.seat];
+        if (seat.dirty) return this.grills[target.seat];
+        return (seat.guest && this.views.get(seat.guest)?.sprite) || null;
       }
-    g.phase = "eating";
-    g.bubble.setVisible(false);
-    const gold = this.prices.get(g.c.dish) ?? 0;
-    this.earned += gold;
-    // a happy little bounce while eating, then the coins, then out
-    this.tweens.add({ targets: g.sprite, y: SEAT_Y - 4, duration: 180, yoyo: true, repeat: 5 });
-    this.time.delayedCall(2200, () => {
-      this.pop(g.sprite.x, SEAT_Y - 70, `+${gold}`, "#ffd166");
-      g.phase = "leaving";
-      g.sprite.play(`${STAND_IN[g.c.kind]}_walk_side`);
-    });
+    }
+  }
+
+  private glow(o: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | null) {
+    if (o === this.glowing) return;
+    this.glowing?.preFX?.clear();
+    this.glowing = o;
+    o?.preFX?.addGlow(0xffe08a, 2, 0, false, 0.1, 8);
   }
 
   private pop(x: number, y: number, text: string, color: string) {
-    const s = this.add.text(x, y, text, { ...label, fontSize: "13px", color }).setOrigin(0.5).setDepth(1000);
+    const s = this.add.text(x, y, text, { ...TEXT, color }).setOrigin(0.5).setDepth(1000);
     this.tweens.add({ targets: s, y: y - 18, alpha: 0, delay: 700, duration: 800, onComplete: () => s.destroy() });
   }
 }

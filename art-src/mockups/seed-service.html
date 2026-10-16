@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시험용 세이브 (밤 장사)</title>
+<!-- Check page only: puts a local test save (version 7) with tonight's service already open into this
+     browser's storage and opens the game in local mode, straight into the night at the counter. -->
+<script>
+  const save = {
+    version: 7, day: 3, stage: "kitchen", gold: 800, items: {}, hunt: null,
+    seenItems: ["boar_belly", "boar_neck", "wild_garlic"],
+    dishes: { grilled_belly: 1, garlic_neck: 1 }, menu: [{ dish: "grilled_belly", sets: 2 }, { dish: "garlic_neck", sets: 2 }],
+    reputation: 40, upgrades: { seats: 5 }, lunchbox: [], lastService: null,
+    service: { id: "stest" + Date.now().toString(36), seed: 12345, startedAt: Date.now(), dishes: [{ dish: "grilled_belly", plates: 6, price: 40 }, { dish: "garlic_neck", plates: 6, price: 50 }] },
+  };
+  for (const k of Object.keys(sessionStorage)) sessionStorage.removeItem(k);
+  localStorage.setItem("monster-bbq:save", JSON.stringify(save));
+  location.replace("/?local" + (location.search.includes("touch") ? "&touch" : ""));
+</script>
+</head>
+<body></body>
+</html>

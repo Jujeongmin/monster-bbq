@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
-import { ammoOf, bagSlots, huntStats, level, lightRadius, sleepFallMs } from "../../shared/growth";
+import { ammoOf, bagSlots, coalPerDish, huntStats, level, lightRadius, sleepFallMs, stools, walkMul } from "../../shared/growth";
 import type { HuntEvent } from "../../shared/actions";
 import type { SideWeaponId } from "../../shared/content/sideWeapons";
 import { BALANCE } from "../../shared/balance";
 import { dishPrice, type MenuLine } from "../../shared/kitchen/dish";
 import { planService } from "../../shared/service/plan";
+import type { ServedEntry } from "../../shared/service/settle";
 import type { SaveData } from "../../shared/save";
 import { PhaserGame } from "../game/PhaserGame";
 import { ServiceGame } from "../game/service/ServiceGame";
@@ -154,7 +155,7 @@ export function DayFlow({ transport }: { transport: Transport }) {
           {save.lastService && (
             <ul className="dayflow-sold">
               <li>{t("settle.served", { served: save.lastService.served, left: save.lastService.left })}</li>
-              <li>{t("settle.sales", { sales: save.lastService.sales, tips: save.lastService.tips })}</li>
+              <li>{t("settle.sales", { sales: save.lastService.sales, tips: save.lastService.tips, drinks: save.lastService.drinks })}</li>
               <li>{t("settle.happy", { happy: save.lastService.happy })}</li>
               <li>{t("settle.rep", { rep: save.reputation, delta: (save.lastService.repDelta >= 0 ? "+" : "") + save.lastService.repDelta })}</li>
             </ul>
@@ -204,8 +205,9 @@ function Panel({ title, body, children }: { title: string; body: string; childre
 
 // Tonight's service: the customers the server's seed brings (same plan as the server checks) and the
 // plates the menu board made.
-function Night({ save, onEnd }: { save: SaveData; onEnd: (r: { served: { customer: string; dish: string }[]; left: string[] }) => void }) {
+function Night({ save, onEnd }: { save: SaveData; onEnd: (r: { served: ServedEntry[]; left: string[]; cleaned: string[] }) => void }) {
   const svc = save.service!;
   const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.dishes.map((d) => d.dish) });
-  return <ServiceGame key={svc.id} shop={{ serviceId: svc.id, customers, dishes: svc.dishes }} onEnd={onEnd} />;
+  const shop = { serviceId: svc.id, customers, dishes: svc.dishes, stools: stools(save), walkMul: walkMul(save), coalPerDish: coalPerDish(save) };
+  return <ServiceGame key={svc.id} shop={shop} onEnd={onEnd} />;
 }
