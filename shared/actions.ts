@@ -1,6 +1,6 @@
 import { BALANCE } from "./balance";
 import { isDishId, isSignature, type DishId } from "./content/dishes";
-import { awakenCost, canAwaken, isAwakenTarget, MAX_STARS, starLevel } from "./awaken";
+import { awakenCost, canAwaken, isAwakenTarget, MAX_STARS, sleepDartsFor, starLevel } from "./awaken";
 import { isUpgradeId } from "./content/upgrades";
 import { RECIPES } from "./content/recipes";
 import { ammoOf, bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost, nextMats, ownsSide, sleepFallMs } from "./growth";
@@ -94,7 +94,8 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): { 
       // sleeping and netting need that gun taken out, and only as many as its shots allow
       if (how === "sleep") {
         if (hunt.side !== "sleepGun") return null;
-        dartsUsed += BALANCE.hunt.sleepHits[spawn.monster];
+        // an awakened sleep gun takes fewer darts a monster (06b-1)
+        dartsUsed += sleepDartsFor(spawn.monster, starLevel(save, "sleepGun"));
         if (dartsUsed > ammoOf(save, "sleepGun")) return null;
       }
       if (how === "net" && (hunt.side !== "netGun" || ++netsUsed > ammoOf(save, "netGun"))) return null;
@@ -209,7 +210,7 @@ function openShop(save: SaveData, a: Record<string, unknown>, ctx: ActionContext
     if (typeof raw.sets !== "number" || !Number.isInteger(raw.sets) || raw.sets < 1 || raw.sets > MAX_SETS) return bad;
     lines.push({ dish: raw.dish, sets: raw.sets });
   }
-  const plan = planShop(save.items, save.dishes, lines);
+  const plan = planShop(save.items, save.dishes, lines, save.stars);
   if (!plan) return { save, error: "no_ingredients" };
   const seed = Math.floor(ctx.random() * 2 ** 31);
   const id = `s${ctx.now.toString(36)}${Math.floor(ctx.random() * 1e9).toString(36)}`;

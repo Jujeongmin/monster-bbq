@@ -2,6 +2,7 @@ import { BALANCE } from "../balance";
 import type { DishId } from "../content/dishes";
 import { itemKey, ITEMS, type ItemId } from "../content/items";
 import { RECIPES } from "../content/recipes";
+import { starMul } from "../awaken";
 
 // Dish levels, prices, plates and ingredient sets (restaurant v2 design 3), in one place: the server's
 // rules (research, upgradeDish, openShop, packLunch) and the kitchen screens all ask here.
@@ -64,12 +65,13 @@ export interface TonightDish {
 }
 
 // Tonight's plates from a menu, taking each line's sets out of the items in menu order (dishes may share
-// ingredients). A dish's price is its level price, raised by premiumBonus for the share of its sets that
-// used a premium part. null when the items do not cover the whole menu.
+// ingredients). A dish's price is its level price, times its awakening (06b-1), raised by premiumBonus for
+// the share of its sets that used a premium part. null when the items do not cover the whole menu.
 export function planShop(
   items: Record<string, number>,
   levels: Partial<Record<DishId, number>>,
   menu: MenuLine[],
+  stars: Partial<Record<DishId, number>> = {},
 ): { items: Record<string, number>; dishes: TonightDish[] } | null {
   let left = items;
   const dishes: TonightDish[] = [];
@@ -78,7 +80,7 @@ export function planShop(
     const took = takeSets(left, line.dish, line.sets);
     if (!took) return null;
     left = took.items;
-    const price = Math.round(dishPrice(line.dish, level) * (1 + (D.premiumBonus * took.premium) / line.sets));
+    const price = Math.round(dishPrice(line.dish, level) * starMul(stars[line.dish] ?? 0) * (1 + (D.premiumBonus * took.premium) / line.sets));
     dishes.push({ dish: line.dish, plates: line.sets * platesPerSet(level), price });
   }
   return { items: left, dishes };

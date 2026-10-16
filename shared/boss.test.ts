@@ -81,6 +81,16 @@ describe("the Charge King", () => {
   });
 });
 
+describe("an awakened sleep gun", () => {
+  it("counts the darts an awakened sleep gun needs", () => {
+    // the sleep gun at level 2 carries 5 darts; the King takes 10, or ceil(10 / 1.1^8) = 5 at star 8
+    const s: SaveData = { ...newSave(), upgrades: { boots: 1, lantern: 1, sleepGun: 2 }, bossKey: true, stars: { sleepGun: 8 } };
+    const started = applyAction(s, { type: "startHunt", zone: "forest", side: "sleepGun" }, { now: T0, random: () => 0.3 }).save;
+    expect(finish(started, [...toDen, king("sleep")], "5-e0").error).toBeUndefined();
+    expect(finish({ ...started, stars: {} }, [...toDen, king("sleep")], "5-e0").error).toBe("bad_hunt");
+  });
+});
+
 describe("the signature dish", () => {
   it("cannot be researched: only the page opens it", () => {
     const s = { ...newSave(), stage: "kitchen" as const, gold: 99_999, seenItems: ["king_rib" as const, "wild_garlic" as const], items: { "king_rib:normal": 2, wild_garlic: 2 } };

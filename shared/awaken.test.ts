@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { applyAction } from "./actions";
-import { awakenCost, canAwaken, starLevel, starMul } from "./awaken";
+import { awakenCost, canAwaken, sidePower, sleepDartsFor, starLevel, starMul } from "./awaken";
+import { BALANCE } from "./balance";
+import { huntStats } from "./growth";
+import { planShop } from "./kitchen/dish";
 import { newSave, type SaveData } from "./save";
 
 // Awakening (06b-1 design 1): stars 1-20 on hunting gear and dishes, gold and charcoal.
@@ -49,5 +52,30 @@ describe("awakening", () => {
   it("waits while a hunt or a night service is on", () => {
     expect(awaken(rich({ hunt: { id: "h", seed: 1, zone: "forest", period: "morning", side: "sling", startedAt: 1 } }), "melee").error).toBe("wrong_stage");
     expect(awaken(rich({ service: { id: "s", seed: 1, startedAt: 1, dishes: [] } }), "melee").error).toBe("wrong_stage");
+  });
+});
+
+describe("what the stars do", () => {
+  it("hits harder with an awakened knife and harpoon, and the apron takes more off", () => {
+    const base = huntStats({ upgrades: {} });
+    const s = huntStats({ upgrades: {}, stars: { melee: 5, ranged: 3, armor: 2 } });
+    expect(s.meleeDamage).toBe(Math.round(base.meleeDamage * 1.1 ** 5));
+    expect(s.rangedDamage).toBe(Math.round(base.rangedDamage * 1.1 ** 3));
+    expect(s.damageTaken).toBeCloseTo(base.damageTaken / 1.1 ** 2);
+  });
+  it("sells an awakened dish dearer", () => {
+    const items = { "boar_belly:normal": 1 };
+    const plain = planShop(items, { grilled_belly: 1 }, [{ dish: "grilled_belly", sets: 1 }])!;
+    const star = planShop(items, { grilled_belly: 1 }, [{ dish: "grilled_belly", sets: 1 }], { grilled_belly: 4 })!;
+    expect(star.dishes[0].price).toBe(Math.round(plain.dishes[0].price * 1.1 ** 4));
+  });
+  it("puts a monster to sleep with fewer darts, the server counting the same", () => {
+    expect(sleepDartsFor("king", 0)).toBe(BALANCE.hunt.sleepHits.king);
+    expect(sleepDartsFor("king", 8)).toBe(Math.ceil(BALANCE.hunt.sleepHits.king / 1.1 ** 8));
+    expect(sleepDartsFor("rabbit", 20)).toBe(1);
+  });
+  it("makes an awakened side weapon stronger by its stars", () => {
+    expect(sidePower({}, "sling")).toBe(1);
+    expect(sidePower({ stars: { firecracker: 3 } }, "firecracker")).toBeCloseTo(1.331);
   });
 });

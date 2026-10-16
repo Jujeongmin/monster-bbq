@@ -3,6 +3,7 @@ import { UPGRADE_IDS, type UpgradeId } from "./content/upgrades";
 import type { SideWeaponId } from "./content/sideWeapons";
 import type { ItemId } from "./content/items";
 import type { SaveData } from "./save";
+import { starLevel, starMul } from "./awaken";
 
 // Upgrade levels (growth design 2): everything starts at level 1.
 export { UPGRADE_IDS };
@@ -25,13 +26,14 @@ const E = BALANCE.growth;
 const at = (table: number[], lv: number) => table[Math.max(0, Math.min(table.length - 1, lv - 1))];
 
 // What the upgrades do, in one place: the hunt and kitchen screens and the server checks all ask here.
-export function huntStats(save: Pick<SaveData, "upgrades">) {
+// Awakening stars (06b-1) multiply the knife's and harpoon's damage and divide what gets through the apron.
+export function huntStats(save: Pick<SaveData, "upgrades"> & Partial<Pick<SaveData, "stars">>) {
   return {
-    meleeDamage: at(E.meleeDamage, level(save, "melee")),
-    rangedDamage: at(E.rangedDamage, level(save, "ranged")),
+    meleeDamage: Math.round(at(E.meleeDamage, level(save, "melee")) * starMul(starLevel(save, "melee"))),
+    rangedDamage: Math.round(at(E.rangedDamage, level(save, "ranged")) * starMul(starLevel(save, "ranged"))),
     rangedRange: at(E.rangedRange, level(save, "ranged")),
     maxHp: at(E.maxHp, level(save, "tank")),
-    damageTaken: at(E.damageTaken, level(save, "armor")),
+    damageTaken: at(E.damageTaken, level(save, "armor")) / starMul(starLevel(save, "armor")),
   };
 }
 export const bagSlots = (save: Pick<SaveData, "upgrades">) => at(E.bag, level(save, "bag"));

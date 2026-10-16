@@ -1,6 +1,7 @@
 import { BALANCE } from "./balance";
 import { isDishId, type DishId } from "./content/dishes";
-import { isSideWeaponId } from "./content/sideWeapons";
+import type { MonsterId } from "./content/monsters";
+import { isSideWeaponId, type SideWeaponId } from "./content/sideWeapons";
 import type { SaveData } from "./save";
 
 // Awakening (06b-1 design 1): hunting gear and dishes take stars 1-20, each multiplying what they do
@@ -26,3 +27,8 @@ export function canAwaken(save: Pick<SaveData, "upgrades" | "dishes">, t: Awaken
   if (isSideWeaponId(t)) return (save.upgrades[t] ?? BALANCE.upgrades[t].base) >= 1;
   return true;
 }
+
+// How much an awakened side weapon does: the slingshot's damage, the firecracker's stun, the net's hold
+// (all × this); the sleep gun's darts per monster go down by it (sleepDartsFor).
+export const sidePower = (save: Partial<Pick<SaveData, "stars">>, side: SideWeaponId): number => starMul(starLevel(save, side));
+export const sleepDartsFor = (monster: MonsterId, sleepStars: number): number => Math.ceil(BALANCE.hunt.sleepHits[monster] / starMul(sleepStars));

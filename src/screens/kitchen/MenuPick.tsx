@@ -13,7 +13,7 @@ import { DishIcon } from "./DishIcon";
 export function MenuPick({ save, menu, setMenu }: { save: SaveData; menu: MenuLine[]; setMenu: (m: MenuLine[]) => void }) {
   const known = (Object.keys(DISHES) as DishId[]).filter((id) => save.dishes[id]);
   const slots = menuSlots(save);
-  const plan = planShop(save.items, save.dishes, menu);
+  const plan = planShop(save.items, save.dishes, menu, save.stars);
   const left = plan?.items ?? {};
   const on = (id: DishId) => menu.some((l) => l.dish === id);
   const setSets = (id: DishId, sets: number) => setMenu(menu.map((l) => (l.dish === id ? { ...l, sets } : l)));

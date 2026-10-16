@@ -88,6 +88,9 @@ export interface HuntData {
   ammo: number;
   harpoonLevel: number;
   sleepFallMs: number;
+  // the side weapon's awakening (06b-1): × its effect (pebble damage, net hold, firecracker stun); the
+  // sleep darts a monster takes ÷ it (the server counts the same)
+  sidePower: number;
   // set by the scene itself when it restarts on the next floor
   run?: Run;
 }
@@ -1105,16 +1108,16 @@ export class HuntScene extends Phaser.Scene {
   private dartHit(kind: SideWeaponId, m: Mob) {
     const at = mobPos(m);
     if (kind === "sling") {
-      this.applyHit(m, "ranged", H.sling.damage, []);
+      this.applyHit(m, "ranged", Math.round(H.sling.damage * this.huntData.sidePower), []);
       if (!m.dead) m.status = stun(m.status, H.sling.stunMs);
     } else if (kind === "sleepGun") {
-      m.status = dart(m.status, H.sleepHits[m.spawn.monster], this.huntData.sleepFallMs);
+      m.status = dart(m.status, Math.ceil(H.sleepHits[m.spawn.monster] / this.huntData.sidePower), this.huntData.sleepFallMs);
       // the flock does not notice one of its own nodding off
       this.tweens.add({ targets: m.sprite, angle: { from: -8, to: 8 }, duration: 160, yoyo: true, repeat: 2, onComplete: () => m.sprite.active && m.sprite.setAngle(0) });
     } else if (kind === "netGun") {
       if (MONSTERS[m.spawn.monster].radius <= H.netSmallMaxRadius) this.take(m, "net");
       else {
-        m.status = bind(m.status, H.netBindMs);
+        m.status = bind(m.status, H.netBindMs * this.huntData.sidePower);
         this.popText(at.x, at.y - 40, "#", "#ffd166", 800);
       }
     }
@@ -1130,7 +1133,7 @@ export class HuntScene extends Phaser.Scene {
       this.popText(b.at.x, b.at.y - 10, "펑!", "#ffd166", 700);
       for (const m of this.mobs) {
         if (m.dead || distance(mobPos(m), b.at) > H.firecracker.radius) continue;
-        m.status = stun(m.status, H.firecracker.stunMs);
+        m.status = stun(m.status, H.firecracker.stunMs * this.huntData.sidePower);
         this.flip(m);
         if (m.ai.kind === "pack") {
           const away = unit({ x: mobPos(m).x - b.at.x, y: mobPos(m).y - b.at.y });
