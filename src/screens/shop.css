@@ -8,7 +8,11 @@
 .shop-what { display: flex; align-items: center; gap: calc(4px * var(--s)); text-align: left; }
 .shop-buy { display: flex; align-items: center; justify-content: flex-end; gap: calc(3px * var(--s)); }
 .shop-band { align-self: stretch; font: var(--fs-small) "Galmuri9", monospace; }
-.shop-icon { height: calc(22px * var(--s)); image-rendering: pixelated; }
+/* the product icons (about 32 art pixels, each its own height) are drawn one art pixel to one UI pixel,
+   never resampled in between: Shop sets each one's height from its own pixels */
+.shop-icon { height: calc(32px * var(--s)); image-rendering: pixelated; }
+/* golden charcoal and the VIP badge are 18 art pixels tall */
+.ui-icon.ui-icon-lg { height: calc(18px * var(--s)); }
 .shop-name { font-weight: 700; }
 .shop-gives { font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
 .shop-mark { font: var(--fs-small) "Galmuri9", monospace; padding: 0 calc(2px * var(--s)); }

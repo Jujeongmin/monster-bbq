@@ -7,6 +7,8 @@
 #   python art-src/codex/pixelsnap.py <sheet.png> <cols> <rows> <out dir> <name:width> ...
 # one name:width[:colours] per cell, row by row ("-" skips a cell); width = the object's width in output
 # pixels, colours = its palette size (default 24; fewer calms busy parts like a grill's grate).
+# --main: keep only the object's own body (bits of a neighbour that reach into its cell go; anything under
+# a tenth of the biggest part counts as such a bit).
 import sys
 from collections import Counter
 from pathlib import Path
@@ -31,10 +33,11 @@ def unkey(im: Image.Image) -> Image.Image:
     return im
 
 
-def drop_specks(im: Image.Image, smallest: int = 6) -> Image.Image:
+def drop_specks(im: Image.Image, smallest: int = 6, main: bool = False) -> Image.Image:
     # loose bits a few pixels big (wisps of steam, stray rim pixels) go; the object itself stays
     px = im.load()
     seen = set()
+    parts = []
     for y in range(im.height):
         for x in range(im.width):
             if (x, y) in seen or px[x, y][3] == 0:
@@ -48,13 +51,17 @@ def drop_specks(im: Image.Image, smallest: int = 6) -> Image.Image:
                     if 0 <= nx < im.width and 0 <= ny < im.height and (nx, ny) not in seen and px[nx, ny][3] > 0:
                         seen.add((nx, ny))
                         todo.append((nx, ny))
-            if len(part) < smallest:
-                for cx, cy in part:
-                    px[cx, cy] = (0, 0, 0, 0)
-    return im
+            parts.append(part)
+    biggest = max((len(p) for p in parts), default=0)
+    floor = max(smallest, biggest // 10) if main else smallest
+    for part in parts:
+        if len(part) < floor:
+            for cx, cy in part:
+                px[cx, cy] = (0, 0, 0, 0)
+    return im.crop(im.getbbox()) if main and im.getbbox() else im
 
 
-def snap(obj: Image.Image, width: int, colors: int = COLORS) -> Image.Image:
+def snap(obj: Image.Image, width: int, colors: int = COLORS, main: bool = False) -> Image.Image:
     block = obj.width / width
     height = max(1, round(obj.height / block))
     # the object's own palette (a whole-sheet palette washes out small bright parts)
@@ -76,11 +83,13 @@ def snap(obj: Image.Image, width: int, colors: int = COLORS) -> Image.Image:
                 continue  # mostly backdrop: transparent
             c = Counter(solid).most_common(1)[0][0]
             o[x, y] = (*colours[c * 3 : c * 3 + 3], 255)
-    return drop_specks(out)
+    return drop_specks(out, main=main)
 
 
 def main():
-    sheet, cols, rows, out_dir, *specs = sys.argv[1:]
+    args = sys.argv[1:]
+    main_only = "--main" in args
+    sheet, cols, rows, out_dir, *specs = [a for a in args if a != "--main"]
     cols, rows = int(cols), int(rows)
     im = unkey(Image.open(sheet))
     w, h = im.width / cols, im.height / rows
@@ -95,7 +104,7 @@ def main():
         box = cell.getbbox()
         if not box:
             continue
-        snap(cell.crop(box), int(width), int(colors[0]) if colors else COLORS).save(out / f"{name}.png")
+        snap(cell.crop(box), int(width), int(colors[0]) if colors else COLORS, main_only).save(out / f"{name}.png")
         print(name, end=" ")
     print()
 

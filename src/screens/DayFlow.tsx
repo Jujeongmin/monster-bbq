@@ -154,10 +154,15 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
             {t("hud.gold", { gold: save.gold })}
           </span>
           <span>
-            <img className="ui-icon" src={artUrl("test/ui/icon_charcoal.png")} alt="" />
+            <img className="ui-icon ui-icon-lg" src={artUrl("test/ui/icon_golden_charcoal.png")} alt="" />
             {t("hud.charcoal", { n: save.charcoal })}
           </span>
-          {vipLevel(save.vip.spent) > 0 && <span className="dayflow-phase">{t("hud.vip", { lv: vipLevel(save.vip.spent) })}</span>}
+          {vipLevel(save.vip.spent) > 0 && (
+            <span className="dayflow-phase">
+              <img className="ui-icon ui-icon-lg" src={artUrl("test/ui/vip_badge.png")} alt="" />
+              {t("hud.vip", { lv: vipLevel(save.vip.spent) })}
+            </span>
+          )}
           {/* during the hunt the scene shows the live bag; the stored meat would read as a second count */}
           {phase !== "hunt" && <span>{t("hud.items", { count: Object.values(save.items).reduce((a, b) => a + b, 0) })}</span>}
           <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>

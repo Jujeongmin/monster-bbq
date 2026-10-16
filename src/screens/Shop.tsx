@@ -14,13 +14,16 @@ import "./shop.css";
 export function Shop({ save, items, checking, onBuy, onClose }: { save: SaveData; items: ShopItem[]; checking: boolean; onBuy: (productId: string) => void; onClose: () => void }) {
   const lv = vipLevel(save.vip.spent);
   const next = BALANCE.shop.vipAt[lv];
-  const icon = (id: string) => artUrl(hasArt(`test/shop/products/${id}.png`) ? `test/shop/products/${id}.png` : "test/ui/icon_charcoal.png");
+  const icon = (id: string) => artUrl(hasArt(`test/shop/products/${id}.png`) ? `test/shop/products/${id}.png` : "test/ui/icon_golden_charcoal.png");
   return (
     <div className="dayflow-screen store">
       <div className="ui-panel shop">
         <h2>{t("shop.title")}</h2>
         <p className="shop-vip">
-          {next === undefined ? t("shop.vipMax") : t("shop.vip", { lv, need: next - save.vip.spent })} · {t("hud.charcoal", { n: save.charcoal })}
+          <img className="ui-icon ui-icon-lg" src={artUrl("test/ui/vip_badge.png")} alt="" />
+          {next === undefined ? t("shop.vipMax") : t("shop.vip", { lv, need: next - save.vip.spent })} ·{" "}
+          <img className="ui-icon ui-icon-lg" src={artUrl("test/ui/icon_golden_charcoal.png")} alt="" />
+          {t("hud.charcoal", { n: save.charcoal })}
         </p>
         <div className="shop-grid">
           {shopOffer(save).map((o) => {
@@ -30,7 +33,7 @@ export function Shop({ save, items, checking, onBuy, onClose }: { save: SaveData
               <div key={o.id} className="ui-box shop-card">
                 <span className="ui-ribbon shop-band">{o.vipPct > 0 ? t("shop.valueVip", { pct: o.valuePct, vip: o.vipPct }) : t("shop.value", { pct: o.valuePct })}</span>
                 <div className="shop-what">
-                  <img className="shop-icon" src={icon(o.id)} alt="" />
+                  <img className="shop-icon" src={icon(o.id)} alt="" onLoad={(e) => (e.currentTarget.style.height = `calc(${e.currentTarget.naturalHeight}px * var(--s))`)} />
                   <div>
                     <div className="shop-name">{t(`product.${o.id}` as StringKey)}</div>
                     <div className="shop-gives">{o.gold > 0 ? t("shop.givesGold", { charcoal: o.charcoal, gold: o.gold }) : t("shop.gives", { charcoal: o.charcoal })}</div>
