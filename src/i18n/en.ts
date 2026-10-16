@@ -92,7 +92,7 @@ export const en: Record<keyof typeof ko, string> = {
   "settle.served": "{served} served · {left} missed",
   "settle.sales": "Sales {sales} · Tips {tips} · Drinks {drinks}",
   "settle.happy": "{happy} happy guests",
-  "settle.cleaned": "Grills scrubbed {n} (tips include {gold})",
+  "settle.cleaned": "Leftovers cleared {n} (tips include {gold})",
   "settle.rep": "Reputation {rep} ({delta})",
   "error.closeShop": "Stay closed tonight",
   "error.bad_hunt": "This hunt's haul was not accepted.",

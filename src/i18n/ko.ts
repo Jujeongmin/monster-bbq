@@ -91,7 +91,7 @@ export const ko = {
   "settle.served": "손님 {served}명 응대 · 놓친 손님 {left}명",
   "settle.sales": "매출 {sales} · 팁 {tips} · 음료 {drinks}",
   "settle.happy": "만족한 손님 {happy}명",
-  "settle.cleaned": "불판 정리 {n}번 (팁에 {gold} 포함)",
+  "settle.cleaned": "잔반 정리 {n}번 (팁에 {gold} 포함)",
   "settle.rep": "평판 {rep} ({delta})",
   "error.closeShop": "오늘은 문 닫기",
   "error.bad_hunt": "이번 사냥 결과를 인정받지 못했다.",
