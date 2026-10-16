@@ -18,7 +18,7 @@ describe("itemKey / parseItemKey", () => {
 });
 
 const FRESH = {
-  version: 8,
+  version: 9,
   day: 1,
   stage: "hunt",
   gold: 0,
@@ -34,6 +34,10 @@ const FRESH = {
   lastService: null,
   bossKey: false,
   pages: [],
+  charcoal: 0,
+  stars: {},
+  vip: { spent: 0, day: 0 },
+  shop: { firstBuy: [], purchases: [] },
 };
 
 describe("newSave", () => {
@@ -42,9 +46,9 @@ describe("newSave", () => {
   });
 });
 
-describe("readSave (version 8)", () => {
+describe("readSave (version 9)", () => {
   const valid = {
-    version: 8,
+    version: 9,
     day: 4,
     stage: "kitchen",
     gold: 120,
@@ -60,10 +64,20 @@ describe("readSave (version 8)", () => {
     lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 0, drinks: 0, cleaned: 0, happy: 3, repDelta: 1 },
     bossKey: true,
     pages: ["forest"],
+    charcoal: 40,
+    stars: { melee: 3, grilled_belly: 1 },
+    vip: { spent: 600, day: 3 },
+    shop: { firstBuy: ["charcoal_1"], purchases: ["p-1"] },
   };
+  it("reads a version 8 save as version 9 with no charcoal, stars, VIP or purchases", () => {
+    const s = readSave({ ...valid, version: 8, charcoal: undefined, stars: undefined, vip: undefined, shop: undefined });
+    expect(s.version).toBe(9);
+    expect([s.charcoal, s.stars, s.vip, s.shop]).toEqual([0, {}, { spent: 0, day: 0 }, { firstBuy: [], purchases: [] }]);
+    expect(readSave({ ...valid, stars: { melee: 25, nope: 3, ranged: -1 } }).stars).toEqual({ melee: 20 });
+  });
   it("reads a version 7 save as version 8 without the den's key or any page", () => {
     const s = readSave({ ...valid, version: 7, bossKey: undefined, pages: undefined });
-    expect(s.version).toBe(8);
+    expect(s.version).toBe(9);
     expect([s.bossKey, s.pages]).toEqual([false, []]);
     expect(readSave({ ...valid, pages: ["forest", "moon", 3] }).pages).toEqual(["forest"]);
   });
@@ -117,7 +131,7 @@ describe("readSave (from version 4 and older)", () => {
   };
   it("opens found recipes at level 1, sees their ingredients and what is in the fridge, keeps the menu as one set each", () => {
     const r = readSave(v4);
-    expect(r.version).toBe(8);
+    expect(r.version).toBe(9);
     expect(r.dishes).toEqual({ grilled_belly: 1, garlic_neck: 1 });
     expect([...r.seenItems].sort()).toEqual(["boar_belly", "boar_neck", "perilla", "wild_garlic"]);
     expect(r.menu).toEqual([{ dish: "grilled_belly", sets: 1 }]);
@@ -155,7 +169,7 @@ describe("refundRetired", () => {
 
 describe("save version 6 (hunt v3: two hunts a day)", () => {
   it("starts a new save at version 6, before the morning hunt", () => {
-    expect(newSave()).toMatchObject({ version: 8, stage: "hunt", hunt: null });
+    expect(newSave()).toMatchObject({ version: 9, stage: "hunt", hunt: null });
   });
   it("keeps the lunch stage and a hunt's time of day", () => {
     const s = readSave({ ...newSave(), stage: "lunch", hunt: { id: "h1", seed: 3, zone: "forest", period: "afternoon", side: "sleepGun", startedAt: 5 } });
@@ -165,7 +179,7 @@ describe("save version 6 (hunt v3: two hunts a day)", () => {
   it("reads a version 5 save as version 6, a hunt in progress as the morning hunt", () => {
     const v5 = { ...newSave(), version: 5, stage: "hunt", hunt: { id: "h1", seed: 3, zone: "forest", startedAt: 5 } };
     const s = readSave(v5);
-    expect(s.version).toBe(8);
+    expect(s.version).toBe(9);
     expect(s.hunt?.period).toBe("morning");
   });
   it("reads a hunt saved before side weapons as carrying the slingshot", () => {

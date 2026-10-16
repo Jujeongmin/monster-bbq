@@ -1,5 +1,6 @@
 import { BALANCE } from "./balance";
 import { isDishId, isSignature, type DishId } from "./content/dishes";
+import { awakenCost, canAwaken, isAwakenTarget, MAX_STARS, starLevel } from "./awaken";
 import { isUpgradeId } from "./content/upgrades";
 import { RECIPES } from "./content/recipes";
 import { ammoOf, bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost, nextMats, ownsSide, sleepFallMs } from "./growth";
@@ -29,7 +30,8 @@ export type Action =
   | { type: "finishService"; serviceId: string; served: { customer: string; dish: string; waitMs: number; drink?: string }[]; left: string[]; cleaned?: string[] }
   | { type: "buyUpgrade"; id: string }
   | { type: "packLunch"; dishes: string[] }
-  | { type: "endDay" };
+  | { type: "endDay" }
+  | { type: "awaken"; target: string; from: number };
 
 // What only the server may decide: its clock and its dice.
 export interface ActionContext {
@@ -147,6 +149,23 @@ function payLevel(save: SaveData, dish: DishId, target: number): { save: SaveDat
   return { save: { ...save, gold: save.gold - cost.gold, items: took.items, dishes: { ...save.dishes, [dish]: target } } };
 }
 
+// Awakening (06b-1): `from` is the star the screen saw, so a retry after a lost reply, or a second tap,
+// finds the star already past it and changes nothing. Not while a hunt or a service is on (their
+// settling checks use the stats they started with).
+function awaken(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
+  if (!isAwakenTarget(a.target)) return { save, error: "bad_action" };
+  const now = starLevel(save, a.target);
+  if (typeof a.from !== "number" || !Number.isInteger(a.from) || a.from > now) return { save, error: "bad_action" };
+  if (a.from < now) return { save };
+  if (save.hunt || save.service) return { save, error: "wrong_stage" };
+  if (now >= MAX_STARS) return { save, error: "max_stars" };
+  if (!canAwaken(save, a.target)) return { save, error: "not_owned" };
+  const cost = awakenCost(now + 1);
+  if (save.gold < cost.gold) return { save, error: "no_gold" };
+  if (save.charcoal < cost.charcoal) return { save, error: "no_charcoal" };
+  return { save: { ...save, gold: save.gold - cost.gold, charcoal: save.charcoal - cost.charcoal, stars: { ...save.stars, [a.target]: now + 1 } } };
+}
+
 // Research (restaurant v2 design 3): a dish opens once every ingredient of it has been brought home.
 // A second press (or a retry after a lost reply) finds it known and changes nothing.
 function research(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
@@ -241,6 +260,8 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       return { save: { ...save, stage: "kitchen" } };
     case "research":
       return research(save, a);
+    case "awaken":
+      return awaken(save, a);
     case "upgradeDish":
       return upgradeDish(save, a);
     case "openShop":

@@ -62,7 +62,7 @@ describe("the stamina tank and the apron armour (save version 7)", () => {
   it("moves a version 6 save's armour levels to the tank, so stamina stays", () => {
     const v6 = { ...newSave(), version: 6, upgrades: { armor: 3 } };
     const s = readSave(v6);
-    expect(s.version).toBe(8);
+    expect(s.version).toBe(9);
     expect(s.upgrades.tank).toBe(3);
     expect(s.upgrades.armor ?? 1).toBe(1);
     expect(huntStats(s).maxHp).toBe(170);

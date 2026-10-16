@@ -2,6 +2,7 @@ import { isDishId, type DishId } from "./content/dishes";
 import { isItemId, parseItemKey, type ItemId } from "./content/items";
 import { RECIPES } from "./content/recipes";
 import { BALANCE } from "./balance";
+import { isAwakenTarget, MAX_STARS, type AwakenTarget } from "./awaken";
 import type { Period } from "./content/floors";
 import { isSideWeaponId, type SideWeaponId } from "./content/sideWeapons";
 import { isUpgradeId, type UpgradeId } from "./content/upgrades";
@@ -53,7 +54,7 @@ const isStage = (v: unknown): v is Stage => v === "hunt" || v === "lunch" || v =
 
 // The whole save of one account, kept in its Global User State under "save" (spec 7).
 export interface SaveData {
-  version: 8;
+  version: 9;
   day: number;
   stage: Stage;
   gold: number;
@@ -77,11 +78,16 @@ export interface SaveData {
   // bosses gave back ("forest" = chapter 1)
   bossKey: boolean;
   pages: string[];
+  // golden charcoal, awakening stars, VIP and the shop's record (06b-1)
+  charcoal: number;
+  stars: Partial<Record<AwakenTarget, number>>;
+  vip: { spent: number; day: number };
+  shop: { firstBuy: string[]; purchases: string[] };
 }
 
 export function newSave(): SaveData {
   return {
-    version: 8,
+    version: 9,
     day: 1,
     stage: "hunt",
     gold: 0,
@@ -97,6 +103,10 @@ export function newSave(): SaveData {
     lastService: null,
     bossKey: false,
     pages: [],
+    charcoal: 0,
+    stars: {},
+    vip: { spent: 0, day: 0 },
+    shop: { firstBuy: [], purchases: [] },
   };
 }
 
@@ -268,10 +278,14 @@ export function readSave(raw: unknown): SaveData {
   }
   // version 8 (plan 08d) adds the den's key and the pages given back, both read with defaults
   if (r.version === 7) return readSave({ ...r, version: 8 });
-  if (r.version !== 8) return newSave();
+  // version 9 (06b-1) adds golden charcoal, awakening stars, VIP and the shop's record, read with defaults
+  if (r.version === 8) return readSave({ ...r, version: 9 });
+  if (r.version !== 9) return newSave();
   const dishes = readDishes(r.dishes);
+  const vip = (r.vip ?? {}) as { spent?: unknown; day?: unknown };
+  const shop = (r.shop ?? {}) as { firstBuy?: unknown; purchases?: unknown };
   return {
-    version: 8,
+    version: 9,
     day: count(r.day, 1),
     stage: isStage(r.stage) ? r.stage : "hunt",
     gold: count(r.gold),
@@ -288,5 +302,18 @@ export function readSave(raw: unknown): SaveData {
     lastService: readSummary(r.lastService),
     bossKey: r.bossKey === true,
     pages: readList(r.pages, (p): p is string => p === "forest"),
+    charcoal: count(r.charcoal),
+    stars: readStars(r.stars),
+    vip: { spent: count(vip.spent), day: count(vip.day) },
+    shop: { firstBuy: strings(shop.firstBuy, 50), purchases: strings(shop.purchases, 200) },
   };
 }
+
+function readStars(raw: unknown): Partial<Record<AwakenTarget, number>> {
+  const out: Partial<Record<AwakenTarget, number>> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [k, v] of Object.entries(raw)) if (isAwakenTarget(k) && typeof v === "number" && Number.isInteger(v) && v > 0) out[k] = Math.min(MAX_STARS, v);
+  return out;
+}
+
+const strings = (v: unknown, max: number): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(-max) : []);

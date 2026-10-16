@@ -170,6 +170,9 @@ export const BALANCE: {
     pass: number; // plates the kitchen window holds
     walk: { speed: number; runMul: number; carryMul: number };
   };
+  // awakening (06b-1, user-approved 2026-10-16): stars 1-20, each ×mul; gold = goldPerStarSq × star² up
+  // to goldUntil, charcoal by the star reached
+  awaken: { mul: number; goldPerStarSq: number; goldUntil: number; charcoal: number[] };
 } = {
   hunt: {
     player: { maxHp: 100, speed: 85, depthSpeedRatio: 0.9, radius: 6 },
@@ -382,4 +385,5 @@ export const BALANCE: {
     // game pixels a second on the 960-wide shop
     walk: { speed: 165, runMul: 1.6, carryMul: 0.9 },
   },
+  awaken: { mul: 1.1, goldPerStarSq: 200, goldUntil: 10, charcoal: [5, 8, 10, 14, 18, 22, 26, 30, 35, 40, 120, 160, 200, 260, 320, 380, 460, 540, 560, 600] },
 };
