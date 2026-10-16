@@ -1,11 +1,19 @@
 import Phaser from "phaser";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { canUse3D } from "../shop3d/input";
+import { ShopStage } from "../shop3d/ShopStage";
 import { ServiceScene } from "./ServiceScene";
 import { SHOP_HEIGHT, SHOP_WIDTH, type ServiceData, type ShopReport } from "./types";
 
-// The night service in a page: one Phaser game per mount. "service:end" reaches onEnd with the night's
-// report (each served guest's dish, wait and pour; who left).
+// The night service in a page: the 3D shop (shop 3D design) where WebGL works, else the 2D Phaser one
+// (also with ?shop2d, and if the 3D one fails to load). Either reports the night to onEnd (each served
+// guest's dish, wait and pour; who left; the leftovers cleared).
 export function ServiceGame({ shop, onEnd }: { shop: ServiceData; onEnd: (r: ShopReport) => void }) {
+  const [threeD, setThreeD] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
+  return threeD ? <ShopStage shop={shop} onEnd={onEnd} onFail={() => setThreeD(false)} /> : <Service2D shop={shop} onEnd={onEnd} />;
+}
+
+function Service2D({ shop, onEnd }: { shop: ServiceData; onEnd: (r: ShopReport) => void }) {
   const host = useRef<HTMLDivElement>(null);
   const onEndRef = useRef(onEnd);
   onEndRef.current = onEnd;
