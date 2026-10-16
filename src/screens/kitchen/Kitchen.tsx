@@ -32,6 +32,7 @@ export function Kitchen({
   onSkip,
   tab: wanted,
   onTab,
+  onClose,
 }: {
   mode?: "evening" | "lunch";
   save: SaveData;
@@ -45,6 +46,8 @@ export function Kitchen({
   // the tab, when the page keeps it (Grandma's notebook turns to the cookbook or the menu board)
   tab?: Tab;
   onTab?: (t: Tab) => void;
+  // opened from Bandal in the shop by day: back out to the shop
+  onClose?: () => void;
 }) {
   const tabs: Tab[] = mode === "lunch" ? ["lunch"] : TABS;
   const [own, setOwn] = useState<Tab>(mode === "lunch" ? "lunch" : "cookbook");
@@ -76,11 +79,13 @@ export function Kitchen({
       </div>
       {mode === "lunch" ? (
         <div className="kitchen-lunch-actions">
+          {onClose && <button className="ui-btn" onClick={onClose}>{t("upgrade.close")}</button>}
           <button className="ui-btn" disabled={busy} onClick={onSkip}>{t("lunch.skip")}</button>
           <button className="ui-btn" disabled={busy} onClick={onHunt}>{t("lunch.goHunt")}</button>
         </div>
       ) : (
         <div className="kitchen-lunch-actions">
+          {onClose && <button className="ui-btn" onClick={onClose}>{t("upgrade.close")}</button>}
           <button className="ui-btn" disabled={busy} onClick={onRest}>
             {t("kitchen.rest")}
           </button>

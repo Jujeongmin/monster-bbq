@@ -314,4 +314,12 @@ export const en: Record<keyof typeof ko, string> = {
   "receipt.dish": "{name} ×{n} · {gold}",
   "awaken.kind.gear": "Gear",
   "awaken.kind.dish": "Dishes",
+  "day.door.hunt": "Go hunting",
+  "day.door.afternoon": "Afternoon hunt",
+  "day.door.night": "The shop needs you tonight",
+  "day.bandal.morning": "Bandal: hunt first",
+  "day.bandal.lunch": "Bandal: pack a lunch",
+  "day.bandal.kitchen": "Bandal: the kitchen",
+  "day.hint": "Walk with A·D, choose with E",
+  "day.act": "Use",
 };

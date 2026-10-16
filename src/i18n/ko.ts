@@ -313,4 +313,12 @@ export const ko = {
   "receipt.dish": "{name} ×{n} · {gold}",
   "awaken.kind.gear": "장비",
   "awaken.kind.dish": "요리",
+  "day.door.hunt": "사냥 나가기",
+  "day.door.afternoon": "오후 사냥 나가기",
+  "day.door.night": "밤엔 가게를 지켜요",
+  "day.bandal.morning": "반달이: 사냥부터 다녀와",
+  "day.bandal.lunch": "반달이: 도시락 싸기",
+  "day.bandal.kitchen": "반달이: 주방",
+  "day.hint": "A·D로 걷고 E로 고르기",
+  "day.act": "고르기",
 } as const;

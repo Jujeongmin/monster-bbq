@@ -80,6 +80,8 @@ export class ShopView {
   constructor(
     canvas: HTMLCanvasElement,
     private readonly seatsX: number[],
+    // by day (the shop between hunts): daylight through the shop, the lanterns and the fire low
+    private readonly day = false,
   ) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
     this.renderer.setPixelRatio(1);
@@ -150,7 +152,7 @@ export class ShopView {
     this.waiterShadow = this.shadow(12);
     this.carried = this.board("prop_cup_tea").setVisible(false);
     // light: a dim warm room, four lanterns, a little from the front, and Bandal's charcoal fire
-    scene.add(new THREE.AmbientLight(0xffe0c0, 0.85));
+    scene.add(new THREE.AmbientLight(this.day ? 0xfff4e4 : 0xffe0c0, this.day ? 1.25 : 0.85));
     this.lanterns = [-150, -40, 70, 180].map((x) => {
       const l = new THREE.PointLight(0xffa040, 2.2, 260, 1.2);
       l.position.set(x, 120, -10);
@@ -200,7 +202,7 @@ export class ShopView {
     // Bandal and the fire that follows the charcoal
     this.bandal.setTexture(look.bandal);
     this.fire.intensity = 0.3 + 2.2 * (look.coal / 100);
-    this.lanterns.forEach((l, i) => (l.intensity = 2 + 0.25 * Math.sin(t / 160 + i * 1.7)));
+    this.lanterns.forEach((l, i) => (l.intensity = (this.day ? 0.5 : 2) + 0.25 * Math.sin(t / 160 + i * 1.7)));
     // seats: a stool where no one sits, the dish while its guest eats, leftovers
     look.seats.forEach((s, i) => {
       this.stools[i].setVisible(s.stool);

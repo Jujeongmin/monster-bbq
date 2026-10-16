@@ -27,6 +27,9 @@ import { Notebook } from "./hud/Notebook";
 import { Receipt } from "./hud/Receipt";
 import { sceneOf, showDayHud, timeOfDay, transitionCard, type App, type Phase, type Scene } from "./hud/hud";
 import { TitleCard } from "./hud/TitleCard";
+import { DayStage } from "../game/shop3d/DayStage";
+import type { DayScene } from "../game/shop3d/day";
+import { canUse3D } from "../game/shop3d/input";
 import { Cookbook } from "./kitchen/Cookbook";
 import "./dayflow.css";
 
@@ -92,6 +95,11 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     lastScene.current = scene;
     if (next) setCard({ key: Date.now(), day: save.day, ...next });
   }, [scene]);
+  // the shop by day, walked (a window opens from the door or Bandal), where WebGL works
+  const [hub, setHub] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
+  const [panel, setPanel] = useState<"kitchen" | "side" | null>(null);
+  useEffect(() => setPanel(null), [phase]);
+  const dayScene: DayScene | null = !save || save.hunt ? null : phase === "hunt" ? "prep" : phase === "lunch" ? "lunch" : phase === "kitchen" ? "kitchen" : null;
   // the evening kitchen's tab, which the notebook's cookbook and menu board apps turn to
   const [kitchenTab, setKitchenTab] = useState<KitchenTab>("cookbook");
 
@@ -174,7 +182,18 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         />
       )}
 
-      {phase === "lunch" && (
+      {/* by day the shop itself, walked: the door and Bandal open the windows below (user, 2026-10-16);
+          without WebGL the windows show as before */}
+      {dayScene && hub && (
+        <DayStage
+          scene={dayScene}
+          stools={stools(save)}
+          active={!panel && !picking && !win && !shopping && !store && !summary && !card && !busy}
+          onSpot={(id) => (id === "door" ? (dayScene === "lunch" ? setPicking(true) : setPanel("side")) : setPanel("kitchen"))}
+          onFail={() => setHub(false)}
+        />
+      )}
+      {phase === "lunch" && (!hub || panel === "kitchen") && (
         <Kitchen
           mode="lunch"
           save={save}
@@ -182,14 +201,15 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           act={(a) => void act(a, "lunch")}
           onHunt={() => setPicking(true)}
           onSkip={() => void act({ type: "skipHunt" }, "kitchen")}
+          onClose={hub ? () => setPanel(null) : undefined}
         />
       )}
-      {phase === "kitchen" && <Kitchen tab={kitchenTab} onTab={setKitchenTab} save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} />}
+      {phase === "kitchen" && (!hub || panel === "kitchen") && <Kitchen tab={kitchenTab} onTab={setKitchenTab} save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} onClose={hub ? () => setPanel(null) : undefined} />}
       {phase === "service" && save.service && <Night save={save} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
       {phase === "settle" && <Receipt save={save} busy={busy} onNext={() => act({ type: "endDay" }, "hunt")} />}
 
       {/* the morning: pick the side weapon, then set out; at lunch the same window opens from its button */}
-      {phase === "hunt" && save.stage === "hunt" && !save.hunt && !failed && <SidePick save={save} busy={busy} onGo={setOut} />}
+      {phase === "hunt" && save.stage === "hunt" && !save.hunt && !failed && (!hub || panel === "side") && <SidePick save={save} busy={busy} onGo={setOut} onCancel={hub ? () => setPanel(null) : undefined} />}
       {phase === "lunch" && picking && <SidePick save={save} busy={busy} onGo={setOut} onCancel={() => setPicking(false)} />}
       {summary && phase !== "hunt" && <HuntSummary events={summary.events} ko={summary.ko} lost={summary.lost} before={summary.before} after={save.items} gotKey={!summary.hadKey && save.bossKey} gotPage={!summary.hadPages.includes("forest") && save.pages.includes("forest")} onShop={() => setStore(true)} onDone={() => setSummary(null)} />}
 
