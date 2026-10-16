@@ -14,7 +14,7 @@ const G = BALANCE.growth;
 const GROUPS: { title: StringKey; ids: UpgradeId[] }[] = [
   { title: "upgrade.group.hunt", ids: ["melee", "ranged", "bag", "lunchbox", "sling", "sleepGun", "netGun", "firecracker"] },
   { title: "upgrade.group.gear", ids: ["boots", "lantern", "tank", "armor"] },
-  { title: "upgrade.group.shop", ids: ["menu", "seats"] },
+  { title: "upgrade.group.shop", ids: ["menu", "seats", "shoes", "coalBin"] },
 ];
 const ICON: Record<UpgradeId, string> = {
   melee: "test/ui/upg_melee.png",
@@ -23,7 +23,9 @@ const ICON: Record<UpgradeId, string> = {
   bag: "test/items/icon_honeycomb.png",
   lunchbox: "test/ui/icon_pot.png",
   menu: "test/ui/icon_notebook.png",
-  seats: "test/cooking/grill.png",
+  seats: "test/shop/stool.png",
+  shoes: "test/ui/upg_boots.png",
+  coalBin: "test/shop/coal_box.png",
   sling: "test/ui/side/sling.png",
   sleepGun: "test/ui/side/sleepGun.png",
   netGun: "test/ui/side/netGun.png",
@@ -58,7 +60,11 @@ function effect(id: UpgradeId, lv: number): string {
     case "menu":
       return pair(G.menu, "upgrade.fx.menu");
     case "seats":
-      return pair(G.seats, "upgrade.fx.guests");
+      return pair(G.seats, "upgrade.fx.stools");
+    case "shoes":
+      return pair(G.shoes, "upgrade.fx.walk", percent);
+    case "coalBin":
+      return pair(BALANCE.service.charcoal.perDish, "upgrade.fx.coal");
     case "sling":
     case "sleepGun":
     case "netGun":

@@ -3,7 +3,7 @@ import { applyAction, type ActionContext } from "../actions";
 import { BALANCE } from "../balance";
 import { newSave, type SaveData } from "../save";
 import { planService } from "./plan";
-import { tipRate } from "./settle";
+import { tipFor } from "./settle";
 import { RECIPES } from "../content/recipes";
 
 const SV = BALANCE.service;
@@ -42,29 +42,37 @@ describe("finishService (restaurant v2 stage 2: the waiter carries, tips, drinks
   it("finds the guests these tests need in tonight's plan", () => {
     expect([thirsty, teaGuest, dry].every(Boolean)).toBe(true);
   });
-  it("pays tonight's price per plate, moves reputation and keeps a summary", () => {
+  it("pays tonight's price per plate and a tenth of it as a tip, moves reputation and keeps a summary", () => {
     const r = applyAction(s0, report([{ customer: c[0].id, dish: "grilled_belly", waitMs: slow(c[0]) }, { customer: c[1].id, dish: "garlic_neck", waitMs: slow(c[1]) }]), after(late));
     expect(r.error).toBeUndefined();
-    expect(r.save.gold).toBe(90);
+    expect(r.save.gold).toBe(90 + 4 + 5);
     expect(r.save.stage).toBe("settle");
     expect(r.save.service).toBeNull();
     // 6 plates, so every customer up to 6 who went without counts as gone
     const gone = Math.min(c.length, 6) - 2;
-    expect(r.save.lastService).toEqual({ id: svc.id, served: 2, left: gone, sales: 90, tips: 0, drinks: 0, happy: 2, repDelta: 2 * SV.rep.happy + gone * SV.rep.left });
+    expect(r.save.lastService).toEqual({ id: svc.id, served: 2, left: gone, sales: 90, tips: 9, drinks: 0, happy: 2, repDelta: 2 * SV.rep.happy + gone * SV.rep.left });
     expect(r.save.reputation).toBe(Math.max(0, 20 + 2 * SV.rep.happy + gone * SV.rep.left));
   });
-  it("tips 30% for a quick plate, 15% for a middling one, nothing for a slow one", () => {
-    expect(tipRate(3000, 30000)).toBe(0.3);
-    expect(tipRate(15000, 30000)).toBe(0.15);
-    expect(tipRate(20000, 30000)).toBe(0);
-    const quick = Math.max(RECIPES.grilled_belly.cookMs, Math.floor(dry.patienceMs * 0.2));
-    const r = applyAction(s0, report([{ customer: dry.id, dish: "grilled_belly", waitMs: quick }]), after(late));
-    expect(r.save.lastService!.tips).toBe(12);
+  it("tips a tenth of the price however quick the plate was", () => {
+    expect(tipFor(40, false)).toBe(4);
+    expect(tipFor(40, true)).toBe(6);
+    const quick = applyAction(s0, report([{ customer: dry.id, dish: "grilled_belly", waitMs: RECIPES.grilled_belly.cookMs }]), after(late));
+    expect(quick.save.lastService!.tips).toBe(4);
+  });
+  it("pays for each dirty grill scrubbed, only for messy guests who were served", () => {
+    const messy = c.find((x) => x.messy)!;
+    const tidy = c.find((x) => !x.messy)!;
+    const both = [{ customer: messy.id, dish: "grilled_belly", waitMs: slow(messy) }, { customer: tidy.id, dish: "garlic_neck", waitMs: slow(tidy) }];
+    const r = applyAction(s0, report(both, [], { cleaned: [messy.id] }), after(late));
+    expect(r.error).toBeUndefined();
+    expect(r.save.lastService!.tips).toBe(4 + 5 + SV.cleanTip);
+    expect(applyAction(s0, report(both, [], { cleaned: [tidy.id] }), after(late)).error).toBe("bad_service");
+    expect(applyAction(s0, report(both, [], { cleaned: [messy.id, messy.id] }), after(late)).error).toBe("bad_service");
+    expect(applyAction(s0, report([both[1]], [], { cleaned: [messy.id] }), after(late)).error).toBe("bad_service");
   });
   it("makes a perfect barley tea worth half as much tip again", () => {
-    const quick = Math.max(RECIPES.grilled_belly.cookMs, Math.floor(teaGuest.patienceMs * 0.2));
-    const r = applyAction(s0, report([{ customer: teaGuest.id, dish: "grilled_belly", waitMs: quick, drink: "perfect" }]), after(late));
-    expect(r.save.lastService!.tips).toBe(18);
+    const r = applyAction(s0, report([{ customer: teaGuest.id, dish: "grilled_belly", waitMs: slow(teaGuest), drink: "perfect" }]), after(late));
+    expect(r.save.lastService!.tips).toBe(6);
     expect(r.save.lastService!.drinks).toBe(0);
   });
   it("sells cider and sikhye after the meal, half again for a perfect pour, a bad pour costs reputation", () => {

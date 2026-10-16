@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyAction, type ActionContext } from "./actions";
 import { BALANCE } from "./balance";
-import { ammoOf, bagSlots, huntStats, ownsSide, sleepFallMs, level, lunchSlots, maxLevel, menuSlots, nextCost, stools, traySlots, walkMul, coalDrain, UPGRADE_IDS } from "./growth";
+import { ammoOf, bagSlots, huntStats, ownsSide, sleepFallMs, level, lunchSlots, maxLevel, menuSlots, nextCost, stools, walkMul, coalPerDish, UPGRADE_IDS } from "./growth";
 import { planFloor } from "./hunt/plan";
 import { newSave, readSave } from "./save";
 
@@ -56,8 +56,8 @@ describe("upgrade effects", () => {
     expect(bagSlots(newSave())).toBe(12);
     expect(bagSlots(at({ bag: 3 }))).toBe(18);
     expect(menuSlots(at({ menu: 2 }))).toBe(3);
-    expect(stools(newSave())).toBe(4);
-    expect(stools(at({ seats: 5 }))).toBe(8);
+    expect(stools(newSave())).toBe(6);
+    expect(stools(at({ seats: 5 }))).toBe(10);
     expect(lunchSlots(at({ lunchbox: 2 }))).toBe(2);
   });
   it("lets the server take a 15-item haul once the bag is upgraded", () => {
@@ -74,10 +74,9 @@ describe("upgrade effects", () => {
     expect(applyAction({ ...kitchen, upgrades: { menu: 2 } }, three, ctx).error).toBeUndefined();
   });
 
-  it("gives the night shop a bigger tray, quicker shoes and a slower-burning charcoal bin by level", () => {
-    expect([traySlots(newSave()), traySlots(at({ tray: 3 }))]).toEqual([2, 4]);
+  it("gives the night shop quicker shoes and a charcoal bin that lasts more dishes by level", () => {
     expect([walkMul(newSave()), walkMul(at({ shoes: 2 }))]).toEqual([1, 1.1]);
-    expect([coalDrain(newSave()), coalDrain(at({ coalBin: 3 }))]).toEqual([1.5, 0.8]);
+    expect([coalPerDish(newSave()), coalPerDish(at({ coalBin: 3 }))]).toEqual([8, 4]);
   });
 });
 

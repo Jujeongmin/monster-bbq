@@ -19,18 +19,18 @@ export interface ServedEntry {
   drink?: Pour;
 }
 
-// A plate's tip as a share of its price, by how much of the guest's patience the wait used.
-export function tipRate(waitMs: number, patienceMs: number): number {
-  const used = waitMs / patienceMs;
-  return used <= SV.tips.within[0] ? SV.tips.rate[0] : used <= SV.tips.within[1] ? SV.tips.rate[1] : 0;
+// A plate's tip (Dave: a tenth of the price), half as much again after a perfect barley tea.
+export function tipFor(price: number, perfectTea: boolean): number {
+  return Math.round(price * SV.tipRate * (perfectTea ? SV.teaMul : 1));
 }
 
 // The night's report checked against the customers the seed brought (restaurant v2 design 4). Each
 // served customer real, once, given a dish cooked tonight, no more plates of a dish than were made; the
 // wait no shorter than the dish takes Bandal and no longer than that guest's patience, and over before
 // the report came; a pour only for a guest who asked for a drink. The wait and the pour are the page's
-// word, so what they can earn is capped (best tip, perfect pour). The server pays tonight's price per
-// plate, the tip, the drinks, and moves the reputation; customers who went without while there were
+// word, so what they can earn is capped (a perfect pour). Grills scrubbed (`cleaned`) only count for
+// guests the seed made messy who were served. The server pays tonight's price per plate, the tip, the
+// drinks, the scrubbing, and moves the reputation; customers who went without while there were
 // plates to give count as gone (those after the last plate do not). The same report sent again after it
 // was settled changes nothing.
 export function settleService(save: SaveData, a: Record<string, unknown>, now: number): { save: SaveData; error?: string } {
@@ -62,7 +62,7 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
     const p = price.get(e.dish)!;
     sales += p;
     const perfectTea = c.drink === "tea" && e.drink === "perfect";
-    tips += Math.round(p * tipRate(wait, c.patienceMs) * (perfectTea ? SV.tips.teaMul : 1));
+    tips += tipFor(p, perfectTea);
     if (e.drink && c.drink !== "none") drinks += Math.round(SV.drinks.price[c.drink] * (e.drink === "perfect" ? SV.drinks.perfectMul : 1));
     if (e.drink === "bad") badPours++;
   }
@@ -70,6 +70,10 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
     if (typeof id !== "string" || !customers.has(id) || seen.has(id)) return bad;
   }
   if (new Set(a.left as string[]).size !== (a.left as string[]).length) return bad;
+  const cleaned = a.cleaned ?? [];
+  if (!Array.isArray(cleaned) || new Set(cleaned).size !== cleaned.length) return bad;
+  for (const id of cleaned as unknown[]) if (typeof id !== "string" || !seen.has(id) || !customers.get(id)!.messy) return bad;
+  tips += cleaned.length * SV.cleanTip;
   if (elapsed < seen.size * SV.minMsPerServe) return bad;
   const made = svc.dishes.reduce((n, d) => n + d.plates, 0);
   const gone = Math.max(0, Math.min(customers.size, made) - seen.size);

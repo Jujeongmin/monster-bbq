@@ -2,9 +2,10 @@ import { BALANCE } from "../balance";
 import type { DishId } from "../content/dishes";
 import { seededRandom } from "../hunt/scatter";
 
-// Tonight's customers (restaurant v2 design 4): who comes when, what they order from the menu, how long
-// they wait, what they want to drink. Decided by the server's seed, so the server can check the service
-// report the same way. Which stool they take is the page's business (the first clean, free one).
+// Tonight's customers (restaurant v2 design 4, Dave's rules 2026-10-16): who comes when over the night's
+// clock, what they order from the menu, how long they wait, what they want to drink, whether they leave
+// a mess on the grill. Decided by the server's seed, so the server can check the service report the same
+// way. Which stool they take is the page's business.
 const SV = BALANCE.service;
 
 // none, barley tea before the meal, cider or sikhye after it
@@ -19,6 +20,7 @@ export interface Customer {
   dish: DishId;
   patienceMs: number;
   drink: Drink;
+  messy: boolean;
 }
 
 export function customerCount(reputation: number): number {
@@ -31,16 +33,19 @@ export function planService(seed: number, opts: { day: number; reputation: numbe
   const count = customerCount(opts.reputation);
   const between = (lo: number, hi: number) => Math.round(lo + rand() * (hi - lo));
   const D = SV.drinks;
+  // spread over the open hours: even slots, each arrival moved a little inside its slot
+  const gap = (SV.lastArrivalMs - SV.firstArriveMs) / Math.max(1, count - 1);
   const out: Customer[] = [];
-  let at = SV.firstArriveMs;
   for (let i = 0; i < count; i++) {
-    if (i > 0) at += between(SV.gapMs[0], SV.gapMs[1]);
+    const jitter = i === 0 ? 0 : (rand() - 0.5) * gap * SV.gapJitter;
+    const arriveMs = Math.round(Math.min(SV.lastArrivalMs, SV.firstArriveMs + i * gap + jitter));
     const kind = Math.floor(rand() * 4) as Customer["kind"];
     const dish = opts.menu[Math.floor(rand() * opts.menu.length)];
     const patienceMs = between(SV.patienceMs[0], SV.patienceMs[1]);
     const r = rand();
     const drink: Drink = r < D.tea ? "tea" : r < D.tea + D.after / 2 ? "cider" : r < D.tea + D.after ? "sikhye" : "none";
-    out.push({ id: `c${i}`, kind, arriveMs: at, dish, patienceMs, drink });
+    const messy = rand() < SV.messy;
+    out.push({ id: `c${i}`, kind, arriveMs, dish, patienceMs, drink, messy });
   }
   return out;
 }

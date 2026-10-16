@@ -1,47 +1,25 @@
-import { isDishId, type DishId } from "../../../shared/content/dishes";
-import type { TonightDish } from "../../../shared/kitchen/dish";
+import type { ShiftState } from "./shift";
 
-// Small rules of the stage-1 night kept out of the Phaser scene so they can be tested.
-
-export interface ServedReport {
-  customer: string;
-  dish: DishId;
-}
+// The night kept per service in the page's session storage, so a reload mid-night picks up where it
+// was (the ingredients were taken when the shop opened) instead of losing the night.
 
 type Store = Pick<Storage, "getItem" | "setItem">;
-const key = (serviceId: string) => `monster-bbq:service:${serviceId}:served`;
+const key = (serviceId: string) => `monster-bbq:service:${serviceId}:shift`;
 
-// The dish a seated guest gets: their order while plates of it are left, else the first dish that still
-// has some, else none (the shop has run out).
-export function pickDish(plates: ReadonlyMap<DishId, number>, wanted: DishId): DishId | null {
-  if ((plates.get(wanted) ?? 0) > 0) return wanted;
-  for (const [dish, n] of plates) if (n > 0) return dish;
-  return null;
-}
-
-// What was served tonight, kept per service in the page's session storage, so a reload mid-night resumes
-// with the same plates sold instead of losing the night (the ingredients were taken when the shop opened).
-export function saveServed(store: Store, serviceId: string, served: ServedReport[]) {
+export function saveShift(store: Store, serviceId: string, s: ShiftState) {
   try {
-    store.setItem(key(serviceId), JSON.stringify(served));
+    store.setItem(key(serviceId), JSON.stringify(s));
   } catch {
-    // private mode: a reload loses tonight's sales, nothing worse
+    // private mode: a reload starts the night over, nothing worse
   }
 }
 
-export function loadServed(store: Store, serviceId: string): ServedReport[] {
+export function loadShift(store: Store, serviceId: string): ShiftState | undefined {
   try {
-    const raw: unknown = JSON.parse(store.getItem(key(serviceId)) ?? "[]");
-    if (!Array.isArray(raw)) return [];
-    return raw.filter((e): e is ServedReport => !!e && typeof e === "object" && typeof e.customer === "string" && isDishId(e.dish));
+    const raw = JSON.parse(store.getItem(key(serviceId)) ?? "null") as Partial<ShiftState> | null;
+    const ok = !!raw && typeof raw === "object" && typeof raw.clock === "number" && Array.isArray(raw.guests) && Array.isArray(raw.seats) && Array.isArray(raw.tray) && Array.isArray(raw.kitchen) && Array.isArray(raw.pass);
+    return ok ? (raw as ShiftState) : undefined;
   } catch {
-    return [];
+    return undefined;
   }
-}
-
-// Plates of each dish still on the pass after what was served.
-export function platesLeft(dishes: TonightDish[], served: ServedReport[]): Map<DishId, number> {
-  const left = new Map(dishes.map((d) => [d.dish, d.plates]));
-  for (const s of served) left.set(s.dish, Math.max(0, (left.get(s.dish) ?? 0) - 1));
-  return left;
 }

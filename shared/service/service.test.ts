@@ -24,11 +24,8 @@ describe("planService", () => {
       expect(menu).toContain(cs[i].dish);
       expect(cs[i].patienceMs).toBeGreaterThanOrEqual(SV.patienceMs[0]);
       expect(cs[i].patienceMs).toBeLessThanOrEqual(SV.patienceMs[1]);
-      if (i > 0) {
-        const gap = cs[i].arriveMs - cs[i - 1].arriveMs;
-        expect(gap).toBeGreaterThanOrEqual(SV.gapMs[0]);
-        expect(gap).toBeLessThanOrEqual(SV.gapMs[1]);
-      }
+      expect(cs[i].arriveMs).toBeLessThanOrEqual(SV.lastArrivalMs);
+      if (i > 0) expect(cs[i].arriveMs).toBeGreaterThanOrEqual(cs[i - 1].arriveMs);
     }
   });
   it("asks about three in ten for barley tea and three in ten for cider or sikhye", () => {
@@ -40,9 +37,13 @@ describe("planService", () => {
     expect(share("none")).toBeCloseTo(1 - SV.drinks.tea - SV.drinks.after, 1);
   });
   it("keeps the count between the night's limits", () => {
-    expect(customerCount(0)).toBe(6);
-    expect(customerCount(25)).toBe(8);
-    expect(customerCount(10_000)).toBe(14);
+    expect(customerCount(0)).toBe(10);
+    expect(customerCount(25)).toBe(15);
+    expect(customerCount(10_000)).toBe(24);
+  });
+  it("makes about four in ten guests messy", () => {
+    const cs = Array.from({ length: 100 }, (_, s) => planService(s, { day: 1, reputation: 80, menu })).flat();
+    expect(cs.filter((c) => c.messy).length / cs.length).toBeCloseTo(SV.messy, 1);
   });
   it("has nobody to serve with an empty menu", () => {
     expect(planService(1, { day: 1, reputation: 0, menu: [] })).toEqual([]);
