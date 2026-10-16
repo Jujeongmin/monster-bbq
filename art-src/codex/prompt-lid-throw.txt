@@ -1,0 +1,13 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a 4-frame HARPOON THROW sprite strip of the character in the attached image (copy his identity exactly from the approved picture: spiky black hair, red bandana, green hooded jacket, cream apron, brown gloves and boots, a brown leather strap across his chest, and Ttukkeong-i, the grumpy talking cast-iron pot lid (dark iron dome, round knob, two small side handles, angry eyebrows and a wobbly frown, warm brown highlight) strapped on his back; ONE harpoon with a coiled rope slung diagonally behind him, its single tip poking up over ONE shoulder only (never two harpoons, never two tips); no cleaver anywhere. Same chunky cute chibi pixel-art style, same dark outline, same big head, same proportions, same size).
+
+Save as art-src/codex/raw/lid_throw.png - a WIDE image exactly 4 times as wide as it is tall (for example 1536x384): 4 equal square cells side by side, left to right, one full-body pose centred in each cell, all poses the same size with the feet on the same baseline. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no motion lines, no dust, no effects, nothing outside the character. No pose touches its cell edge.
+
+The SECOND attached image is the old 4-frame harpoon throw, for timing and pose: copy its rhythm and arm poses (draw back, throw, release with the rope out, recover).
+FACING for every frame: pure side profile facing camera-RIGHT. The lid stays strapped on his back like a turtle shell (dome bulging behind him to the left, its grumpy face looking back) in every frame; he throws the ONE harpoon with his arm.
+frame 1: harpoon drawn back over his shoulder, weight back.
+frame 2: arm whipping forward, harpoon at head height pointing right.
+frame 3: harpoon released and flying out to the right in front of him with its rope trailing back to his hand (inside the cell).
+frame 4: recovering, arm coming down, rope slack in his hand.
+The four frames must be clearly different poses.
+
+Reply only with the saved file path.

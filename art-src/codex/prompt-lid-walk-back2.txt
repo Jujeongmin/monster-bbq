@@ -1,0 +1,16 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a 4-frame WALK CYCLE sprite strip of the character in the attached image (copy his identity exactly from the approved picture: spiky black hair, red bandana, green hooded jacket, cream apron, brown gloves and boots, a brown leather strap across his chest, and Ttukkeong-i, the grumpy talking cast-iron pot lid (dark iron dome, round knob, two small side handles, angry eyebrows and a wobbly frown, warm brown highlight) strapped on his back; ONE harpoon with a coiled rope slung diagonally behind him, its single tip poking up over ONE shoulder only (never two harpoons, never two tips); no cleaver anywhere. Same chunky cute chibi pixel-art style, same dark outline, same big head, same proportions, same size).
+
+Save as art-src/codex/raw/lid_walk_back2.png - a WIDE image exactly 4 times as wide as it is tall (for example 1536x384): 4 equal square cells side by side, left to right, one full-body pose centred in each cell, all poses the same size with the feet on the same baseline. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no motion lines, no dust, no effects, nothing outside the character. No pose touches its cell edge.
+
+SIDE RULE (most important after the leg rule): the harpoon tip and its coiled rope poke up over the IMAGE-LEFT shoulder in every frame (it is slung over his left shoulder, which is on the image-left when we see his back), and the red bandana knot tails also hang on the IMAGE-LEFT. Nothing pokes up on the image-right. The attached picture shows the harpoon on the wrong side: mirror only the harpoon.
+
+FACING for every frame: facing away from the viewer (back view, walking away from the camera; no human face visible). The lid covers most of his back seen face-on, so Ttukkeong-i's grumpy face is clearly visible, held by the leather strap, its knob near his neck.
+
+The four frames must be clearly DIFFERENT poses - this is the most important rule:
+frame 1 (step): the leg on the IMAGE-LEFT side steps forward away from the viewer, so its boot is HIGHER in the picture and slightly smaller, the sole hidden; the image-right leg is back, its boot LOWER with the sole showing.
+frame 2 (passing): both boots side by side under the body, body one pixel higher.
+frame 3 (step): the opposite - the IMAGE-RIGHT leg steps forward (boot higher); the image-left leg is back (boot lower, sole showing).
+frame 4 (passing): like frame 2.
+Arms swing opposite to the legs. Keep the head, the lid and the harpoon steady except a one-pixel bob. The two stepping frames must be mirror opposites in which leg leads.
+
+Reply only with the saved file path.

@@ -1,0 +1,12 @@
+Use your image generation tool (do not write code to draw) to create ONE image. The attached reference shows, left to right: our hunter standing facing the camera (front), facing right (side), facing away (back), and then "Ttukkeong-i", a grumpy talking cast-iron pot lid (a dark iron dome with a round knob on top, two small handles at the sides, angry eyebrows and a wobbly frowning mouth on its front).
+
+Draw a CHARACTER DESIGN SHEET of the same hunter now carrying Ttukkeong-i. Copy the hunter's identity exactly: spiky black hair, red bandana, green hooded jacket, cream apron, brown gloves and boots, the harpoon with a coiled rope; same chunky cute chibi pixel-art style, same dark outline, same big head and small body, same size in every cell. He no longer carries the small cleaver at his belt.
+
+Save as art-src/codex/raw/hunter_lid_sheet.png — a WIDE image exactly 4 times as wide as it is tall (for example 1536x384): 4 equal square cells side by side, one full-body pose centred in each, feet on the same baseline. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no motion lines, no effects. No pose touches its cell edge.
+
+Cell 1 FRONT (facing the camera, standing): the pot lid is strapped on his back with a brown leather strap crossing his chest diagonally; the lid's rim peeks out around both shoulders and its knob pokes up behind his head. The harpoon's tip pokes up over the other shoulder.
+Cell 2 SIDE (pure side profile facing camera-RIGHT, standing): the lid sits on his back like a turtle shell, seen edge-on as a rounded dome bulging behind him, its grumpy face visible on the dome looking backwards/left, knob up. The harpoon slung diagonally behind it.
+Cell 3 BACK (facing away, standing): the lid covers most of his back, seen face-on: we see Ttukkeong-i's grumpy face clearly, the leather strap holding it, the knob near his neck; the harpoon tip pokes up beside it.
+Cell 4 SWING (side profile facing camera-RIGHT): he grips the lid by its knob with both hands and swings it forward in a big horizontal arc like a frying-pan smash, lid out in front at chest height, legs in a wide lunge; Ttukkeong-i's face looks shocked (wide eyes, open mouth). The empty strap hangs loose.
+
+Keep the lid clearly readable at small size: dark iron grey with a warm brown highlight on its dome, thick dark outline, the face drawn with a few bold pixels. Reply only with the saved file path.

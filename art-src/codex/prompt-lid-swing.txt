@@ -1,0 +1,13 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a 4-frame ATTACK (swinging the pot lid) sprite strip of the character in the attached image (copy his identity exactly from the approved picture: spiky black hair, red bandana, green hooded jacket, cream apron, brown gloves and boots, a brown leather strap across his chest, and Ttukkeong-i, the grumpy talking cast-iron pot lid (dark iron dome, round knob, two small side handles, angry eyebrows and a wobbly frown, warm brown highlight) strapped on his back; ONE harpoon with a coiled rope slung diagonally behind him, its single tip poking up over ONE shoulder only (never two harpoons, never two tips); no cleaver anywhere. Same chunky cute chibi pixel-art style, same dark outline, same big head, same proportions, same size).
+
+Save as art-src/codex/raw/lid_swing.png - a WIDE image exactly 4 times as wide as it is tall (for example 1536x384): 4 equal square cells side by side, left to right, one full-body pose centred in each cell, all poses the same size with the feet on the same baseline. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no motion lines, no dust, no effects, nothing outside the character. No pose touches its cell edge.
+
+The SECOND attached image is the old 4-frame cleaver slash, for timing only: copy its rhythm (wind-up, big swing, follow-through, recover), not its weapon.
+FACING for every frame: pure side profile facing camera-RIGHT. In every frame he holds Ttukkeong-i by its knob with both hands (the strap hangs loose from his chest); the harpoon stays slung on his back.
+frame 1 (wind-up): lid pulled back behind his right shoulder, body twisted back, weight on the back foot; Ttukkeong-i looks alarmed.
+frame 2 (swing): lid swept forward in a big horizontal arc at chest height, lid flat-on toward the right, front foot stepping out; Ttukkeong-i's eyes squeezed shut.
+frame 3 (follow-through): lid fully out in front to the right, arms extended, wide lunge; Ttukkeong-i shocked, wide eyes, open mouth (like the approved swing pose).
+frame 4 (recover): lid pulled back in front of his chest, standing up again; Ttukkeong-i dizzy, little swirl eyes.
+The four frames must be clearly different poses.
+
+Reply only with the saved file path.
