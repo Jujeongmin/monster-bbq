@@ -1,10 +1,11 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
-import { SHOP_HEIGHT, SHOP_WIDTH, ServiceScene, type ServedReport, type ServiceData } from "./ServiceScene";
+import { ServiceScene } from "./ServiceScene";
+import { SHOP_HEIGHT, SHOP_WIDTH, type ServiceData, type ShopReport } from "./types";
 
 // The night service in a page: one Phaser game per mount. "service:end" reaches onEnd with the night's
 // report (each served guest's dish, wait and pour; who left).
-export function ServiceGame({ shop, onEnd }: { shop: ServiceData; onEnd: (r: { served: ServedReport[]; left: string[]; cleaned: string[] }) => void }) {
+export function ServiceGame({ shop, onEnd }: { shop: ServiceData; onEnd: (r: ShopReport) => void }) {
   const host = useRef<HTMLDivElement>(null);
   const onEndRef = useRef(onEnd);
   onEndRef.current = onEnd;
@@ -21,7 +22,7 @@ export function ServiceGame({ shop, onEnd }: { shop: ServiceData; onEnd: (r: { s
       scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     });
     g.scene.add("shop", ServiceScene, true, start.current);
-    g.events.on("service:end", (r: { served: ServedReport[]; left: string[]; cleaned: string[] }) => onEndRef.current(r));
+    g.events.on("service:end", (r: ShopReport) => onEndRef.current(r));
     return () => g.destroy(true);
   }, []);
 

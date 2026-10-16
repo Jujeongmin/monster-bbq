@@ -9,8 +9,9 @@ import { tipFor, type Pour, type ServedEntry } from "../../../shared/service/set
 // can be tested: while the clock runs guests come in at the seed's times, take a free stool (or wait by
 // the door) and order a moment later; Bandal cooks the orders one after another, each burning some
 // charcoal (none left: he waits), and sets the plates on the pass; the waiter walks the aisle behind the
-// counter and carries one thing at a time to the guest who wants it. Chores: charcoal, the grills messy
-// guests leave dirty (scrub before the next guest orders there), drinks. ServiceScene draws this state
+// counter and carries one thing at a time to the guest who wants it. Chores: charcoal, the leftovers messy
+// guests leave on the counter (an empty plate and spills: scrub before the next guest orders there;
+// `dirty`), drinks. ServiceScene draws this state
 // and feeds it the keys; `report()` is what goes to the server.
 const SV = BALANCE.service;
 
@@ -288,7 +289,7 @@ export class Shift {
         break;
       }
       case "seated":
-        // a moment to settle in, then the order; a grill still dirty by then sends them out angry
+        // a moment to settle in, then the order; leftovers still there by then send them out angry
         if (g.ordered) break;
         g.timerMs -= dt;
         if (g.timerMs > 0) break;
@@ -319,7 +320,7 @@ export class Shift {
     }
   }
 
-  // Off the stool and out the door; a messy guest leaves the grill dirty.
+  // Off the stool and out the door; a messy guest leaves leftovers on the counter.
   private leave(g: Guest, mess: boolean) {
     if (g.seat !== null) {
       const seat = this.s.seats[g.seat];
@@ -339,7 +340,7 @@ export class Shift {
     this.leave(g, false);
   }
 
-  // Out of patience, or a dirty grill: storms out; an order Bandal has not started is called off.
+  // Out of patience, or leftovers at the seat: storms out; an order Bandal has not started is called off.
   private storm(g: Guest) {
     const s = this.s;
     if (g.phase === "seated" && g.ordered) {
@@ -396,7 +397,7 @@ export class Shift {
     }
   }
 
-  // The action key (pressed): take a plate, put it down, add charcoal, scrub a grill. Pouring is
+  // The action key (pressed): take a plate, put it down, add charcoal, scrub leftovers. Pouring is
   // pourStart/pourEnd (held).
   act(): boolean {
     const s = this.s;
@@ -507,7 +508,7 @@ export class Shift {
     for (const g of this.s.guests) if ((g.phase === "queue" || g.phase === "walk" || g.phase === "seated") && g.servedMs === null) this.storm(g);
   }
 
-  // What goes to the server: every guest who got their dish, with the wait and the pour; the grills
+  // What goes to the server: every guest who got their dish, with the wait and the pour; the leftovers
   // scrubbed after messy guests.
   report(): { served: ServedEntry[]; left: string[]; cleaned: string[] } {
     const served = this.s.guests

@@ -1,9 +1,6 @@
 import Phaser from "phaser";
 import { BALANCE } from "../../../shared/balance";
 import { DISHES } from "../../../shared/content/dishes";
-import type { TonightDish } from "../../../shared/kitchen/dish";
-import type { Customer } from "../../../shared/service/plan";
-import type { ServedEntry } from "../../../shared/service/settle";
 import { t } from "../../i18n";
 import { artUrl, hasArt } from "../art";
 import { createCharacterAnims, loadCharacterArt } from "../hunt/anims";
@@ -11,6 +8,7 @@ import { joystickVector } from "../joystick";
 import { addButton, addGauge, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiButton, type UiGauge } from "../ui";
 import { loadShift, saveShift } from "./night";
 import { LAYOUT, Shift, type Guest, type Target } from "./shift";
+import { clockText, SHOP_WIDTH, type ServiceData } from "./types";
 
 // The shop at night (restaurant v2 design 4, plan 07b), like Dave the Diver's sushi bar: one long grill
 // counter, yokai on stools in front of it (seen from behind), the waiter walking the aisle behind it,
@@ -24,19 +22,7 @@ import { LAYOUT, Shift, type Guest, type Target } from "./shift";
 // shop's own small dishes (test/shop/dishes/<dish>.png, else the kitchen's icons shrunk), the waiter's
 // shop outfit (test/waiter/<pose>.png, see WAITER_FRAMES; else the hunter stands in). New grills replace
 // test/shop/grill_*.png.
-export interface ServiceData {
-  serviceId: string;
-  customers: Customer[];
-  dishes: TonightDish[];
-  stools: number;
-  walkMul: number;
-  coalPerDish: number;
-}
-
-export type ServedReport = ServedEntry;
-
-export const SHOP_WIDTH = 960;
-export const SHOP_HEIGHT = 540;
+export { SHOP_HEIGHT, SHOP_WIDTH, type ServedReport, type ServiceData } from "./types";
 const BIG_HALL = hasArt("test/shop/hall480.png");
 const BG_W = BIG_HALL ? 480 : 320;
 const BG_H = BIG_HALL ? 270 : 180;
@@ -78,11 +64,6 @@ interface GuestView {
   fill: Phaser.GameObjects.Rectangle;
 }
 
-// The shop clock: 18:00 when the doors open, 22:00 at closing time, in ten-minute steps.
-export function clockText(ms: number): string {
-  const minutes = Math.min(240, Math.floor((ms / BALANCE.service.openMs) * 24) * 10);
-  return `${18 + Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
-}
 
 export class ServiceScene extends Phaser.Scene {
   private data0!: ServiceData;
