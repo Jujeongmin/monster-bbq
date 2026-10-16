@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { bagRows, notebookApps, receiptAt, receiptLines, sceneOf, showDayHud, timeOfDay, transitionCard, RECEIPT } from "./hud";
 
-const summary = { id: "s", served: 8, left: 4, sales: 360, tips: 61, drinks: 15, cleaned: 1, happy: 8, repDelta: 0 };
+const summary = { id: "s", served: 8, left: 4, sales: 360, tips: 61, drinks: 15, cleaned: 1, happy: 8, repDelta: 0, dishes: [{ dish: "grilled_belly" as const, plates: 4, gold: 160 }, { dish: "garlic_neck" as const, plates: 4, gold: 200 }] };
 
 describe("the day HUD", () => {
   it("names the time of day from the stage of the day", () => {
@@ -47,7 +47,8 @@ describe("the night's receipt", () => {
   it("lists the night line by line, the scrubbing only when there was some, the total of what came in", () => {
     const r = receiptLines(summary, 40);
     expect(r.total).toBe(360 + 61 + 15);
-    expect(r.lines.map((l) => l.key)).toEqual(["receipt.guests", "receipt.sales", "receipt.tips", "receipt.drinks", "receipt.cleaned", "receipt.rep"]);
+    expect(r.lines.map((l) => l.key)).toEqual(["receipt.guests", "receipt.dish", "receipt.dish", "receipt.sales", "receipt.tips", "receipt.drinks", "receipt.cleaned", "receipt.rep"]);
+    expect(r.lines[1]).toEqual({ key: "receipt.dish", dish: "grilled_belly", vars: { n: 4, gold: 160 } });
     expect(receiptLines({ ...summary, cleaned: 0 }, 40).lines.map((l) => l.key)).not.toContain("receipt.cleaned");
     expect(r.lines.find((l) => l.key === "receipt.rep")!.vars).toEqual({ rep: 40, delta: "+0" });
   });

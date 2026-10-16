@@ -328,4 +328,5 @@ export const ko = {
   "card.lunch": "점심 주방",
   "card.kitchen": "저녁 주방",
   "card.service": "밤 장사 시작",
+  "receipt.dish": "{name} ×{n} · {gold}",
 } as const;

@@ -38,8 +38,10 @@
 .receipt-paper { border: calc(4 * var(--k)) solid transparent; border-image-slice: 4 fill; border-image-width: calc(4 * var(--k)); border-image-repeat: round; image-rendering: pixelated; }
 .receipt h2 { margin: 0 0 calc(2px * var(--s)); text-align: center; font: 700 var(--fs) "Galmuri11", monospace; }
 .receipt-day { margin: 0 0 calc(6px * var(--s)); text-align: center; color: var(--paper-ink-soft); }
-.receipt-lines { list-style: none; margin: 0; padding: 0 0 calc(4px * var(--s)); min-height: calc(104px * var(--s)); border-bottom: var(--k) dashed var(--paper-ink-soft); }
+.receipt-lines { list-style: none; margin: 0; padding: 0 0 calc(4px * var(--s)); min-height: calc(140px * var(--s)); border-bottom: var(--k) dashed var(--paper-ink-soft); }
 .receipt-line { padding: calc(1px * var(--s)) 0; animation: receipt-in 0.2s steps(3) both; }
+.receipt-dish { display: flex; align-items: center; gap: calc(4px * var(--s)); padding-left: calc(6px * var(--s)); color: var(--paper-ink-soft); }
+.receipt-dish img { height: calc(16px * var(--s)); image-rendering: pixelated; }
 @keyframes receipt-in { from { opacity: 0; transform: translateY(calc(4px * var(--s))); } }
 .receipt-total { margin: calc(4px * var(--s)) 0 calc(6px * var(--s)); text-align: right; font: 700 var(--fs) "Galmuri11", monospace; color: var(--paper-ink-soft); }
 .receipt-total.done { color: #c88a10; }

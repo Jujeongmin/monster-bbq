@@ -50,7 +50,7 @@ describe("finishService (restaurant v2 stage 2: the waiter carries, tips, drinks
     expect(r.save.service).toBeNull();
     // 6 plates, so every customer up to 6 who went without counts as gone
     const gone = Math.min(c.length, 6) - 2;
-    expect(r.save.lastService).toEqual({ id: svc.id, served: 2, left: gone, sales: 90, tips: 9, drinks: 0, cleaned: 0, happy: 2, repDelta: 2 * SV.rep.happy + gone * SV.rep.left });
+    expect(r.save.lastService).toEqual({ id: svc.id, served: 2, left: gone, sales: 90, tips: 9, drinks: 0, cleaned: 0, happy: 2, repDelta: 2 * SV.rep.happy + gone * SV.rep.left, dishes: [{ dish: "grilled_belly", plates: 1, gold: 40 }, { dish: "garlic_neck", plates: 1, gold: 50 }] });
     expect(r.save.reputation).toBe(Math.max(0, 20 + 2 * SV.rep.happy + gone * SV.rep.left));
   });
   it("tips a tenth of the price however quick the plate was", () => {

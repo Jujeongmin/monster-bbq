@@ -48,6 +48,7 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
   let tips = 0;
   let drinks = 0;
   let badPours = 0;
+  const sold = new Map<DishId, { plates: number; gold: number }>();
   for (const raw of a.served as unknown[]) {
     const e = raw as Partial<Record<keyof ServedEntry, unknown>> | null;
     if (!e || typeof e !== "object" || typeof e.customer !== "string" || seen.has(e.customer) || !isDishId(e.dish)) return bad;
@@ -61,6 +62,8 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
     seen.add(e.customer);
     const p = price.get(e.dish)!;
     sales += p;
+    const line = sold.get(e.dish) ?? { plates: 0, gold: 0 };
+    sold.set(e.dish, { plates: line.plates + 1, gold: line.gold + p });
     const perfectTea = c.drink === "tea" && e.drink === "perfect";
     tips += tipFor(p, perfectTea);
     if (e.drink && c.drink !== "none") drinks += Math.round(SV.drinks.price[c.drink] * (e.drink === "perfect" ? SV.drinks.perfectMul : 1));
@@ -86,7 +89,7 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
       reputation,
       stage: "settle",
       service: null,
-      lastService: { id: svc.id, served: seen.size, left: gone, sales, tips, drinks, cleaned: cleaned.length, happy, repDelta: reputation - save.reputation },
+      lastService: { id: svc.id, served: seen.size, left: gone, sales, tips, drinks, cleaned: cleaned.length, happy, repDelta: reputation - save.reputation, dishes: menu.filter((d) => sold.has(d)).map((dish) => ({ dish, ...sold.get(dish)! })) },
     },
   };
 }

@@ -14,7 +14,7 @@
     dishes: { grilled_belly: 2, shiitake_grill: 1 },
     menu: [{ dish: "grilled_belly", sets: 2 }],
     reputation: 5, upgrades: {}, lunchbox: [], service: null,
-    lastService: { id: "stest", served: 8, left: 4, sales: 360, tips: 61, drinks: 15, cleaned: 1, happy: 8, repDelta: 0 },
+    lastService: { id: "stest", served: 8, left: 4, sales: 360, tips: 61, drinks: 15, cleaned: 1, happy: 8, repDelta: 0, dishes: [{ dish: "grilled_belly", plates: 4, gold: 160 }, { dish: "garlic_neck", plates: 4, gold: 200 }] },
   };
   localStorage.setItem("monster-bbq:save", JSON.stringify(save));
   location.replace("/?local");

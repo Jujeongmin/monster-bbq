@@ -43,6 +43,9 @@ export interface ServiceSummary {
   cleaned: number;
   happy: number;
   repDelta: number;
+  // each dish's plates sold and what they brought, in tonight's menu order (the receipt's lines; older
+  // summaries read as none)
+  dishes: { dish: DishId; plates: number; gold: number }[];
 }
 
 // Where the day is (hunt v3 design 3): the morning hunt, lunch (after it; the afternoon hunt starts from
@@ -200,7 +203,13 @@ function readSummary(raw: unknown): ServiceSummary | null {
   const nums = ["served", "left", "sales", "tips", "happy", "repDelta"] as const;
   if (!nums.every((k) => typeof r[k] === "number" && Number.isFinite(r[k]))) return null;
   const opt = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
-  return { id: r.id, served: r.served as number, left: r.left as number, sales: r.sales as number, tips: r.tips as number, drinks: opt(r.drinks), cleaned: opt(r.cleaned), happy: r.happy as number, repDelta: r.repDelta as number };
+  const dishes = Array.isArray(r.dishes)
+    ? (r.dishes as unknown[]).flatMap((d) => {
+        const e = d as Record<string, unknown> | null;
+        return e && isDishId(e.dish) && typeof e.plates === "number" && typeof e.gold === "number" && Number.isFinite(e.plates) && Number.isFinite(e.gold) ? [{ dish: e.dish, plates: e.plates, gold: e.gold }] : [];
+      })
+    : [];
+  return { id: r.id, served: r.served as number, left: r.left as number, sales: r.sales as number, tips: r.tips as number, drinks: opt(r.drinks), cleaned: opt(r.cleaned), happy: r.happy as number, repDelta: r.repDelta as number, dishes };
 }
 
 // The upgrades that went with hands-on cooking (restaurant v2) and what each of their levels cost.

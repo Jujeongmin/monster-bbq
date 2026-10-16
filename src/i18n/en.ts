@@ -329,4 +329,5 @@ export const en: Record<keyof typeof ko, string> = {
   "card.lunch": "Lunch kitchen",
   "card.kitchen": "Evening kitchen",
   "card.service": "The shop opens",
+  "receipt.dish": "{name} ×{n} · {gold}",
 };

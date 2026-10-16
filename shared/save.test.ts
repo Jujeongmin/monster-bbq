@@ -61,7 +61,7 @@ describe("readSave (version 9)", () => {
     upgrades: { melee: 2 },
     lunchbox: ["grilled_belly"],
     service: { id: "s1", seed: 9, startedAt: 2000, dishes: [{ dish: "grilled_belly", plates: 8, price: 46 }] },
-    lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 0, drinks: 0, cleaned: 0, happy: 3, repDelta: 1 },
+    lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 0, drinks: 0, cleaned: 0, happy: 3, repDelta: 1, dishes: [{ dish: "grilled_belly", plates: 3, gold: 120 }] },
     bossKey: true,
     pages: ["forest"],
     charcoal: 40,
@@ -101,6 +101,12 @@ describe("readSave (version 9)", () => {
     expect(r.dishes).toEqual({ grilled_belly: 2 });
     expect(r.menu).toEqual([{ dish: "grilled_belly", sets: 2 }]);
     expect(r.service?.dishes).toEqual([{ dish: "grilled_belly", plates: 8, price: 46 }]);
+  });
+  it("reads an older night's summary (no dishes) with no dish lines, and drops unknown dishes", () => {
+    const old = readSave({ ...valid, lastService: { ...valid.lastService, dishes: undefined } });
+    expect(old.lastService?.dishes).toEqual([]);
+    const odd = readSave({ ...valid, lastService: { ...valid.lastService, dishes: [{ dish: "unicorn", plates: 1, gold: 9 }, { dish: "grilled_belly", plates: 3, gold: 120 }] } });
+    expect(odd.lastService?.dishes).toEqual([{ dish: "grilled_belly", plates: 3, gold: 120 }]);
   });
   it("drops a broken service, summary or reputation instead of failing", () => {
     const r = readSave({ ...valid, reputation: -5, service: { id: 3 }, lastService: { id: "x", served: "lots" } });

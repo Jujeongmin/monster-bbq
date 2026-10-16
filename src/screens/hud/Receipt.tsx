@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { SaveData } from "../../../shared/save";
 import { artUrl, hasArt } from "../../game/art";
-import { t } from "../../i18n";
+import { t, type StringKey } from "../../i18n";
 import { HUD_ART, receiptAt, receiptLines } from "./hud";
 import { Scene } from "./Scene";
 
@@ -31,8 +31,9 @@ export function Receipt({ save, busy, onNext }: { save: SaveData; busy: boolean;
         <p className="receipt-day">{t("settle.body", { day: save.day, gold: save.gold })}</p>
         <ul className="receipt-lines">
           {r.lines.slice(0, at.shown).map((l) => (
-            <li key={l.key} className="receipt-line">
-              {t(l.key, l.vars)}
+            <li key={l.dish ?? l.key} className={`receipt-line${l.dish ? " receipt-dish" : ""}`}>
+              {l.dish && <img src={artUrl(hasArt(`test/shop/dishes/${l.dish}.png`) ? `test/shop/dishes/${l.dish}.png` : `test/dishes/${l.dish}.png`)} alt="" />}
+              {t(l.key, l.dish ? { ...l.vars, name: t(`dish.${l.dish}` as StringKey) } : l.vars)}
             </li>
           ))}
         </ul>

@@ -1,3 +1,4 @@
+import type { DishId } from "../../../shared/content/dishes";
 import { isItemId, ITEMS, parseItemKey, type ItemId } from "../../../shared/content/items";
 import type { ServiceSummary } from "../../../shared/save";
 import type { StringKey } from "../../i18n";
@@ -71,13 +72,15 @@ export function notebookApps(phase: Phase): { app: App; open: boolean }[] {
 export interface ReceiptLine {
   key: StringKey;
   vars: Record<string, number | string>;
+  dish?: DishId; // a dish's line: the page names it and shows its picture
 }
 
-// The night's receipt: guests, then each kind of takings, the scrubbing (only if any; its gold is in the
+// The night's receipt: guests, each dish sold (Dave's night results), then each kind of takings, the scrubbing (only if any; its gold is in the
 // tips), the reputation. The total is what came in.
 export function receiptLines(s: ServiceSummary, reputation: number): { lines: ReceiptLine[]; total: number } {
   const lines: ReceiptLine[] = [
     { key: "receipt.guests", vars: { served: s.served, left: s.left } },
+    ...s.dishes.map((d): ReceiptLine => ({ key: "receipt.dish", dish: d.dish, vars: { n: d.plates, gold: d.gold } })),
     { key: "receipt.sales", vars: { gold: s.sales } },
     { key: "receipt.tips", vars: { gold: s.tips } },
     { key: "receipt.drinks", vars: { gold: s.drinks } },
