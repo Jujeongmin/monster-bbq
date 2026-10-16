@@ -25,20 +25,13 @@ html, body, #root { width: 100%; height: 100%; }
 #root { display: flex; align-items: center; justify-content: center; background: #0b0b12; }
 .frame { position: relative; width: min(100vw, calc(100vh * 16 / 9)); aspect-ratio: 16 / 9; overflow: hidden; }
 
-/* scrollbars in the kit's look: a lacquered wooden thumb with brass corners on a walnut track */
-* { scrollbar-width: auto; scrollbar-color: #8a3a22 #3a2618; }
-::-webkit-scrollbar { width: calc(12px * var(--s)); height: calc(12px * var(--s)); }
-::-webkit-scrollbar-track {
-  border: calc(4px * var(--s)) solid transparent;
-  border-image: url("../art/test/ui2/topbar.png") 3 5 fill / calc(2px * var(--s)) calc(4px * var(--s)) stretch;
-  image-rendering: pixelated;
-}
-::-webkit-scrollbar-thumb {
-  border: calc(6px * var(--s)) solid transparent;
-  border-image: url("../art/test/ui2/btn_normal.png") 3 4 fill / calc(2px * var(--s)) calc(4px * var(--s)) stretch;
-  image-rendering: pixelated;
-}
-::-webkit-scrollbar-thumb:active { border-image-source: url("../art/test/ui2/btn_pressed.png"); }
+/* scrollbars: a slim brass bar on a dark walnut groove, square like the pixel art (the wide stretched
+   kit pieces read as a cream slab: user, 2026-10-16) */
+* { scrollbar-width: thin; scrollbar-color: #b8862a #2b1a10; }
+::-webkit-scrollbar { width: calc(6px * var(--s)); height: calc(6px * var(--s)); }
+::-webkit-scrollbar-track { background: #2b1a10; }
+::-webkit-scrollbar-thumb { background: #b8862a; box-shadow: inset calc(-1px * var(--s)) calc(-1px * var(--s)) 0 #7a5418, inset calc(1px * var(--s)) calc(1px * var(--s)) 0 #e8c060; }
+::-webkit-scrollbar-corner { background: transparent; }
 ::-webkit-scrollbar-button { display: none; }
 ::-webkit-scrollbar-corner { background: transparent; }
 body { touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: "Galmuri11", monospace; -webkit-font-smoothing: none; font-smooth: never; }

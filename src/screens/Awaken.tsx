@@ -49,10 +49,11 @@ function nextStar(save: SaveData, target: AwakenTarget, n: number): string {
   }
 }
 
-export function AwakenList({ save, busy, act, onShop }: { save: SaveData; busy: boolean; act: (a: Action) => void; onShop: () => void }) {
+export function AwakenList({ kind, save, busy, act, onShop }: { kind: "gear" | "dish"; save: SaveData; busy: boolean; act: (a: Action) => void; onShop: () => void }) {
+  // gear and dishes on their own sub-tabs, so each fits without scrolling (user, 2026-10-16)
   return (
-    <div className="upgrades-list">
-      {TARGETS.map((target) => {
+    <div className="upgrades-list awaken-list">
+      {TARGETS.filter((target) => isDishId(target) === (kind === "dish")).map((target) => {
         const n = starLevel(save, target);
         const owned = canAwaken(save, target);
         const top = n >= MAX_STARS;
