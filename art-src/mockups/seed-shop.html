@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시험용 세이브 (상점·각성)</title>
+<!-- Check page only: a local test save (version 9) at the settle screen after beating the Charge King,
+     with gold, a little charcoal and VIP 1, so the shop shows the starter pack and the bands. -->
+<script>
+  const save = {
+    version: 9, day: 6, stage: "settle", gold: 30000, items: {}, hunt: null,
+    seenItems: ["boar_belly", "wild_garlic", "king_rib"], dishes: { grilled_belly: 2, king_galbi: 1 }, menu: [],
+    reputation: 20, upgrades: { boots: 1, lantern: 1, sleepGun: 1 }, lunchbox: [], service: null,
+    lastService: { id: "s0", served: 8, left: 1, sales: 520, tips: 60, drinks: 30, cleaned: 2, happy: 8, repDelta: 6 },
+    bossKey: true, pages: ["forest"],
+    charcoal: 25, stars: { melee: 2 }, vip: { spent: 100, day: 0 }, shop: { firstBuy: [], purchases: [] },
+  };
+  for (const k of Object.keys(sessionStorage)) sessionStorage.removeItem(k);
+  localStorage.setItem("monster-bbq:save", JSON.stringify(save));
+  location.replace("/?local");
+</script>
+</head>
+<body></body>
+</html>

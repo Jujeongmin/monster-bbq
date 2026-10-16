@@ -88,7 +88,7 @@ function Mat({ id, n, short }: { id: ItemId; n: string; short?: boolean }) {
   );
 }
 
-export function Upgrades({ save, busy, act, onClose }: { save: SaveData; busy: boolean; act: (a: Action) => void; onClose: () => void }) {
+export function Upgrades({ save, busy, act, onShop, onClose }: { save: SaveData; busy: boolean; act: (a: Action) => void; onShop: () => void; onClose: () => void }) {
   const have = (id: ItemId) => save.items[id] ?? 0;
   const owned = MATERIALS.filter((id) => have(id) > 0);
   return (
@@ -135,9 +135,14 @@ export function Upgrades({ save, busy, act, onClose }: { save: SaveData; busy: b
             </section>
           ))}
         </div>
-        <button className="ui-btn" onClick={onClose}>
-          {t("upgrade.close")}
-        </button>
+        <div className="dayflow-actions">
+          <button className="ui-btn" onClick={onShop}>
+            {t("shop.open")}
+          </button>
+          <button className="ui-btn" onClick={onClose}>
+            {t("upgrade.close")}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -18,6 +18,9 @@ import { Kitchen } from "./kitchen/Kitchen";
 import { Upgrades } from "./Upgrades";
 import { HuntSummary } from "./HuntSummary";
 import { SidePick } from "./SidePick";
+import { Shop } from "./Shop";
+import { buy, refreshAfterPurchase, startShop, type ShopItem } from "../net/shop";
+import { vipLevel } from "../../shared/shop";
 import { artUrl } from "../game/art";
 import "./dayflow.css";
 
@@ -50,6 +53,23 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   const [summary, setSummary] = useState<{ events: HuntEvent[]; ko: boolean; before: Record<string, number>; hadKey: boolean; hadPages: string[] } | null>(null);
   // a second click can land before React re-renders with busy=true
   const busyRef = useRef(false);
+  // the VX shop (06b-1): open or not, Verse8's list of products, and a purchase being checked
+  const [store, setStore] = useState(false);
+  const [storeItems, setStoreItems] = useState<ShopItem[]>([]);
+  const [checking, setChecking] = useState(false);
+  useEffect(
+    () =>
+      startShop({
+        local: localShop,
+        onItems: setStoreItems,
+        // the grant is the server's webhook: read the save again, twice (it can trail the window)
+        onClosed: () => {
+          setChecking(true);
+          void refreshAfterPurchase(async () => setSave(await transport.load())).finally(() => setChecking(false));
+        },
+      }),
+    [transport, localShop],
+  );
 
   function load() {
     setLoadFailed(false);
@@ -133,6 +153,11 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
             <img className="ui-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />
             {t("hud.gold", { gold: save.gold })}
           </span>
+          <span>
+            <img className="ui-icon" src={artUrl("test/ui/icon_charcoal.png")} alt="" />
+            {t("hud.charcoal", { n: save.charcoal })}
+          </span>
+          {vipLevel(save.vip.spent) > 0 && <span className="dayflow-phase">{t("hud.vip", { lv: vipLevel(save.vip.spent) })}</span>}
           {/* during the hunt the scene shows the live bag; the stored meat would read as a second count */}
           {phase !== "hunt" && <span>{t("hud.items", { count: Object.values(save.items).reduce((a, b) => a + b, 0) })}</span>}
           <span className="dayflow-phase">{t(PHASE_NAME[phase])}</span>
@@ -150,7 +175,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           onUpgrades={() => setShopping(true)}
         />
       )}
-      {phase === "lunch" && shopping && <Upgrades save={save} busy={busy} act={(a) => void act(a, "lunch")} onClose={() => setShopping(false)} />}
+      {phase === "lunch" && shopping && <Upgrades save={save} busy={busy} act={(a) => void act(a, "lunch")} onShop={() => setStore(true)} onClose={() => setShopping(false)} />}
       {phase === "kitchen" && <Kitchen save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} />}
       {phase === "service" && save.service && <Night save={save} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
       {phase === "settle" && (
@@ -166,16 +191,23 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           )}
           <div className="dayflow-actions">
             <button className="ui-btn" disabled={busy} onClick={() => setShopping(true)}>{t("upgrade.open")}</button>
+            <button className="ui-btn" disabled={busy} onClick={() => setStore(true)}>{t("shop.open")}</button>
             <button className="ui-btn" disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("nextDay")}</button>
           </div>
         </Panel>
       )}
-      {phase === "settle" && shopping && <Upgrades save={save} busy={busy} act={(a) => void act(a, "settle")} onClose={() => setShopping(false)} />}
+      {phase === "settle" && shopping && <Upgrades save={save} busy={busy} act={(a) => void act(a, "settle")} onShop={() => setStore(true)} onClose={() => setShopping(false)} />}
 
       {/* the morning: pick the side weapon, then set out; at lunch the same window opens from its button */}
       {phase === "hunt" && save.stage === "hunt" && !save.hunt && !failed && <SidePick save={save} busy={busy} onGo={setOut} />}
       {phase === "lunch" && picking && <SidePick save={save} busy={busy} onGo={setOut} onCancel={() => setPicking(false)} />}
-      {summary && phase !== "hunt" && <HuntSummary events={summary.events} ko={summary.ko} before={summary.before} after={save.items} gotKey={!summary.hadKey && save.bossKey} gotPage={!summary.hadPages.includes("forest") && save.pages.includes("forest")} onDone={() => setSummary(null)} />}
+      {summary && phase !== "hunt" && <HuntSummary events={summary.events} ko={summary.ko} before={summary.before} after={save.items} gotKey={!summary.hadKey && save.bossKey} gotPage={!summary.hadPages.includes("forest") && save.pages.includes("forest")} onShop={() => setStore(true)} onDone={() => setSummary(null)} />}
+
+      {/* the VIP's charcoal: in the morning before the hunt, once a day */}
+      {phase === "hunt" && save.stage === "hunt" && !save.hunt && vipLevel(save.vip.spent) > 0 && save.vip.day !== save.day && (
+        <button className="ui-btn vip-claim" disabled={busy} onClick={() => act({ type: "claimVipDaily" }, "hunt")}>{t("vip.claim")}</button>
+      )}
+      {store && <Shop save={save} items={storeItems} checking={checking} onBuy={buy} onClose={() => setStore(false)} />}
 
       {failed && (
         <div className="dayflow-error ui-panel">

@@ -1,0 +1,18 @@
+/* The VX shop (06b-1): product cards in a grid, the value band on top of each (UI kit pieces only). */
+.dayflow-screen.store { z-index: 6; }
+.shop { width: 92%; max-height: 92%; display: flex; flex-direction: column; align-items: center; text-align: center; color: var(--ink); padding: calc(6px * var(--s)) calc(10px * var(--s)); }
+.shop h2 { margin: 0 0 calc(2px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink); }
+.shop-vip { margin: 0 0 calc(6px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
+.shop-grid { flex: 1; min-height: 0; overflow: auto; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(6px * var(--s)); margin-bottom: calc(6px * var(--s)); }
+.shop-card { display: flex; flex-direction: column; align-items: stretch; gap: calc(3px * var(--s)); padding: calc(3px * var(--s)); }
+.shop-what { display: flex; align-items: center; gap: calc(4px * var(--s)); text-align: left; }
+.shop-buy { display: flex; align-items: center; justify-content: flex-end; gap: calc(3px * var(--s)); }
+.shop-band { align-self: stretch; font: var(--fs-small) "Galmuri9", monospace; }
+.shop-icon { height: calc(22px * var(--s)); image-rendering: pixelated; }
+.shop-name { font-weight: 700; }
+.shop-gives { font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
+.shop-mark { font: var(--fs-small) "Galmuri9", monospace; padding: 0 calc(2px * var(--s)); }
+.shop-card .ui-btn { font: var(--fs-small) "Galmuri9", monospace; }
+.shop-checking { margin: 0 0 calc(4px * var(--s)); color: var(--red); }
+/* the VIP's daily charcoal, top right in the morning */
+.vip-claim { position: absolute; top: calc(6px * var(--s)); right: calc(6px * var(--s)); z-index: 5; }
