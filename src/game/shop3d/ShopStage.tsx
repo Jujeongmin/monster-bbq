@@ -33,6 +33,9 @@ export function ShopStage({ shop, onEnd, onFail }: { shop: ServiceData; onEnd: (
   onEndRef.current = onEnd;
   const onFailRef = useRef(onFail);
   onFailRef.current = onFail;
+  // the night as it opened: the page re-renders with a new (equal) object, which must not restart the room
+  // (ServiceGame is keyed by the service id, so a new night gets a new stage)
+  const start = useRef(shop);
   const [scale, setScale] = useState(1);
   const [hud, setHud] = useState<Hud | null>(null);
   const [paused, setPaused] = useState(false);
@@ -52,6 +55,7 @@ export function ShopStage({ shop, onEnd, onFail }: { shop: ServiceData; onEnd: (
   }, []);
 
   useEffect(() => {
+    const shop = start.current;
     const cfg = { customers: shop.customers, dishes: shop.dishes, stools: shop.stools, walkMul: shop.walkMul, coalPerDish: shop.coalPerDish };
     // a reload picks the night up where it was (the ingredients went when the shop opened)
     const saved = loadShift(sessionStorage, shop.serviceId);
@@ -218,7 +222,7 @@ export function ShopStage({ shop, onEnd, onFail }: { shop: ServiceData; onEnd: (
       removeEventListener("keyup", ku);
       view.dispose();
     };
-  }, [shop]);
+  }, []);
 
   return (
     <div ref={stage} className="s3-stage">
