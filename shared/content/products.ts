@@ -13,7 +13,7 @@ export interface Product {
 }
 
 export const PRODUCTS: Product[] = [
-  { id: "starter_pack", vx: 100, charcoal: 200, gold: 5_000, once: true, bundle: false, needsPage: "forest" },
+  { id: "starter_pack", vx: 100, charcoal: 75, gold: 5_000, once: true, bundle: false, needsPage: "forest" },
   { id: "charcoal_1", vx: 100, charcoal: 30, gold: 0, once: false, bundle: true },
   { id: "charcoal_2", vx: 500, charcoal: 150, gold: 0, once: false, bundle: true },
   { id: "charcoal_3", vx: 1_500, charcoal: 450, gold: 0, once: false, bundle: true },

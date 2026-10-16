@@ -11,7 +11,7 @@
 
 | Product ID | Product Name | Price (VX) | Stock Quantity | Lifetime Limit | Period Limit | Time-Limited Sale | Image | Description (대시보드에 넣을 글, 영어) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `starter_pack` | Starter Pack | 100 | 999999 | 1 | — | — | `art-src/products-512/starter_pack.png` | 200 golden charcoal and 5,000 gold to start your growth. Shown after you beat the Charge King. One per account. Counts toward VIP. |
+| `starter_pack` | Starter Pack | 100 | 999999 | 1 | — | — | `art-src/products-512/starter_pack.png` | 75 golden charcoal and 5,000 gold to start your growth. Shown after you beat the Charge King. One per account. Counts toward VIP. |
 | `charcoal_1` | Charcoal Pouch | 100 | 999999 | — | — | — | `art-src/products-512/charcoal_1.png` | 30 golden charcoal to awaken your gear and dishes. Double on your first purchase of this pouch. VIP bonus included. Counts toward VIP. |
 | `charcoal_2` | Charcoal Sack | 500 | 999999 | — | — | — | `art-src/products-512/charcoal_2.png` | 150 golden charcoal. Double on your first purchase of this sack. VIP bonus included. Counts toward VIP. |
 | `charcoal_3` | Charcoal Crate | 1500 | 999999 | — | — | — | `art-src/products-512/charcoal_3.png` | 450 golden charcoal. Double on your first purchase of this crate. VIP bonus included. Counts toward VIP. |
@@ -19,7 +19,7 @@
 | `charcoal_5` | Charcoal Forge | 30000 | 999999 | — | — | — | `art-src/products-512/charcoal_5.png` | 9,000 golden charcoal. Double on your first purchase of this forge. VIP bonus included. Counts toward VIP. |
 
 한국어 설명(참고):
-- 스타터팩: 황금 숯 200개와 골드 5,000. 돌진대왕을 쓰러뜨린 뒤 나온다. 계정당 1번. VIP에 포함.
+- 스타터팩: 황금 숯 75개와 골드 5,000. 돌진대왕을 쓰러뜨린 뒤 나온다. 계정당 1번. VIP에 포함.
 - 숯 주머니: 황금 숯 30개(장비·요리 각성에 쓴다). 이 주머니 첫 구매는 2배. VIP 보너스 포함.
 - 숯 자루: 150개. 첫 구매 2배.
 - 숯 상자: 450개. 첫 구매 2배.

@@ -28,9 +28,9 @@ describe("buying charcoal", () => {
   });
   it("sells the starter pack once: a second webhook grants nothing but is recorded", () => {
     const a = buy({ ...newSave(), pages: ["forest"] }, "starter_pack", "s-1").save;
-    expect([a.charcoal, a.gold]).toEqual([200, 5_000]);
+    expect([a.charcoal, a.gold]).toEqual([75, 5_000]);
     const b = buy(a, "starter_pack", "s-2").save;
-    expect([b.charcoal, b.gold, b.shop.purchases.includes("s-2")]).toEqual([200, 5_000, true]);
+    expect([b.charcoal, b.gold, b.shop.purchases.includes("s-2")]).toEqual([75, 5_000, true]);
   });
   it("refuses a product it does not know", () => {
     expect(buy(newSave(), "gold_pouch").error).toBe("unknown_product");
@@ -57,7 +57,7 @@ describe("the shop's offer", () => {
   });
   it("offers the starter pack only after the Charge King, and not once bought", () => {
     expect(shopOffer(newSave()).some((x) => x.id === "starter_pack")).toBe(false);
-    expect(shopOffer({ ...newSave(), pages: ["forest"] }).find((x) => x.id === "starter_pack")!.valuePct).toBe(666);
+    expect(shopOffer({ ...newSave(), pages: ["forest"] }).find((x) => x.id === "starter_pack")!.valuePct).toBe(250);
     expect(shopOffer({ ...newSave(), pages: ["forest"], shop: { firstBuy: ["starter_pack"], purchases: [] } }).some((x) => x.id === "starter_pack")).toBe(false);
   });
 });
