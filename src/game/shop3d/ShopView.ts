@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { DISHES } from "../../../shared/content/dishes";
 import { artUrl, hasArt } from "../art";
 import { LAYOUT } from "../service/shift";
-import { CAMERA, COUNTER, cameraX, FLOOR_Y, toWorldX, Z } from "./layout";
+import { CAMERA, COUNTER, cameraX, FLOOR_Y, HUNTER_FEET, PASS, toWorldX, Z } from "./layout";
 import { YOKAI, type Glow, type Pose, type ShopLook } from "./look";
 import type { Anchors } from "./ShopHud";
 import { Board, loadTextures } from "./sprites";
@@ -13,8 +13,6 @@ import { Board, loadTextures } from "./sprites";
 
 const W = 960;
 const H = 540;
-const HUNTER_FEET = 7; // the hunter's 105 px frames have the feet on row 98
-const PASS = { x: toWorldX(LAYOUT.pass) + 10, w: 80, h: 22, d: 12 };
 const BANDAL_SINK = 4; // Bandal's picture stops at the waist: that much of it stays behind the pass
 const YK_POSES = ["walk_0", "walk_1", "sit", "eat", "happy", "angry"];
 const BANDAL = ["idle", "breathe", "grill", "turn", "serve", "smile"];
@@ -136,9 +134,9 @@ export class ShopView {
     box(PASS.w, PASS.h, PASS.d, PASS.x, Z.pass);
     // Bandal behind the pass, the waist hidden by it
     this.bandal = this.board("bandal_idle").place(PASS.x, FLOOR_Y + PASS.h - BANDAL_SINK, Z.bandal);
-    // the stations behind the counter, at the grandchild's depth
-    this.cart = this.board("prop_drink_cart").place(toWorldX(LAYOUT.drinkCart), FLOOR_Y, Z.waiter);
-    this.coalBox = this.board("prop_coal_box").place(toWorldX(LAYOUT.coalBox), FLOOR_Y, Z.waiter);
+    // the stations behind the counter, just in front of the grandchild
+    this.cart = this.board("prop_drink_cart").place(toWorldX(LAYOUT.drinkCart), FLOOR_Y, Z.station);
+    this.coalBox = this.board("prop_coal_box").place(toWorldX(LAYOUT.coalBox), FLOOR_Y, Z.station);
     // stools, and what lies on the counter in front of each
     for (const x of this.seatsX) {
       const wx = toWorldX(x);
@@ -187,7 +185,7 @@ export class ShopView {
       const h = WALL_H - PLAQUE_ROW;
       return this.projectWorld(px - 240, FLOOR_Y + h * Math.cos(p), Z.backWall - h * Math.sin(p));
     });
-    return { guests, plaques, coal: this.project(LAYOUT.coalBox, FLOOR_Y + 30, Z.waiter), cart: this.project(LAYOUT.drinkCart, FLOOR_Y + 44, Z.waiter) };
+    return { guests, plaques, coal: this.project(LAYOUT.coalBox, FLOOR_Y + 30, Z.station), cart: this.project(LAYOUT.drinkCart, FLOOR_Y + 44, Z.station) };
   }
 
   render(look: ShopLook, dt: number) {

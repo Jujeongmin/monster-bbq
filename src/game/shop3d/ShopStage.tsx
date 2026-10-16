@@ -149,14 +149,14 @@ export function ShopStage({ shop, onEnd, onFail }: { shop: ServiceData; onEnd: (
           if (e.done) pop(view.project(shift.s.seats[e.seat].x, FLOOR_Y + COUNTER.h + 20, Z.counter), t("service.tip", { n: e.tip }), "#ffd166");
           break;
         case "pour":
-          pop(view.project(LAYOUT.drinkCart, FLOOR_Y + 60, Z.waiter), t(`service.pour.${e.pour}`), e.pour === "perfect" ? "#ffd166" : e.pour === "good" ? "#bfe8a0" : "#ff8080");
+          pop(view.project(LAYOUT.drinkCart, FLOOR_Y + 60, Z.station), t(`service.pour.${e.pour}`), e.pour === "perfect" ? "#ffd166" : e.pour === "good" ? "#bfe8a0" : "#ff8080");
           break;
         case "coal":
           hold.busy = "grind";
-          pop(view.project(LAYOUT.coalBox, FLOOR_Y + 56, Z.waiter), `${Math.round(e.level)}%`, "#ffb070");
+          pop(view.project(LAYOUT.coalBox, FLOOR_Y + 56, Z.station), `${Math.round(e.level)}%`, "#ffb070");
           break;
         case "noCoal":
-          pop(view.project(LAYOUT.coalBox, FLOOR_Y + 64, Z.waiter), t("service.coalOut"), "#ff8080");
+          pop(view.project(LAYOUT.coalBox, FLOOR_Y + 64, Z.station), t("service.coalOut"), "#ff8080");
           break;
         case "soldOut":
           setCloseStep((c) => (c === 0 ? 1 : c));
