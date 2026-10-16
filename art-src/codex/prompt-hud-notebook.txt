@@ -1,0 +1,11 @@
+Use your image generation tool (do not write code to draw) to create ONE image: Grandma's notebook, the game's menu (like the smartphone in Dave the Diver), in two pieces: closed, and opened flat. A cozy, comic Korean BBQ restaurant game; Grandma runs the grill shop and this is her worn recipe-and-everything notebook.
+
+Style: match the attached references exactly (the first is the approved shop background, the second the approved small icons scaled up 8 times; the small brown notebook icon among them is this same notebook, keep its look: brown leather cover, brass corners, a strap). Real low-resolution pixel art: every art pixel an exact 8x8 block on an 8-pixel grid, a 1-art-pixel dark brown outline (#2b1408 or close), FLAT colours with 2-3 shades per material, NO gradients, NO glow, NO texture noise, NO anti-aliasing.
+
+Save as art-src/codex/raw/hud_notebook.png — exactly 2048x1024, background one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow), the two pieces side by side with wide magenta space between and around them, nothing touching the edges.
+
+piece 1 (left), CLOSED: the notebook's front cover, exactly 84 art pixels wide and 112 tall (672x896 image pixels). Brown leather with darker stitched border, brass corner caps, a brass clasp on the right edge, a small embossed emblem in the middle (a cute grill with a little flame), the spine on the left edge. No text.
+
+piece 2 (right), OPEN: the notebook lying open flat, exactly 168 art pixels wide and 112 tall (1344x896 image pixels): the leather cover showing 3 art pixels around the edges, two cream hanji paper pages with faint ruled lines, a stitched spine down the middle with a slight shadow, a ribbon bookmark hanging from the top of the spine. The pages are otherwise EMPTY (no text, no drawings) — app buttons will be placed on them.
+
+Reply only with the saved file path.

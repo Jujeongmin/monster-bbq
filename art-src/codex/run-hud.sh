@@ -12,10 +12,12 @@ if [ "${1:-}" != "snap" ]; then
   codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art-src/codex/raw/ref_hud_icons_x8.png - < art-src/codex/prompt-hud-time.txt
   codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art-src/codex/raw/ref_hud_icons_x8.png - < art-src/codex/prompt-hud-apps.txt
   codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art/test/shop/bg.png art-src/codex/raw/ref_hud_icons_x8.png - < art-src/codex/prompt-hud-receipt.txt
+  codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art/test/shop/bg.png art-src/codex/raw/ref_hud_icons_x8.png - < art-src/codex/prompt-hud-notebook.txt
 fi
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_time.png 6 1 art-src/codex/out/hud --main time_morning:20 time_noon:20 time_afternoon:20 time_evening:16 time_night:18 bag:20
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_apps.png 6 1 art-src/codex/out/hud --main app_bag:28 app_upgrade:28 app_awaken:28 app_cookbook:28 app_menu:28 app_shop:28
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_receipt.png 1 1 art-src/codex/out/hud --main receipt:40:8
+python art-src/codex/pixelsnap.py art-src/codex/raw/hud_notebook.png 2 1 art-src/codex/out/hud --main notebook_closed:84:20 notebook_open:168:20
 # one sheet of all of them at 4x for looking at
 python - <<'PY'
 from pathlib import Path
