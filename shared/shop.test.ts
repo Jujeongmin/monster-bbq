@@ -7,10 +7,10 @@ import { newSave, type SaveData } from "./save";
 const buy = (s: SaveData, productId: string, purchaseId = `p-${Math.random()}`) => grantPurchase(s, { purchaseId, productId, quantity: 1 });
 
 describe("buying charcoal", () => {
-  it("gives twice the first time a bundle is bought, then its plain amount", () => {
+  it("gives a bundle's plain amount every time, the first purchase included (no first-buy double, user 2026-10-16)", () => {
     const a = buy(newSave(), "charcoal_1").save;
-    expect(a.charcoal).toBe(60);
-    expect(buy(a, "charcoal_1").save.charcoal).toBe(90);
+    expect(a.charcoal).toBe(30);
+    expect(buy(a, "charcoal_1").save.charcoal).toBe(60);
   });
   it("grants a purchase once however often the webhook comes", () => {
     const a = buy(newSave(), "charcoal_2", "p-1").save;
@@ -44,15 +44,14 @@ describe("buying charcoal", () => {
 });
 
 describe("the shop's offer", () => {
-  it("sells every charcoal bundle at the same 30 charcoal per 100 VX (user, 2026-10-16), doubled the first time", () => {
+  it("sells every charcoal bundle at the same 30 charcoal per 100 VX (user, 2026-10-16), the first time too", () => {
     const o = shopOffer(newSave()).filter((x) => x.bundle);
-    expect(o.map((x) => [x.id, x.charcoal / 2 / (x.vx / 100)])).toEqual(["charcoal_1", "charcoal_2", "charcoal_3", "charcoal_4", "charcoal_5"].map((id) => [id, 30]));
-    expect(new Set(o.map((x) => x.valuePct))).toEqual(new Set([200]));
-    const after = shopOffer({ ...newSave(), shop: { firstBuy: ["charcoal_4"], purchases: [] } });
-    expect(after.find((x) => x.id === "charcoal_4")).toMatchObject({ charcoal: 1500, valuePct: 100, firstBuy: false });
+    expect(o.map((x) => [x.id, x.charcoal / (x.vx / 100)])).toEqual(["charcoal_1", "charcoal_2", "charcoal_3", "charcoal_4", "charcoal_5"].map((id) => [id, 30]));
+    expect(new Set(o.map((x) => x.valuePct))).toEqual(new Set([100]));
+    expect(o.some((x) => "firstBuy" in x)).toBe(false);
   });
   it("counts the VIP bonus in the band", () => {
-    const o = shopOffer({ ...newSave(), vip: { spent: 6_000, day: 0 }, shop: { firstBuy: ["charcoal_1"], purchases: [] } });
+    const o = shopOffer({ ...newSave(), vip: { spent: 6_000, day: 0 } });
     expect(o.find((x) => x.id === "charcoal_1")).toMatchObject({ charcoal: 33, valuePct: 110, vipPct: 10 });
   });
   it("offers the starter pack only after the Charge King, and not once bought", () => {

@@ -9,11 +9,11 @@ const S = BALANCE.shop;
 export const vipLevel = (spent: number): number => S.vipAt.filter((at) => spent >= at).length;
 export const vipBonus = (level: number): number => (level > 0 ? S.vipBonus[level - 1] : 0);
 
-// The charcoal one unit of a product gives this account now: twice for a bundle's first purchase, plus
-// the VIP bonus of the level before it.
-function charcoalFor(save: SaveData, p: Product, first: boolean): number {
+// The charcoal one unit of a product gives this account now: a bundle's amount plus the VIP bonus of the
+// level before it (no first-buy double any more, user 2026-10-16).
+function charcoalFor(save: SaveData, p: Product): number {
   if (!p.bundle) return p.charcoal;
-  return Math.floor(p.charcoal * (first ? 2 : 1) * (1 + vipBonus(vipLevel(save.vip.spent))));
+  return Math.floor(p.charcoal * (1 + vipBonus(vipLevel(save.vip.spent))));
 }
 
 // One purchase from the webhook. The same purchaseId again changes nothing; a one-per-account product
@@ -25,11 +25,12 @@ export function grantPurchase(save: SaveData, p: { purchaseId: string; productId
   const units = Math.max(1, Math.min(99, Math.floor(Number(p.quantity) || 1)));
   let s = save;
   for (let i = 0; i < units; i++) {
+    // shop.firstBuy is the record of products bought at least once (it keeps a one-per-account product to one)
     const first = !s.shop.firstBuy.includes(product.id);
     if (product.once && !first) break;
     s = {
       ...s,
-      charcoal: s.charcoal + charcoalFor(s, product, first),
+      charcoal: s.charcoal + charcoalFor(s, product),
       gold: s.gold + product.gold,
       vip: { ...s.vip, spent: s.vip.spent + product.vx },
       shop: { ...s.shop, firstBuy: first ? [...s.shop.firstBuy, product.id] : s.shop.firstBuy },
@@ -44,7 +45,6 @@ export interface Offer {
   charcoal: number;
   gold: number;
   valuePct: number; // the value band: charcoal's worth in VX over the price
-  firstBuy: boolean;
   vipPct: number;
   once: boolean;
   bundle: boolean; // a charcoal bundle: the shop shows no value band on these (all the same rate)
@@ -54,10 +54,9 @@ export interface Offer {
 export function shopOffer(save: SaveData): Offer[] {
   const vip = vipBonus(vipLevel(save.vip.spent));
   return PRODUCTS.filter((p) => (!p.needsPage || save.pages.includes(p.needsPage)) && !(p.once && save.shop.firstBuy.includes(p.id))).map((p) => {
-    const first = !save.shop.firstBuy.includes(p.id);
-    const charcoal = charcoalFor(save, p, first);
+    const charcoal = charcoalFor(save, p);
     // (+1e-9: 30 / 0.3 is 99.99… in floating point, and a band must not lose a percent to that)
     const valuePct = Math.floor((charcoal / S.charcoalPerVx / p.vx) * 100 + 1e-9);
-    return { id: p.id, vx: p.vx, charcoal, gold: p.gold, valuePct, firstBuy: p.bundle && first, vipPct: p.bundle ? Math.round(vip * 100) : 0, once: p.once, bundle: p.bundle };
+    return { id: p.id, vx: p.vx, charcoal, gold: p.gold, valuePct, vipPct: p.bundle ? Math.round(vip * 100) : 0, once: p.once, bundle: p.bundle };
   });
 }

@@ -11,8 +11,8 @@ describe("the shop service", () => {
   it("buys in local development through the same grant rules", async () => {
     const t = new LocalTransport(memory());
     const s = await t.purchase("charcoal_1");
-    expect(s.charcoal).toBe(60);
-    expect((await t.purchase("charcoal_1")).charcoal).toBe(90);
+    expect(s.charcoal).toBe(30);
+    expect((await t.purchase("charcoal_1")).charcoal).toBe(60);
   });
   it("reads the save again one and four seconds after the payment window closes", async () => {
     const waits: number[] = [];

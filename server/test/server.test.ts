@@ -99,7 +99,7 @@ describe("purchases", () => {
     await server.$onItemPurchased({ account: acct, purchaseId: "p-1", productId: "charcoal_1", quantity: 1 });
     server.connect({ account: acct });
     const s = await server.load();
-    expect(s.charcoal).toBe(60);
+    expect(s.charcoal).toBe(30);
     expect(s.vip.spent).toBe(100);
   });
   test("refuses a product it does not know", async (server) => {

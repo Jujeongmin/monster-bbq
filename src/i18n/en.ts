@@ -256,7 +256,7 @@ export const en: Record<keyof typeof ko, string> = {
   "shop.value": "Value {pct}%",
   "shop.gives": "{charcoal} golden charcoal",
   "shop.givesGold": "{charcoal} golden charcoal + {gold} gold",
-  "shop.firstBuy": "First buy x2",
+  "shop.soon": "Coming soon",
   "shop.once": "Once per account",
   "shop.price": "{vx} VX",
   "shop.checking": "Checking your purchase…",

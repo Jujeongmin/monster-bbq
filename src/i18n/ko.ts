@@ -255,7 +255,7 @@ export const ko = {
   "shop.value": "효율 {pct}%",
   "shop.gives": "황금 숯 {charcoal}",
   "shop.givesGold": "황금 숯 {charcoal} + 골드 {gold}",
-  "shop.firstBuy": "첫 구매 2배",
+  "shop.soon": "준비 중",
   "shop.once": "계정당 1번",
   "shop.price": "{vx} VX",
   "shop.checking": "결제를 확인하는 중…",
