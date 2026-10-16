@@ -1,0 +1,10 @@
+Use your image generation tool (do not write code to draw) to create ONE image: the attached picture again, the same Korean BBQ grill shop seen from the front, but in the DAYTIME (the shop between the morning and afternoon hunts, before it opens for the night).
+
+Keep EVERYTHING in the same place and at the same size: the walls, the big window, the menu plaques, the entrance curtain on the left, the kitchen on the right, the counter, the stools, the floor. Same real pixel-art style, same outline, same chunky pixels, same palette family. Only the light and the view change:
+- outside the window: a clear blue morning sky with a few soft white clouds, the village's tiled roofs and green hills in warm sunlight (no moon, no stars, no lit night lanterns outside);
+- inside: the paper lanterns are unlit (cream paper, no glow), soft daylight falls in from the window onto the wall and the counter, the wood looks warmer and lighter than at night;
+- the kitchen fire is a low ember, the shop is calm and empty, no people.
+
+Save as art-src/codex/raw/shop_counter_day.png at exactly the same size as the attached picture. No text anywhere.
+
+Reply only with the saved file path.

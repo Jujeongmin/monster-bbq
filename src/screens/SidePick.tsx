@@ -36,10 +36,10 @@ export function SidePick({ save, busy, onGo, onCancel }: { save: SaveData; busy:
       <div className="ui-panel side-pick">
         <h2>{t("side.title")}</h2>
         <div className="side-list">
-          {SIDE_WEAPONS.map((id) => {
+          {SIDE_WEAPONS.map((id, i) => {
             const owned = ownsSide(save, id);
             return (
-              <button key={id} className={`ui-box side-card${id === side ? " on" : ""}`} disabled={!owned} onClick={() => setSide(id)}>
+              <button key={id} className={`ui-box side-card${id === side ? " on" : ""}`} style={{ "--i": i } as React.CSSProperties} disabled={!owned} onClick={() => setSide(id)}>
                 <img src={artUrl(`test/ui/side/${id}.png`)} alt="" />
                 <span className="side-name">{t(`hunt.side.${id}` as StringKey)}</span>
                 <span className="side-ammo">{owned ? t("side.ammo", { n: ammoOf(save, id) }) : t("side.locked")}</span>

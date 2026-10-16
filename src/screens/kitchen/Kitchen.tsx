@@ -62,7 +62,7 @@ export function Kitchen({
   // the cut-in plays once the server has opened the dish that was asked for
   const landed = asked && save.dishes[asked] ? asked : null;
   return (
-    <div className="kitchen" style={{ backgroundImage: `url(${artUrl("test/shop/bg.png")})` }}>
+    <div className={`kitchen${onClose ? " kitchen-pop" : ""}`} style={{ backgroundImage: `url(${artUrl("test/shop/bg.png")})` }}>
       <div className="kitchen-dim" />
       <div className="kitchen-tabs">
         {tabs.map((k) => (

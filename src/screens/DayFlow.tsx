@@ -128,6 +128,21 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     }
   }
 
+  // Tab opens or closes Grandma's notebook, I the bag, while the day's HUD is up and nothing else is open
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => {
+      if (!save || !showDayHud(phase, !!save.hunt) || e.repeat) return;
+      const k = e.key.toLowerCase();
+      if (k !== "tab" && k !== "i") return;
+      if (shopping || store || summary || card || panel || picking) return;
+      e.preventDefault();
+      const want = k === "tab" ? "notebook" : "bag";
+      setWin((w) => (w === want ? null : w === null ? want : w));
+    };
+    addEventListener("keydown", on);
+    return () => removeEventListener("keydown", on);
+  });
+
   // An app of Grandma's notebook: its window, or in the evening kitchen the kitchen's own tab.
   function openApp(app: App) {
     setWin(null);
@@ -177,6 +192,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         <DayHud
           save={save}
           time={timeOfDay(phase, save.hunt?.period ?? null)}
+          quiet={!!(shopping || store || win || panel || picking || summary)}
           onBag={() => setWin("bag")}
           onNotebook={() => setWin("notebook")}
         />

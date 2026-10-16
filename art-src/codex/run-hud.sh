@@ -13,6 +13,8 @@ if [ "${1:-}" != "snap" ]; then
   codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art-src/codex/raw/ref_hud_icons_x8.png - < art-src/codex/prompt-hud-apps.txt
   codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art/test/shop/bg.png art-src/codex/raw/ref_hud_icons_x8.png - < art-src/codex/prompt-hud-receipt.txt
   codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art/test/shop/bg.png art-src/codex/raw/ref_hud_icons_x8.png - < art-src/codex/prompt-hud-notebook.txt
+  # the shop by day: the same room, daylight outside the window (user, 2026-10-16)
+  codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art-src/codex/raw/shop_counter_bg2.png - < art-src/codex/prompt-shop-day.txt
   # each window its own material (user, 2026-10-16: the same card frame everywhere cheapened the game)
   for k in bag upgrade rack; do
     codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art/test/shop/bg.png art-src/codex/raw/ref_hud_icons_x8.png - < "art-src/codex/prompt-ui-$k.txt"
@@ -25,6 +27,26 @@ python art-src/codex/pixelsnap.py art-src/codex/raw/hud_notebook.png 2 1 art-src
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_bag_cloth.png 1 1 art-src/codex/out/hud --main bag_cloth:200:20
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_upgrade_board.png 1 1 art-src/codex/out/hud --main upgrade_board:216:20
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_weapon_rack.png 1 1 art-src/codex/out/hud --main weapon_rack:208:20
+# the daytime back wall: shrunk to the night room's 480x270 by each block's most common colour (no drawing),
+# then the same box the night back wall was cut from (art-src/codex/slice_shop3d.py)
+python - <<'PY'
+from collections import Counter
+from pathlib import Path
+from PIL import Image
+src = Path("art-src/codex/raw/shop_counter_day.png")
+if src.exists():
+    im = Image.open(src).convert("RGB").quantize(48).convert("RGB")
+    W, H = 480, 270
+    bw, bh = im.width / W, im.height / H
+    out = Image.new("RGB", (W, H))
+    px = im.load()
+    for y in range(H):
+        for x in range(W):
+            c = Counter(px[int(x * bw + i), int(y * bh + j)] for i in range(int(bw)) for j in range(int(bh)))
+            out.putpixel((x, y), c.most_common(1)[0][0])
+    out.crop((0, 0, 480, 201)).save("art-src/codex/out/hud/backwall_day.png")
+    print("backwall_day: art-src/codex/out/hud/backwall_day.png (approve, then copy to art/test/shop3d/backwall_day.png)")
+PY
 # one sheet of all of them at 4x for looking at
 python - <<'PY'
 from pathlib import Path

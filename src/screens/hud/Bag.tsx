@@ -24,8 +24,8 @@ export function Bag({ save, onClose }: { save: SaveData; onClose: () => void }) 
         </div>
         <div className="ui-frame bag-grid">
           {cells.length === 0 && <span className="bag-empty">{t("bag.empty")}</span>}
-          {cells.map((c) => (
-            <button key={c.key} className={`ui-slot bag-cell${c.key === picked ? " on" : ""}`} onClick={() => setPicked(c.key)}>
+          {cells.map((c, i) => (
+            <button key={c.key} className={`ui-slot bag-cell${c.key === picked ? " on" : ""}`} style={{ "--i": i } as React.CSSProperties} onClick={() => setPicked(c.key)}>
               <ItemIcon itemKey={c.key} />
               <span className="bag-count">×{c.count}</span>
             </button>

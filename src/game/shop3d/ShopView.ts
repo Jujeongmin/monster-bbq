@@ -23,9 +23,11 @@ const WALL_H = 201;
 const GUEST_HEAD = 50; // a bubble sits on top of a guest this high
 const PROPS = ["stool", "plate_dirty", "drink_cart", "coal_box", "cup_tea", "cup_cider", "bowl_sikhye"];
 
-function textureUrls(): Record<string, string> {
+function textureUrls(day: boolean): Record<string, string> {
   const urls: Record<string, string> = {};
   for (const n of ["backwall", "countertop", "counterfront", "floor"]) urls[`room_${n}`] = artUrl(`test/shop3d/${n}.png`);
+  // by day the daylight back wall once it is approved and in (the night one until then)
+  if (day && hasArt("test/shop3d/backwall_day.png")) urls.room_backwall = artUrl("test/shop3d/backwall_day.png");
   for (const p of PROPS) urls[`prop_${p}`] = artUrl(`test/shop/${p}.png`);
   for (const d of Object.keys(DISHES)) urls[`dish_${d}`] = artUrl(hasArt(`test/shop/dishes/${d}.png`) ? `test/shop/dishes/${d}.png` : `test/dishes/${d}.png`);
   for (const y of YOKAI) for (const p of YK_POSES) urls[`yk_${y}_${p}`] = artUrl(`test/yokai/counter/${y}_${p}.png`);
@@ -91,7 +93,7 @@ export class ShopView {
   }
 
   async load(): Promise<void> {
-    this.tex = await loadTextures(textureUrls());
+    this.tex = await loadTextures(textureUrls(this.day));
     this.build();
   }
 
