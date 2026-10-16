@@ -321,4 +321,5 @@ export const ko = {
   "day.bandal.kitchen": "반달이: 주방",
   "day.hint": "A·D로 걷고 E로 고르기",
   "day.act": "고르기",
+  "day.hintTouch": "조이스틱으로 걷고 고르기 버튼으로 고르기",
 } as const;

@@ -52,6 +52,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   const [picking, setPicking] = useState(false);
   // the bag or Grandma's notebook, opened from the day's HUD
   const [win, setWin] = useState<"bag" | "notebook" | "cookbook" | null>(null);
+  // a key asked the open window to close (it plays its closing, then calls back)
+  const [shut, setShut] = useState(0);
   // the hunt just settled: what was taken, the fridge, the den's key and the pages before it, for the summary
   const [summary, setSummary] = useState<{ events: HuntEvent[]; ko: boolean; lost: Record<string, number>; before: Record<string, number>; hadKey: boolean; hadPages: string[] } | null>(null);
   // a second click can land before React re-renders with busy=true
@@ -137,7 +139,9 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       if (shopping || store || summary || card || panel || picking) return;
       e.preventDefault();
       const want = k === "tab" ? "notebook" : "bag";
-      setWin((w) => (w === want ? null : w === null ? want : w));
+      // the same key again closes it the window's own way (folding back to its button)
+      if (win === want) setShut((n) => n + 1);
+      else if (win === null) setWin(want);
     };
     addEventListener("keydown", on);
     return () => removeEventListener("keydown", on);
@@ -178,6 +182,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {phase === "hunt" && save.hunt && (
         <PhaserGame
           key={save.hunt.id}
+          hold={!!card}
           hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, side: save.hunt.side, ammo: ammoOf(save, save.hunt.side), harpoonLevel: level(save, "ranged"), sleepFallMs: sleepFallMs(save), sidePower: sidePower(save, save.hunt.side), stats: huntStats(save), gear: { boots: level(save, "boots") >= 1, light: lightRadius(save), key: save.bossKey }, bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
           onHuntEnd={(r: HuntResult) => {
             const before = save.items;
@@ -221,7 +226,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         />
       )}
       {phase === "kitchen" && (!hub || panel === "kitchen") && <Kitchen tab={kitchenTab} onTab={setKitchenTab} save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} onClose={hub ? () => setPanel(null) : undefined} />}
-      {phase === "service" && save.service && <Night save={save} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
+      {phase === "service" && save.service && <Night save={save} hold={!!card} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
       {phase === "settle" && <Receipt save={save} busy={busy} onNext={() => act({ type: "endDay" }, "hunt")} />}
 
       {/* the morning: pick the side weapon, then set out; at lunch the same window opens from its button */}
@@ -235,8 +240,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       )}
       {/* the notebook's windows; the upgrades act at whatever stage of the day they were opened in */}
       {shopping && phase !== "service" && <Upgrades tab={shopping} save={save} busy={busy} act={(a) => void act(a, phase)} onShop={() => setStore(true)} onClose={() => setShopping(null)} />}
-      {win === "notebook" && <Notebook phase={phase} onApp={openApp} onClose={() => setWin(null)} />}
-      {win === "bag" && <Bag save={save} onClose={() => setWin(null)} />}
+      {win === "notebook" && <Notebook phase={phase} shut={shut} onApp={openApp} onClose={() => setWin(null)} />}
+      {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
       {win === "cookbook" && (
         <div className="hud-win" onClick={() => setWin(null)}>
           <div className="ui-frame hud-cookbook" onClick={(e) => e.stopPropagation()}>
@@ -270,9 +275,9 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
 
 // Tonight's service: the customers the server's seed brings (same plan as the server checks) and the
 // plates the menu board made.
-function Night({ save, onEnd }: { save: SaveData; onEnd: (r: { served: ServedEntry[]; left: string[]; cleaned: string[] }) => void }) {
+function Night({ save, hold, onEnd }: { save: SaveData; hold: boolean; onEnd: (r: { served: ServedEntry[]; left: string[]; cleaned: string[] }) => void }) {
   const svc = save.service!;
   const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.dishes.map((d) => d.dish) });
   const shop = { serviceId: svc.id, customers, dishes: svc.dishes, stools: stools(save), walkMul: walkMul(save), coalPerDish: coalPerDish(save) };
-  return <ServiceGame key={svc.id} shop={shop} onEnd={onEnd} />;
+  return <ServiceGame key={svc.id} shop={shop} hold={hold} onEnd={onEnd} />;
 }

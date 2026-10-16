@@ -322,4 +322,5 @@ export const en: Record<keyof typeof ko, string> = {
   "day.bandal.kitchen": "Bandal: the kitchen",
   "day.hint": "Walk with A·D, choose with E",
   "day.act": "Use",
+  "day.hintTouch": "Walk with the stick, choose with Use",
 };

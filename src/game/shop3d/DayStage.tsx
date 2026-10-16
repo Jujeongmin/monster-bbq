@@ -136,7 +136,7 @@ export function DayStage({ scene, stools, active, onSpot, onFail }: { scene: Day
               {t(near.spot.label)}
             </div>
           )}
-          {active && !near && <div className="day-hint">{t("day.hint")}</div>}
+          {active && !near && <div className="day-hint">{t(touch ? "day.hintTouch" : "day.hint")}</div>}
           {touch && active && (
             <>
               <div className="s3-stick" style={{ left: STICK.x - STICK.r, top: STICK.y - STICK.r }} onPointerDown={(e) => (e.currentTarget.setPointerCapture(e.pointerId), stickAt(e))} onPointerMove={(e) => e.buttons && stickAt(e)} onPointerUp={release} onPointerCancel={release}>

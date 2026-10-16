@@ -339,6 +339,8 @@ export class HuntScene extends Phaser.Scene {
     for (const e of this.floorDef.exits) this.add.image(e.x, e.y, "exit").setOrigin(0.5, 0.9).setDepth(e.y);
     if (this.floorDef.down) this.add.image(this.floorDef.down.x, this.floorDef.down.y, "stairs").setOrigin(0.5, 0.7).setDepth(this.floorDef.down.y - 20);
     createCharacterAnims(this);
+    // a handle for the check scripts (development only)
+    if (import.meta.env.DEV) (window as unknown as { __hunt?: HuntScene }).__hunt = this;
 
     this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_down_1").setOrigin(0.5, HUNTER_FEET).setScale(CHAR_SCALE);
     this.fx = this.add.graphics().setDepth(5000);

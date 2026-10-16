@@ -44,7 +44,7 @@ export function DayHud({ save, time, quiet = false, onBag, onNotebook }: { save:
           {t("hud.notebookButton")}
         </span>
       </button>
-      <button className={`dh-big dh-bag${quiet ? " quiet" : ""}`} onClick={onBag} aria-label={t("hud.bagButton")}>
+      <button className={`dh-big dh-bag${touch ? " touch" : ""}${quiet ? " quiet" : ""}`} onClick={onBag} aria-label={t("hud.bagButton")}>
         <img src={artUrl(HUD_ART.bag)} alt="" />
         <span className="dh-label">
           {!touch && <kbd className="dh-key">I</kbd>}

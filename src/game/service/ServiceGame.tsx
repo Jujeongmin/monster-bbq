@@ -8,13 +8,16 @@ import { SHOP_HEIGHT, SHOP_WIDTH, type ServiceData, type ShopReport } from "./ty
 // The night service in a page: the 3D shop (shop 3D design) where WebGL works, else the 2D Phaser one
 // (also with ?shop2d, and if the 3D one fails to load). Either reports the night to onEnd (each served
 // guest's dish, wait and pour; who left; the leftovers cleared).
-export function ServiceGame({ shop, onEnd }: { shop: ServiceData; onEnd: (r: ShopReport) => void }) {
+export function ServiceGame({ shop, hold = false, onEnd }: { shop: ServiceData; hold?: boolean; onEnd: (r: ShopReport) => void }) {
   const [threeD, setThreeD] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
-  return threeD ? <ShopStage shop={shop} onEnd={onEnd} onFail={() => setThreeD(false)} /> : <Service2D shop={shop} onEnd={onEnd} />;
+  return threeD ? <ShopStage shop={shop} hold={hold} onEnd={onEnd} onFail={() => setThreeD(false)} /> : <Service2D shop={shop} hold={hold} onEnd={onEnd} />;
 }
 
-function Service2D({ shop, onEnd }: { shop: ServiceData; onEnd: (r: ShopReport) => void }) {
+function Service2D({ shop, hold, onEnd }: { shop: ServiceData; hold: boolean; onEnd: (r: ShopReport) => void }) {
   const host = useRef<HTMLDivElement>(null);
+  const game = useRef<Phaser.Game | null>(null);
+  const holdRef = useRef(hold);
+  holdRef.current = hold;
   const onEndRef = useRef(onEnd);
   onEndRef.current = onEnd;
   const start = useRef(shop);
@@ -31,8 +34,16 @@ function Service2D({ shop, onEnd }: { shop: ServiceData; onEnd: (r: ShopReport) 
     });
     g.scene.add("shop", ServiceScene, true, start.current);
     g.events.on("service:end", (r: ShopReport) => onEndRef.current(r));
+    game.current = g;
+    g.events.once(Phaser.Core.Events.POST_STEP, () => holdRef.current && g.loop.sleep());
     return () => g.destroy(true);
   }, []);
+  useEffect(() => {
+    if (!game.current) return;
+    const g = game.current;
+    if (hold) g.isRunning ? g.loop.sleep() : g.events.once(Phaser.Core.Events.POST_STEP, () => holdRef.current && g.loop.sleep());
+    else g.loop.wake();
+  }, [hold]);
 
   return <div ref={host} className="service-stage" />;
 }

@@ -13,8 +13,11 @@
 .dh-big:active img { transform: translateY(calc(1px * var(--s))) scale(0.96); }
 .dh-note { left: calc(10px * var(--s)); }
 .dh-big.quiet { visibility: hidden; }
-/* on touch the walking stick takes the bottom left corner */
-.dh-note.touch { bottom: calc(150px * var(--s)); }
+/* on touch the walking stick and the action button take the bottom corners: the two sit under the top
+   plates instead, a little smaller */
+.dh-big.touch { top: calc(34px * var(--s)); bottom: auto; }
+.dh-note.touch img { height: calc(40px * var(--s)); }
+.dh-bag.touch img { height: calc(30px * var(--s)); }
 .dh-bag { right: calc(12px * var(--s)); }
 .dh-label { display: inline-flex; align-items: center; gap: calc(3px * var(--s)); }
 .dh-key { display: inline-flex; align-items: center; justify-content: center; min-width: calc(12px * var(--s)); height: calc(12px * var(--s)); padding: 0 calc(2px * var(--s)); border: calc(2px * var(--s)) solid transparent; border-image: url("../../../art/test/ui2/btn_small.png") 3 fill / calc(3px * var(--s)) stretch; image-rendering: pixelated; color: #4a2a12; text-shadow: none; font: 700 var(--fs-small) / 1 "Galmuri9", monospace; }
@@ -23,9 +26,12 @@
 .hud-win h2 { margin: 0 0 calc(4px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink); }
 .bag { width: min(92%, calc(440px * var(--s))); padding: calc(6px * var(--s)) calc(10px * var(--s)); display: flex; flex-direction: column; align-items: center; color: var(--ink); }
 .bag-tabs { display: flex; gap: calc(2px * var(--s)); margin-bottom: calc(-2px * var(--s)); align-self: flex-start; }
-.bag-grid { align-self: stretch; min-height: calc(120px * var(--s)); max-height: calc(170px * var(--s)); overflow: auto; padding: calc(6px * var(--s)); display: grid; grid-template-columns: repeat(auto-fill, calc(38px * var(--s))); gap: calc(4px * var(--s)); align-content: start; justify-content: center; }
-.bag-cell { position: relative; width: calc(38px * var(--s)); height: calc(38px * var(--s)); padding: 0; background: none; cursor: pointer; font: inherit; }
+.bag-grid { align-self: stretch; min-height: calc(120px * var(--s)); max-height: calc(170px * var(--s)); overflow: auto; padding: calc(6px * var(--s)); display: grid; grid-template-columns: repeat(auto-fill, calc(56px * var(--s))); gap: calc(4px * var(--s)); align-content: start; justify-content: center; }
+.bag-cell { position: relative; width: calc(56px * var(--s)); height: calc(56px * var(--s)); padding: 0; background: none; cursor: pointer; font: inherit; }
 .bag-cell.on { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(var(--k) 0 0 #ffd65a) drop-shadow(calc(-1 * var(--k)) 0 0 #ffd65a) drop-shadow(0 var(--k) 0 #ffd65a) drop-shadow(0 calc(-1 * var(--k)) 0 #ffd65a); }
+/* the item at twice its pixels (21 art px → 42), the slot sized round it */
+.bag-cell .item-icon img { width: calc(42px * var(--s)); }
+.bag-cell .item-star { font-size: var(--fs); right: calc(-4px * var(--s)); top: calc(-6px * var(--s)); }
 .bag-count { position: absolute; right: calc(1px * var(--s)); bottom: calc(-1px * var(--s)); font: 700 var(--fs-small) "Galmuri9", monospace; color: var(--cream); text-shadow: var(--s) var(--s) 0 #2b1408; }
 .bag-empty { grid-column: 1 / -1; text-align: center; color: #d8c4a4; padding-top: calc(40px * var(--s)); }
 .bag-info { margin: calc(4px * var(--s)) 0; min-height: calc(14px * var(--s)); color: var(--paper-ink-soft); }
@@ -102,6 +108,9 @@
 /* Each window opens its own way, in the game's stepped pixel motion (user, 2026-10-16) */
 /* the bag: out of its button at the bottom right, the slots laid on one after another */
 .bag { transform-origin: 100% 100%; animation: bag-open 0.28s steps(7) both; }
+.bag-win.closing .bag { animation: bag-close 0.22s steps(6) both; }
+.hud-win.bag-win.closing { animation: nb-undim 0.22s steps(5) both; }
+@keyframes bag-close { to { transform: translate(38vw, 40vh) scale(0.1); } }
 @keyframes bag-open { 0% { transform: translate(38vw, 40vh) scale(0.1); } 70% { transform: scale(1.04); } 100% { transform: none; } }
 .bag-cell { animation: cell-in 0.18s steps(3) both; animation-delay: calc(0.22s + var(--i, 0) * 0.05s); }
 @keyframes cell-in { from { opacity: 0; transform: translateY(calc(-6px * var(--s))) scale(0.6); } }

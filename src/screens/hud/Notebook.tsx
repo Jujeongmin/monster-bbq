@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { artUrl } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
 import { HUD_ART, notebookApps, type App, type Phase } from "./hud";
@@ -7,9 +7,14 @@ import { HUD_ART, notebookApps, type App, type Phase } from "./hud";
 // at the HUD's bottom right, the notebook flies up from its button and its cover swings open onto the apps
 // (user, 2026-10-16); closing folds it back down. The menu board opens only in the evening kitchen; a closed
 // app says where it opens.
-export function Notebook({ phase, onApp, onClose }: { phase: Phase; onApp: (app: App) => void; onClose: () => void }) {
+export function Notebook({ phase, shut = 0, onApp, onClose }: { phase: Phase; shut?: number; onApp: (app: App) => void; onClose: () => void }) {
   const [closing, setClosing] = useState<App | "close" | null>(null);
   const close = (then: App | "close") => setClosing((c) => c ?? then);
+  // its key pressed again: fold back like the close button
+  const first = useRef(shut);
+  useEffect(() => {
+    if (shut !== first.current) close("close");
+  }, [shut]);
   return (
     <div className={`hud-win nb-win${closing ? " closing" : ""}`} onClick={() => close("close")}>
       <div

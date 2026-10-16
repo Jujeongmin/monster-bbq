@@ -26,7 +26,10 @@ interface Hud {
   pops: Pop[];
 }
 
-export function ShopStage({ shop, onEnd, onFail }: { shop: ServiceData; onEnd: (r: ShopReport) => void; onFail: () => void }) {
+// `hold`: the day's title card is over the shop, so the night waits (no clock, no guests) until it is gone.
+export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: ServiceData; hold?: boolean; onEnd: (r: ShopReport) => void; onFail: () => void }) {
+  const holdRef = useRef(hold);
+  holdRef.current = hold;
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const onEndRef = useRef(onEnd);
@@ -91,7 +94,7 @@ export function ShopStage({ shop, onEnd, onFail }: { shop: ServiceData; onEnd: (
     const top = { x: 480, y: 90 };
 
     const press = () => {
-      if (isPaused || ended) return;
+      if (isPaused || ended || holdRef.current) return;
       if (shift.target()?.kind === "drinks") shift.pourStart();
       else shift.act();
     };
@@ -175,7 +178,7 @@ export function ShopStage({ shop, onEnd, onFail }: { shop: ServiceData; onEnd: (
       const dt = Math.min(time - last, MAX_DT_MS);
       last = time;
       const move = moveFrom(keys, stick);
-      if (!isPaused && !ended) {
+      if (!isPaused && !ended && !holdRef.current) {
         shift.tick(dt, move);
         if (shift.s.clock - savedAt > 1000) {
           savedAt = shift.s.clock;
