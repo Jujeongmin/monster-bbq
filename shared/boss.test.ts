@@ -59,6 +59,8 @@ describe("the Charge King", () => {
     expect(r.error).toBeUndefined();
     expect(r.save.pages).toEqual(["forest"]);
     expect(r.save.dishes.king_galbi).toBe(1);
+    // and the first boss's charcoal, once (06b-1)
+    expect(r.save.charcoal).toBe(BALANCE.shop.bossCharcoal);
     // his rib, twice the stars like the tusk boss
     expect(r.save.items["king_rib:normal"]).toBe(H.stars.down.count * H.stars.bossMul);
   });
@@ -67,6 +69,7 @@ describe("the Charge King", () => {
     const r = finish(s, [...toDen, king("capture")], "5-e0");
     expect(r.save.pages).toEqual(["forest"]);
     expect(r.save.dishes.king_galbi).toBe(3);
+    expect(r.save.charcoal).toBe(0);
     expect(r.save.items["king_rib:normal"]).toBe(H.stars.capture.count * H.stars.bossMul);
   });
   it("refuses a King taken faster than the fight could last", () => {

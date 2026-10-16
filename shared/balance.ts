@@ -173,6 +173,10 @@ export const BALANCE: {
   // awakening (06b-1, user-approved 2026-10-16): stars 1-20, each ×mul; gold = goldPerStarSq × star² up
   // to goldUntil, charcoal by the star reached
   awaken: { mul: number; goldPerStarSq: number; goldUntil: number; charcoal: number[] };
+  // the VX shop (06b-1, user-approved 2026-10-16): 30 charcoal = 100 VX is the value line; VIP levels by VX
+  // spent, each adding a share to charcoal bundles and vipDaily charcoal a day per level; the first boss
+  // of a chapter gives bossCharcoal the first time
+  shop: { charcoalPerVx: number; vipAt: number[]; vipBonus: number[]; vipDaily: number; bossCharcoal: number; keepPurchases: number };
 } = {
   hunt: {
     player: { maxHp: 100, speed: 85, depthSpeedRatio: 0.9, radius: 6 },
@@ -386,4 +390,5 @@ export const BALANCE: {
     walk: { speed: 165, runMul: 1.6, carryMul: 0.9 },
   },
   awaken: { mul: 1.1, goldPerStarSq: 200, goldUntil: 10, charcoal: [5, 8, 10, 14, 18, 22, 26, 30, 35, 40, 120, 160, 200, 260, 320, 380, 460, 540, 560, 600] },
+  shop: { charcoalPerVx: 0.3, vipAt: [100, 500, 1500, 3000, 6000, 12000, 25000, 45000, 70000, 100000], vipBonus: [0.02, 0.04, 0.06, 0.08, 0.1, 0.13, 0.16, 0.19, 0.22, 0.25], vipDaily: 2, bossCharcoal: 50, keepPurchases: 200 },
 };

@@ -13,6 +13,7 @@ import { planFloor, type FloorPlan } from "./hunt/plan";
 import { FLOORS, isFloorId, type FloorId } from "./content/floors";
 import { levelCost, MAX_SETS, planShop, takeSets, type MenuLine } from "./kitchen/dish";
 import { settleService } from "./service/settle";
+import { vipLevel } from "./shop";
 import type { SaveData, Zone } from "./save";
 
 // What a hunt report lists, in the order things happened (hunt v3 design 5.3): each monster taken and how
@@ -31,7 +32,8 @@ export type Action =
   | { type: "buyUpgrade"; id: string }
   | { type: "packLunch"; dishes: string[] }
   | { type: "endDay" }
-  | { type: "awaken"; target: string; from: number };
+  | { type: "awaken"; target: string; from: number }
+  | { type: "claimVipDaily" };
 
 // What only the server may decide: its clock and its dice.
 export interface ActionContext {
@@ -167,6 +169,15 @@ function awaken(save: SaveData, a: Record<string, unknown>): { save: SaveData; e
   return { save: { ...save, gold: save.gold - cost.gold, charcoal: save.charcoal - cost.charcoal, stars: { ...save.stars, [a.target]: now + 1 } } };
 }
 
+// The VIP's charcoal (06b-1 design 3): once a game day, in the morning before the hunt.
+function claimVipDaily(save: SaveData): { save: SaveData; error?: string } {
+  const lv = vipLevel(save.vip.spent);
+  if (lv === 0) return { save, error: "no_vip" };
+  if (save.vip.day === save.day) return { save, error: "claimed" };
+  if (save.stage !== "hunt" || save.hunt) return { save, error: "wrong_stage" };
+  return { save: { ...save, charcoal: save.charcoal + lv * BALANCE.shop.vipDaily, vip: { ...save.vip, day: save.day } } };
+}
+
 // Research (restaurant v2 design 3): a dish opens once every ingredient of it has been brought home.
 // A second press (or a retry after a lost reply) finds it known and changes nothing.
 function research(save: SaveData, a: Record<string, unknown>): { save: SaveData; error?: string } {
@@ -251,7 +262,9 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       const firstKing = settled.king && !save.pages.includes("forest");
       const pages = firstKing ? [...save.pages, "forest"] : save.pages;
       const dishes = firstKing ? { ...save.dishes, king_galbi: Math.max(1, save.dishes.king_galbi ?? 0) } : save.dishes;
-      return { save: { ...save, items, hunt: null, seenItems, stage, lunchbox: [], bossKey: save.bossKey || settled.tusk, pages, dishes } };
+      // and the chapter boss's charcoal, the first time (06b-1)
+      const charcoal = save.charcoal + (firstKing ? BALANCE.shop.bossCharcoal : 0);
+      return { save: { ...save, items, hunt: null, seenItems, stage, lunchbox: [], bossKey: save.bossKey || settled.tusk, pages, dishes, charcoal } };
     }
     case "skipHunt":
       // staying home this afternoon: straight on to the evening kitchen
@@ -263,6 +276,8 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       return research(save, a);
     case "awaken":
       return awaken(save, a);
+    case "claimVipDaily":
+      return claimVipDaily(save);
     case "upgradeDish":
       return upgradeDish(save, a);
     case "openShop":
