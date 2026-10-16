@@ -126,7 +126,7 @@ UI 요소는 지금 키트(키트 A + 갈무리)를 쓴다. 새 UI 그림이 필
 - 새 가게 배경 `art-src/pixellab/shop3/bg_C_320.png` → `art/test/shop/hall.png` — **승인**(2026-10-16, 카운터 구조). 예전 `shop2/bg_320_faithful.png`(식탁 구조)는 대체됨.
 - 반달이 8동작 `art-src/pixellab/shop2/bandal_200_faithful.png` — **승인**(변환본 그대로).
 - 소품 `art-src/pixellab/shop2/props_196_faithful.png` — 식탁용이라 카운터 구조에 맞게 다시 뽑는다(카운터 불판 3상태·둥근 의자·숯통·음료 수레).
-- 요괴 손님 — 같은 방식으로 변환 예정(PixelLab 생성 횟수 소진으로 멈춤).
+- 카운터 소품(불판 3상태·의자·숯통·음료 수레·쟁반·음료·그릇) `art/test/shop/`, 요괴 손님 카운터용(걷기 2·앉은 뒷모습·먹기·하트·화남) `art/test/yokai/counter/` — **승인**(2026-10-16, 미리보기 `art-src/preview/shop3_props_on_bg.png`). 원본 `art-src/codex/raw/shop3_props.png`, `shop3_customers.png`, 도트 변환 `art-src/pixellab/shop3/`, 자르기 `slice_shop3.py`.
 - 손주 장사 복장, 반달이 컷인 그림 — 아직 없음.
 - 원본: `art-src/codex/raw/shop_bg2.png`, `shop_props.png`, `bandal_sheet.png`. 예전 `shop_bg.png`는 폐기(파일 삭제).
 - 따로 기다리는 승인: 사냥꾼 8방향 걷기(`art-src/sprite-gen/hunter8/`, 뒤45 서 있기 다시 뽑기), 새 대화창 패널(`art-src/codex/raw/dialogue_panel.png` — 새 그림 방식으로 다시 맞춘 뒤 승인).
