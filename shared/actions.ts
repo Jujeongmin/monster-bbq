@@ -26,7 +26,7 @@ export type Action =
   | { type: "research"; dish: string }
   | { type: "upgradeDish"; dish: string; from?: number }
   | { type: "openShop"; menu: { dish: string; sets: number }[] }
-  | { type: "finishService"; serviceId: string; served: { customer: string; dish: string }[]; left: string[] }
+  | { type: "finishService"; serviceId: string; served: { customer: string; dish: string; waitMs: number; drink?: string }[]; left: string[] }
   | { type: "buyUpgrade"; id: string }
   | { type: "packLunch"; dishes: string[] }
   | { type: "endDay" };

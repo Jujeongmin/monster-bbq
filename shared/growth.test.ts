@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyAction, type ActionContext } from "./actions";
 import { BALANCE } from "./balance";
-import { ammoOf, bagSlots, huntStats, ownsSide, sleepFallMs, level, lunchSlots, maxLevel, menuSlots, nextCost, seatBonus, UPGRADE_IDS } from "./growth";
+import { ammoOf, bagSlots, huntStats, ownsSide, sleepFallMs, level, lunchSlots, maxLevel, menuSlots, nextCost, stools, traySlots, walkMul, coalDrain, UPGRADE_IDS } from "./growth";
 import { planFloor } from "./hunt/plan";
 import { planService } from "./service/plan";
 import { newSave, readSave } from "./save";
@@ -51,13 +51,14 @@ describe("reading upgrades from a save", () => {
 
 describe("upgrade effects", () => {
   const at = (upgrades: Record<string, number>) => ({ ...newSave(), upgrades });
-  it("gives stronger hunts, a bigger bag, more menu slots, more guests by level", () => {
+  it("gives stronger hunts, a bigger bag, more menu slots, more stools by level", () => {
     expect(huntStats(newSave())).toEqual({ meleeDamage: 10, rangedDamage: 5, rangedRange: 1, maxHp: 100, damageTaken: 1 });
     expect(huntStats(at({ melee: 3, ranged: 2, armor: 4, tank: 4 }))).toEqual({ meleeDamage: 19, rangedDamage: 8, rangedRange: 1.1, maxHp: 220, damageTaken: 0.7 });
     expect(bagSlots(newSave())).toBe(12);
     expect(bagSlots(at({ bag: 3 }))).toBe(18);
     expect(menuSlots(at({ menu: 2 }))).toBe(3);
-    expect(seatBonus(at({ seats: 3 }))).toBe(2);
+    expect(stools(newSave())).toBe(4);
+    expect(stools(at({ seats: 5 }))).toBe(8);
     expect(lunchSlots(at({ lunchbox: 2 }))).toBe(2);
   });
   it("lets the server take a 15-item haul once the bag is upgraded", () => {
@@ -74,9 +75,10 @@ describe("upgrade effects", () => {
     expect(applyAction({ ...kitchen, upgrades: { menu: 2 } }, three, ctx).error).toBeUndefined();
   });
 
-  it("brings one more guest a night per seat level, the same way for the server and the page", () => {
-    const opts = { day: 1, reputation: 0, menu: ["grilled_belly" as const] };
-    expect(planService(5, { ...opts, seats: 1 })).toHaveLength(planService(5, opts).length + 1);
+  it("gives the night shop a bigger tray, quicker shoes and a slower-burning charcoal bin by level", () => {
+    expect([traySlots(newSave()), traySlots(at({ tray: 3 }))]).toEqual([2, 4]);
+    expect([walkMul(newSave()), walkMul(at({ shoes: 2 }))]).toEqual([1, 1.1]);
+    expect([coalDrain(newSave()), coalDrain(at({ coalBin: 3 }))]).toEqual([1.5, 0.8]);
   });
 });
 

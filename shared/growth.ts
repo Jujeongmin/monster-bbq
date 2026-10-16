@@ -36,7 +36,12 @@ export function huntStats(save: Pick<SaveData, "upgrades">) {
 }
 export const bagSlots = (save: Pick<SaveData, "upgrades">) => at(E.bag, level(save, "bag"));
 export const menuSlots = (save: Pick<SaveData, "upgrades">) => at(E.menu, level(save, "menu"));
-export const seatBonus = (save: Pick<SaveData, "upgrades">) => at(E.seats, level(save, "seats"));
+// The night shop (plan 07b): stools at the counter, dishes and drinks the tray carries, the straw shoes'
+// pace, how fast the charcoal burns down (% a second, the big bin's level)
+export const stools = (save: Pick<SaveData, "upgrades">) => at(E.seats, level(save, "seats"));
+export const traySlots = (save: Pick<SaveData, "upgrades">) => at(E.tray, level(save, "tray"));
+export const walkMul = (save: Pick<SaveData, "upgrades">) => at(E.shoes, level(save, "shoes"));
+export const coalDrain = (save: Pick<SaveData, "upgrades">) => at(BALANCE.service.charcoal.drainPerSec, level(save, "coalBin"));
 export const lunchSlots = (save: Pick<SaveData, "upgrades">) => at(E.lunch, level(save, "lunchbox"));
 
 // Side weapons (hunt v3 design 4.4): owned from level 1; shots per hunt by level.

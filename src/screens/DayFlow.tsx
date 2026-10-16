@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
-import { ammoOf, bagSlots, huntStats, level, lightRadius, seatBonus, sleepFallMs } from "../../shared/growth";
+import { ammoOf, bagSlots, huntStats, level, lightRadius, sleepFallMs } from "../../shared/growth";
 import type { HuntEvent } from "../../shared/actions";
 import type { SideWeaponId } from "../../shared/content/sideWeapons";
 import { BALANCE } from "../../shared/balance";
@@ -206,6 +206,6 @@ function Panel({ title, body, children }: { title: string; body: string; childre
 // plates the menu board made.
 function Night({ save, onEnd }: { save: SaveData; onEnd: (r: { served: { customer: string; dish: string }[]; left: string[] }) => void }) {
   const svc = save.service!;
-  const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.dishes.map((d) => d.dish), seats: seatBonus(save) });
+  const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.dishes.map((d) => d.dish) });
   return <ServiceGame key={svc.id} shop={{ serviceId: svc.id, customers, dishes: svc.dishes }} onEnd={onEnd} />;
 }

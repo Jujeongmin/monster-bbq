@@ -106,6 +106,8 @@ export const BALANCE: {
     menu: number[];
     seats: number[];
     lunch: number[];
+    tray: number[];
+    shoes: number[];
     // side weapons: shots per hunt by level, and how fast the sleep dart works by its level
     ammo: Record<SideWeaponId, number[]>;
     sleepFallMs: number[];
@@ -118,9 +120,30 @@ export const BALANCE: {
     firstArriveMs: number;
     gapMs: [number, number];
     patienceMs: [number, number];
-    seats: number;
+    eatMs: number;
     minMsPerServe: number; // no faster than this per plate (server check)
-    rep: { happy: number; left: number };
+    rep: { happy: number; left: number; badDrink: number };
+    // a plate's tip by how much of the guest's patience the wait used: under the first share the first
+    // rate, under the second the second, after that none; a perfect barley tea multiplies it
+    tips: { within: [number, number]; rate: [number, number]; teaMul: number };
+    // what each guest wants to drink (shares of 1, the rest want none), its price, the pour's marks
+    drinks: {
+      tea: number;
+      after: number; // cider or sikhye, half each
+      price: { tea: number; cider: number; sikhye: number };
+      perfectMul: number;
+      fillMs: number; // a glass fills while Space is held
+      line: number; // the mark to stop at (share of the glass)
+      perfect: number; // within this of the line
+      good: number;
+    };
+    // charcoal (Dave's wasabi): drains per second, slows Bandal below low and at empty; a press adds
+    // `press` and keeps the waiter's hands busy for pressMs
+    charcoal: { drainPerSec: number[]; low: number; lowMul: number; emptyMul: number; press: number; pressMs: number };
+    // a dirty grill takes this many presses of this long each
+    scrub: { presses: number; pressMs: number };
+    pass: number; // plates the kitchen window holds
+    walk: { speed: number; runMul: number; trayMul: number };
   };
 } = {
   hunt: {
@@ -264,6 +287,10 @@ export const BALANCE: {
     // gear (hunt v3 design 4.5, user-approved draft numbers 2026-10-15)
     boots: { base: 0, costs: [400] },
     lantern: { base: 0, costs: [600, 1500, 3000], mats: [[{ item: "frog_skin", n: 3 }], [{ item: "snake_scale", n: 4 }, { item: "glow_mushroom", n: 2 }], [{ item: "iron_ore", n: 4 }]] },
+    // the night shop (plan 07b, user-approved draft numbers 2026-10-16)
+    tray: { base: 1, costs: [700, 2000] },
+    shoes: { base: 1, costs: [500, 1500] },
+    coalBin: { base: 1, costs: [600, 1800] },
     tank: { base: 1, costs: [600, 1500, 3000], mats: [[{ item: "frog_skin", n: 2 }], [{ item: "snake_scale", n: 3 }], [{ item: "crab_shell", n: 3 }]] },
   },
   lunch: { healPerGold: 0.8, speedDishes: ["honey_rabbit", "baeksuk"], speedMul: 1.2, speedMs: 10000 },
@@ -276,22 +303,31 @@ export const BALANCE: {
     light: [90, 130, 170],
     bag: [12, 15, 18, 21, 24],
     menu: [2, 3, 4, 5],
-    seats: [0, 1, 2, 3, 4],
+    // stools at the counter (the seats upgrade)
+    seats: [4, 5, 6, 7, 8],
     lunch: [1, 2, 3],
+    tray: [2, 3, 4],
+    shoes: [1, 1.1, 1.2],
     ammo: { sling: [12, 16, 20], sleepGun: [4, 5, 6], netGun: [2, 3], firecracker: [3] },
     sleepFallMs: [1500, 1000, 600],
   },
   // the night service (restaurant v2 design 4); first guesses, tuned in play
   service: {
-    baseCustomers: 4,
+    baseCustomers: 6,
     perReputation: 10,
-    minCustomers: 3,
-    maxCustomers: 10,
+    minCustomers: 6,
+    maxCustomers: 14,
     firstArriveMs: 3000,
-    gapMs: [8000, 14000],
-    patienceMs: [45000, 60000],
-    seats: 4,
-    minMsPerServe: 4000,
-    rep: { happy: 1, left: -2 },
+    gapMs: [4000, 8000],
+    patienceMs: [30000, 45000],
+    eatMs: 6000,
+    minMsPerServe: 2500,
+    rep: { happy: 1, left: -2, badDrink: -1 },
+    tips: { within: [0.35, 0.6], rate: [0.3, 0.15], teaMul: 1.5 },
+    drinks: { tea: 0.3, after: 0.3, price: { tea: 0, cider: 15, sikhye: 20 }, perfectMul: 1.5, fillMs: 1200, line: 0.7, perfect: 0.06, good: 0.15 },
+    charcoal: { drainPerSec: [1.5, 1.1, 0.8], low: 30, lowMul: 1.5, emptyMul: 2, press: 15, pressMs: 350 },
+    scrub: { presses: 4, pressMs: 250 },
+    pass: 4,
+    walk: { speed: 110, runMul: 1.6, trayMul: 0.9 },
   },
 };
