@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import type { HuntEvent } from "../../../shared/actions";
+import { koLost, type HuntEvent } from "../../../shared/actions";
 import { BALANCE } from "../../../shared/balance";
 import type { DishId } from "../../../shared/content/dishes";
 import { ITEMS, itemKey, parseItemKey, type ItemId } from "../../../shared/content/items";
@@ -113,6 +113,8 @@ export interface HuntResult {
   events: HuntEvent[];
   exit: string | null;
   ko: boolean;
+  // knocked out: what the bag lost (for the summary; the server halves the bag by the same rule)
+  lost: Record<string, number>;
 }
 
 interface Player {
@@ -187,7 +189,7 @@ export class HuntScene extends Phaser.Scene {
   private gatherHint!: Phaser.GameObjects.Text;
   private staminaText!: Phaser.GameObjects.Text;
   private exitArrow!: Phaser.GameObjects.Text;
-  private lowGlow!: Phaser.GameObjects.Rectangle;
+  private lowGlow!: Phaser.GameObjects.Image;
   private gatherButton: Phaser.GameObjects.Arc | null = null;
   private gatherButtonLabel: Phaser.GameObjects.Text | null = null;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -366,7 +368,20 @@ export class HuntScene extends Phaser.Scene {
     // is full or stamina runs low)
     this.exitArrow = this.add.text(0, 0, "▶", { ...TEXT, color: "#ffd166" }).setOrigin(0.5).setScrollFactor(0).setDepth(10001).setVisible(false);
     // low stamina: the screen's edge pulses red (Dave the Diver's oxygen warning)
-    this.lowGlow = this.add.rectangle(4, 4, GAME_WIDTH - 8, GAME_HEIGHT - 8).setOrigin(0).setStrokeStyle(8, 0xd01818, 1).setScrollFactor(0).setDepth(9999).setVisible(false);
+    // low stamina: the screen's edges go red and beat like a heart (Dave's low oxygen)
+    if (!this.textures.exists("low_vignette")) {
+      const tex = this.textures.createCanvas("low_vignette", GAME_WIDTH, GAME_HEIGHT)!;
+      const ctx = tex.getContext();
+      const g = ctx.createRadialGradient(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_HEIGHT * 0.32, GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.62);
+      g.addColorStop(0, "rgba(160,0,0,0)");
+      g.addColorStop(0.5, "rgba(190,10,10,0.5)");
+      g.addColorStop(1, "rgba(140,0,0,0.95)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      // uploaded once the renderer has drawn a frame (an upload during create is lost)
+      this.events.once(Phaser.Scenes.Events.POST_UPDATE, () => tex.refresh());
+    }
+    this.lowGlow = this.add.image(0, 0, "low_vignette").setOrigin(0).setScrollFactor(0).setDepth(9999).setVisible(false);
     // the lunchbox: one button per packed dish under the way home (the dish at one game pixel per art pixel)
     this.huntData.lunchbox.forEach(({ dish, heal }, i) => {
       const bubble = kitSlice(this, 0, 0, "bubble_plain", 50, 48, 3, 3, 3, 3);
@@ -711,7 +726,9 @@ export class HuntScene extends Phaser.Scene {
   }
 
   // Out of stamina (worn out, or one hit too many): down, then home with half the bag (the server halves
-  // it too).
+  // it too). Played like Dave running out of air: the HUD goes, a red flash, the hunter staggers and falls,
+  // the camera closes in while the world drains of colour, the light closes round him to black, one line,
+  // then the summary with what was lost.
   private knockOut() {
     const p = this.player;
     if (p.down) return;
@@ -721,13 +738,54 @@ export class HuntScene extends Phaser.Scene {
     this.endCapture();
     this.pinned = null;
     this.hunter.anims.stop();
-    this.hunter.setTint(0x777777).setAngle(-90);
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, t("hunt.ko"), { ...TEXT, fontStyle: "bold" })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(10001);
-    this.time.delayedCall(1500, () => this.endHunt(true, null));
+    const cam = this.cameras.main;
+    // the HUD steps aside (everything fixed to the screen)
+    for (const o of this.children.list as Phaser.GameObjects.GameObject[]) {
+      const g = o as Phaser.GameObjects.Image;
+      if ((g.scrollFactorX === 0 || g.depth >= 9999) && g.alpha > 0) this.tweens.add({ targets: g, alpha: 0, duration: 250 });
+    }
+    cam.flash(180, 255, 60, 60);
+    cam.shake(160, 0.008);
+    // stagger, then fall over backwards
+    const back = this.hunter.flipX ? 1 : -1;
+    const at = { x: this.hunter.x, y: this.hunter.y };
+    this.tweens.chain({
+      targets: this.hunter,
+      tweens: [
+        { angle: 10 * back, x: at.x - 2 * back, duration: 110, ease: "Sine.easeOut" },
+        { angle: -8 * back, x: at.x + 2 * back, duration: 140, ease: "Sine.easeInOut" },
+        { angle: 6 * back, x: at.x, duration: 160, ease: "Sine.easeInOut" },
+        { angle: 90 * back, y: at.y + 6, duration: 240, ease: "Quad.easeIn", onComplete: () => (cam.shake(120, 0.006), this.hunter.setTint(0xb0b0b0)) },
+      ],
+    });
+    cam.zoomTo(1.6, 1300, "Sine.easeInOut");
+    // the world drains of colour (WebGL only)
+    const grey = cam.postFX?.addColorMatrix();
+    if (grey) this.tweens.addCounter({ from: 0, to: 1, duration: 1200, onUpdate: (tw) => grey.grayscale(tw.getValue() ?? 0) });
+    // the light closes round him: a black cover over the world with a shrinking round hole
+    const hole = this.make.graphics({}, false);
+    const mask = hole.createGeometryMask();
+    mask.setInvertAlpha(true);
+    const w = this.floorDef.world;
+    const cover = this.add.rectangle(-w.w, -w.h, w.w * 3, w.h * 3, 0x000000).setOrigin(0).setDepth(9990).setMask(mask);
+    const iris = { r: 520 };
+    hole.fillStyle(0xffffff).fillCircle(this.hunter.x, this.hunter.y - 14, iris.r);
+    this.tweens.add({
+      targets: iris,
+      r: 0,
+      delay: 1100,
+      duration: 800,
+      ease: "Cubic.easeIn",
+      onUpdate: () => hole.clear().fillStyle(0xffffff).fillCircle(this.hunter.x, this.hunter.y - 14, iris.r),
+      onComplete: () => {
+        cover.clearMask();
+        cam.setZoom(1);
+        if (grey) cam.postFX.clear();
+        const line = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, t("hunt.ko"), { ...TEXT, color: "#c8bfb4" }).setOrigin(0.5).setScrollFactor(0).setDepth(10003).setAlpha(0);
+        this.tweens.add({ targets: line, alpha: 1, duration: 400 });
+        this.time.delayedCall(1500, () => this.endHunt(true, null));
+      },
+    });
   }
 
   // What E (or the action button) would use here: an exit, the way down, a sleeping monster, else a
@@ -1482,6 +1540,8 @@ export class HuntScene extends Phaser.Scene {
   }
 
   private drawHud() {
+    // knocked out: the HUD has faded away for the fall and stays away
+    if (this.player.down) return;
     const frac = this.run.stamina / this.maxStamina;
     const shown = Math.ceil(this.run.stamina);
     if (shown !== this.shownStamina) {
@@ -1494,7 +1554,14 @@ export class HuntScene extends Phaser.Scene {
     this.bagText.setText(`${t("hunt.floorShort", { n: this.run.floor })} · ${t("hud.bag", { n: bagCount(this.run.bag), max: this.bagSlots })}`);
     const low = frac < LOW_STAMINA && !this.player.down;
     this.lowGlow.setVisible(low);
-    if (low) this.lowGlow.setAlpha(0.8 + 0.2 * Math.sin(this.time.now / 180));
+    if (low) {
+      // lub-dub: two quick beats a cycle, the cycle faster and the red deeper as stamina runs out
+      const left = frac / LOW_STAMINA; // 1 at the line, 0 when empty
+      const period = 700 + 500 * left;
+      const ph = (this.time.now % period) / period;
+      const beat = Math.max(Math.exp(-((ph / 0.07) ** 2)), 0.7 * Math.exp(-(((ph - 0.22) / 0.07) ** 2)));
+      this.lowGlow.setAlpha((0.6 + 0.4 * (1 - left)) * (0.6 + 0.4 * beat));
+    }
     this.drawExitArrow();
     this.ammoText.setText(`${this.run.ammo}/${this.huntData.ammo}`).setColor(this.run.ammo === 0 ? "#9a8f84" : this.run.ammo <= AMMO_LOW ? "#ff7070" : "#fff3d8");
     this.ammoIcon.setAlpha(this.run.ammo > 0 ? 1 : 0.4);
@@ -1532,7 +1599,7 @@ export class HuntScene extends Phaser.Scene {
   private endHunt(ko: boolean, exit: string | null) {
     if (this.ended) return;
     this.ended = true;
-    const result: HuntResult = { events: [...this.run.report], exit, ko };
+    const result: HuntResult = { events: [...this.run.report], exit, ko, lost: ko ? koLost(this.run.bag) : {} };
     this.game.events.emit("hunt:end", result);
     this.scene.pause();
   }

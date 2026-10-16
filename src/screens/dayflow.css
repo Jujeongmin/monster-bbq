@@ -64,6 +64,10 @@
 .summary-item img { width: calc(21px * var(--s)); image-rendering: pixelated; }
 .summary-item.premium { color: #c88a10; }
 .summary-ko { margin: 0 0 calc(6px * var(--s)); color: var(--red); }
+/* lost to a knockout: greyed, a red X over the icon */
+.summary-item.lost { position: relative; color: #9a8f84; }
+.summary-item.lost img { filter: grayscale(1) brightness(0.75); }
+.summary-item.lost::after { content: "X"; position: absolute; left: calc(5px * var(--s)); top: 50%; transform: translateY(-50%); color: var(--red); font-weight: 700; font-size: calc(16px * var(--s)); }
 .summary-news { margin: 0 0 calc(6px * var(--s)); color: var(--ink); font-weight: 700; }
 
 /* the awakening tab (06b-1): stars, cost red when short, targets not owned yet dimmed */

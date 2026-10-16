@@ -50,7 +50,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the side weapon window at lunch (in the morning it shows by itself before the hunt)
   const [picking, setPicking] = useState(false);
   // the hunt just settled: what was taken, the fridge, the den's key and the pages before it, for the summary
-  const [summary, setSummary] = useState<{ events: HuntEvent[]; ko: boolean; before: Record<string, number>; hadKey: boolean; hadPages: string[] } | null>(null);
+  const [summary, setSummary] = useState<{ events: HuntEvent[]; ko: boolean; lost: Record<string, number>; before: Record<string, number>; hadKey: boolean; hadPages: string[] } | null>(null);
   // a second click can land before React re-renders with busy=true
   const busyRef = useRef(false);
   // the VX shop (06b-1): open or not, Verse8's list of products, and a purchase being checked
@@ -137,7 +137,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           onHuntEnd={(r: HuntResult) => {
             const before = save.items;
             const had = { hadKey: save.bossKey, hadPages: save.pages };
-            void act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, exit: r.exit, ko: r.ko }, save.hunt!.period === "morning" ? "lunch" : "kitchen").then((ok) => ok && setSummary({ events: r.events, ko: r.ko, before, ...had }));
+            void act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, exit: r.exit, ko: r.ko }, save.hunt!.period === "morning" ? "lunch" : "kitchen").then((ok) => ok && setSummary({ events: r.events, ko: r.ko, lost: r.lost, before, ...had }));
           }}
         />
       )}
@@ -206,7 +206,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {/* the morning: pick the side weapon, then set out; at lunch the same window opens from its button */}
       {phase === "hunt" && save.stage === "hunt" && !save.hunt && !failed && <SidePick save={save} busy={busy} onGo={setOut} />}
       {phase === "lunch" && picking && <SidePick save={save} busy={busy} onGo={setOut} onCancel={() => setPicking(false)} />}
-      {summary && phase !== "hunt" && <HuntSummary events={summary.events} ko={summary.ko} before={summary.before} after={save.items} gotKey={!summary.hadKey && save.bossKey} gotPage={!summary.hadPages.includes("forest") && save.pages.includes("forest")} onShop={() => setStore(true)} onDone={() => setSummary(null)} />}
+      {summary && phase !== "hunt" && <HuntSummary events={summary.events} ko={summary.ko} lost={summary.lost} before={summary.before} after={save.items} gotKey={!summary.hadKey && save.bossKey} gotPage={!summary.hadPages.includes("forest") && save.pages.includes("forest")} onShop={() => setStore(true)} onDone={() => setSummary(null)} />}
 
       {/* the VIP's charcoal: in the morning before the hunt, once a day */}
       {phase === "hunt" && save.stage === "hunt" && !save.hunt && vipLevel(save.vip.spent) > 0 && save.vip.day !== save.day && (

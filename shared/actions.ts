@@ -48,6 +48,14 @@ export function koPenalty(items: Record<string, number>): Record<string, number>
   return out;
 }
 
+// What a knockout takes: the other half of every stack (the hunt summary shows it).
+export function koLost(items: Record<string, number>): Record<string, number> {
+  const kept = koPenalty(items);
+  const out: Record<string, number> = {};
+  for (const [k, n] of Object.entries(items)) if (n - (kept[k] ?? 0) > 0) out[k] = n - (kept[k] ?? 0);
+  return out;
+}
+
 const MAX_EVENTS = 200;
 
 // Re-creates the hunt floor by floor from its seed and follows the report: every way down taken from the

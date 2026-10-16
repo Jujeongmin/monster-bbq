@@ -7,7 +7,7 @@ import { itemName, t } from "../i18n";
 // Home from the hunt (hunt v3 design 5.2): what was taken, row by row by stars, and the parts that came
 // home (the save's items after the server settled the hunt, against before); the den's key or a boss's
 // notebook page when this hunt brought one (plan 08d).
-export function HuntSummary({ events, ko, before, after, gotKey, gotPage, onShop, onDone }: { events: HuntEvent[]; ko: boolean; before: Record<string, number>; after: Record<string, number>; gotKey: boolean; gotPage: boolean; onShop: () => void; onDone: () => void }) {
+export function HuntSummary({ events, ko, lost, before, after, gotKey, gotPage, onShop, onDone }: { events: HuntEvent[]; ko: boolean; lost: Record<string, number>; before: Record<string, number>; after: Record<string, number>; gotKey: boolean; gotPage: boolean; onShop: () => void; onDone: () => void }) {
   const counts = [3, 2, 1].map((n) => ({ n, count: events.filter((e) => "take" in e && starsOf(e.how) === n).length }));
   const gained = Object.entries(after)
     .map(([k, v]) => [k, v - (before[k] ?? 0)] as const)
@@ -37,7 +37,23 @@ export function HuntSummary({ events, ko, before, after, gotKey, gotPage, onShop
         </div>
         {gotKey && <p className="summary-news">{t("summary.key")}</p>}
         {gotPage && <p className="summary-news">{t("summary.page")}</p>}
-        {ko && <p className="summary-ko">{t("summary.ko")}</p>}
+        {ko && (
+          // what the knockout took: each lost stack greyed and crossed out (Dave's lost-items list)
+          <div className="summary-lost">
+            <p className="summary-ko">{t("summary.ko")}</p>
+            <div className="summary-items">
+              {Object.entries(lost).map(([k, v]) => {
+                const item = parseItemKey(k);
+                if (!item) return null;
+                return (
+                  <span key={k} className="summary-item lost" title={itemName(k)}>
+                    <img src={artUrl(`test/items/icon_${item.id}.png`)} alt="" />×{v}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="dayflow-actions">
           <button className="ui-btn" onClick={onShop}>
             {t("shop.open")}

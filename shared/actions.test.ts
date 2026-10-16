@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyAction, koPenalty, type ActionContext } from "./actions";
+import { applyAction, koLost, koPenalty, type ActionContext } from "./actions";
 import { BALANCE } from "./balance";
 import { itemKey } from "./content/items";
 import { dropFor } from "./hunt/drops";
@@ -106,6 +106,10 @@ describe("endDay", () => {
 describe("koPenalty", () => {
   it("keeps half of every stack, rounded down", () => {
     expect(koPenalty({ "boar_belly:premium": 3, shiitake: 4, perilla: 1 })).toEqual({ "boar_belly:premium": 1, shiitake: 2 });
+  });
+  it("says what is lost: the other half, rounded up (what the summary shows)", () => {
+    expect(koLost({ "boar_belly:premium": 3, shiitake: 4, perilla: 1 })).toEqual({ "boar_belly:premium": 2, shiitake: 2, perilla: 1 });
+    expect(koLost({})).toEqual({});
   });
 });
 
