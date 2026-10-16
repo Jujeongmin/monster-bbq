@@ -3,6 +3,7 @@ import { SIDE_WEAPONS, type SideWeaponId } from "../../shared/content/sideWeapon
 import { ammoOf, ownsSide } from "../../shared/growth";
 import type { SaveData } from "../../shared/save";
 import { artUrl } from "../game/art";
+import { Scene } from "./hud/Scene";
 import { t, type StringKey } from "../i18n";
 
 // Setting out (hunt v3 design 4.4): which side weapon to take, one per hunt, with its shots for the whole
@@ -31,7 +32,7 @@ export function SidePick({ save, busy, onGo, onCancel }: { save: SaveData; busy:
     onGo(side);
   };
   return (
-    <div className="dayflow-screen">
+    <Scene>
       <div className="ui-panel side-pick">
         <h2>{t("side.title")}</h2>
         <div className="side-list">
@@ -57,6 +58,6 @@ export function SidePick({ save, busy, onGo, onCancel }: { save: SaveData; busy:
           </button>
         </div>
       </div>
-    </div>
+    </Scene>
   );
 }

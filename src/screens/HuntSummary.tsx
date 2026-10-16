@@ -2,6 +2,7 @@ import type { HuntEvent } from "../../shared/actions";
 import { parseItemKey, type ItemId } from "../../shared/content/items";
 import { starsOf } from "../../shared/hunt/stars";
 import { artUrl } from "../game/art";
+import { Scene } from "./hud/Scene";
 import { itemName, t } from "../i18n";
 
 // Home from the hunt (hunt v3 design 5.2): what was taken, row by row by stars, and the parts that came
@@ -13,7 +14,7 @@ export function HuntSummary({ events, ko, lost, before, after, gotKey, gotPage, 
     .map(([k, v]) => [k, v - (before[k] ?? 0)] as const)
     .filter(([, v]) => v > 0);
   return (
-    <div className="dayflow-screen">
+    <Scene>
       <div className="ui-panel hunt-summary">
         <h2>{t("summary.title")}</h2>
         <ul className="summary-stars">
@@ -26,10 +27,10 @@ export function HuntSummary({ events, ko, lost, before, after, gotKey, gotPage, 
         </ul>
         <div className="summary-items">
           {gained.length === 0 && <span className="soft">{t("summary.nothing")}</span>}
-          {gained.map(([k, v]) => {
+          {gained.map(([k, v], i) => {
             const item = parseItemKey(k);
             return (
-              <span key={k} className={`summary-item${item?.grade === "premium" ? " premium" : ""}`} title={itemName(k)}>
+              <span key={k} className={`summary-item${item?.grade === "premium" ? " premium" : ""}`} title={itemName(k)} style={{ animationDelay: `${i * 120}ms` }}>
                 <img src={artUrl(`test/items/icon_${item?.id as ItemId}.png`)} alt="" />×{v}
               </span>
             );
@@ -63,6 +64,6 @@ export function HuntSummary({ events, ko, lost, before, after, gotKey, gotPage, 
           </button>
         </div>
       </div>
-    </div>
+    </Scene>
   );
 }

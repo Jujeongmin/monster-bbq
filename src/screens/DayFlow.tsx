@@ -24,6 +24,7 @@ import { vipLevel } from "../../shared/shop";
 import { Bag } from "./hud/Bag";
 import { DayHud } from "./hud/DayHud";
 import { Notebook } from "./hud/Notebook";
+import { Receipt } from "./hud/Receipt";
 import { showDayHud, timeOfDay, type App, type Phase } from "./hud/hud";
 import { Cookbook } from "./kitchen/Cookbook";
 import "./dayflow.css";
@@ -175,22 +176,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       )}
       {phase === "kitchen" && <Kitchen tab={kitchenTab} onTab={setKitchenTab} save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} />}
       {phase === "service" && save.service && <Night save={save} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
-      {phase === "settle" && (
-        <Panel title={t("settle.title")} body={t("settle.body", { day: save.day, gold: save.gold })}>
-          {save.lastService && (
-            <ul className="dayflow-sold">
-              <li>{t("settle.served", { served: save.lastService.served, left: save.lastService.left })}</li>
-              <li>{t("settle.sales", { sales: save.lastService.sales, tips: save.lastService.tips, drinks: save.lastService.drinks })}</li>
-              {save.lastService.cleaned > 0 && <li>{t("settle.cleaned", { n: save.lastService.cleaned, gold: save.lastService.cleaned * BALANCE.service.cleanTip })}</li>}
-              <li>{t("settle.happy", { happy: save.lastService.happy })}</li>
-              <li>{t("settle.rep", { rep: save.reputation, delta: (save.lastService.repDelta >= 0 ? "+" : "") + save.lastService.repDelta })}</li>
-            </ul>
-          )}
-          <div className="dayflow-actions">
-            <button className="ui-btn" disabled={busy} onClick={() => act({ type: "endDay" }, "hunt")}>{t("nextDay")}</button>
-          </div>
-        </Panel>
-      )}
+      {phase === "settle" && <Receipt save={save} busy={busy} onNext={() => act({ type: "endDay" }, "hunt")} />}
 
       {/* the morning: pick the side weapon, then set out; at lunch the same window opens from its button */}
       {phase === "hunt" && save.stage === "hunt" && !save.hunt && !failed && <SidePick save={save} busy={busy} onGo={setOut} />}
@@ -230,18 +216,6 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function Panel({ title, body, children }: { title: string; body: string; children: React.ReactNode }) {
-  return (
-    <div className="dayflow-screen">
-      <div className="dayflow-panel ui-panel">
-        <h2>{title}</h2>
-        <p>{body}</p>
-        {children}
-      </div>
     </div>
   );
 }
