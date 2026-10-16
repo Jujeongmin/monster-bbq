@@ -57,12 +57,16 @@ const SEAT_FLOOR = 404; // the stools stand at the counter's foot
 const WALK_FLOOR = 448;
 const WAITER_FEET = 342;
 const BUBBLE_Y = 268;
+// the order bubble, sized to the dish pictures in it; plates on the pass overlap a little when big
+const BUBBLE = SHOP_DISHES ? { w: 64, h: 60 } : { w: 40, h: 38 };
+const PASS_STEP = SHOP_DISHES ? 38 : 32;
 const PLAQUES = [352, 400, 448, 498, 548, 597];
 const YOKAI = ["dokkaebi", "gumiho", "reaper", "ghost"] as const;
 const POSES = ["walk_0", "walk_1", "sit", "eat", "happy", "angry"];
 const PROPS = ["grill_lit", "grill_dirty", "grill_off", "stool", "coal_box", "drink_cart", "tray", "cup_tea", "cup_cider", "bowl_sikhye", "plate", "plate_dirty"];
 const BANDAL = ["idle", "breathe", "grill", "turn", "serve", "smile"];
 const DISH_SCALE = SHOP_DISHES ? S : 0.6;
+const PLAQUE_SCALE = SHOP_DISHES ? 1 : 0.6; // the wall plaques are narrower than a bubble
 const STICK = { x: 110, y: 440, radius: 40, deadZone: 0.25 };
 const ACT_BTN = { x: 850, y: 470, radius: 34 };
 const drinkIcon = { tea: "prop_cup_tea", cider: "prop_cup_cider", sikhye: "prop_bowl_sikhye" } as const;
@@ -161,7 +165,7 @@ export class ServiceScene extends Phaser.Scene {
     this.bandal = this.add.image(849, 314, "bandal_idle").setOrigin(0.5, 1).setScale(S).setDepth(5);
     // tonight's menu on the wall plaques: the dish and the plates still to order
     this.data0.dishes.slice(0, PLAQUES.length).forEach((d, i) => {
-      this.add.image(PLAQUES[i], 152, `dish_${d.dish}`).setScale(DISH_SCALE).setDepth(4);
+      this.add.image(PLAQUES[i], 152, `dish_${d.dish}`).setScale(PLAQUE_SCALE).setDepth(4);
       this.plaqueCounts.push(this.add.text(PLAQUES[i], 182, "", TEXT_SMALL).setOrigin(0.5).setDepth(4));
     });
     // the waiter walks behind the counter: the counter front and the floor are drawn again over the legs
@@ -359,7 +363,7 @@ export class ServiceScene extends Phaser.Scene {
     // the pass
     if (this.passPlates.length !== s.pass.length || this.passPlates.some((p, i) => p.texture.key !== `dish_${s.pass[i]}`)) {
       this.passPlates.forEach((p) => p.destroy());
-      this.passPlates = s.pass.map((d, i) => this.add.image(790 + i * 32, COUNTER_TOP - 2, `dish_${d}`).setOrigin(0.5, 1).setScale(DISH_SCALE).setDepth(31));
+      this.passPlates = s.pass.map((d, i) => this.add.image(790 + i * PASS_STEP, COUNTER_TOP - 2, `dish_${d}`).setOrigin(0.5, 1).setScale(DISH_SCALE).setDepth(31));
     }
     // plaques: plates still to order
     this.data0.dishes.slice(0, PLAQUES.length).forEach((d, i) => this.plaqueCounts[i].setText(`×${s.plates[d.dish] ?? 0}`));
@@ -412,8 +416,9 @@ export class ServiceScene extends Phaser.Scene {
     const who = YOKAI[g.kind];
     if (!v) {
       const sprite = this.add.image(g.x, WALK_FLOOR, `yk_${who}_walk_0`).setOrigin(0.5, 1).setScale(S).setDepth(45);
-      const back = kitSlice(this, 0, 0, "bubble_plain", 40, 38, 3, 3, 3, 3);
-      const fill = this.add.rectangle(0, 15, 32, 0, 0xd83a2a, 0.45).setOrigin(0.5, 1);
+      const back = kitSlice(this, 0, 0, "bubble_plain", BUBBLE.w, BUBBLE.h, 3, 3, 3, 3);
+      // full height, squashed from the bottom up as patience runs (scaleY), so it never spills out
+      const fill = this.add.rectangle(0, BUBBLE.h / 2 - 4, BUBBLE.w - 8, BUBBLE.h - 8, 0xd83a2a, 0.45).setOrigin(0.5, 1).setScale(1, 0);
       const icon = this.add.image(0, -2, `dish_${g.dish}`).setScale(DISH_SCALE);
       const bubble = this.add.container(g.x, BUBBLE_Y, [back, fill, icon]).setDepth(80).setVisible(false);
       v = { sprite, bubble, icon, fill };
@@ -453,7 +458,7 @@ export class ServiceScene extends Phaser.Scene {
     const key = dirty ? "prop_plate_dirty" : wantsDish ? `dish_${g.dish}` : wantsTea ? drinkIcon.tea : drinkIcon[g.drink as "cider" | "sikhye"];
     if (v.icon.texture.key !== key) v.icon.setTexture(key).setScale(key.startsWith("dish_") ? DISH_SCALE : 1);
     const used = wantsDish || dirty ? g.waitedMs / g.patienceMs : 0;
-    v.fill.height = Math.round(30 * Math.min(1, used));
+    v.fill.setScale(1, Math.min(1, used));
     v.bubble.setAngle(used > 0.75 || dirty ? Math.sin(time / 60) * 6 : 0);
   }
 
