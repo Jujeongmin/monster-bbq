@@ -1,0 +1,18 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a side-view cross-section background of a cozy yokai-night-market BBQ restaurant for a 2D pixel-art game, redrawn from the attached picture (our current shop background: copy its world, palette and mood exactly - warm red-brown wood, red drapes, glowing paper lanterns, blue spirit flames, a big open window onto a yokai night market under a full moon, chunky pixel art with clear dark outlines, cute and comic, low detail like real 320x180 pixel art).
+
+Save as art-src/codex/raw/shop_counter_bg2.png - exactly 1536x864 pixels (16:9). No text, no letters, no logos, no UI, no people, no animals, no characters, no food, no stools, no grills: an EMPTY stage. Flat even lighting suitable for a game background.
+
+The one thing that changes is the PROPORTION of the counter, like a sushi bar in a side-scrolling restaurant game: staff walk BEHIND a long LOW counter (we see them from the waist up above the counter top) and guests sit on stools IN FRONT of it with their backs to us. Lay it out exactly, measured from the top of the image (y in pixels of the 864-tall image):
+- y 0-170: roof beams, red drapes, hanging paper lanterns, and a row of six blank wooden menu plaques hanging in the middle (left-centre), plain boards with nothing written.
+- y 170-480: the back wall with a wide open window onto the yokai night market at night (lanterns, rooftops, full moon), and along the bottom of the window (y 430-480) a low back shelf with a few jars and bottles. This is the wall behind the staff.
+- y 480-640: the lower back wall, plain dark wood panelling, nothing on it (the staff's bodies will stand in front of it). This band must be TALL and EMPTY.
+- y 640-652: the COUNTER TOP, one long flat polished wooden plank running from x 180 to x 1250, seen almost edge-on (a thin band, light top edge).
+- y 652-712: the COUNTER FRONT, dark wood panels with a brass trim, from x 180 to x 1250. It is VERY LOW and SHORT: only 60 pixels tall, a narrow band. Do NOT make it taller.
+- y 712-864: the front floor, warm wooden planks, empty (stools are added later), with a plain walkway along the very front. No stone strip at the bottom.
+- Left end, x 0-180, from y 300 to y 864: the entrance, a doorway with a short red noren curtain and a warm glow, at the front floor level.
+- Right end, x 1250-1536, from y 300 to y 652: the kitchen: an open kitchen window with a big charcoal grill station behind it (no cook drawn), and in front of it, level with the counter top, a short pass shelf where finished plates are set. Below it, x 1250-1536 from y 652 down: the kitchen's lower wall, with a small step down to the front floor.
+Keep the whole image readable at 480x270: big simple shapes, few colours, no tiny details, no noise, no gradients smoother than pixel art allows.
+
+Reply only with the saved file path.
+
+CHECK before saving: the counter top line is at y 640 (three quarters of the way down), and the counter front is a thin band only 60 px tall.
