@@ -234,7 +234,8 @@ export const BALANCE: {
     },
     king: {
       wanderSpeed: 26,
-      aggroRange: 220,
+      // the den is small: he takes the hunter on from the moment they come down
+      aggroRange: 700,
       chargeTelegraphMs: 900,
       chargeSpeed: 260,
       chargeDamage: 28,

@@ -45,6 +45,8 @@ export interface FloorDef {
   objects: { trees: ObjectKind[]; smalls: ObjectKind[] };
   // how many of them (default 18 and 12; the boss's den keeps its floor clear for the charges)
   objectCount?: { trees: number; smalls: number };
+  // a cave floor lit by torches (the den, so the boss fight reads); other caves are dark but for the lantern
+  lit?: boolean;
 }
 
 const W = 1536;
@@ -142,6 +144,7 @@ export const FLOORS: Record<FloorId, FloorDef> = {
     ground: "cave",
     objects: CAVE_OBJECTS,
     objectCount: { trees: 4, smalls: 3 },
+    lit: true,
     drainPerSec: 0.8,
     layoutSeed: 0x5b055,
     roster: {

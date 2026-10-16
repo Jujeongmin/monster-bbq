@@ -10,18 +10,27 @@ import type { FloorPlan } from "../../../shared/hunt/plan";
 import { newShooter, updateShooter, type ShooterState, type Shot } from "../../../shared/hunt/shooter";
 import { FREE, isHeld, stepStatus, wake, type MobStatus } from "../../../shared/hunt/status";
 import { isTuskVulnerable, newTusk, updateTusk, type TuskState } from "../../../shared/hunt/tusk";
+import { isKingOpen, newKing, updateKing, type KingState } from "../../../shared/hunt/king";
+import { hasArt } from "../art";
 import { angerSwarm, isLurkerOpen, isLurkerTargetable, isShellOpen, isSwarmOpen, isTongueOpen, newLurker, newShell, newSwarm, newTongue, updateLurker, updateShell, updateSwarm, updateTongue, type LurkerState, type ShellState, type SwarmState, type TongueState } from "../../../shared/hunt/deepMonsters";
 import type { Field, Vec } from "../../../shared/hunt/types";
 import { lookOf, stepBob } from "./anims";
 
 // One monster on the hunting ground: its spawn (from the hunt plan), its behaviour's state machine
 // (shared/hunt), what the side weapons have done to it (status: stunned, drowsy, asleep, tied up) and
-// its sprite. The tusk boss is drawn with the boar's frames at twice the size until its own art.
+// its sprite. The tusk boss is drawn with the boar's frames at twice the size until its own art; the
+// Charge King with them at three times, reddened, and his piglets small, until theirs (art/test/king/).
 const H = BALANCE.hunt;
 // Where the feet are inside each sheet's cells (measured when slicing).
-const FEET: Record<MonsterId, number> = { boar: 0.92, rabbit: 0.885, bee: 0.885, chicken: 0.89, tusk: 0.92, frog: 0.975, snake: 0.979, bat: 0.974, crab: 0.981 };
+const FEET: Record<MonsterId, number> = { boar: 0.92, rabbit: 0.885, bee: 0.885, chicken: 0.89, tusk: 0.92, king: 0.92, piglet: 0.92, frog: 0.975, snake: 0.979, bat: 0.974, crab: 0.981 };
+const KING_ART = hasArt("test/king/side_0.png");
 // whose frames a monster is drawn with
-export const artOf = (monster: MonsterId): string => (monster === "tusk" ? "boar" : monster);
+export const artOf = (monster: MonsterId): string => (monster === "tusk" || monster === "piglet" || (monster === "king" && !KING_ART) ? "boar" : monster);
+// how much bigger than its frames a monster is drawn
+const SIZE: Partial<Record<MonsterId, number>> = { tusk: 2, king: KING_ART ? 1 : 3, piglet: 0.6 };
+// the Charge King's colour while his own art is not drawn, and when he is angry
+export const KING_TINT = KING_ART ? 0xffffff : 0xffb090;
+const KING_ANGRY = 0xff7060;
 
 export type Spawn = FloorPlan["spawns"][number];
 export type MobAI =
@@ -30,6 +39,7 @@ export type MobAI =
   | { kind: "shooter"; s: ShooterState }
   | { kind: "pack"; s: PackMemberState }
   | { kind: "boss"; s: TuskState }
+  | { kind: "king"; s: KingState }
   | { kind: "tongue"; s: TongueState }
   | { kind: "lurker"; s: LurkerState }
   | { kind: "swarm"; s: SwarmState }
@@ -61,6 +71,8 @@ export function createMob(scene: Phaser.Scene, spawn: Spawn): Mob {
           ? { kind, s: newShooter(pos) }
           : kind === "boss"
             ? { kind, s: newTusk(pos) }
+            : kind === "king"
+              ? { kind, s: newKing(pos) }
             : kind === "tongue"
               ? { kind, s: newTongue(pos) }
               : kind === "lurker"
@@ -70,7 +82,7 @@ export function createMob(scene: Phaser.Scene, spawn: Spawn): Mob {
                   : kind === "shell"
                     ? { kind, s: newShell(pos) }
                     : { kind, s: newPackMember(pos) };
-  const big = kind === "boss" ? 2 : 1;
+  const big = SIZE[spawn.monster] ?? 1;
   const sprite = scene.add.sprite(pos.x, pos.y, `${artOf(spawn.monster)}_side_0`).setOrigin(0.5, FEET[spawn.monster]).setScale(CHAR_SCALE * big).setDepth(pos.y);
   sprite.setAlpha(0);
   scene.tweens.add({ targets: sprite, alpha: 1, duration: 400 });
@@ -99,6 +111,8 @@ export function isMobVulnerable(m: Mob): boolean {
       return m.ai.s.phase === "recover";
     case "boss":
       return isTuskVulnerable(m.ai.s);
+    case "king":
+      return isKingOpen(m.ai.s);
     case "tongue":
       return isTongueOpen(m.ai.s);
     case "lurker":
@@ -158,6 +172,9 @@ export interface MobStep {
   // the frog general's tongue pulls the hunter toward it this far
   pull?: number;
   slam?: Vec;
+  // the Charge King: rocks that came down, piglets he called out
+  fell?: Vec[];
+  piglets?: number;
   // the side weapons' effects: fell asleep, woke up
   statusEvent?: "fell_asleep" | "woke" | null;
   phaseChanged: boolean;
@@ -165,7 +182,8 @@ export interface MobStep {
 
 // One frame of the monster's behaviour, kept out of trees and rocks. `player` null = knocked out.
 // `light`: the lantern's radius around the hunter in the cave (bats keep out of it), 0 elsewhere.
-export function stepMob(m: Mob, dt: number, player: Vec | null, field: Field, obstacles: Rect[], light = 0): MobStep {
+// `pigletsOut`: the Charge King's piglets still running about (he calls no more than the most).
+export function stepMob(m: Mob, dt: number, player: Vec | null, field: Field, obstacles: Rect[], light = 0, pigletsOut = 0): MobStep {
   const seen = player ?? { x: -99999, y: -99999 };
   const before = m.ai.s.phase;
   const st = stepStatus(m.status, dt);
@@ -201,6 +219,14 @@ export function stepMob(m: Mob, dt: number, player: Vec | null, field: Field, ob
       if (r.hurt) out.hurt = { damage: r.hurt.damage, dir: r.state.chargeDir };
       if (r.grabbed) out.grabbed = true;
       if (r.slam) out.slam = r.slam;
+      break;
+    }
+    case "king": {
+      const r = updateKing(m.ai.s, seen, dt, field, Math.random, Math.max(0, m.hp) / MONSTERS[m.spawn.monster].maxHp, pigletsOut);
+      m.ai = { kind: "king", s: r.state };
+      if (r.hurt) out.hurt = { damage: r.hurt.damage, dir: r.state.chargeDir };
+      if (r.fell) out.fell = r.fell;
+      if (r.piglets) out.piglets = r.piglets;
       break;
     }
     case "tongue": {
@@ -254,6 +280,7 @@ export function drawMob(scene: Phaser.Scene, m: Mob, phaseChanged: boolean, shou
   if (phaseChanged) {
     scene.tweens.killTweensOf(s);
     s.setAlpha(1).clearTint();
+    if (m.ai.kind === "king") s.setTint(m.ai.s.angry ? KING_ANGRY : KING_TINT);
     const warn = (tint: number, ms: number) => {
       s.setTint(tint);
       scene.tweens.add({ targets: s, alpha: 0.5, yoyo: true, repeat: 3, duration: ms / 8 });
@@ -263,6 +290,8 @@ export function drawMob(scene: Phaser.Scene, m: Mob, phaseChanged: boolean, shou
     if (m.ai.kind === "shooter" && m.ai.s.phase === "aim") warn(0xffb040, H.bee.aimMs);
     if (m.ai.kind === "pack" && m.ai.s.phase === "windup") warn(0xff7070, H.chicken.windupMs);
     if (m.ai.kind === "boss" && (m.ai.s.phase === "telegraph" || m.ai.s.phase === "slamWindup" || m.ai.s.phase === "rush")) warn(0xff4040, H.tusk.telegraphMs);
+    if (m.ai.kind === "king" && (m.ai.s.phase === "chargeTell" || m.ai.s.phase === "rockTell" || m.ai.s.phase === "roar")) warn(0xff4040, H.king.chargeTelegraphMs);
+    if (m.ai.kind === "king" && m.ai.s.phase === "stunned") shout(pos.x, pos.y - 70, "@@", "#ffd166", H.king.stunMs);
     if (m.ai.kind === "tongue" && m.ai.s.phase === "puff") warn(0xff6060, H.deep.frog.puffMs);
     if (m.ai.kind === "lurker" && m.ai.s.phase === "ripple") shout(pos.x, pos.y - 20, "!", "#ff5050", H.deep.snake.rippleMs);
     if (m.ai.kind === "swarm" && m.ai.s.phase === "fold") warn(0xff6060, H.deep.bat.foldMs);
@@ -322,6 +351,23 @@ export function drawMob(scene: Phaser.Scene, m: Mob, phaseChanged: boolean, shou
       else ((key = `boar_walk_${look}`), (bob = true));
       break;
     }
+    case "king": {
+      // the boar's frames until his own: pawing before a charge, a roll or a roar; still while stunned
+      // or catching his breath
+      const p = m.ai.s.phase;
+      if (p === "charge" || p === "chargeTell") dir = m.ai.s.chargeDir;
+      const look = lookOf(dir);
+      if (p === "chargeTell" || p === "rockTell" || p === "roar") {
+        if (phaseChanged) s.play("boar_windup");
+        s.setFlipX(dir.x < 0);
+        s.setPosition(pos.x, pos.y).setDepth(pos.y);
+        return;
+      }
+      if (p === "stunned" || p === "breather") still = `boar_${look}_0`;
+      else if (p === "charge") key = look === "side" ? "boar_charge" : `boar_run_${look}`;
+      else ((key = `boar_walk_${look}`), (bob = true));
+      break;
+    }
     // the deep monsters: their walk while moving, a frame of the special row for each move
     case "tongue": {
       const p = m.ai.s.phase;
@@ -376,6 +422,8 @@ export function drawMob(scene: Phaser.Scene, m: Mob, phaseChanged: boolean, shou
   }
   const look = lookOf(dir);
   s.setFlipX(look === "side" && dir.x < 0);
+  // the King's colour comes back after a hit's flash
+  if (m.ai.kind === "king" && !s.isTinted) s.setTint(m.ai.s.angry ? KING_ANGRY : KING_TINT);
   if (still) {
     s.anims.stop();
     s.setTexture(still);

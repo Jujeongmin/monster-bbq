@@ -1,4 +1,4 @@
-import type { DishId } from "../../../shared/content/dishes";
+import { isSignature, type DishId } from "../../../shared/content/dishes";
 import { parseItemKey, type ItemId } from "../../../shared/content/items";
 import { RECIPES } from "../../../shared/content/recipes";
 import { levelCost, setsAvailable } from "../../../shared/kitchen/dish";
@@ -11,8 +11,10 @@ import { ItemIcon } from "./ItemIcon";
 // The research window over the cookbook (mock-up approved 2026-10-15): the dish's silhouette, how it is
 // made and its base price, each ingredient with how many the fridge holds. Every ingredient seen: the cost
 // (gold and one set) and the research button. Not yet: the lid says where the first missing one is found.
+// A signature dish is never researched (plan 08d): the lid says its boss has the page.
 export function ResearchWindow({ dish, save, busy, onClose, onResearch }: { dish: DishId; save: SaveData; busy: boolean; onClose: () => void; onResearch: () => void }) {
   const r = RECIPES[dish];
+  const signature = isSignature(dish);
   const missing = r.items.find((id) => !save.seenItems.includes(id));
   const cost = levelCost(dish, 1)!;
   const why = save.gold < cost.gold ? t("upgrade.noGold") : setsAvailable(save.items, dish) < cost.sets ? t("kitchen.needSet") : null;
@@ -51,7 +53,9 @@ export function ResearchWindow({ dish, save, busy, onClose, onResearch }: { dish
           })}
         </ul>
         <div className="research-foot">
-          {missing ? (
+          {signature ? (
+            <span className="research-cost soft">{t("kitchen.signature")}</span>
+          ) : missing ? (
             <span className="research-cost soft">{t("kitchen.needAll")}</span>
           ) : (
             <>
@@ -62,9 +66,9 @@ export function ResearchWindow({ dish, save, busy, onClose, onResearch }: { dish
             </>
           )}
         </div>
-        {missing && (
+        {(signature || missing) && (
           <div className="research-lid">
-            <p className="ui-bubble research-say">{t(`where.${missing}` as StringKey)}</p>
+            <p className="ui-bubble research-say">{t(signature ? `where.page.${dish}` as StringKey : (`where.${missing}` as StringKey))}</p>
             <img src={artUrl("test/lid/smug.png")} alt="" />
           </div>
         )}

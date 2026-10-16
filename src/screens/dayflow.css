@@ -64,4 +64,5 @@
 .summary-item img { width: calc(21px * var(--s)); image-rendering: pixelated; }
 .summary-item.premium { color: #c88a10; }
 .summary-ko { margin: 0 0 calc(6px * var(--s)); color: var(--red); }
+.summary-news { margin: 0 0 calc(6px * var(--s)); color: var(--ink); font-weight: 700; }
 

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시험용 세이브 (돌진대왕의 굴)</title>
+<!-- Check page only: a local test save (version 8) with the den's key, boots and a lantern, before the
+     morning hunt; opens the dev game on floor 5 (?floor=5 works only in the dev server). -->
+<script>
+  const save = {
+    version: 8, day: 5, stage: "hunt", gold: 3000, items: {}, hunt: null,
+    seenItems: ["boar_belly", "wild_garlic"], dishes: { grilled_belly: 2 }, menu: [],
+    reputation: 20, upgrades: { boots: 1, lantern: 3, tank: 4, melee: 4 }, lunchbox: [], service: null, lastService: null,
+    bossKey: true, pages: [],
+  };
+  for (const k of Object.keys(sessionStorage)) sessionStorage.removeItem(k);
+  localStorage.setItem("monster-bbq:save", JSON.stringify(save));
+  location.replace("/?local&floor=" + (new URLSearchParams(location.search).get("floor") ?? "5"));
+</script>
+</head>
+<body></body>
+</html>

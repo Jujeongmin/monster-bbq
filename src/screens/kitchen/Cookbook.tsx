@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Action } from "../../../shared/actions";
-import { DISHES, type DishId } from "../../../shared/content/dishes";
+import { DISHES, isSignature, type DishId } from "../../../shared/content/dishes";
 import { RECIPES } from "../../../shared/content/recipes";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
@@ -43,7 +43,8 @@ export function Cookbook({ save, busy, act, onResearch }: { save: SaveData; busy
               </div>
             );
           const r = RECIPES[id];
-          const can = r.items.every((item) => save.seenItems.includes(item));
+          // a signature dish waits for its boss's page, never for research
+          const can = !isSignature(id) && r.items.every((item) => save.seenItems.includes(item));
           return (
             <button key={id} className={`ui-box dish-card closed${can ? " can" : ""}`} onClick={() => setOpen(id)}>
               {can && <span className="ui-plate dish-can">{t("kitchen.canResearch")}</span>}

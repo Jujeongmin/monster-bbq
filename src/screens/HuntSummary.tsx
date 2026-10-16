@@ -5,8 +5,9 @@ import { artUrl } from "../game/art";
 import { itemName, t } from "../i18n";
 
 // Home from the hunt (hunt v3 design 5.2): what was taken, row by row by stars, and the parts that came
-// home (the save's items after the server settled the hunt, against before).
-export function HuntSummary({ events, ko, before, after, onDone }: { events: HuntEvent[]; ko: boolean; before: Record<string, number>; after: Record<string, number>; onDone: () => void }) {
+// home (the save's items after the server settled the hunt, against before); the den's key or a boss's
+// notebook page when this hunt brought one (plan 08d).
+export function HuntSummary({ events, ko, before, after, gotKey, gotPage, onDone }: { events: HuntEvent[]; ko: boolean; before: Record<string, number>; after: Record<string, number>; gotKey: boolean; gotPage: boolean; onDone: () => void }) {
   const counts = [3, 2, 1].map((n) => ({ n, count: events.filter((e) => "take" in e && starsOf(e.how) === n).length }));
   const gained = Object.entries(after)
     .map(([k, v]) => [k, v - (before[k] ?? 0)] as const)
@@ -34,6 +35,8 @@ export function HuntSummary({ events, ko, before, after, onDone }: { events: Hun
             );
           })}
         </div>
+        {gotKey && <p className="summary-news">{t("summary.key")}</p>}
+        {gotPage && <p className="summary-news">{t("summary.page")}</p>}
         {ko && <p className="summary-ko">{t("summary.ko")}</p>}
         <button className="ui-btn" onClick={onDone}>
           {t("summary.next")}

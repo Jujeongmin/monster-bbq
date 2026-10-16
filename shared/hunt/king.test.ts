@@ -23,7 +23,7 @@ function run(s: KingState, ms: number, player = { x: 300, y: 350 }, health = 1, 
 
 describe("the Charge King", () => {
   it("wanders until the hunter comes near, then warns before charging", () => {
-    const far = run(newKing({ x: 900, y: 350 }), 500, { x: 50, y: 350 });
+    const far = run(newKing({ x: 990, y: 690 }), 500, { x: 10, y: 10 });
     expect(far.s.phase).toBe("wander");
     const near = run(newKing({ x: 500, y: 350 }), 100);
     expect(near.s.phase).toBe("chargeTell");

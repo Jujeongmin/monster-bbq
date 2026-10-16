@@ -74,8 +74,8 @@ export interface HuntData {
   // damageTaken: the apron armour's share of each hit that gets through (save v7)
   stats: { meleeDamage: number; rangedDamage: number; rangedRange: number; maxHp: number; damageTaken: number };
   // the gear that opens the deep floors (hunt v3 design 4.6): boots for the swamp, the lantern's light
-  // radius in the cave (0 without one)
-  gear: { boots: boolean; light: number };
+  // radius in the cave (0 without one), the key to the Charge King's den (plan 08d)
+  gear: { boots: boolean; light: number; key: boolean };
   bagSlots: number;
   // dishes packed for this hunt and the health each gives back (its level price, shared/kitchen/dish): eat one
   // with its button (or keys 1-3)
@@ -212,6 +212,9 @@ export class HuntScene extends Phaser.Scene {
   private ammoText!: Phaser.GameObjects.Text;
   private bossBar: UiGauge | null = null;
   private bossSeen = false;
+  // the Charge King's falling rocks landing, and his piglets called so far (their ids)
+  private dust: { at: Vec; ms: number }[] = [];
+  private pigletsCalled = 0;
   // what a side weapon has done to each monster, shown above its head (Zzz, z, @@, #)
   private statusLabels = new Map<Mob, Phaser.GameObjects.Text>();
   private slamRing: { at: Vec; ms: number } | null = null;
@@ -228,7 +231,11 @@ export class HuntScene extends Phaser.Scene {
     this.melee = { ...H.weapons.melee, damage: data.stats.meleeDamage };
     this.ranged = { ...H.weapons.ranged, damage: data.stats.rangedDamage, range: H.weapons.ranged.range * data.stats.rangedRange };
     this.maxStamina = data.stats.maxHp;
-    this.run = data.run ?? { floor: 1, stamina: data.stats.maxHp, bag: {}, report: [], eaten: data.lunchbox.map(() => false), ammo: data.ammo };
+    // dev builds only (?local&floor=5): start on a deeper floor, its ways down already in the report
+    const devFloor = import.meta.env.DEV ? Number(new URLSearchParams(location.search).get("floor")) : NaN;
+    const first: FloorId = isFloorId(devFloor) ? devFloor : 1;
+    const downs: HuntEvent[] = Array.from({ length: first - 1 }, (_, i) => ({ down: (i + 2) as FloorId }));
+    this.run = data.run ?? { floor: first, stamina: data.stats.maxHp, bag: {}, report: downs, eaten: data.lunchbox.map(() => false), ammo: data.ammo };
     this.bagSlots = data.bagSlots;
     this.lunch = [];
     this.speedUntil = 0;
@@ -267,6 +274,8 @@ export class HuntScene extends Phaser.Scene {
     this.pauseMenu = null;
     this.bossBar = null;
     this.bossSeen = false;
+    this.dust = [];
+    this.pigletsCalled = 0;
     this.statusLabels = new Map();
     this.slamRing = null;
     this.dark = null;
@@ -283,6 +292,9 @@ export class HuntScene extends Phaser.Scene {
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
     for (const k of ["ring_empty", "ring_full", "face_fine", "face_tired"]) this.load.image(`stamina_${k}`, artUrl(`test/ui/stamina/${k}.png`));
     this.load.image(`side_${this.huntData.side}`, artUrl(`test/ui/side/${this.huntData.side}.png`));
+    // what the side weapon fires (pebble, dart, net, firecracker); until drawn, its own icon flies
+    const shot = `test/hunt/shots/${this.huntData.side}.png`;
+    if (hasArt(shot)) this.load.image(`shot_${this.huntData.side}`, artUrl(shot));
     this.load.image("exit", artUrl("test/hunt/exit.png"));
     this.load.image("stairs", artUrl("test/hunt/stairs.png"));
     loadCharacterArt(this);
@@ -296,8 +308,10 @@ export class HuntScene extends Phaser.Scene {
   }
 
   create() {
+    // dev builds only: the scene on window for screenshot checks (art-src/mockups/tools/shot.mjs)
+    if (import.meta.env.DEV) (window as unknown as { __hunt?: HuntScene }).__hunt = this;
     this.add.tileSprite(0, 0, this.floorDef.world.w, this.floorDef.world.h, this.textures.exists(this.floorDef.ground) ? this.floorDef.ground : "grass").setOrigin(0).setDepth(-1000);
-    if (this.floorDef.ground === "cave") this.makeDark();
+    if (this.floorDef.ground === "cave" && !this.floorDef.lit) this.makeDark();
     for (const o of this.plan.objects) {
       const sprite = this.add.image(o.x, o.y, `obj_${o.kind}`).setOrigin(0.5, 1).setDepth(o.y);
       this.obstacles.push(o.foot);
@@ -727,7 +741,7 @@ export class HuntScene extends Phaser.Scene {
     if (!this.floorDef.down || !isFloorId(next) || this.ended) return;
     const need = this.downNeed();
     if (need) {
-      this.popText(this.player.pos.x, this.player.pos.y - 44, t(need === "boots" ? "hunt.needBoots" : "hunt.needLantern"), "#ff8080", 900);
+      this.popText(this.player.pos.x, this.player.pos.y - 44, t(need === "boots" ? "hunt.needBoots" : need === "lantern" ? "hunt.needLantern" : "hunt.needKey"), "#ff8080", 900);
       return;
     }
     this.run.report.push({ down: next });
@@ -737,11 +751,12 @@ export class HuntScene extends Phaser.Scene {
   }
 
   // The next floor's gear the hunter lacks (the server refuses such a report too), or null.
-  private downNeed(): "boots" | "lantern" | null {
+  private downNeed(): "boots" | "lantern" | "key" | null {
     const next = this.run.floor + 1;
     const need = isFloorId(next) ? FLOORS[next].needs : null;
     if (need === "boots" && !this.huntData.gear.boots) return "boots";
     if (need === "lantern" && this.huntData.gear.light <= 0) return "lantern";
+    if (need === "key" && !this.huntData.gear.key) return "key";
     return null;
   }
 
@@ -921,8 +936,14 @@ export class HuntScene extends Phaser.Scene {
     if (this.reeling === m) this.reeling = null;
     if (this.capturing?.mob === m) this.endCapture();
     if (this.pinned === m) this.pinned = null;
+    // the Charge King's piglets: knocked away, nothing to report or bag
+    if (m.spawn.monster === "piglet") {
+      this.celebrate(mobPos(m), how);
+      this.tweens.add({ targets: m.sprite, alpha: 0, duration: 400, onComplete: () => { m.sprite.destroy(); this.mobs = this.mobs.filter((x) => x !== m); } });
+      return;
+    }
     this.run.report.push({ take: m.spawn.id, how });
-    const y = takeYield(how, m.spawn.monster === "tusk");
+    const y = takeYield(how, m.spawn.monster === "tusk" || m.spawn.monster === "king");
     const key = itemKey(dropFor(this.huntData.seed, m.spawn), y.grade);
     const at = mobPos(m);
     let added = 0;
@@ -935,7 +956,16 @@ export class HuntScene extends Phaser.Scene {
     this.celebrate(at, how);
     if (added > 0) this.flyToBag(at, key, added);
     else this.popText(at.x, at.y - 38, t("hunt.bagFull"), "#ffb0b0", 1200);
-    if (m.spawn.monster === "tusk") this.say(at, t("hunt.tuskCaught"));
+    if (m.spawn.monster === "tusk") {
+      this.say(at, t("hunt.tuskCaught"));
+      // the first time, he drops the key to his big brother's den (plan 08d)
+      if (!this.huntData.gear.key) this.popText(at.x, at.y - 84, t("hunt.keyDropped"), "#ffd166", 2200);
+    }
+    if (m.spawn.monster === "king") {
+      this.say(at, t("hunt.kingBeaten"));
+      // the piglets run off with their father beaten
+      for (const p of this.mobs) if (p.spawn.monster === "piglet" && !p.dead) this.take(p, "down");
+    }
     this.statusLabels.get(m)?.destroy();
     this.statusLabels.delete(m);
     this.tweens.killTweensOf(m.sprite);
@@ -1031,13 +1061,19 @@ export class HuntScene extends Phaser.Scene {
     if (side === "firecracker") {
       const d = Math.min(H.firecracker.range, distance(this.hand(), at));
       const to = { x: this.hand().x + p.aim.x * d, y: this.hand().y + p.aim.y * d + H.harpoon.handHeight };
-      const sprite = this.add.image(this.hand().x, this.hand().y, `side_${side}`).setScale(0.5).setDepth(9000);
+      const sprite = this.shotSprite(side);
       this.tweens.add({ targets: sprite, x: to.x, y: to.y, angle: 360, duration: 400 });
       this.bombs.push({ at: to, ms: 400, sprite });
       return;
     }
-    const sprite = this.add.image(this.hand().x, this.hand().y, `side_${side}`).setScale(0.5).setDepth(9000);
+    const sprite = this.shotSprite(side);
     this.darts.push({ kind: side, h: fireHarpoon(this.hand(), at, p.aim.x < 0 ? -1 : 1), sprite });
+  }
+
+  // The shot in flight: its own picture at full size, or the weapon's icon halved while that is not drawn.
+  private shotSprite(side: SideWeaponId): Phaser.GameObjects.Image {
+    const own = this.textures.exists(`shot_${side}`);
+    return this.add.image(this.hand().x, this.hand().y, own ? `shot_${side}` : `side_${side}`).setScale(own ? 1 : 0.5).setDepth(9000);
   }
 
   private updateDarts(dt: number) {
@@ -1197,7 +1233,8 @@ export class HuntScene extends Phaser.Scene {
     for (const m of this.mobs) {
       if (m.dead || m === this.reeling) continue;
       if (m === this.capturing?.mob) continue;
-      const step = stepMob(m, dt, seen, this.floorDef.field, this.obstacles, this.dark ? this.huntData.gear.light : 0);
+      const piglets = this.mobs.filter((x) => x.spawn.monster === "piglet" && !x.dead).length;
+      const step = stepMob(m, dt, seen, this.floorDef.field, this.obstacles, this.dark ? this.huntData.gear.light : 0, piglets);
       if (step.hurt) this.hurtPlayer(step.hurt.damage, step.hurt.dir);
       if (step.pull && !this.player.down) {
         // the frog's tongue reels the hunter in
@@ -1216,29 +1253,46 @@ export class HuntScene extends Phaser.Scene {
         this.cameras.main.shake(200, 0.015);
         this.slamRing = { at: step.slam, ms: 300 };
       }
+      if (step.fell) {
+        // rocks come down where their shadows were
+        this.cameras.main.shake(220, 0.012);
+        for (const r of step.fell) this.dust.push({ at: r, ms: 400 });
+      }
+      if (step.piglets) this.callPiglets(m, step.piglets);
       if (step.statusEvent === "fell_asleep") this.tweens.add({ targets: m.sprite, y: m.sprite.y + 2, duration: 200 });
-      if (m.ai.kind === "boss") this.watchBoss(m);
+      if (m.ai.kind === "boss" || m.ai.kind === "king") this.watchBoss(m);
       if (step.shot) this.shots.push({ shot: step.shot, sprite: this.add.image(step.shot.pos.x, step.shot.pos.y, "bee_stinger").setDepth(9000).setRotation(Math.atan2(step.shot.dir.y, step.shot.dir.x)) });
       drawMob(this, m, step.phaseChanged, (x, y, s, c, ms) => this.popText(x, y, s, c, ms));
     }
   }
 
-  // The tusk boss: its name card the first time it comes into view, its health along the top while it
-  // lives, and the pin released once it lets go.
+  // The Charge King's piglets come out beside him (his calls, not the plan's: ids the report never sees).
+  private callPiglets(king: Mob, n: number) {
+    const at = mobPos(king);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const pos = clampToField({ x: at.x + Math.cos(a) * 50, y: at.y + Math.sin(a) * 40 }, this.floorDef.field);
+      this.mobs.push(createMob(this, { id: `pig-${this.pigletsCalled++}`, monster: "piglet", x: pos.x, y: pos.y, wave: 0 }));
+    }
+    this.popText(at.x, at.y - 80, t("hunt.kingRoar"), "#ff8080", 900);
+  }
+
+  // A boss (the tusk boss, the Charge King): its name card the first time it comes into view, its health
+  // along the top while it lives, and the pin released once it lets go.
   private watchBoss(m: Mob) {
     if (this.pinned === m && (m.ai.kind !== "boss" || m.ai.s.phase !== "grab")) this.pinned = null;
     if (!this.bossSeen && this.cameras.main.worldView.contains(mobPos(m).x, mobPos(m).y)) {
       this.bossSeen = true;
-      this.bossCard();
+      this.bossCard(m.spawn.monster === "king");
       this.bossBar = addGauge(this, GAME_WIDTH / 2, 18, 240);
       this.bossBar.box.setScrollFactor(0).setDepth(10000);
     }
-    this.bossBar?.set(Math.max(0, m.hp) / MONSTERS.tusk.maxHp);
+    this.bossBar?.set(Math.max(0, m.hp) / MONSTERS[m.spawn.monster].maxHp);
   }
 
-  private bossCard() {
-    const line = this.add.text(0, -8, t("hunt.tuskCard"), { ...TEXT_SMALL, color: "#ffd166" }).setOrigin(0.5);
-    const name = this.add.text(0, 8, t("hunt.tuskName"), { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
+  private bossCard(king: boolean) {
+    const line = this.add.text(0, -8, t(king ? "hunt.kingCard" : "hunt.tuskCard"), { ...TEXT_SMALL, color: "#ffd166" }).setOrigin(0.5);
+    const name = this.add.text(0, 8, t(king ? "hunt.kingName" : "hunt.tuskName"), { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
     const plate = kitSlice(this, 0, 0, "topbar", Math.max(line.width, name.width) + 48, 44, 5, 5, 2, 1);
     const card = this.add.container(GAME_WIDTH + 140, GAME_HEIGHT / 2 - 40, [plate, line, name]).setScrollFactor(0).setDepth(10002);
     this.tweens.add({ targets: card, x: GAME_WIDTH / 2, duration: 260, ease: "Cubic.easeOut", hold: 1200, yoyo: true, onComplete: () => card.destroy() });
@@ -1278,6 +1332,21 @@ export class HuntScene extends Phaser.Scene {
       // the slam's circle, warned before it lands
       if (m.ai.kind === "boss" && m.ai.s.phase === "slamWindup") g.fillStyle(0x400000, 0.3).fillCircle(mobPos(m).x, mobPos(m).y, H.tusk.slamRadius).lineStyle(2, 0xff3030, 1).strokeCircle(mobPos(m).x, mobPos(m).y, H.tusk.slamRadius * Math.min(1, m.ai.s.phaseMs / H.tusk.slamTelegraphMs));
     }
+    for (const m of this.mobs) {
+      if (m.dead || m.ai.kind !== "king") continue;
+      const s = m.ai.s;
+      // the charge's line (to the wall), and the rocks' shadows growing until they fall
+      if (s.phase === "chargeTell") this.drawLane(g, mobPos(m), s.chargeDir, 700, 30);
+      if (s.phase === "rockTell") {
+        const k = Math.min(1, s.phaseMs / (H.king.rockTelegraphMs / (s.angry ? H.king.angryMul : 1)));
+        for (const r of s.rocks) g.fillStyle(0x000000, 0.25 + 0.35 * k).fillCircle(r.x, r.y, H.king.rockRadius * (0.4 + 0.6 * k)).lineStyle(2, 0xff3030, 1).strokeCircle(r.x, r.y, H.king.rockRadius);
+      }
+    }
+    this.dust = this.dust.filter((d) => {
+      d.ms -= dt;
+      g.lineStyle(3, 0xc8b8a0, Math.max(0, d.ms / 400)).strokeCircle(d.at.x, d.at.y, H.king.rockRadius * (1.3 - d.ms / 1000));
+      return d.ms > 0;
+    });
     if (this.slamRing) {
       this.slamRing.ms -= dt;
       g.lineStyle(3, 0xffd166, Math.max(0, this.slamRing.ms / 300)).strokeCircle(this.slamRing.at.x, this.slamRing.at.y, H.tusk.slamRadius * (1.2 - this.slamRing.ms / 1000));
