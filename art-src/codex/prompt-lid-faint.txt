@@ -1,0 +1,12 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a 4-frame KNOCKOUT (fainting) sprite strip of the character in the attached image (copy his identity exactly from the approved picture: spiky black hair, red bandana, green hooded jacket, cream apron, brown gloves and boots, a brown leather strap across his chest, and Ttukkeong-i, the grumpy talking cast-iron pot lid (dark iron dome, round knob, two small side handles, angry eyebrows and a wobbly frown, warm brown highlight) strapped on his back; ONE harpoon with a coiled rope slung diagonally behind him, its single tip poking up over ONE shoulder only (never two harpoons, never two tips); no cleaver anywhere. Same chunky cute chibi pixel-art style, same dark outline, same big head, same proportions, same size).
+
+Save as art-src/codex/raw/lid_faint.png - a WIDE image exactly 4 times as wide as it is tall (for example 1536x384): 4 equal square cells side by side, left to right, one full-body pose centred in each cell, all drawn at the same scale as the attached picture, the ground line the same in every cell (feet, knees or body resting on it). Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no motion lines, no dust, no stars, no effects. No pose touches its cell edge.
+
+FACING for every frame: pure side profile facing camera-RIGHT, like the attached picture. He has run out of stamina and collapses, comic and cute, not violent.
+frame 1 (stagger): still standing but wobbling, knees bent, shoulders slumped, arms hanging, head drooping, eyes half closed and dizzy; the lid on his back looks worried.
+frame 2 (knees): he drops onto both knees, upper body leaning forward, arms limp at his sides, eyes closed; the lid on his back looks alarmed.
+frame 3 (falling): he tips forward, body at about 45 degrees, hands just reaching out toward the ground in front (to the right), eyes squeezed shut.
+frame 4 (down): he lies flat on his belly on the ground, face down toward the right, arms spread, eyes as little x marks; Ttukkeong-i still strapped on his back, now on top, facing up with dizzy swirl eyes and an open mouth. The harpoon still slung across his back.
+Keep the same character, the same outfit, the same lid and the same size in every frame; only the pose changes.
+
+Reply only with the saved file path.

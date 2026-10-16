@@ -5,10 +5,11 @@
 # little (--color) because the converted sprite reads greyer than the original. Nothing is drawn.
 #
 #   python art-src/codex/charsnap.py <sheet.png> <cols> <rows> <scale> <out dir> <name> ... [--size 105]
-#       [--base 98] [--color 1.3]
+#       [--base 98] [--color 1.3] [--keep-x]
 # one name per cell, row by row ("-" skips); scale = output pixels per sheet pixel, the same for every cell
 # so every pose stays the same size. Each pose goes into a square --size frame with its feet on row --base,
-# placed across by its head (the top third), so a walk cycle's body stays still while the legs move.
+# placed across by its head (the top third), so a walk cycle's body stays still while the legs move; with
+# --keep-x, where it sits across its cell instead (a pose that moves, like falling over, keeps its path).
 import sys
 from collections import Counter
 from pathlib import Path
@@ -89,6 +90,8 @@ def lift(im: Image.Image, color: float) -> Image.Image:
 
 def main():
     args = sys.argv[1:]
+    keep_x = "--keep-x" in args
+    args = [a for a in args if a != "--keep-x"]
     opt = {"--size": 105.0, "--base": 98.0, "--color": 1.0}
     for k in list(opt):
         if k in args:
@@ -111,11 +114,13 @@ def main():
         if not box:
             continue
         pose = drop_specks(sample(cell.crop(box), scale))
-        pose = lift(pose.crop(pose.getbbox()), opt["--color"])
+        trim = pose.getbbox()
+        pose = lift(pose.crop(trim), opt["--color"])
+        left = (box[0] - cell.width / 2) * scale + trim[0]  # the pose's left edge from the cell's centre
         head = pose.crop((0, 0, pose.width, max(1, pose.height // 3))).getbbox() or (0, 0, pose.width, 1)
         mid = (head[0] + head[2]) // 2
         frame = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-        x, y = size // 2 - mid, base - pose.height
+        x, y = (size // 2 + round(left)) if keep_x else (size // 2 - mid), base - pose.height
         if x < 0 or y < 0 or x + pose.width > size:
             print(f"({name} spills out of its frame)", end=" ")
         frame.paste(pose, (x, y), pose)

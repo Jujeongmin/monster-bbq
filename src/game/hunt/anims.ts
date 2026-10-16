@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { BALANCE } from "../../../shared/balance";
-import { artUrl } from "../art";
+import { artUrl, hasArt } from "../art";
 
 // Codex sprite sheets (art-src/codex), sliced to art/test/<who>/<row>_<n>.png, 4 frames per row.
 const ROWS = {
@@ -36,6 +36,8 @@ export function loadCharacterArt(scene: Phaser.Scene) {
   for (const [who, rows] of Object.entries(ROWS))
     for (const row of rows) for (let i = 0; i < 4; i++) scene.load.image(`${who}_${row}_${i}`, artUrl(`test/${who}/${row}_${i}.png`));
   scene.load.image("bee_stinger", artUrl("test/bee/stinger.png"));
+  // the hunter's knockout, drawn as frames (dropped in by file when approved)
+  for (let i = 0; i < 4; i++) if (hasArt(`test/hunter/faint_${i}.png`)) scene.load.image(`hunter_faint_${i}`, artUrl(`test/hunter/faint_${i}.png`));
 }
 
 const frames = (prefix: string, ids: number[]) => ids.map((i) => ({ key: `${prefix}_${i}` }));
@@ -59,6 +61,7 @@ export function createCharacterAnims(scene: Phaser.Scene) {
   }
   A.create({ key: "hunter_slash", frames: frames("hunter_slash", all), frameRate: Math.round(4000 / H.weapons.melee.swingMs) });
   A.create({ key: "hunter_throw", frames: frames("hunter_throw", all), frameRate: 18 });
+  if ([0, 1, 2, 3].every((i) => scene.textures.exists(`hunter_faint_${i}`))) A.create({ key: "hunter_faint", frames: frames("hunter_faint", all), frameRate: 6 });
   A.create({ key: "boar_windup", frames: frames("boar_windup", all), frameRate: Math.round(4000 / H.boar.telegraphMs) });
   A.create({ key: "boar_charge", frames: frames("boar_charge", all), frameRate: 14, repeat: -1 });
   A.create({ key: "rabbit_sprint", frames: frames("rabbit_special", [2, 3]), frameRate: 12, repeat: -1 });

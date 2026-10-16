@@ -746,18 +746,14 @@ export class HuntScene extends Phaser.Scene {
     }
     cam.flash(180, 255, 60, 60);
     cam.shake(160, 0.008);
-    // stagger, then fall over backwards
-    const back = this.hunter.flipX ? 1 : -1;
-    const at = { x: this.hunter.x, y: this.hunter.y };
-    this.tweens.chain({
-      targets: this.hunter,
-      tweens: [
-        { angle: 10 * back, x: at.x - 2 * back, duration: 110, ease: "Sine.easeOut" },
-        { angle: -8 * back, x: at.x + 2 * back, duration: 140, ease: "Sine.easeInOut" },
-        { angle: 6 * back, x: at.x, duration: 160, ease: "Sine.easeInOut" },
-        { angle: 90 * back, y: at.y + 6, duration: 240, ease: "Quad.easeIn", onComplete: () => (cam.shake(120, 0.006), this.hunter.setTint(0xb0b0b0)) },
-      ],
-    });
+    // the fall is drawn, never turned in code (user, 2026-10-16): the faint frames when they exist (side
+    // view, flipped like the walk), else he just greys where he stands
+    const fallen = () => (cam.shake(120, 0.006), this.hunter.setTint(0xb0b0b0));
+    if (this.anims.exists("hunter_faint")) {
+      this.hunter.setFlipX(this.player.face.x < 0);
+      this.hunter.play("hunter_faint");
+      this.hunter.once(Phaser.Animations.Events.ANIMATION_COMPLETE, fallen);
+    } else this.time.delayedCall(500, fallen);
     cam.zoomTo(1.6, 1300, "Sine.easeInOut");
     // the world drains of colour (WebGL only)
     const grey = cam.postFX?.addColorMatrix();
