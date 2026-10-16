@@ -90,3 +90,20 @@ describe("Server", () => {
     expect(refused).toBe(true);
   });
 });
+
+// The VX Shop purchase webhook (06b-1): granted once per purchaseId, under the account's save lock.
+describe("purchases", () => {
+  test("the same purchaseId is granted once", async (server) => {
+    const acct = `buyer-${Date.now()}`;
+    await server.$onItemPurchased({ account: acct, purchaseId: "p-1", productId: "charcoal_1", quantity: 1 });
+    await server.$onItemPurchased({ account: acct, purchaseId: "p-1", productId: "charcoal_1", quantity: 1 });
+    server.connect({ account: acct });
+    const s = await server.load();
+    expect(s.charcoal).toBe(60);
+    expect(s.vip.spent).toBe(100);
+  });
+  test("refuses a product it does not know", async (server) => {
+    const r = await server.$onItemPurchased({ account: `buyer-x-${Date.now()}`, purchaseId: "p-2", productId: "gold_pouch", quantity: 1 });
+    expect(r.success).toBe(false);
+  });
+});
