@@ -45,14 +45,19 @@
 @keyframes nb-dim { from { background-color: rgba(20, 10, 4, 0); } }
 .nb-book { position: relative; perspective: calc(900px * var(--s)); transform-origin: 50% 50%; animation: nb-fly 0.5s steps(12) both; }
 @keyframes nb-fly { 0% { transform: translate(-40vw, 38vh) scale(0.12); } 80% { transform: translate(0, 0) scale(1.03); } 100% { transform: none; } }
-.nb-cover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(6px * var(--s)); color: var(--brass); font-weight: 700; transform-origin: 0 50%; backface-visibility: hidden; animation: nb-open 0.7s 0.7s steps(16) both; pointer-events: none; }
-.nb-cover img { height: calc(62px * var(--s)); image-rendering: pixelated; }
-@keyframes nb-open { from { transform: rotateY(0); } to { transform: rotateY(-180deg); visibility: hidden; } }
-.nb-win.closing { animation: nb-undim 0.3s 0.4s steps(6) both; }
+/* the closed notebook: the notebook picture 8 times over (29x31 art pixels), centred on the pages */
+.nb-cover { position: absolute; left: calc(50% - 116px * var(--s)); top: calc(50% - 124px * var(--s)); width: calc(232px * var(--s)); height: calc(248px * var(--s)); image-rendering: pixelated; transform-origin: 8% 50%; backface-visibility: hidden; pointer-events: none; animation: nb-open 0.7s 0.7s steps(16) both; }
+@keyframes nb-open { from { transform: rotateY(0); } 90% { opacity: 1; } to { transform: rotateY(-170deg); opacity: 0; visibility: hidden; } }
+/* the pages under it: hidden while it flies, opening out as the cover turns */
+.nb-book .notebook { animation: nb-pages 0.45s 0.85s steps(9) both; }
+@keyframes nb-pages { from { opacity: 0; transform: scale(0.72, 0.9); } }
+.nb-win.closing { animation: nb-undim 0.3s 0.5s steps(6) both; }
 @keyframes nb-undim { to { background-color: rgba(20, 10, 4, 0); } }
-.nb-win.closing .nb-cover { animation: nb-shut 0.4s steps(10) both; }
-@keyframes nb-shut { from { transform: rotateY(-180deg); } to { transform: rotateY(0); } }
-.nb-win.closing .nb-book { animation: nb-down 0.35s 0.4s steps(9) both; }
+.nb-win.closing .notebook { animation: nb-pages-out 0.2s steps(4) both; }
+@keyframes nb-pages-out { to { opacity: 0; transform: scale(0.72, 0.9); } }
+.nb-win.closing .nb-cover { animation: nb-shut 0.35s 0.12s steps(9) both; }
+@keyframes nb-shut { from { transform: rotateY(-170deg); opacity: 0; } 15% { opacity: 1; } to { transform: rotateY(0); opacity: 1; } }
+.nb-win.closing .nb-book { animation: nb-down 0.35s 0.5s steps(9) both; }
 @keyframes nb-down { from { transform: none; } to { transform: translate(-40vw, 38vh) scale(0.12); } }
 /* the cookbook to read, outside the evening kitchen (research only there) */
 .hud-cookbook { position: relative; width: 92%; height: 84%; padding: calc(6px * var(--s)); overflow: auto; }
@@ -126,5 +131,5 @@
 .hud-cookbook { transform-origin: 0 50%; animation: book-open 0.36s steps(9) both; }
 @keyframes book-open { from { transform: perspective(calc(900px * var(--s))) rotateY(-80deg); opacity: 0.5; } }
 @media (prefers-reduced-motion: reduce) {
-  .bag, .bag-cell, .upgrades, .side-pick, .side-card, .kitchen-pop *, .store .shop, .receipt, .hunt-summary, .hud-cookbook { animation-duration: 0.01s !important; animation-delay: 0s !important; }
+  .nb-win, .nb-book, .nb-cover, .nb-book .notebook, .bag, .bag-cell, .upgrades, .side-pick, .side-card, .kitchen-pop *, .store .shop, .receipt, .hunt-summary, .hud-cookbook { animation-duration: 0.01s !important; animation-delay: 0s !important; }
 }

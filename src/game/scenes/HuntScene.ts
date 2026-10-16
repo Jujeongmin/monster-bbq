@@ -26,6 +26,7 @@ import { itemName, t, type StringKey } from "../../i18n";
 import { artUrl, hasArt } from "../art";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 import { createCharacterAnims, loadCharacterArt, lookOf, stepBob } from "../hunt/anims";
+import { bagLevel } from "../hunt/bagGauge";
 import { angerFlock, CHAR_SCALE, createMob, drawMob, isMobVulnerable, isTargetable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { fleerHit } from "../../../shared/hunt/fleer";
 import { joystickVector } from "../joystick";
@@ -185,7 +186,12 @@ export class HuntScene extends Phaser.Scene {
   private face!: Phaser.GameObjects.Image;
   private shownStamina = -1;
   private fx!: Phaser.GameObjects.Graphics;
-  private bagText!: Phaser.GameObjects.Text;
+  // beside the stamina ring: the floor big (Dave's depth) and the bag as a gauge with its count (his weight)
+  private floorText!: Phaser.GameObjects.Text;
+  private bagIcon!: Phaser.GameObjects.Image;
+  private bagGauge!: UiGauge;
+  private bagCountText!: Phaser.GameObjects.Text;
+  private shownBag = -1;
   private gatherHint!: Phaser.GameObjects.Text;
   private staminaText!: Phaser.GameObjects.Text;
   private exitArrow!: Phaser.GameObjects.Text;
@@ -301,6 +307,7 @@ export class HuntScene extends Phaser.Scene {
     for (const g of DEEP_GROUNDS) if (this.floorDef.ground === g && hasArt(`test/bg/${g}.png`)) this.load.image(g, artUrl(`test/bg/${g}.png`));
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
     for (const k of ["ring_empty", "ring_full", "face_fine", "face_tired"]) this.load.image(`stamina_${k}`, artUrl(`test/ui/stamina/${k}.png`));
+    this.load.image("hud_bag", artUrl("test/ui/hud/bag.png"));
     this.load.image(`side_${this.huntData.side}`, artUrl(`test/ui/side/${this.huntData.side}.png`));
     // what the side weapon fires (pebble, dart, net, firecracker); until drawn, its own icon flies
     const shot = `test/hunt/shots/${this.huntData.side}.png`;
@@ -362,7 +369,14 @@ export class HuntScene extends Phaser.Scene {
     this.face = hud(this.add.image(RING.x, RING.y, "stamina_face_fine").setScale(KIT));
     this.staminaText = hud(this.add.text(RING.x, RING.y + RING.r + 8, "", { ...TEXT, fontStyle: "bold" }).setOrigin(0.5));
     this.shownStamina = -1;
-    this.bagText = hud(this.add.text(RING.x + RING.r + 10, RING.y - 6, "", hudStyle).setOrigin(0, 0.5));
+    const hx = RING.x + RING.r + 12;
+    this.floorText = hud(this.add.text(hx, RING.y - 16, t("hunt.floorShort", { n: this.run.floor }), { ...TEXT, fontSize: "18px", fontStyle: "bold" }).setOrigin(0, 0.5));
+    hud(this.add.text(hx + this.floorText.width + 6, RING.y - 14, t(`floor.${this.run.floor}` as StringKey), hudStyle).setOrigin(0, 0.5));
+    this.bagIcon = hud(this.add.image(hx + 10, RING.y + 12, "hud_bag"));
+    this.bagIcon.setScale(Math.max(1, Math.floor(22 / this.bagIcon.height)));
+    this.bagGauge = addGauge(this, hx + 24 + 40, RING.y + 12, 80);
+    this.bagGauge.box.setScrollFactor(0).setDepth(10000);
+    this.bagCountText = hud(this.add.text(hx + 24 + 86, RING.y + 12, "", { ...TEXT, fontStyle: "bold" }).setOrigin(0, 0.5));
     this.gatherHint = this.add.text(0, 0, "", hudStyle).setOrigin(0.5).setDepth(9500).setVisible(false);
     // which way the nearest cart is, at the screen's edge when it is out of sight (or always, when the bag
     // is full or stamina runs low)
@@ -1547,7 +1561,19 @@ export class HuntScene extends Phaser.Scene {
       this.staminaText.setText(String(shown)).setColor(frac < LOW_STAMINA ? "#ff7070" : "#fff3d8");
       this.face.setTexture(frac < LOW_STAMINA ? "stamina_face_tired" : "stamina_face_fine");
     }
-    this.bagText.setText(`${t("hunt.floorShort", { n: this.run.floor })} · ${t("hud.bag", { n: bagCount(this.run.bag), max: this.bagSlots })}`);
+    const count = bagCount(this.run.bag);
+    const bag = bagLevel(count, this.bagSlots);
+    if (count !== this.shownBag) {
+      // something went in: the bundle hops (not on the first draw)
+      if (this.shownBag >= 0 && count > this.shownBag) this.tweens.add({ targets: this.bagIcon, y: RING.y + 8, duration: 80, yoyo: true });
+      this.shownBag = count;
+      this.bagGauge.set(bag.fill);
+      this.bagCountText.setText(`${count}/${this.bagSlots}`).setColor(bag.state === "full" ? "#ff7070" : bag.state === "heavy" ? "#ffd166" : "#fff3d8");
+    }
+    // full: the bundle and its count blink, like Dave's weight warning
+    const blink = bag.state === "full" && Math.floor(this.time.now / 300) % 2 === 0;
+    this.bagIcon.setAlpha(blink ? 0.4 : 1);
+    this.bagCountText.setAlpha(blink ? 0.5 : 1);
     const low = frac < LOW_STAMINA && !this.player.down;
     this.lowGlow.setVisible(low);
     if (low) {

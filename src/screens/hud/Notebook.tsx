@@ -38,11 +38,9 @@ export function Notebook({ phase, onApp, onClose }: { phase: Phase; onApp: (app:
             {t("upgrade.close")}
           </button>
         </div>
-        {/* the cover: the notebook's walnut binding with its picture, swinging open on its left edge */}
-        <div className="ui-frame nb-cover" aria-hidden>
-          <img src={artUrl(HUD_ART.notebook)} alt="" />
-          <span>{t("notebook.title")}</span>
-        </div>
+        {/* the notebook itself, big and closed, flying in; its cover swings open on the spine (user, 2026-10-16:
+            the notebook, not a brown panel) */}
+        <img className="nb-cover" src={artUrl(HUD_ART.notebook)} alt="" aria-hidden />
       </div>
     </div>
   );
