@@ -90,11 +90,11 @@ function Mat({ id, n, short }: { id: ItemId; n: string; short?: boolean }) {
   );
 }
 
-export function Upgrades({ save, busy, act, onShop, onClose }: { save: SaveData; busy: boolean; act: (a: Action) => void; onShop: () => void; onClose: () => void }) {
+export function Upgrades({ tab: first = "upgrade", save, busy, act, onShop, onClose }: { tab?: "upgrade" | "awaken"; save: SaveData; busy: boolean; act: (a: Action) => void; onShop: () => void; onClose: () => void }) {
   const have = (id: ItemId) => save.items[id] ?? 0;
   const owned = MATERIALS.filter((id) => have(id) > 0);
   // upgrades (gold) or awakening (stars, gold and golden charcoal — 06b-1)
-  const [tab, setTab] = useState<"upgrade" | "awaken">("upgrade");
+  const [tab, setTab] = useState<"upgrade" | "awaken">(first);
   return (
     <div className="dayflow-screen">
       <div className="ui-panel upgrades">

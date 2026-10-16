@@ -25,7 +25,8 @@
 .service-stage { position: absolute; inset: 0 0 calc(32px * var(--s)); background: var(--wood-dark); }
 .dayflow-actions { display: flex; gap: calc(6px * var(--s)); justify-content: center; }
 /* upgrade shop */
-.upgrades { width: 96%; height: 86%; margin-bottom: calc(26px * var(--s)); display: flex; flex-direction: column; text-align: center; }
+/* between the day HUD's top row and its bottom-right buttons */
+.upgrades { width: 96%; height: calc(100% - 74px * var(--s)); margin-top: calc(4px * var(--s)); display: flex; flex-direction: column; text-align: center; }
 .upgrades h2 { margin: 0 0 calc(4px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink); }
 /* landscape: the three groups side by side; the frame's own scrollbar only if a column ever overflows */
 .upgrades-list { flex: 1; min-height: 0; overflow: auto; text-align: left; margin-bottom: calc(4px * var(--s)); display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(4px * var(--s)); align-content: start; }

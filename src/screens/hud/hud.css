@@ -1,0 +1,31 @@
+/* The day's HUD, the bag, Grandma's notebook and the night's receipt (Dave-style UI design), UI kit art only. */
+.dh { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.dh > * { pointer-events: auto; }
+.dh-left { position: absolute; left: calc(12px * var(--s)); top: calc(10px * var(--s)); display: flex; gap: calc(6px * var(--s)); align-items: center; pointer-events: none; }
+.dh-time, .dh-title { padding: 0 calc(6px * var(--s)); line-height: calc(10px * var(--s)); white-space: nowrap; display: inline-flex; align-items: center; gap: calc(4px * var(--s)); }
+.dh-res { position: absolute; right: calc(12px * var(--s)); top: calc(13px * var(--s)); padding: 0 calc(6px * var(--s)); display: flex; gap: calc(12px * var(--s)); align-items: center; white-space: nowrap; pointer-events: none; }
+.dh-res span { display: inline-flex; align-items: center; gap: calc(4px * var(--s)); }
+.dh-buttons { position: absolute; right: calc(12px * var(--s)); bottom: calc(7px * var(--s)); display: flex; gap: calc(4px * var(--s)); }
+.ui-sq.dh-btn { width: auto; height: calc(15 * var(--k)); padding: 0 calc(3 * var(--k)); white-space: nowrap; display: inline-flex; align-items: center; gap: calc(2px * var(--s)); }
+.dh-btn img { height: calc(16px * var(--s)); image-rendering: pixelated; }
+/* a window over the day: the screen behind dimmed, a tap outside closes it */
+.hud-win { position: absolute; inset: 0; z-index: 8; display: flex; align-items: center; justify-content: center; background: rgba(20, 10, 4, 0.55); }
+.hud-win h2 { margin: 0 0 calc(4px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink); }
+.bag { width: min(92%, calc(440px * var(--s))); padding: calc(6px * var(--s)) calc(10px * var(--s)); display: flex; flex-direction: column; align-items: center; color: var(--ink); }
+.bag-tabs { display: flex; gap: calc(2px * var(--s)); margin-bottom: calc(-2px * var(--s)); align-self: flex-start; }
+.bag-grid { align-self: stretch; min-height: calc(120px * var(--s)); max-height: calc(170px * var(--s)); overflow: auto; padding: calc(6px * var(--s)); display: grid; grid-template-columns: repeat(auto-fill, calc(38px * var(--s))); gap: calc(4px * var(--s)); align-content: start; justify-content: center; }
+.bag-cell { position: relative; width: calc(38px * var(--s)); height: calc(38px * var(--s)); padding: 0; background: none; cursor: pointer; font: inherit; }
+.bag-cell.on { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(var(--k) 0 0 #ffd65a) drop-shadow(calc(-1 * var(--k)) 0 0 #ffd65a) drop-shadow(0 var(--k) 0 #ffd65a) drop-shadow(0 calc(-1 * var(--k)) 0 #ffd65a); }
+.bag-count { position: absolute; right: calc(1px * var(--s)); bottom: calc(-1px * var(--s)); font: 700 var(--fs-small) "Galmuri9", monospace; color: var(--cream); text-shadow: var(--s) var(--s) 0 #2b1408; }
+.bag-empty { grid-column: 1 / -1; text-align: center; color: #d8c4a4; padding-top: calc(40px * var(--s)); }
+.bag-info { margin: calc(4px * var(--s)) 0; min-height: calc(14px * var(--s)); color: var(--paper-ink-soft); }
+.notebook { padding: calc(6px * var(--s)) calc(10px * var(--s)); display: flex; flex-direction: column; align-items: center; color: var(--ink); }
+.notebook-apps { display: grid; grid-template-columns: repeat(3, calc(100px * var(--s))); gap: calc(6px * var(--s)); margin-bottom: calc(6px * var(--s)); }
+.notebook-app { height: calc(66px * var(--s)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(2px * var(--s)); font: inherit; color: var(--ink); cursor: pointer; }
+.notebook-app img { height: calc(28px * var(--s)); image-rendering: pixelated; }
+.notebook-name { font-weight: 700; }
+.notebook-why { font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
+.notebook-app:disabled { cursor: default; filter: grayscale(1) brightness(0.85); }
+/* the cookbook to read, outside the evening kitchen (research only there) */
+.hud-cookbook { position: relative; width: 92%; height: 84%; padding: calc(6px * var(--s)); overflow: auto; }
+.hud-cookbook-close { position: absolute; left: 50%; bottom: calc(6px * var(--s)); transform: translateX(-50%); z-index: 9; }

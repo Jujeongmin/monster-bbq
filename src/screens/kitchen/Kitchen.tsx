@@ -13,11 +13,12 @@ import { ResearchCutIn } from "./ResearchCutIn";
 import "./kitchen.css";
 
 // The evening kitchen (restaurant v2 design 5, mock-ups approved 2026-10-15): the shop behind, dimmed; the
-// shop's name plate at the top left, day and gold at the top right, four tabs, the walnut frame with the
+// day's HUD over it (the shop's name plate, day, time, gold: Dave-style UI design 4), four tabs, the walnut frame with the
 // cookbook / menu board / dish upgrades / lunchbox, and the open button at the bottom centre. Every change
 // goes through `act` (the server's rules); the screen shows what the save says. At lunch (hunt v3 design 3)
 // the same room shows only the lunchbox, the upgrades and the way back out to the afternoon hunt.
-type Tab = "cookbook" | "menu" | "upgrade" | "lunch";
+export type KitchenTab = "cookbook" | "menu" | "upgrade" | "lunch";
+type Tab = KitchenTab;
 const TABS: Tab[] = ["cookbook", "menu", "upgrade", "lunch"];
 
 export function Kitchen({
@@ -29,7 +30,8 @@ export function Kitchen({
   onRest,
   onHunt,
   onSkip,
-  onUpgrades,
+  tab: wanted,
+  onTab,
 }: {
   mode?: "evening" | "lunch";
   save: SaveData;
@@ -40,10 +42,14 @@ export function Kitchen({
   onRest?: () => void;
   onHunt?: () => void;
   onSkip?: () => void;
-  onUpgrades?: () => void;
+  // the tab, when the page keeps it (Grandma's notebook turns to the cookbook or the menu board)
+  tab?: Tab;
+  onTab?: (t: Tab) => void;
 }) {
   const tabs: Tab[] = mode === "lunch" ? ["lunch"] : TABS;
-  const [tab, setTab] = useState<Tab>(mode === "lunch" ? "lunch" : "cookbook");
+  const [own, setOwn] = useState<Tab>(mode === "lunch" ? "lunch" : "cookbook");
+  const tab = mode === "lunch" ? "lunch" : (wanted ?? own);
+  const setTab = (k: Tab) => (onTab ? onTab(k) : setOwn(k));
   // starts from last night's menu, cut to what the fridge makes now
   const [menu, setMenu] = useState<MenuLine[]>(() => fitMenu(save.items, save.dishes, save.menu));
   // research, upgrades and lunches use ingredients: the board shrinks to what the fridge still makes
@@ -55,17 +61,6 @@ export function Kitchen({
   return (
     <div className="kitchen" style={{ backgroundImage: `url(${artUrl("test/shop/bg.png")})` }}>
       <div className="kitchen-dim" />
-      <div className="ui-plate kitchen-title">{t(mode === "lunch" ? "lunch.title" : "kitchen.title")}</div>
-      <div className="ui-bar kitchen-res">
-        <span>
-          <img className="ui-icon" src={artUrl("test/ui/icon_day.png")} alt="" />
-          {t("hud.day", { day: save.day })}
-        </span>
-        <span>
-          <img className="ui-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />
-          {t("hud.gold", { gold: save.gold })}
-        </span>
-      </div>
       <div className="kitchen-tabs">
         {tabs.map((k) => (
           <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
@@ -81,7 +76,6 @@ export function Kitchen({
       </div>
       {mode === "lunch" ? (
         <div className="kitchen-lunch-actions">
-          <button className="ui-btn" disabled={busy} onClick={onUpgrades}>{t("lunch.upgrades")}</button>
           <button className="ui-btn" disabled={busy} onClick={onSkip}>{t("lunch.skip")}</button>
           <button className="ui-btn" disabled={busy} onClick={onHunt}>{t("lunch.goHunt")}</button>
         </div>
