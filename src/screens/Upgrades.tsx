@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { Action } from "../../shared/actions";
+import { AwakenList } from "./Awaken";
 import { BALANCE } from "../../shared/balance";
 import { ITEMS, type ItemId } from "../../shared/content/items";
 import type { UpgradeId } from "../../shared/content/upgrades";
@@ -91,10 +93,21 @@ function Mat({ id, n, short }: { id: ItemId; n: string; short?: boolean }) {
 export function Upgrades({ save, busy, act, onShop, onClose }: { save: SaveData; busy: boolean; act: (a: Action) => void; onShop: () => void; onClose: () => void }) {
   const have = (id: ItemId) => save.items[id] ?? 0;
   const owned = MATERIALS.filter((id) => have(id) > 0);
+  // upgrades (gold) or awakening (stars, gold and golden charcoal — 06b-1)
+  const [tab, setTab] = useState<"upgrade" | "awaken">("upgrade");
   return (
     <div className="dayflow-screen">
       <div className="ui-panel upgrades">
-        <h2>{t("upgrade.title")}</h2>
+        <div className="upgrade-tabs">
+          {(["upgrade", "awaken"] as const).map((k) => (
+            <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
+              {t(`upgrade.tab.${k}` as StringKey)}
+            </button>
+          ))}
+        </div>
+        {tab === "awaken" ? (
+          <AwakenList save={save} busy={busy} act={act} onShop={onShop} />
+        ) : (
         <div className="upgrades-list">
           {GROUPS.map((g) => (
             <section key={g.title}>
@@ -135,6 +148,7 @@ export function Upgrades({ save, busy, act, onShop, onClose }: { save: SaveData;
             </section>
           ))}
         </div>
+        )}
         <div className="dayflow-actions">
           <button className="ui-btn" onClick={onShop}>
             {t("shop.open")}
