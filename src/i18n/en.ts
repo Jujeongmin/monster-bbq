@@ -290,4 +290,13 @@ export const en: Record<keyof typeof ko, string> = {
   "awaken.go": "Awaken",
   "awaken.notYet": "Not yet",
   "shop.vipBonus": "VIP +{vip}%",
+  "receipt.title": "Tonight's receipt",
+  "receipt.guests": "{served} guests served · {left} missed",
+  "receipt.sales": "Sales {gold}",
+  "receipt.tips": "Tips {gold}",
+  "receipt.drinks": "Drinks {gold}",
+  "receipt.cleaned": "Leftovers cleared {n} (in the tips)",
+  "receipt.rep": "Reputation {rep} ({delta})",
+  "receipt.total": "Total {gold}",
+  "receipt.skip": "Tap to see it all",
 };

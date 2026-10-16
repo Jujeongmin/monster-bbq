@@ -289,4 +289,13 @@ export const ko = {
   "awaken.go": "각성",
   "awaken.notYet": "아직",
   "shop.vipBonus": "VIP +{vip}%",
+  "receipt.title": "오늘의 영수증",
+  "receipt.guests": "손님 {served}명 · 놓친 손님 {left}명",
+  "receipt.sales": "매출 {gold}",
+  "receipt.tips": "팁 {gold}",
+  "receipt.drinks": "음료 {gold}",
+  "receipt.cleaned": "잔반 정리 {n}번 (팁에 포함)",
+  "receipt.rep": "평판 {rep} ({delta})",
+  "receipt.total": "합계 {gold}",
+  "receipt.skip": "누르면 바로 보기",
 } as const;
