@@ -1,0 +1,17 @@
+Use your image generation tool (do not write code to draw) to create ONE image: six small HUD icons for a cozy, comic Korean BBQ restaurant game (the day is spent hunting cute monsters in a forest, the night running Grandma's grill shop for yokai guests).
+
+Style: match the attached reference exactly. It shows the game's approved small icons, each scaled up 8 times (golden charcoal, Grandma's notebook, a gold coin, the VIP badge, a cooking pot, a slice of pork belly). Same real low-resolution pixel art:
+- every art pixel is an exact, crisp square block of 8x8 image pixels on an 8-pixel grid (the image must shrink 8 times with no loss);
+- a 1-art-pixel dark brown outline (#2b1408 or close), FLAT colours with 2-3 shades per material, one small highlight, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise;
+- chunky, cute, readable at tiny size; warm palette like the references (walnut brown, brass gold, cream hanji paper, ember orange).
+
+Save as art-src/codex/raw/hud_time.png — exactly 1536x256: 6 equal square cells (256x256) side by side, one icon centred in each, every icon about 20 art pixels tall (160 image pixels) and no wider than 24 art pixels. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no halo, no shadow). No text, no grid lines, no frames. Nothing touches its cell edge.
+
+cell 1 MORNING: a small rising sun peeking over a green hill line, pale yellow sun with short rays, a touch of pink sky.
+cell 2 NOON: a full round bright yellow sun with chunky rays, high and cheerful.
+cell 3 AFTERNOON: a sun half sunk behind a red-orange sunset cloud, warm orange.
+cell 4 EVENING: a glowing paper lantern (red Korean lantern with brass top and tassel), lit warm from inside (flat colours, no glow halo).
+cell 5 NIGHT: a cream crescent moon with one tiny star, deep blue accents.
+cell 6 BAG: a cloth bundle tied at the top (Korean bojagi style), red-brown cloth with a brass knot ring, plump with meat inside, a little bone sticking out.
+
+Reply only with the saved file path.

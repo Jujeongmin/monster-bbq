@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { SaveData } from "../../../shared/save";
+import { artUrl, hasArt } from "../../game/art";
 import { t } from "../../i18n";
-import { receiptAt, receiptLines } from "./hud";
+import { HUD_ART, receiptAt, receiptLines } from "./hud";
 import { Scene } from "./Scene";
 
 // The night's receipt (Dave-style UI design 7): over the shop, the lines come up one by one and the total
@@ -21,9 +22,11 @@ export function Receipt({ save, busy, onNext }: { save: SaveData; busy: boolean;
     return () => cancelAnimationFrame(raf);
   }, []);
   const at = receiptAt(ms, r.lines.length, r.total);
+  // the drawn receipt paper once it is in, else the card frame
+  const paper = hasArt(HUD_ART.receipt);
   return (
     <Scene>
-      <div className="ui-panel receipt" onClick={() => setMs(Infinity)}>
+      <div className={paper ? "receipt receipt-paper" : "ui-panel receipt"} style={paper ? { borderImageSource: `url(${artUrl(HUD_ART.receipt)})` } : undefined} onClick={() => setMs(Infinity)}>
         <h2>{t("receipt.title")}</h2>
         <p className="receipt-day">{t("settle.body", { day: save.day, gold: save.gold })}</p>
         <ul className="receipt-lines">

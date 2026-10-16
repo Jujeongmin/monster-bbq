@@ -34,6 +34,8 @@
 .hud-scene-dim { position: absolute; inset: 0; background: rgba(20, 10, 4, 0.6); }
 .hud-scene > :not(.hud-scene-dim) { position: relative; }
 .receipt { width: min(80%, calc(300px * var(--s))); padding: calc(6px * var(--s)) calc(14px * var(--s)); display: flex; flex-direction: column; align-items: stretch; text-align: left; color: var(--ink); cursor: pointer; }
+/* the drawn receipt (40x56, torn edges 4 px deep with the outline, repeated) */
+.receipt-paper { border: calc(4 * var(--k)) solid transparent; border-image-slice: 4 fill; border-image-width: calc(4 * var(--k)); border-image-repeat: round; image-rendering: pixelated; }
 .receipt h2 { margin: 0 0 calc(2px * var(--s)); text-align: center; font: 700 var(--fs) "Galmuri11", monospace; }
 .receipt-day { margin: 0 0 calc(6px * var(--s)); text-align: center; color: var(--paper-ink-soft); }
 .receipt-lines { list-style: none; margin: 0; padding: 0 0 calc(4px * var(--s)); min-height: calc(104px * var(--s)); border-bottom: var(--k) dashed var(--paper-ink-soft); }

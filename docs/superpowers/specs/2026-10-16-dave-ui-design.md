@@ -88,7 +88,7 @@
 
 ## 8. 그림 (넣기 전 사용자 승인, CLAUDE.md)
 
-UI 그림은 PixelLab(10-28 충전) 또는 Codex로 만든다. 승인 전에는 지금 UI 키트 그림으로 대신한다.
+UI 그림은 Codex로 만든다(사용자 2026-10-16: "게임 디자인과 맞게만"). 클라우드 세션에는 Codex가 없어서 로컬에서 `bash art-src/codex/run-hud.sh`로 뽑는다(프롬프트 `art-src/codex/prompt-hud-*.txt`, 참고 그림 `art-src/codex/raw/ref_hud_icons_x8.png`). 결과는 `art-src/codex/out/hud/`와 `_preview.png`(4배)로 나오고, 승인된 것만 `art/test/ui/hud/`에 같은 이름으로 복사하면 게임이 알아서 바꾼다(`src/game/art.ts` STAND_IN). 승인 전에는 지금 UI 키트 그림으로 대신한다.
 
 | 그림 | 대신 쓰는 것 |
 |---|---|

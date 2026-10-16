@@ -1,0 +1,17 @@
+Use your image generation tool (do not write code to draw) to create ONE image: six app icons for "Grandma's notebook" (the game's menu, like the smartphone apps in Dave the Diver) in a cozy, comic Korean BBQ restaurant game.
+
+Style: match the attached reference exactly. It shows the game's approved small icons, each scaled up 8 times (golden charcoal, Grandma's notebook, a gold coin, the VIP badge, a cooking pot, a slice of pork belly). Same real low-resolution pixel art:
+- every art pixel is an exact, crisp square block of 8x8 image pixels on an 8-pixel grid (the image must shrink 8 times with no loss);
+- a 1-art-pixel dark brown outline (#2b1408 or close), FLAT colours with 2-3 shades per material, one small highlight, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise;
+- chunky, cute, readable at tiny size; warm palette like the references.
+
+Save as art-src/codex/raw/hud_apps.png — exactly 1536x256: 6 equal square cells (256x256) side by side, one icon centred in each, every icon about 28 art pixels tall (224 image pixels would be too big: keep each icon within 28x28 art pixels, 224x224 image pixels, centred). Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no halo, no shadow). No text, no letters, no numbers, no grid lines. Nothing touches its cell edge.
+
+cell 1 BAG: a plump cloth bundle tied at the top (Korean bojagi style), red-brown cloth, brass knot ring, a bone sticking out.
+cell 2 UPGRADES: a small anvil with a cleaver and a hammer crossed above it, a few sparks as square pixels.
+cell 3 AWAKENING: a lump of golden charcoal (like the reference's golden charcoal) with a big four-point star sparkle on it.
+cell 4 COOKBOOK: an open old recipe book with brown leather cover, cream pages showing a tiny drawn dish (simple shapes, no letters).
+cell 5 MENU BOARD: a hanging wooden menu plaque with a brass hook, two small dish pictures painted on it (no letters).
+cell 6 SHOP: a small brass-trimmed treasure chest, lid open, golden charcoal lumps and coins inside.
+
+Reply only with the saved file path.

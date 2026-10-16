@@ -8,19 +8,16 @@ import type { StringKey } from "../../i18n";
 export type Phase = "hunt" | "lunch" | "kitchen" | "service" | "settle";
 export type TimeOfDay = "morning" | "noon" | "afternoon" | "evening" | "night";
 
-// The pictures the HUD uses, in one place: stand-ins until the drawn ones are approved (design 8).
+// The pictures the HUD uses, in one place. Until the drawn ones are approved and copied into
+// art/test/ui/hud/ the old icons stand in (src/game/art.ts STAND_IN); the receipt paper falls back to the
+// card frame (design 8).
+const hud = (name: string) => `test/ui/hud/${name}.png`;
 export const HUD_ART = {
-  time: { morning: "test/ui/icon_day.png", noon: "test/ui/icon_day.png", afternoon: "test/ui/icon_day.png", evening: "test/ui/icon_day.png", night: "test/ui/icon_day.png" } as Record<TimeOfDay, string>,
-  bag: "test/items/icon_boar_belly.png",
+  time: { morning: hud("time_morning"), noon: hud("time_noon"), afternoon: hud("time_afternoon"), evening: hud("time_evening"), night: hud("time_night") } as Record<TimeOfDay, string>,
+  bag: hud("bag"),
   notebook: "test/ui/icon_notebook.png",
-  apps: {
-    bag: "test/items/icon_boar_belly.png",
-    upgrade: "test/ui/upg_melee.png",
-    awaken: "test/ui/icon_golden_charcoal.png",
-    cookbook: "test/ui/icon_notebook.png",
-    menu: "test/ui/icon_pot.png",
-    shop: "test/ui/vip_badge.png",
-  } as Record<App, string>,
+  apps: { bag: hud("app_bag"), upgrade: hud("app_upgrade"), awaken: hud("app_awaken"), cookbook: hud("app_cookbook"), menu: hud("app_menu"), shop: hud("app_shop") } as Record<App, string>,
+  receipt: hud("receipt"),
   shopBg: "test/shop/bg.png",
 };
 
