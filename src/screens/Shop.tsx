@@ -6,9 +6,9 @@ import { t, type StringKey } from "../i18n";
 import type { ShopItem } from "../net/shop";
 import "./shop.css";
 
-// The VX shop (06b-1 design 2): each product at what this account would really get now, with its value
-// band (charcoal's worth in VX over the price, the VIP bonus counted), the first-purchase and
-// once-per-account marks, and the VIP level with what the next one takes. A product the Verse8 shop does
+// The VX shop (06b-1 design 2): each product at what this account would really get now; the starter pack
+// with its value band (charcoal's worth in VX over the price), the charcoal bundles (all one rate) with
+// only the first-purchase and VIP marks; the once-per-account mark, and the VIP level with what the next one takes. A product the Verse8 shop does
 // not list (not registered yet) or will not sell (limit reached) cannot be bought. While a purchase is
 // being checked (the webhook can trail the payment window) the buttons wait.
 export function Shop({ save, items, checking, onBuy, onClose }: { save: SaveData; items: ShopItem[]; checking: boolean; onBuy: (productId: string) => void; onClose: () => void }) {
@@ -31,7 +31,8 @@ export function Shop({ save, items, checking, onBuy, onClose }: { save: SaveData
             const ok = !!item && item.purchasable && !item.purchaseLimitReached;
             return (
               <div key={o.id} className="ui-box shop-card">
-                <span className="ui-ribbon shop-band">{o.vipPct > 0 ? t("shop.valueVip", { pct: o.valuePct, vip: o.vipPct }) : t("shop.value", { pct: o.valuePct })}</span>
+                {/* the value band only where it means something: the bundles all sell at one rate (user, 2026-10-16) */}
+                {!o.bundle && <span className="ui-ribbon shop-band">{t("shop.value", { pct: o.valuePct })}</span>}
                 <div className="shop-what">
                   <img className="shop-icon" src={icon(o.id)} alt="" onLoad={(e) => (e.currentTarget.style.height = `calc(${e.currentTarget.naturalHeight}px * var(--s))`)} />
                   <div>
@@ -41,6 +42,7 @@ export function Shop({ save, items, checking, onBuy, onClose }: { save: SaveData
                 </div>
                 <div className="shop-buy">
                   {o.firstBuy && <span className="ui-plate shop-mark">{t("shop.firstBuy")}</span>}
+                  {o.vipPct > 0 && <span className="ui-plate shop-mark">{t("shop.vipBonus", { vip: o.vipPct })}</span>}
                   {o.once && <span className="ui-plate shop-mark">{t("shop.once")}</span>}
                   <button className="ui-btn" disabled={!ok || checking} onClick={() => onBuy(o.id)}>
                     {t("shop.price", { vx: item?.price ?? o.vx })}

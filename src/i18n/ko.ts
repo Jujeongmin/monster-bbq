@@ -253,7 +253,6 @@ export const ko = {
   "shop.vip": "VIP {lv} · 다음 단계까지 {need} VX",
   "shop.vipMax": "VIP 10 (최고 단계)",
   "shop.value": "효율 {pct}%",
-  "shop.valueVip": "효율 {pct}% (VIP +{vip}% 포함)",
   "shop.gives": "황금 숯 {charcoal}",
   "shop.givesGold": "황금 숯 {charcoal} + 골드 {gold}",
   "shop.firstBuy": "첫 구매 2배",
@@ -289,4 +288,5 @@ export const ko = {
   "awaken.costCharcoal": "숯 {charcoal}",
   "awaken.go": "각성",
   "awaken.notYet": "아직",
+  "shop.vipBonus": "VIP +{vip}%",
 } as const;

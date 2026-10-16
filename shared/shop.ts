@@ -47,6 +47,7 @@ export interface Offer {
   firstBuy: boolean;
   vipPct: number;
   once: boolean;
+  bundle: boolean; // a charcoal bundle: the shop shows no value band on these (all the same rate)
 }
 
 // What the shop shows this account, each at what it would really get now.
@@ -57,6 +58,6 @@ export function shopOffer(save: SaveData): Offer[] {
     const charcoal = charcoalFor(save, p, first);
     // (+1e-9: 30 / 0.3 is 99.99… in floating point, and a band must not lose a percent to that)
     const valuePct = Math.floor((charcoal / S.charcoalPerVx / p.vx) * 100 + 1e-9);
-    return { id: p.id, vx: p.vx, charcoal, gold: p.gold, valuePct, firstBuy: p.bundle && first, vipPct: p.bundle ? Math.round(vip * 100) : 0, once: p.once };
+    return { id: p.id, vx: p.vx, charcoal, gold: p.gold, valuePct, firstBuy: p.bundle && first, vipPct: p.bundle ? Math.round(vip * 100) : 0, once: p.once, bundle: p.bundle };
   });
 }

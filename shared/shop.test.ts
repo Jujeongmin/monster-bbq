@@ -22,7 +22,7 @@ describe("buying charcoal", () => {
   it("adds the VIP bonus of the level before this purchase", () => {
     const vip5 = { ...newSave(), vip: { spent: 6_000, day: 0 }, shop: { firstBuy: ["charcoal_3"], purchases: [] } };
     expect(vipLevel(6_000)).toBe(5);
-    expect(buy(vip5, "charcoal_3").save.charcoal).toBe(Math.floor(600 * 1.1));
+    expect(buy(vip5, "charcoal_3").save.charcoal).toBe(Math.floor(450 * 1.1));
     expect([vipLevel(99), vipLevel(100), vipLevel(70_000), vipLevel(10 ** 7)]).toEqual([0, 1, 9, 10]);
     expect([vipBonus(0), vipBonus(1), vipBonus(10)]).toEqual([0, 0.02, 0.25]);
   });
@@ -44,12 +44,12 @@ describe("buying charcoal", () => {
 });
 
 describe("the shop's offer", () => {
-  it("shows each bundle's true value, doubled while its first purchase is left", () => {
-    const o = shopOffer(newSave());
-    expect(o.find((x) => x.id === "charcoal_1")!.valuePct).toBe(200);
-    expect(o.find((x) => x.id === "charcoal_4")!.valuePct).toBe(300);
+  it("sells every charcoal bundle at the same 30 charcoal per 100 VX (user, 2026-10-16), doubled the first time", () => {
+    const o = shopOffer(newSave()).filter((x) => x.bundle);
+    expect(o.map((x) => [x.id, x.charcoal / 2 / (x.vx / 100)])).toEqual(["charcoal_1", "charcoal_2", "charcoal_3", "charcoal_4", "charcoal_5"].map((id) => [id, 30]));
+    expect(new Set(o.map((x) => x.valuePct))).toEqual(new Set([200]));
     const after = shopOffer({ ...newSave(), shop: { firstBuy: ["charcoal_4"], purchases: [] } });
-    expect(after.find((x) => x.id === "charcoal_4")!.valuePct).toBe(150);
+    expect(after.find((x) => x.id === "charcoal_4")).toMatchObject({ charcoal: 1500, valuePct: 100, firstBuy: false });
   });
   it("counts the VIP bonus in the band", () => {
     const o = shopOffer({ ...newSave(), vip: { spent: 6_000, day: 0 }, shop: { firstBuy: ["charcoal_1"], purchases: [] } });

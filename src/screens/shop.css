@@ -6,7 +6,7 @@
 .shop-grid { flex: 1; min-height: 0; overflow: auto; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(6px * var(--s)); margin-bottom: calc(6px * var(--s)); }
 .shop-card { display: flex; flex-direction: column; align-items: stretch; gap: calc(3px * var(--s)); padding: calc(3px * var(--s)); }
 .shop-what { display: flex; align-items: center; gap: calc(4px * var(--s)); text-align: left; }
-.shop-buy { display: flex; align-items: center; justify-content: flex-end; gap: calc(3px * var(--s)); }
+.shop-buy { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: calc(3px * var(--s)); }
 .shop-band { align-self: stretch; font: var(--fs-small) "Galmuri9", monospace; }
 /* the product icons (about 32 art pixels, each its own height) are drawn one art pixel to one UI pixel,
    never resampled in between: Shop sets each one's height from its own pixels */
@@ -15,7 +15,7 @@
 .ui-icon.ui-icon-lg { height: calc(18px * var(--s)); }
 .shop-name { font-weight: 700; }
 .shop-gives { font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
-.shop-mark { font: var(--fs-small) "Galmuri9", monospace; padding: 0 calc(2px * var(--s)); }
+.shop-mark { font: var(--fs-small) "Galmuri9", monospace; padding: 0 calc(2px * var(--s)); white-space: nowrap; }
 .shop-card .ui-btn { font: var(--fs-small) "Galmuri9", monospace; }
 .shop-checking { margin: 0 0 calc(4px * var(--s)); color: var(--red); }
 /* the VIP's daily charcoal, top right in the morning */

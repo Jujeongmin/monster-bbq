@@ -254,7 +254,6 @@ export const en: Record<keyof typeof ko, string> = {
   "shop.vip": "VIP {lv} · {need} VX to the next level",
   "shop.vipMax": "VIP 10 (top level)",
   "shop.value": "Value {pct}%",
-  "shop.valueVip": "Value {pct}% (VIP +{vip}% included)",
   "shop.gives": "{charcoal} golden charcoal",
   "shop.givesGold": "{charcoal} golden charcoal + {gold} gold",
   "shop.firstBuy": "First buy x2",
@@ -290,4 +289,5 @@ export const en: Record<keyof typeof ko, string> = {
   "awaken.costCharcoal": "{charcoal} charcoal",
   "awaken.go": "Awaken",
   "awaken.notYet": "Not yet",
+  "shop.vipBonus": "VIP +{vip}%",
 };
