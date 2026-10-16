@@ -13,11 +13,18 @@ if [ "${1:-}" != "snap" ]; then
   codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art-src/codex/raw/ref_hud_icons_x8.png - < art-src/codex/prompt-hud-apps.txt
   codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art/test/shop/bg.png art-src/codex/raw/ref_hud_icons_x8.png - < art-src/codex/prompt-hud-receipt.txt
   codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art/test/shop/bg.png art-src/codex/raw/ref_hud_icons_x8.png - < art-src/codex/prompt-hud-notebook.txt
+  # each window its own material (user, 2026-10-16: the same card frame everywhere cheapened the game)
+  for k in bag upgrade rack; do
+    codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art/test/shop/bg.png art-src/codex/raw/ref_hud_icons_x8.png - < "art-src/codex/prompt-ui-$k.txt"
+  done
 fi
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_time.png 6 1 art-src/codex/out/hud --main time_morning:20 time_noon:20 time_afternoon:20 time_evening:16 time_night:18 bag:20
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_apps.png 6 1 art-src/codex/out/hud --main app_bag:28 app_upgrade:28 app_awaken:28 app_cookbook:28 app_menu:28 app_shop:28
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_receipt.png 1 1 art-src/codex/out/hud --main receipt:40:8
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_notebook.png 2 1 art-src/codex/out/hud --main notebook_closed:84:20 notebook_open:168:20
+python art-src/codex/pixelsnap.py art-src/codex/raw/hud_bag_cloth.png 1 1 art-src/codex/out/hud --main bag_cloth:200:20
+python art-src/codex/pixelsnap.py art-src/codex/raw/hud_upgrade_board.png 1 1 art-src/codex/out/hud --main upgrade_board:216:20
+python art-src/codex/pixelsnap.py art-src/codex/raw/hud_weapon_rack.png 1 1 art-src/codex/out/hud --main weapon_rack:208:20
 # one sheet of all of them at 4x for looking at
 python - <<'PY'
 from pathlib import Path

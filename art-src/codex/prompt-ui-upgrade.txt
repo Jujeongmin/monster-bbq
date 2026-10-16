@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image for a cozy, comic Korean BBQ restaurant game: the UPGRADES window: Bandal the bear chef's tool pegboard hanging on the kitchen wall. Exactly 216 art pixels wide and 128 tall (1728x1024 image pixels). A walnut wood frame 8 art pixels thick with brass corner plates, a lighter pine pegboard inside with evenly spaced small round holes in a regular grid, two brass nails at the top as if it hangs. The inside is otherwise EMPTY (cards are placed on it).
+
+Style: match the attached references exactly (the first is the game's approved shop background, the second its approved small icons scaled up 8 times). Real low-resolution pixel art: every art pixel an exact 8x8 block on an 8-pixel grid (the image must shrink 8 times with no loss), a 1-art-pixel dark brown outline (#2b1408 or close), FLAT colours with 2-3 shades per material, NO gradients, NO glow, NO texture noise, NO anti-aliasing. Comic and cozy, warm palette.
+
+The background must be one perfectly flat solid magenta #FF00FF everywhere (no glow, no halo, no shadow), the piece centred with wide magenta space around it, nothing touching the image edge. No text, no letters, no numbers anywhere.
+
+Save as art-src/codex/raw/hud_upgrade_board.png — exactly 2048x1280.
+
+Reply only with the saved file path.

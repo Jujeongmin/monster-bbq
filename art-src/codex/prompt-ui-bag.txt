@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image for a cozy, comic Korean BBQ restaurant game: the BAG window: a Korean bojagi wrapping cloth untied and laid open flat, seen from above, so the hunt's meat can be laid out on it. Exactly 200 art pixels wide and 120 tall (1600x960 image pixels). Deep red-brown cloth with a simple repeating patchwork border (the same patch repeated evenly along each side, 8 art pixels wide), the four corners still knotted into little tied tails, the middle a plain, calm lighter cloth (empty: item slots go there).
+
+Style: match the attached references exactly (the first is the game's approved shop background, the second its approved small icons scaled up 8 times). Real low-resolution pixel art: every art pixel an exact 8x8 block on an 8-pixel grid (the image must shrink 8 times with no loss), a 1-art-pixel dark brown outline (#2b1408 or close), FLAT colours with 2-3 shades per material, NO gradients, NO glow, NO texture noise, NO anti-aliasing. Comic and cozy, warm palette.
+
+The background must be one perfectly flat solid magenta #FF00FF everywhere (no glow, no halo, no shadow), the piece centred with wide magenta space around it, nothing touching the image edge. No text, no letters, no numbers anywhere.
+
+Save as art-src/codex/raw/hud_bag_cloth.png — exactly 2048x1280.
+
+Reply only with the saved file path.
