@@ -48,3 +48,11 @@
 /* the hunt's haul pops in, one slot after another */
 .summary-items .summary-item { animation: haul-in 0.24s steps(4) both; }
 @keyframes haul-in { from { opacity: 0; transform: scale(0.4); } }
+/* the title card between the stages of the day: dark in, the card pops, holds, everything out */
+.title-card { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: rgba(10, 5, 2, 0.85); animation: title-dim 1.6s steps(16) both; cursor: pointer; }
+@keyframes title-dim { 0% { background-color: rgba(10, 5, 2, 0); } 15%, 78% { background-color: rgba(10, 5, 2, 0.85); } 100% { background-color: rgba(10, 5, 2, 0); } }
+.title-card-box { display: flex; flex-direction: column; align-items: center; gap: calc(6px * var(--s)); animation: title-pop 1.6s steps(16) both; }
+@keyframes title-pop { 0%, 10% { opacity: 0; transform: scale(0.6); } 22% { opacity: 1; transform: scale(1.08); } 28%, 74% { opacity: 1; transform: scale(1); } 90%, 100% { opacity: 0; transform: scale(1); } }
+.title-card-day { display: inline-flex; align-items: center; gap: calc(6px * var(--s)); padding: calc(2px * var(--s)) calc(10px * var(--s)); font-size: calc(18px * var(--s)); line-height: calc(18px * var(--s)); }
+.title-card-day img { height: calc(18px * var(--s)); image-rendering: pixelated; }
+.title-card-line { padding: calc(2px * var(--s)) calc(16px * var(--s)); font-size: calc(14px * var(--s)); }

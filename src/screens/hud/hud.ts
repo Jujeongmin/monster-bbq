@@ -95,3 +95,27 @@ export function receiptAt(ms: number, lineCount: number, total: number): { shown
   const roll = Math.max(0, Math.min(1, (ms - lineCount * RECEIPT.lineMs) / RECEIPT.rollMs));
   return { shown, total: Math.round(total * roll), done: roll >= 1 };
 }
+
+// The stages a title card can come between: the hunt counts as its own stage (setting out is "prep").
+export type Scene = "prep" | "hunt-morning" | "hunt-afternoon" | "lunch" | "kitchen" | "service" | "settle";
+export function sceneOf(phase: Phase, huntPeriod: "morning" | "afternoon" | null): Scene {
+  if (phase === "hunt") return huntPeriod ? `hunt-${huntPeriod}` : "prep";
+  return phase;
+}
+
+const CARD_LINE: Record<Exclude<Scene, "settle">, StringKey> = {
+  prep: "card.prep",
+  "hunt-morning": "card.huntMorning",
+  "hunt-afternoon": "card.huntAfternoon",
+  lunch: "card.lunch",
+  kitchen: "card.kitchen",
+  service: "card.service",
+};
+const SCENE_TIME: Record<Scene, TimeOfDay> = { prep: "morning", "hunt-morning": "morning", "hunt-afternoon": "afternoon", lunch: "noon", kitchen: "evening", service: "night", settle: "night" };
+
+// Dave's title card when the day moves on (none on the first screen, and none for the receipt, which
+// is its own show).
+export function transitionCard(prev: Scene | null, next: Scene): { time: TimeOfDay; line: StringKey } | null {
+  if (prev === null || prev === next || next === "settle") return null;
+  return { time: SCENE_TIME[next], line: CARD_LINE[next] };
+}

@@ -322,4 +322,10 @@ export const ko = {
   "notebook.app.menu": "메뉴판",
   "notebook.app.shop": "상점",
   "notebook.eveningOnly": "저녁 주방에서",
+  "card.prep": "새 아침이 밝았다",
+  "card.huntMorning": "오전 사냥",
+  "card.huntAfternoon": "오후 사냥",
+  "card.lunch": "점심 주방",
+  "card.kitchen": "저녁 주방",
+  "card.service": "밤 장사 시작",
 } as const;

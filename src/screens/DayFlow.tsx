@@ -12,7 +12,7 @@ import type { SaveData } from "../../shared/save";
 import { PhaserGame } from "../game/PhaserGame";
 import { ServiceGame } from "../game/service/ServiceGame";
 import type { HuntResult } from "../game/scenes/HuntScene";
-import { t } from "../i18n";
+import { t, type StringKey } from "../i18n";
 import type { LocalTransport, Transport } from "../net/transport";
 import { Kitchen, type KitchenTab } from "./kitchen/Kitchen";
 import { Upgrades } from "./Upgrades";
@@ -25,7 +25,8 @@ import { Bag } from "./hud/Bag";
 import { DayHud } from "./hud/DayHud";
 import { Notebook } from "./hud/Notebook";
 import { Receipt } from "./hud/Receipt";
-import { showDayHud, timeOfDay, type App, type Phase } from "./hud/hud";
+import { sceneOf, showDayHud, timeOfDay, transitionCard, type App, type Phase, type Scene } from "./hud/hud";
+import { TitleCard } from "./hud/TitleCard";
 import { Cookbook } from "./kitchen/Cookbook";
 import "./dayflow.css";
 
@@ -81,6 +82,16 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   useEffect(load, [transport]);
   // the upgrade shop belongs to the screen it was opened from: a new stage closes it
   useEffect(() => (setShopping(null), setWin(null)), [phase]);
+  // Dave's title card when the day moves on to another stage (not on the first screen)
+  const scene: Scene | null = save ? sceneOf(phase, save.hunt?.period ?? null) : null;
+  const lastScene = useRef<Scene | null>(null);
+  const [card, setCard] = useState<{ key: number; day: number; time: ReturnType<typeof timeOfDay>; line: StringKey } | null>(null);
+  useEffect(() => {
+    if (!scene || !save) return;
+    const next = transitionCard(lastScene.current, scene);
+    lastScene.current = scene;
+    if (next) setCard({ key: Date.now(), day: save.day, ...next });
+  }, [scene]);
   // the evening kitchen's tab, which the notebook's cookbook and menu board apps turn to
   const [kitchenTab, setKitchenTab] = useState<KitchenTab>("cookbook");
 
@@ -201,6 +212,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         </div>
       )}
       {store && <Shop save={save} items={storeItems} checking={checking} onBuy={buy} onClose={() => setStore(false)} />}
+
+      {card && <TitleCard key={card.key} day={card.day} time={card.time} line={card.line} onDone={() => setCard(null)} />}
 
       {failed && (
         <div className="dayflow-error ui-panel">

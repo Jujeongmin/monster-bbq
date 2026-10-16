@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bagRows, notebookApps, receiptAt, receiptLines, showDayHud, timeOfDay, RECEIPT } from "./hud";
+import { bagRows, notebookApps, receiptAt, receiptLines, sceneOf, showDayHud, timeOfDay, transitionCard, RECEIPT } from "./hud";
 
 const summary = { id: "s", served: 8, left: 4, sales: 360, tips: 61, drinks: 15, cleaned: 1, happy: 8, repDelta: 0 };
 
@@ -58,5 +58,26 @@ describe("the night's receipt", () => {
     expect(rolling).toEqual({ shown: 6, total: 200, done: false });
     expect(receiptAt(RECEIPT.lineMs * 6 + RECEIPT.rollMs, 6, 400)).toEqual({ shown: 6, total: 400, done: true });
     expect(receiptAt(Infinity, 6, 400)).toEqual({ shown: 6, total: 400, done: true });
+  });
+});
+
+describe("the title card between the stages of the day", () => {
+  it("names where the day goes next, with its time of day", () => {
+    expect(transitionCard("settle", "prep")).toEqual({ time: "morning", line: "card.prep" });
+    expect(transitionCard("prep", "hunt-morning")).toEqual({ time: "morning", line: "card.huntMorning" });
+    expect(transitionCard("hunt-morning", "lunch")).toEqual({ time: "noon", line: "card.lunch" });
+    expect(transitionCard("lunch", "hunt-afternoon")).toEqual({ time: "afternoon", line: "card.huntAfternoon" });
+    expect(transitionCard("hunt-afternoon", "kitchen")).toEqual({ time: "evening", line: "card.kitchen" });
+    expect(transitionCard("kitchen", "service")).toEqual({ time: "night", line: "card.service" });
+  });
+  it("shows none on the first screen, for the same stage, or for the receipt (it is its own show)", () => {
+    expect(transitionCard(null, "kitchen")).toBeNull();
+    expect(transitionCard("lunch", "lunch")).toBeNull();
+    expect(transitionCard("service", "settle")).toBeNull();
+  });
+  it("tells the stages apart by the hunt", () => {
+    expect(sceneOf("hunt", null)).toBe("prep");
+    expect(sceneOf("hunt", "afternoon")).toBe("hunt-afternoon");
+    expect(sceneOf("kitchen", null)).toBe("kitchen");
   });
 });

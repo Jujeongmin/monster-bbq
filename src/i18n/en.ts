@@ -323,4 +323,10 @@ export const en: Record<keyof typeof ko, string> = {
   "notebook.app.menu": "Menu board",
   "notebook.app.shop": "Shop",
   "notebook.eveningOnly": "In the evening kitchen",
+  "card.prep": "A new morning",
+  "card.huntMorning": "Morning hunt",
+  "card.huntAfternoon": "Afternoon hunt",
+  "card.lunch": "Lunch kitchen",
+  "card.kitchen": "Evening kitchen",
+  "card.service": "The shop opens",
 };
