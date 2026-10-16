@@ -53,7 +53,7 @@ const isStage = (v: unknown): v is Stage => v === "hunt" || v === "lunch" || v =
 
 // The whole save of one account, kept in its Global User State under "save" (spec 7).
 export interface SaveData {
-  version: 7;
+  version: 8;
   day: number;
   stage: Stage;
   gold: number;
@@ -73,11 +73,15 @@ export interface SaveData {
   lunchbox: DishId[];
   service: PendingService | null;
   lastService: ServiceSummary | null;
+  // the key to the Charge King's den (the tusk boss drops it, plan 08d) and the notebook pages the
+  // bosses gave back ("forest" = chapter 1)
+  bossKey: boolean;
+  pages: string[];
 }
 
 export function newSave(): SaveData {
   return {
-    version: 7,
+    version: 8,
     day: 1,
     stage: "hunt",
     gold: 0,
@@ -91,6 +95,8 @@ export function newSave(): SaveData {
     lunchbox: [],
     service: null,
     lastService: null,
+    bossKey: false,
+    pages: [],
   };
 }
 
@@ -260,10 +266,12 @@ export function readSave(raw: unknown): SaveData {
     const up = r.upgrades && typeof r.upgrades === "object" ? (r.upgrades as Record<string, unknown>) : {};
     return readSave({ ...r, version: 7, upgrades: up.armor === undefined ? up : { ...up, tank: up.armor, armor: 1 } });
   }
-  if (r.version !== 7) return newSave();
+  // version 8 (plan 08d) adds the den's key and the pages given back, both read with defaults
+  if (r.version === 7) return readSave({ ...r, version: 8 });
+  if (r.version !== 8) return newSave();
   const dishes = readDishes(r.dishes);
   return {
-    version: 7,
+    version: 8,
     day: count(r.day, 1),
     stage: isStage(r.stage) ? r.stage : "hunt",
     gold: count(r.gold),
@@ -278,5 +286,7 @@ export function readSave(raw: unknown): SaveData {
     lunchbox: Array.isArray(r.lunchbox) ? r.lunchbox.filter(isDishId) : [],
     service: readService(r.service),
     lastService: readSummary(r.lastService),
+    bossKey: r.bossKey === true,
+    pages: readList(r.pages, (p): p is string => p === "forest"),
   };
 }

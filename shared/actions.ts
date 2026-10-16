@@ -1,5 +1,5 @@
 import { BALANCE } from "./balance";
-import { isDishId, type DishId } from "./content/dishes";
+import { isDishId, isSignature, type DishId } from "./content/dishes";
 import { isUpgradeId } from "./content/upgrades";
 import { RECIPES } from "./content/recipes";
 import { ammoOf, bagSlots, isLocked, level, lunchSlots, menuSlots, nextCost, nextMats, ownsSide, sleepFallMs } from "./growth";
@@ -53,8 +53,10 @@ const MAX_EVENTS = 200;
 // than minMsPerKill a kill and minMsPerFloor a way down. Monsters come by how they were taken (stars):
 // sleep and the net only with that gun taken out and within its shots, and a capture or a sleep only as
 // fast as the gauge fills or the dart works. Items go into the bag in report order until it
-// is full. Returns the items gained, or null for a report that cannot be true.
-function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Record<string, number> | null {
+// is full. The den below the cave takes the key; the Charge King no sooner than minBossMs after coming
+// down to him. Returns the items gained and which bosses were taken, or null for a report that cannot
+// be true.
+function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): { bag: Record<string, number>; tusk: boolean; king: boolean } | null {
   const hunt = save.hunt;
   if (!hunt || a.huntId !== hunt.id || !Array.isArray(a.events) || a.events.length > MAX_EVENTS || typeof a.ko !== "boolean") return null;
   if (a.ko ? a.exit !== null : typeof a.exit !== "string") return null;
@@ -70,6 +72,8 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
   let dartsUsed = 0;
   let netsUsed = 0;
   let bag: Record<string, number> = {};
+  let tusk = false;
+  let king = false;
   for (const raw of a.events as unknown[]) {
     const e = raw as { take?: unknown; how?: unknown; gather?: unknown; down?: unknown } | null;
     if (!e || typeof e !== "object") return null;
@@ -78,7 +82,7 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
       if (!FLOORS[floor].down || e.down !== floor + 1 || !isFloorId(e.down)) return null;
       // the swamp needs boots, the cave a lantern (hunt v3 design 4.5)
       const needs = FLOORS[e.down].needs;
-      if (needs && level(save, needs) < 1) return null;
+      if (needs === "key" ? !save.bossKey : needs && level(save, needs) < 1) return null;
       floor = e.down;
       descents++;
     } else if (typeof e.take === "string") {
@@ -100,7 +104,9 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
       kills++;
       if (how === "capture") captures++;
       if (how === "sleep") sleeps++;
-      const got = takeParts(dropFor(hunt.seed, spawn), how, spawn.monster === "tusk");
+      if (spawn.monster === "tusk") tusk = true;
+      if (spawn.monster === "king") king = true;
+      const got = takeParts(dropFor(hunt.seed, spawn), how, spawn.monster === "tusk" || spawn.monster === "king");
       for (let i = 0; i < got.count; i++) bag = addToBag(bag, got.key, bagSlots(save)).bag;
     } else if (typeof e.gather === "string") {
       const node = plan.nodes.find((n) => n.id === e.gather);
@@ -110,9 +116,9 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): Re
     } else return null;
   }
   if (!a.ko && !FLOORS[floor].exits.some((x) => x.id === a.exit)) return null;
-  const minMs = kills * BALANCE.hunt.minMsPerKill + descents * BALANCE.hunt.minMsPerFloor + captures * BALANCE.hunt.capture.minMs + sleeps * sleepFallMs(save);
+  const minMs = kills * BALANCE.hunt.minMsPerKill + descents * BALANCE.hunt.minMsPerFloor + captures * BALANCE.hunt.capture.minMs + sleeps * sleepFallMs(save) + (king ? BALANCE.hunt.king.minBossMs : 0);
   if (now - hunt.startedAt < minMs) return null;
-  return a.ko ? koPenalty(bag) : bag;
+  return { bag: a.ko ? koPenalty(bag) : bag, tusk, king };
 }
 
 // Lunchboxes (growth design 2): found dishes packed from real ingredients (regular grade first, so the
@@ -147,6 +153,8 @@ function research(save: SaveData, a: Record<string, unknown>): { save: SaveData;
   if (!isDishId(a.dish)) return { save, error: "bad_action" };
   if (save.stage !== "kitchen" || save.service) return { save, error: "wrong_stage" };
   if (save.dishes[a.dish]) return { save };
+  // a signature dish opens only when its boss gives the page back
+  if (isSignature(a.dish)) return { save, error: "signature" };
   if (!RECIPES[a.dish].items.every((id) => save.seenItems.includes(id))) return { save, error: "unseen" };
   return payLevel(save, a.dish, 1);
 }
@@ -208,8 +216,9 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       return { save: { ...save, hunt: { id, seed, zone: a.zone, period, side: a.side, startedAt: ctx.now } } };
     }
     case "finishHunt": {
-      const gained = settleHunt(save, a, ctx.now);
-      if (!gained) return { save, error: "bad_hunt" };
+      const settled = settleHunt(save, a, ctx.now);
+      if (!settled) return { save, error: "bad_hunt" };
+      const gained = settled.bag;
       const items = { ...save.items };
       for (const [k, n] of Object.entries(gained)) items[k] = (items[k] ?? 0) + n;
       // what came home shows on the cookbook's silhouettes from now on (restaurant v2 design 3)
@@ -217,7 +226,12 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       const seenItems = [...new Set<ItemId>([...save.seenItems, ...ids])];
       // after the morning hunt comes lunch; after the afternoon one, the evening kitchen
       const stage = save.hunt!.period === "morning" ? "lunch" : "kitchen";
-      return { save: { ...save, items, hunt: null, seenItems, stage, lunchbox: [] } };
+      // the tusk boss drops the den's key; the Charge King gives the forest's page back the first time,
+      // and his signature dish opens (never lowering a level it already has) — plan 08d
+      const firstKing = settled.king && !save.pages.includes("forest");
+      const pages = firstKing ? [...save.pages, "forest"] : save.pages;
+      const dishes = firstKing ? { ...save.dishes, king_galbi: Math.max(1, save.dishes.king_galbi ?? 0) } : save.dishes;
+      return { save: { ...save, items, hunt: null, seenItems, stage, lunchbox: [], bossKey: save.bossKey || settled.tusk, pages, dishes } };
     }
     case "skipHunt":
       // staying home this afternoon: straight on to the evening kitchen

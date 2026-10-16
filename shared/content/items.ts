@@ -5,6 +5,8 @@ export const ITEMS = {
   boar_belly: { kind: "part" },
   boar_neck: { kind: "part" },
   boar_rib: { kind: "part" },
+  // the Charge King's (plan 08d): the signature dish's meat
+  king_rib: { kind: "part" },
   rabbit_leg: { kind: "part" },
   honeycomb: { kind: "part" },
   chicken_thigh: { kind: "part" },

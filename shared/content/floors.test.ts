@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { FLOORS, isFloorId, nearestExit } from "./floors";
 
 describe("FLOORS", () => {
-  it("has floors 1 to 4 (the boss's den below comes later)", () => {
-    expect(Object.keys(FLOORS)).toEqual(["1", "2", "3", "4"]);
-    expect([isFloorId(1), isFloorId(4), isFloorId(5), isFloorId("1")]).toEqual([true, true, false, false]);
+  it("has floors 1 to 5 (the boss's den at the bottom)", () => {
+    expect(Object.keys(FLOORS)).toEqual(["1", "2", "3", "4", "5"]);
+    expect([isFloorId(1), isFloorId(5), isFloorId(6), isFloorId("1")]).toEqual([true, true, false, false]);
   });
   it("keeps the start, every exit and the way down inside the walkable field", () => {
     for (const f of Object.values(FLOORS)) {
@@ -23,9 +23,9 @@ describe("FLOORS", () => {
   it("drains stamina faster on the deeper floor", () => {
     expect(FLOORS[2].drainPerSec).toBeGreaterThan(FLOORS[1].drainPerSec);
   });
-  it("leads down from floors 1 to 3, and floor 4 is the deepest for now", () => {
-    expect([FLOORS[1].down, FLOORS[2].down, FLOORS[3].down].every((d) => d !== null)).toBe(true);
-    expect(FLOORS[4].down).toBeNull();
+  it("leads down from floors 1 to 4, and the den (5) is the deepest", () => {
+    expect([FLOORS[1].down, FLOORS[2].down, FLOORS[3].down, FLOORS[4].down].every((d) => d !== null)).toBe(true);
+    expect(FLOORS[5].down).toBeNull();
   });
   it("finds the nearest exit of a floor", () => {
     const e = FLOORS[1].exits[1];

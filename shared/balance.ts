@@ -55,6 +55,28 @@ export const BALANCE: {
       bat: { speed: number; sense: number; foldMs: number; diveSpeed: number; diveMs: number; hitRadius: number; damage: number; dazedMs: number };
       crab: { speed: number; reach: number; clawMs: number; recoverMs: number; damage: number; frontMul: number; flippedMul: number; flippedMs: number };
     };
+    // the Charge King (plan 08d, user-approved draft 2026-10-16): wall charges (stunned when he hits a
+    // wall), falling rocks, piglets; angry below angryAt of his health (faster, charges twice)
+    king: {
+      wanderSpeed: number;
+      aggroRange: number;
+      chargeTelegraphMs: number;
+      chargeSpeed: number;
+      chargeDamage: number;
+      stunMs: number; // stunned and out of breath he is open: hits count as counters
+      chargeMaxMs: number; // a charge that meets no wall stops after this
+      rockTelegraphMs: number;
+      rocks: number;
+      rockRadius: number;
+      rockDamage: number;
+      roarMs: number;
+      piglets: number; // a call brings this many
+      maxPiglets: number;
+      breatherMs: number; // between patterns
+      angryAt: number;
+      angryMul: number;
+      minBossMs: number; // the server's floor: no faster than this from arriving in the den
+    };
     // the tusk boss (hunt v3 design 4.7): how often it is on floor 2, how it moves, its three patterns
     tusk: {
       chance: number;
@@ -198,7 +220,7 @@ export const BALANCE: {
     // user-approved drafts (plan 08b), tuned in play
     stars: { down: { count: 1, grade: "normal" }, capture: { count: 2, grade: "normal" }, sleep: { count: 2, grade: "premium" }, net: { count: 2, grade: "premium" }, bossMul: 2 },
     capture: { start: 0.35, tap: [0.09, 0.1, 0.11], decayPerSec: 0.25, minMs: 1200 },
-    sleepHits: { rabbit: 1, chicken: 1, bee: 1, boar: 2, tusk: 5, frog: 2, snake: 1, bat: 1, crab: 2 },
+    sleepHits: { rabbit: 1, chicken: 1, bee: 1, boar: 2, tusk: 5, king: 10, piglet: 1, frog: 2, snake: 1, bat: 1, crab: 2 },
     sleepMs: 15000,
     netSmallMaxRadius: 8,
     netBindMs: 3000,
@@ -209,6 +231,26 @@ export const BALANCE: {
       snake: { speed: 30, sense: 70, rippleMs: 500, biteRange: 30, damage: 14, exposedMs: 2000, openMs: 900 },
       bat: { speed: 60, sense: 140, foldMs: 400, diveSpeed: 220, diveMs: 500, hitRadius: 10, damage: 8, dazedMs: 900 },
       crab: { speed: 14, reach: 26, clawMs: 500, recoverMs: 600, damage: 12, frontMul: 0.3, flippedMul: 2, flippedMs: 3000 },
+    },
+    king: {
+      wanderSpeed: 26,
+      aggroRange: 220,
+      chargeTelegraphMs: 900,
+      chargeSpeed: 260,
+      chargeDamage: 28,
+      stunMs: 3000,
+      chargeMaxMs: 3000,
+      rockTelegraphMs: 900,
+      rocks: 5,
+      rockRadius: 26,
+      rockDamage: 18,
+      roarMs: 800,
+      piglets: 2,
+      maxPiglets: 4,
+      breatherMs: 1200,
+      angryAt: 0.5,
+      angryMul: 1.3,
+      minBossMs: 25_000,
     },
     tusk: {
       chance: 0.6,
@@ -240,6 +282,7 @@ export const BALANCE: {
       boar_belly: { normal: 15, premium: 30 },
       boar_neck: { normal: 14, premium: 28 },
       boar_rib: { normal: 18, premium: 36 },
+      king_rib: { normal: 60, premium: 120 },
       rabbit_leg: { normal: 12, premium: 24 },
       honeycomb: { normal: 16, premium: 32 },
       chicken_thigh: { normal: 13, premium: 26 },

@@ -20,4 +20,6 @@ export const RECIPES: Record<DishId, Recipe> = {
   rib_stew: { method: "boil", items: ["boar_rib", "shiitake"], price: 80, cookMs: 5500 },
   baeksuk: { method: "boil", items: ["chicken_thigh", "wild_garlic", "shiitake"], price: 90, cookMs: 6000 },
   chicken_perilla: { method: "season", items: ["chicken_breast", "perilla"], price: 55, cookMs: 3500 },
+  // chapter 1's signature (plan 08d): the Charge King's rib over charcoal
+  king_galbi: { method: "grill", items: ["king_rib", "wild_garlic"], price: 180, cookMs: 7000 },
 };

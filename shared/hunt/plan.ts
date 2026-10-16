@@ -1,5 +1,5 @@
 import { BALANCE } from "../balance";
-import { FLOORS, type FloorId, type Period } from "../content/floors";
+import { FLOORS, KING_AT, type FloorId, type Period } from "../content/floors";
 import type { ItemId } from "../content/items";
 import { MONSTERS, type MonsterId } from "../content/monsters";
 import { OBJECT_KINDS, type ObjectKind } from "../content/objects";
@@ -38,10 +38,10 @@ export function planFloor(seed: number, floor: FloorId, period: Period): FloorPl
     const { foot } = OBJECT_KINDS[kind];
     objects.push({ kind, x: p.x, y: p.y, foot: { x0: p.x - foot.w / 2, x1: p.x + foot.w / 2, y0: p.y - foot.h, y1: p.y } });
   };
-  const treeSpots = scatter(ground, area, TREE_COUNT, 170, open);
+  const treeSpots = scatter(ground, area, f.objectCount?.trees ?? TREE_COUNT, 170, open);
   const kinds = f.objects;
   for (const p of treeSpots) place(p, kinds.trees[Math.floor(pick() * kinds.trees.length)]);
-  for (const p of scatter(ground + 2, area, SMALL_COUNT, 130, [...open, ...treeSpots.map((t) => ({ x: t.x, y: t.y, r: 70 }))]))
+  for (const p of scatter(ground + 2, area, f.objectCount?.smalls ?? SMALL_COUNT, 130, [...open, ...treeSpots.map((t) => ({ x: t.x, y: t.y, r: 70 }))]))
     place(p, kinds.smalls[Math.floor(pick() * kinds.smalls.length)]);
 
   // who and what: from the hunt's seed, mixed with the floor so each floor differs
@@ -93,6 +93,9 @@ export function planFloor(seed: number, floor: FloorId, period: Period): FloorPl
     const at = spots(s0 + 400, 1, 0, 24)[0];
     if (at) spawns.push({ id: "2-boss", monster: "tusk", x: at.x, y: at.y, wave: 0 });
   }
+
+  // the Charge King (plan 08d): always in his den, the one monster there
+  if (floor === 5) spawns.push({ id: "5-boss", monster: "king", x: KING_AT.x, y: KING_AT.y, wave: 0 });
 
   return { floor, objects, spawns, nodes };
 }

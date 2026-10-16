@@ -6,8 +6,9 @@ import { CAVE_OBJECTS, SMALL_OBJECTS, SWAMP_OBJECTS, TREES, type ObjectKind } fr
 // The forest's floors (hunt v3 design 3): each a fixed ground (its layout comes from layoutSeed until the
 // floor's own picture replaces it, stage 4), its exits (Bandal's carts: the only way home), the way down,
 // how fast stamina drains there and who lives there in the morning and the afternoon. Floors 3-4 (boots,
-// lantern) come in stage 3. The numbers are the user-approved draft (plan 08a), tuned in play.
-export type FloorId = 1 | 2 | 3 | 4;
+// lantern) come in stage 3, the boss's den below them in stage 5 (plan 08d). The numbers are the
+// user-approved drafts (plans 08a, 08d), tuned in play.
+export type FloorId = 1 | 2 | 3 | 4 | 5;
 export type Period = "morning" | "afternoon";
 
 export interface FloorExit {
@@ -36,12 +37,14 @@ export interface FloorDef {
   drainPerSec: number;
   layoutSeed: number;
   roster: Record<Period, Roster>;
-  // the gear needed to come down to this floor (hunt v3 design 4.5): boots for the swamp, a lantern for
-  // the cave
-  needs: "boots" | "lantern" | null;
+  // what it takes to come down to this floor (hunt v3 design 4.5): boots for the swamp, a lantern for
+  // the cave, the key the tusk boss drops for the Charge King's den (plan 08d)
+  needs: "boots" | "lantern" | "key" | null;
   // the ground's tile and the things standing on it
   ground: "grass" | "swamp" | "cave";
   objects: { trees: ObjectKind[]; smalls: ObjectKind[] };
+  // how many of them (default 18 and 12; the boss's den keeps its floor clear for the charges)
+  objectCount?: { trees: number; smalls: number };
 }
 
 const W = 1536;
@@ -116,7 +119,7 @@ export const FLOORS: Record<FloorId, FloorDef> = {
     field: FIELD,
     start: { x: 1380, y: 200 },
     exits: [{ id: "4-e0", x: 220, y: 900 }],
-    down: null,
+    down: { x: 1300, y: 880 },
     needs: "lantern",
     ground: "cave",
     objects: CAVE_OBJECTS,
@@ -127,10 +130,32 @@ export const FLOORS: Record<FloorId, FloorDef> = {
       afternoon: { solo: [["crab", 3]], flock: { monster: "bat", count: 2, size: 4 }, waves: 3, forage: [["iron_ore", 4], ["glow_mushroom", 3]] },
     },
   },
+  // the Charge King's den (plan 08d): the key to come down; one boss, nothing to gather, one cart home
+  // by the way in (run whenever); a smaller cave, nearly bare so the charges reach the walls
+  5: {
+    world: { w: 1024, h: 768 },
+    field: { minX: 16, maxX: 1024 - 16, minY: 24, maxY: 768 - 16 },
+    start: { x: 150, y: 620 },
+    exits: [{ id: "5-e0", x: 80, y: 700 }],
+    down: null,
+    needs: "key",
+    ground: "cave",
+    objects: CAVE_OBJECTS,
+    objectCount: { trees: 4, smalls: 3 },
+    drainPerSec: 0.8,
+    layoutSeed: 0x5b055,
+    roster: {
+      morning: { solo: [], flock: null, waves: 1, forage: [] },
+      afternoon: { solo: [], flock: null, waves: 1, forage: [] },
+    },
+  },
 };
 
+// where the Charge King waits in his den
+export const KING_AT: Vec = { x: 700, y: 330 };
+
 export function isFloorId(v: unknown): v is FloorId {
-  return v === 1 || v === 2 || v === 3 || v === 4;
+  return v === 1 || v === 2 || v === 3 || v === 4 || v === 5;
 }
 
 // The exit closest to `pos` on a floor (the HUD arrow points at it).

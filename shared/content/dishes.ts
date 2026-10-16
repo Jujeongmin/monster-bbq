@@ -7,7 +7,8 @@ export function isMethod(v: unknown): v is Method {
   return typeof v === "string" && (METHODS as readonly string[]).includes(v);
 }
 
-// Cookbook order. The forest's signature dish comes with its boss (plan 03b).
+// Cookbook order. A chapter's signature dish is never researched: it opens when its boss gives the
+// notebook page back (plan 08d).
 export const DISHES = {
   grilled_belly: { chapter: 1 },
   garlic_neck: { chapter: 1 },
@@ -17,7 +18,10 @@ export const DISHES = {
   rib_stew: { chapter: 1 },
   baeksuk: { chapter: 1 },
   chicken_perilla: { chapter: 1 },
-} as const satisfies Record<string, { chapter: number }>;
+  king_galbi: { chapter: 1, signature: true },
+} as const satisfies Record<string, { chapter: number; signature?: boolean }>;
+
+export const isSignature = (dish: DishId): boolean => "signature" in DISHES[dish];
 
 export type DishId = keyof typeof DISHES;
 

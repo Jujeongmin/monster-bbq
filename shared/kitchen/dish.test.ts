@@ -14,7 +14,7 @@ describe("RECIPES", () => {
       expect(r.items.every(isItemId)).toBe(true);
       expect(r.price).toBeGreaterThan(0);
       expect(r.cookMs).toBeGreaterThanOrEqual(3000);
-      expect(r.cookMs).toBeLessThanOrEqual(6000);
+      expect(r.cookMs).toBeLessThanOrEqual(7000);
     }
   });
 });

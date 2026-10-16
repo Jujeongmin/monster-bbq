@@ -11,11 +11,11 @@ const ctx = (now = T0): ActionContext => ({ now, random: () => 0.4 });
 const buy = (s: SaveData, id: string) => applyAction(s, { type: "buyUpgrade", id }, ctx());
 
 describe("gear and the floors it opens", () => {
-  it("has floors 1 to 4, the swamp needing boots and the cave a lantern", () => {
-    expect([1, 2, 3, 4].every(isFloorId)).toBe(true);
-    expect([FLOORS[3].needs, FLOORS[4].needs]).toEqual(["boots", "lantern"]);
+  it("has floors 1 to 5, the swamp needing boots, the cave a lantern, the den below it the key", () => {
+    expect([1, 2, 3, 4, 5].every(isFloorId)).toBe(true);
+    expect([FLOORS[3].needs, FLOORS[4].needs, FLOORS[5].needs]).toEqual(["boots", "lantern", "key"]);
     expect(FLOORS[2].down).not.toBeNull();
-    expect(FLOORS[4].down).toBeNull();
+    expect(FLOORS[5].down).toBeNull();
   });
   it("refuses a report that went down to the swamp without boots", () => {
     const s = applyAction(newSave(), { type: "startHunt", zone: "forest", side: "sling" }, ctx()).save;
@@ -62,7 +62,7 @@ describe("the stamina tank and the apron armour (save version 7)", () => {
   it("moves a version 6 save's armour levels to the tank, so stamina stays", () => {
     const v6 = { ...newSave(), version: 6, upgrades: { armor: 3 } };
     const s = readSave(v6);
-    expect(s.version).toBe(7);
+    expect(s.version).toBe(8);
     expect(s.upgrades.tank).toBe(3);
     expect(s.upgrades.armor ?? 1).toBe(1);
     expect(huntStats(s).maxHp).toBe(170);
