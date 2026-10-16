@@ -3,7 +3,6 @@ import { applyAction, type ActionContext } from "./actions";
 import { BALANCE } from "./balance";
 import { ammoOf, bagSlots, huntStats, ownsSide, sleepFallMs, level, lunchSlots, maxLevel, menuSlots, nextCost, stools, traySlots, walkMul, coalDrain, UPGRADE_IDS } from "./growth";
 import { planFloor } from "./hunt/plan";
-import { planService } from "./service/plan";
 import { newSave, readSave } from "./save";
 
 const ctx: ActionContext = { now: 0, random: () => 0.5 };

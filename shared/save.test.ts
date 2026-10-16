@@ -55,7 +55,7 @@ describe("readSave (version 7)", () => {
     upgrades: { melee: 2 },
     lunchbox: ["grilled_belly"],
     service: { id: "s1", seed: 9, startedAt: 2000, dishes: [{ dish: "grilled_belly", plates: 8, price: 46 }] },
-    lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 0, happy: 3, repDelta: 1 },
+    lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 0, drinks: 0, happy: 3, repDelta: 1 },
   };
   it("keeps a valid save as it is", () => {
     expect(readSave(valid)).toEqual(valid);
