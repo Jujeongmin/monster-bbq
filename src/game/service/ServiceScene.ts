@@ -160,6 +160,7 @@ export class ServiceScene extends Phaser.Scene {
       for (const [pose, rate] of [["walk", 8], ["carry", 8], ["grind", 8], ["scrub", 10]] as const)
         this.anims.create({ key: `waiter_${pose}`, frames: Array.from({ length: WAITER_FRAMES[pose] }, (_, i) => ({ key: `waiter_${pose}_${i}` })), frameRate: rate, repeat: -1 });
     const s = this.shift.s;
+    if (import.meta.env.DEV) (window as unknown as { __service?: ServiceScene }).__service = this;
     this.add.image(0, 0, "hall").setOrigin(0).setScale(BG_SCALE).setDepth(0);
     // Bandal in the kitchen window
     this.bandal = this.add.image(849, 314, "bandal_idle").setOrigin(0.5, 1).setScale(S).setDepth(5);

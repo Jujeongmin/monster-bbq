@@ -331,7 +331,7 @@ export const BALANCE: {
     armor: { base: 1, costs: [500, 1200, 2500], mats: [[{ item: "frog_skin", n: 2 }], [{ item: "crab_shell", n: 2 }], [{ item: "iron_ore", n: 3 }]] },
     bag: { base: 1, costs: [200, 500, 1000, 2000] },
     menu: { base: 1, costs: [400, 1200, 3000] },
-    seats: { base: 1, costs: [800, 1600, 3200, 6400] },
+    seats: { base: 1, costs: [800, 1600] },
     lunchbox: { base: 1, costs: [300, 1500] },
     // side weapons (hunt v3 design 4.4, user-approved draft 2026-10-15): gold only until the deep floors' parts (stage 3)
     sling: { base: 1, costs: [600, 1500] },
@@ -357,7 +357,8 @@ export const BALANCE: {
     bag: [12, 15, 18, 21, 24],
     menu: [2, 3, 4, 5],
     // stools at the counter (the seats upgrade)
-    seats: [6, 7, 8, 9, 10],
+    // three to start, five at most, spaced wide like Dave's bar (user, 2026-10-16)
+    seats: [3, 4, 5],
     lunch: [1, 2, 3],
     shoes: [1, 1.1, 1.2],
     ammo: { sling: [12, 16, 20], sleepGun: [4, 5, 6], netGun: [2, 3], firecracker: [3] },

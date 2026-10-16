@@ -201,3 +201,16 @@ describe("the first dish", () => {
     expect(readSave({ ...newSave(), dishes: { shiitake_grill: 2 } }).dishes).toEqual({ shiitake_grill: 2 });
   });
 });
+
+// The stools went from 6-10 (four upgrades) to 3-5 (two): a save past the new top keeps the top and gets
+// back the gold it paid for the levels that are gone (user, 2026-10-16)
+describe("seat levels past the new top", () => {
+  it("come down to the top with their gold back", () => {
+    const five = readSave({ ...newSave(), gold: 100, upgrades: { seats: 5 } });
+    expect([five.upgrades.seats, five.gold]).toEqual([3, 100 + 3_200 + 6_400]);
+    const four = readSave({ ...newSave(), gold: 0, upgrades: { seats: 4 } });
+    expect([four.upgrades.seats, four.gold]).toEqual([3, 3_200]);
+    const three = readSave({ ...newSave(), gold: 0, upgrades: { seats: 3 } });
+    expect([three.upgrades.seats, three.gold]).toEqual([3, 0]);
+  });
+});

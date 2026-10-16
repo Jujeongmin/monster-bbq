@@ -56,8 +56,10 @@ describe("upgrade effects", () => {
     expect(bagSlots(newSave())).toBe(12);
     expect(bagSlots(at({ bag: 3 }))).toBe(18);
     expect(menuSlots(at({ menu: 2 }))).toBe(3);
-    expect(stools(newSave())).toBe(6);
-    expect(stools(at({ seats: 5 }))).toBe(10);
+    // three stools to start, five at most, spaced wide like Dave's bar (user, 2026-10-16)
+    expect(stools(newSave())).toBe(3);
+    expect(stools(at({ seats: 3 }))).toBe(5);
+    expect(maxLevel("seats")).toBe(3);
     expect(lunchSlots(at({ lunchbox: 2 }))).toBe(2);
   });
   it("lets the server take a 15-item haul once the bag is upgraded", () => {

@@ -188,6 +188,8 @@ function readUpgrades(raw: unknown): Partial<Record<UpgradeId, number>> {
     if (!isUpgradeId(id) || typeof lv !== "number" || !Number.isInteger(lv)) continue;
     const u = BALANCE.upgrades[id];
     if (lv >= u.base && lv <= u.base + u.costs.length) out[id] = lv;
+    // a level that was cut: the new top (its gold comes back, refundCutLevels)
+    else if (CUT_LEVELS[id] && lv > u.base + u.costs.length) out[id] = u.base + u.costs.length;
   }
   return out;
 }
@@ -210,6 +212,24 @@ const RETIRED_UPGRADES: Record<string, { base: number; costs: number[] }> = {
   grillQuality: { base: 1, costs: [500, 2000] },
   potQuality: { base: 1, costs: [500, 2000] },
 };
+
+// Levels an upgrade no longer has, and what each cost when it was bought: the stools went from 6-10 to 3-5
+// (user, 2026-10-16), so seats levels 4 and 5 are gone. A save past the new top keeps the top and gets
+// that gold back (readUpgrades clamps, refundCutLevels pays).
+const CUT_LEVELS: Partial<Record<UpgradeId, { from: number; costs: number[] }>> = {
+  seats: { from: 4, costs: [3_200, 6_400] },
+};
+
+function refundCutLevels(raw: unknown): number {
+  if (!raw || typeof raw !== "object") return 0;
+  let gold = 0;
+  for (const [id, cut] of Object.entries(CUT_LEVELS)) {
+    const lv = (raw as Record<string, unknown>)[id];
+    if (typeof lv !== "number" || !Number.isInteger(lv) || !cut) continue;
+    gold += cut.costs.slice(0, Math.max(0, Math.min(cut.costs.length, lv - cut.from + 1))).reduce((a, b) => a + b, 0);
+  }
+  return gold;
+}
 
 // The gold a stored upgrade table spent on retired upgrades (levels past the last one count as the last).
 export function refundRetired(raw: unknown): number {
@@ -294,7 +314,7 @@ export function readSave(raw: unknown): SaveData {
     version: 9,
     day: count(r.day, 1),
     stage: isStage(r.stage) ? r.stage : "hunt",
-    gold: count(r.gold),
+    gold: count(r.gold) + refundCutLevels(r.upgrades),
     items: readItems(r.items),
     hunt: readHunt(r.hunt),
     seenItems: readList(r.seenItems, isItemId),
