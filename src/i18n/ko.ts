@@ -289,7 +289,6 @@ export const ko = {
   "hud.dayTime": "{day}일째 · {time}",
   "hud.bagButton": "가방",
   "hud.notebookButton": "수첩",
-  "kitchen.shopName": "할매 돌판집",
   "bag.title": "가방",
   "bag.tab.part": "고기",
   "bag.tab.forage": "채집",

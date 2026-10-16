@@ -13,7 +13,7 @@ import { ResearchCutIn } from "./ResearchCutIn";
 import "./kitchen.css";
 
 // The evening kitchen (restaurant v2 design 5, mock-ups approved 2026-10-15): the shop behind, dimmed; the
-// day's HUD over it (the shop's name plate, day, time, gold: Dave-style UI design 4), four tabs, the walnut frame with the
+// day's HUD over it (day, time, gold: Dave-style UI design 4), four tabs, the walnut frame with the
 // cookbook / menu board / dish upgrades / lunchbox, and the open button at the bottom centre. Every change
 // goes through `act` (the server's rules); the screen shows what the save says. At lunch (hunt v3 design 3)
 // the same room shows only the lunchbox, the upgrades and the way back out to the afternoon hunt.

@@ -2,7 +2,7 @@
 .dh { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
 .dh > * { pointer-events: auto; }
 .dh-left { position: absolute; left: calc(12px * var(--s)); top: calc(10px * var(--s)); display: flex; gap: calc(6px * var(--s)); align-items: center; pointer-events: none; }
-.dh-time, .dh-title { padding: 0 calc(6px * var(--s)); line-height: calc(10px * var(--s)); white-space: nowrap; display: inline-flex; align-items: center; gap: calc(4px * var(--s)); }
+.dh-time { padding: 0 calc(6px * var(--s)); line-height: calc(10px * var(--s)); white-space: nowrap; display: inline-flex; align-items: center; gap: calc(4px * var(--s)); }
 .dh-res { position: absolute; right: calc(12px * var(--s)); top: calc(13px * var(--s)); padding: 0 calc(6px * var(--s)); display: flex; gap: calc(12px * var(--s)); align-items: center; white-space: nowrap; pointer-events: none; }
 .dh-res span { display: inline-flex; align-items: center; gap: calc(4px * var(--s)); }
 .dh-buttons { position: absolute; right: calc(12px * var(--s)); bottom: calc(7px * var(--s)); display: flex; gap: calc(4px * var(--s)); }

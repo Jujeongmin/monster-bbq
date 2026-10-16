@@ -290,7 +290,6 @@ export const en: Record<keyof typeof ko, string> = {
   "hud.dayTime": "Day {day} · {time}",
   "hud.bagButton": "Bag",
   "hud.notebookButton": "Notebook",
-  "kitchen.shopName": "Granny's Grill",
   "bag.title": "Bag",
   "bag.tab.part": "Meat",
   "bag.tab.forage": "Forage",

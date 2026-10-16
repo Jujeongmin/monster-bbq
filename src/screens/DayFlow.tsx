@@ -169,7 +169,6 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         <DayHud
           save={save}
           time={timeOfDay(phase, save.hunt?.period ?? null)}
-          title={phase === "lunch" || phase === "kitchen" ? t("kitchen.shopName") : undefined}
           onBag={() => setWin("bag")}
           onNotebook={() => setWin("notebook")}
         />
