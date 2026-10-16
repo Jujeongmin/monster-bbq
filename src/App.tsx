@@ -19,12 +19,13 @@ export function App() {
 
 function LocalApp() {
   const transport = useMemo(() => new LocalTransport(window.localStorage), []);
-  return <DayFlow transport={transport} />;
+  // the shop buys through the same in-page rules here (src/net/shop.ts)
+  return <DayFlow transport={transport} localShop={transport} />;
 }
 
 function OnlineApp() {
   const { server, connected } = useGameServer();
   const transport = useMemo(() => (server ? new Verse8Transport(server) : null), [server]);
   if (!connected || !transport) return <div className="dayflow-wait">…</div>;
-  return <DayFlow transport={transport} />;
+  return <DayFlow transport={transport} localShop={null} />;
 }

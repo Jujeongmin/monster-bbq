@@ -1,5 +1,6 @@
 import { applyAction, type Action, type ActionContext } from "../../shared/actions";
 import { readSave, type SaveData } from "../../shared/save";
+import { grantPurchase } from "../../shared/shop";
 
 // How the game reaches "the server": load the save, ask for a change.
 export interface Transport {
@@ -33,6 +34,14 @@ export class LocalTransport implements Transport {
     if (result.error) throw new Error(result.error);
     this.storage.setItem(this.key, JSON.stringify(result.save));
     return result.save;
+  }
+
+  // ?local development: a purchase granted at once by the server's own rules (no Verse8 shop here)
+  async purchase(productId: string): Promise<SaveData> {
+    const r = grantPurchase(await this.load(), { purchaseId: `local-${Date.now()}-${Math.random()}`, productId, quantity: 1 });
+    if (r.error) throw new Error(r.error);
+    this.storage.setItem(this.key, JSON.stringify(r.save));
+    return r.save;
   }
 }
 

@@ -13,7 +13,7 @@ import { PhaserGame } from "../game/PhaserGame";
 import { ServiceGame } from "../game/service/ServiceGame";
 import type { HuntResult } from "../game/scenes/HuntScene";
 import { t, type StringKey } from "../i18n";
-import type { Transport } from "../net/transport";
+import type { LocalTransport, Transport } from "../net/transport";
 import { Kitchen } from "./kitchen/Kitchen";
 import { Upgrades } from "./Upgrades";
 import { HuntSummary } from "./HuntSummary";
@@ -36,7 +36,8 @@ const PHASE_NAME: Record<Phase, StringKey> = {
 const shopShut = (code: string) => code === "no_menu" || code === "no_ingredients";
 const huntRefused = (f: { action: Action; code: string }) => f.action.type === "finishHunt" && f.code === "bad_hunt";
 
-export function DayFlow({ transport }: { transport: Transport }) {
+// `localShop`: in ?local development the shop buys through the page's own server rules (src/net/shop.ts).
+export function DayFlow({ transport, localShop }: { transport: Transport; localShop: LocalTransport | null }) {
   const [save, setSave] = useState<SaveData | null>(null);
   const [phase, setPhase] = useState<Phase>("hunt");
   const [failed, setFailed] = useState<{ action: Action; next: Phase; code: string } | null>(null);
