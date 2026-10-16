@@ -8,7 +8,7 @@
 /* the notebook and the bag: the picture itself, big, with its key and name under it (no box) */
 .dh-big { position: absolute; bottom: calc(4px * var(--s)); padding: 0; border: 0; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: calc(1px * var(--s)); color: var(--cream); font: 700 var(--fs-small) "Galmuri11", monospace; text-shadow: var(--s) var(--s) 0 #2b1408; filter: drop-shadow(0 calc(2px * var(--s)) 0 rgba(20, 10, 4, 0.6)); }
 .dh-big img { height: calc(62px * var(--s)); image-rendering: pixelated; transition: transform 0.08s steps(2); }
-.dh-bag img { height: calc(40px * var(--s)); }
+.dh-bag img { height: calc(52px * var(--s)); }
 .dh-big:hover img { transform: translateY(calc(-2px * var(--s))); }
 .dh-big:active img { transform: translateY(calc(1px * var(--s))) scale(0.96); }
 .dh-note { left: calc(10px * var(--s)); }
@@ -38,20 +38,22 @@
 .notebook-name { font-weight: 700; line-height: 1; }
 .notebook-why { font: var(--fs-small) / 1 "Galmuri9", monospace; color: var(--paper-ink-soft); }
 .notebook-app:disabled { cursor: default; filter: grayscale(1) brightness(0.85); }
-/* opening like Dave's phone: up from the HUD button, then the cover swings open; closing folds it back */
-.nb-win { animation: nb-dim 0.2s steps(4) both; }
+/* opening like Dave's phone (user, 2026-10-16): the closed notebook flies from its button to the middle of
+   the screen, rests a moment, then its cover swings open slowly; closing shuts the cover first, then it
+   flies back down to its button */
+.nb-win { animation: nb-dim 0.3s steps(6) both; }
 @keyframes nb-dim { from { background-color: rgba(20, 10, 4, 0); } }
-.nb-book { position: relative; perspective: calc(900px * var(--s)); transform-origin: 0 100%; animation: nb-fly 0.24s steps(6) both; }
-@keyframes nb-fly { from { transform: translate(-38vw, 40vh) scale(0.12); } }
-.nb-cover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(6px * var(--s)); color: var(--brass); font-weight: 700; transform-origin: 0 50%; backface-visibility: hidden; animation: nb-open 0.36s 0.24s steps(9) both; pointer-events: none; }
+.nb-book { position: relative; perspective: calc(900px * var(--s)); transform-origin: 50% 50%; animation: nb-fly 0.5s steps(12) both; }
+@keyframes nb-fly { 0% { transform: translate(-40vw, 38vh) scale(0.12); } 80% { transform: translate(0, 0) scale(1.03); } 100% { transform: none; } }
+.nb-cover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(6px * var(--s)); color: var(--brass); font-weight: 700; transform-origin: 0 50%; backface-visibility: hidden; animation: nb-open 0.7s 0.7s steps(16) both; pointer-events: none; }
 .nb-cover img { height: calc(62px * var(--s)); image-rendering: pixelated; }
 @keyframes nb-open { from { transform: rotateY(0); } to { transform: rotateY(-180deg); visibility: hidden; } }
-.nb-win.closing { animation: nb-undim 0.2s steps(4) both; }
+.nb-win.closing { animation: nb-undim 0.3s 0.4s steps(6) both; }
 @keyframes nb-undim { to { background-color: rgba(20, 10, 4, 0); } }
-.nb-win.closing .nb-book { animation: nb-down 0.2s steps(5) both; }
-@keyframes nb-down { to { transform: translate(-38vw, 40vh) scale(0.12); } }
-.nb-win.closing .nb-cover { visibility: hidden; animation: none; }
-@media (prefers-reduced-motion: reduce) { .nb-win, .nb-book, .nb-cover { animation-duration: 0.01s !important; animation-delay: 0s !important; } }
+.nb-win.closing .nb-cover { animation: nb-shut 0.4s steps(10) both; }
+@keyframes nb-shut { from { transform: rotateY(-180deg); } to { transform: rotateY(0); } }
+.nb-win.closing .nb-book { animation: nb-down 0.35s 0.4s steps(9) both; }
+@keyframes nb-down { from { transform: none; } to { transform: translate(-40vw, 38vh) scale(0.12); } }
 /* the cookbook to read, outside the evening kitchen (research only there) */
 .hud-cookbook { position: relative; width: 92%; height: 84%; padding: calc(6px * var(--s)); overflow: auto; }
 .hud-cookbook-close { position: absolute; left: 50%; bottom: calc(6px * var(--s)); transform: translateX(-50%); z-index: 9; }

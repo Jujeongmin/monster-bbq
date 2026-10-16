@@ -13,15 +13,16 @@ const STAND_IN: Record<string, string> = {
   "test/items/icon_king_rib.png": "test/items/icon_boar_rib.png",
   "test/dishes/king_galbi.png": "test/dishes/rib_stew.png",
   "test/shop/dishes/king_galbi.png": "test/shop/dishes/rib_stew.png",
-  // the Dave-style UI's pictures (design 2026-10-16-dave-ui, section 8): the old icons until the drawn
+  // the Dave-style UI's pictures (design 2026-10-16-dave-ui, section 8): near icons (the bag: the starter
+  // pack's bojagi bundle, not the pork belly it first borrowed: user, 2026-10-16) until the drawn
   // ones are approved and copied in
   "test/ui/hud/time_morning.png": "test/ui/icon_day.png",
   "test/ui/hud/time_noon.png": "test/ui/icon_day.png",
   "test/ui/hud/time_afternoon.png": "test/ui/icon_day.png",
   "test/ui/hud/time_evening.png": "test/ui/icon_day.png",
   "test/ui/hud/time_night.png": "test/ui/icon_day.png",
-  "test/ui/hud/bag.png": "test/items/icon_boar_belly.png",
-  "test/ui/hud/app_bag.png": "test/items/icon_boar_belly.png",
+  "test/ui/hud/bag.png": "test/shop/products/starter_pack.png",
+  "test/ui/hud/app_bag.png": "test/shop/products/starter_pack.png",
   "test/ui/hud/app_upgrade.png": "test/ui/upg_melee.png",
   "test/ui/hud/app_awaken.png": "test/ui/icon_golden_charcoal.png",
   "test/ui/hud/app_cookbook.png": "test/ui/icon_notebook.png",

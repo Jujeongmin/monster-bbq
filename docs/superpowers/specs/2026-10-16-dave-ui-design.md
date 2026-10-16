@@ -93,7 +93,7 @@ UI 그림은 Codex로 만든다(사용자 2026-10-16: "게임 디자인과 맞�
 | 그림 | 대신 쓰는 것 |
 |---|---|
 | 시간대 그림 5장(아침 해, 점심 해, 오후 노을, 저녁 등불, 밤 달), 16px | `test/ui/icon_day.png` |
-| 가방 버튼 그림(보따리), 32px | `test/items/icon_boar_belly.png` |
+| 가방 버튼 그림(보따리), 32px | `test/shop/products/starter_pack.png`(보자기 꾸러미) |
 | 수첩 버튼 그림 | `test/ui/icon_notebook.png`(이미 있음) |
 | 수첩 앱 칸 그림 6장(가방·강화·각성·도감·메뉴판·상점) | 지금 아이콘(업그레이드·황금 숯·그릇 등) |
 | 영수증 종이 9조각 | `test/ui2/card.png` |
