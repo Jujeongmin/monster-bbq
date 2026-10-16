@@ -54,6 +54,8 @@ const REFILL_DELAY_MS = 2500;
 const STICK = { x: GAME_WIDTH * 0.12, y: GAME_HEIGHT * 0.78, radius: 36, deadZone: 0.2 };
 const SLASH_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.8, radius: 28 };
 const GATHER_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.58, radius: 22 };
+// shots left at or below this show red
+const AMMO_LOW = 2;
 const SIDE_BTN = { x: GAME_WIDTH * 0.76, y: GAME_HEIGHT * 0.86, radius: 22 };
 // a mash every this often while auto-mash is on (pause menu)
 // the deep floors' ground tiles (art/test/bg/<ground>.png), loaded only on their own floor
@@ -210,6 +212,9 @@ export class HuntScene extends Phaser.Scene {
   private paused = false;
   private pauseMenu: Phaser.GameObjects.Container | null = null;
   private ammoText!: Phaser.GameObjects.Text;
+  private ammoIcon!: Phaser.GameObjects.Image;
+  private ammoSlot: Phaser.GameObjects.NineSlice | null = null;
+  private ammoShown = 0;
   private bossBar: UiGauge | null = null;
   private bossSeen = false;
   // the Charge King's falling rocks landing, and his piglets called so far (their ids)
@@ -308,8 +313,6 @@ export class HuntScene extends Phaser.Scene {
   }
 
   create() {
-    // dev builds only: the scene on window for screenshot checks (art-src/mockups/tools/shot.mjs)
-    if (import.meta.env.DEV) (window as unknown as { __hunt?: HuntScene }).__hunt = this;
     this.add.tileSprite(0, 0, this.floorDef.world.w, this.floorDef.world.h, this.textures.exists(this.floorDef.ground) ? this.floorDef.ground : "grass").setOrigin(0).setDepth(-1000);
     if (this.floorDef.ground === "cave" && !this.floorDef.lit) this.makeDark();
     for (const o of this.plan.objects) {
@@ -378,10 +381,13 @@ export class HuntScene extends Phaser.Scene {
       l.eaten = true;
       l.button.setAlpha(0.3).disableInteractive();
     });
-    // the side weapon taken out and its shots left, bottom right (on touch: on its button)
-    const sideAt = this.touch ? SIDE_BTN : { x: GAME_WIDTH - 44, y: GAME_HEIGHT - 52 };
-    hud(this.add.image(sideAt.x, sideAt.y, `side_${this.huntData.side}`).setScale(this.touch ? 1 : KIT));
-    this.ammoText = hud(this.add.text(sideAt.x + 18, sideAt.y + 14, "", { ...TEXT, fontStyle: "bold" }).setOrigin(0, 0.5));
+    // the side weapon taken out in its kit slot, shots left of all it carried in big figures below it, bottom
+    // right (on touch: on its button) — red when nearly out, the slot dimmed when empty
+    const sideAt = this.touch ? SIDE_BTN : { x: GAME_WIDTH - 44, y: GAME_HEIGHT - 60 };
+    if (!this.touch) this.ammoSlot = kitSlice(this, sideAt.x, sideAt.y, "slot", 56, 56, 4, 4, 4, 4).setScrollFactor(0).setDepth(9999);
+    this.ammoIcon = hud(this.add.image(sideAt.x, sideAt.y, `side_${this.huntData.side}`).setScale(this.touch ? 1 : KIT * 0.85));
+    this.ammoText = hud(this.add.text(sideAt.x, sideAt.y + (this.touch ? 20 : 38), "", { ...TEXT, fontStyle: "bold" }).setOrigin(0.5));
+    this.ammoShown = this.run.ammo;
     this.cameras.main.fadeIn(300, 0, 0, 0);
     this.floorCard();
     // development builds only: the scene reachable from the page, for screen checks (art-src/mockups/tools)
@@ -1487,7 +1493,14 @@ export class HuntScene extends Phaser.Scene {
     this.lowGlow.setVisible(low);
     if (low) this.lowGlow.setAlpha(0.8 + 0.2 * Math.sin(this.time.now / 180));
     this.drawExitArrow();
-    this.ammoText.setText(`${this.run.ammo}`).setColor(this.run.ammo > 0 ? "#fff3d8" : "#9a8f84");
+    this.ammoText.setText(`${this.run.ammo}/${this.huntData.ammo}`).setColor(this.run.ammo === 0 ? "#9a8f84" : this.run.ammo <= AMMO_LOW ? "#ff7070" : "#fff3d8");
+    this.ammoIcon.setAlpha(this.run.ammo > 0 ? 1 : 0.4);
+    this.ammoSlot?.setAlpha(this.run.ammo > 0 ? 1 : 0.5);
+    // a shot fired: the count hops
+    if (this.run.ammo !== this.ammoShown) {
+      this.ammoShown = this.run.ammo;
+      this.tweens.add({ targets: this.ammoText, scale: 1.4, duration: 90, yoyo: true });
+    }
   }
 
   // The nearest cart: an arrow beside the hunter pointing at it, pushed in to the screen's edge when the
