@@ -18,7 +18,19 @@ export function App() {
 }
 
 function LocalApp() {
-  const transport = useMemo(() => new LocalTransport(window.localStorage), []);
+  const transport = useMemo(() => {
+    // in-page play only (development, the offline preview): "#new" starts a new game, to see the prologue
+    if (location.hash === "#new") {
+      try {
+        localStorage.removeItem("monster-bbq:save");
+        sessionStorage.clear();
+      } catch {
+        // storage blocked: the game starts new anyway
+      }
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+    return new LocalTransport(window.localStorage);
+  }, []);
   // the shop buys through the same in-page rules here (src/net/shop.ts)
   return <DayFlow transport={transport} localShop={transport} />;
 }
