@@ -27,6 +27,8 @@ import { Notebook } from "./hud/Notebook";
 import { Receipt } from "./hud/Receipt";
 import { sceneOf, showDayHud, timeOfDay, transitionCard, type App, type Phase, type Scene } from "./hud/hud";
 import { TitleCard } from "./hud/TitleCard";
+import { Cutscene } from "./story/Cutscene";
+import { storyDue } from "./story/story";
 import { DayStage } from "../game/shop3d/DayStage";
 import type { DayScene } from "../game/shop3d/day";
 import { canUse3D } from "../game/shop3d/input";
@@ -97,6 +99,9 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     lastScene.current = scene;
     if (next) setCard({ key: Date.now(), day: save.day, ...next });
   }, [scene]);
+  // the story scene due now (the prologue on the first morning, its dusk cut on the first evening), shown
+  // once the title card is gone; seeing it (or skipping it) is saved
+  const story = save && !card ? storyDue(save, phase) : null;
   // the shop by day, walked (a window opens from the door or Bandal), where WebGL works
   const [hub, setHub] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
   const [panel, setPanel] = useState<"kitchen" | "side" | null>(null);
@@ -140,7 +145,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       if (!save || !showDayHud(phase, !!save.hunt) || e.repeat) return;
       const k = e.key.toLowerCase();
       if (k !== "tab" && k !== "i") return;
-      if (shopping || store || summary || card || panel || picking) return;
+      if (shopping || store || summary || card || panel || picking || story) return;
       e.preventDefault();
       const want = k === "tab" ? "notebook" : "bag";
       // the same key again closes it the window's own way (folding back to its button)
@@ -205,7 +210,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         <DayHud
           save={save}
           time={timeOfDay(phase, save.hunt?.period ?? null)}
-          quiet={!!(shopping || store || win || panel || picking || summary)}
+          quiet={!!(shopping || store || win || panel || picking || summary || story)}
           onBag={() => setWin("bag")}
           onNotebook={() => setWin("notebook")}
         />
@@ -217,7 +222,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         <DayStage
           scene={dayScene}
           stools={stools(save)}
-          active={!panel && !picking && !win && !shopping && !store && !summary && !card && !busy}
+          active={!panel && !picking && !win && !shopping && !store && !summary && !card && !busy && !story}
           onSpot={(id) => (id === "door" ? (dayScene === "lunch" ? setPicking(true) : setPanel("side")) : setPanel("kitchen"))}
           onFail={() => setHub(false)}
         />
@@ -261,6 +266,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       )}
       {store && <Shop save={save} items={storeItems} checking={checking} onBuy={buy} onClose={() => setStore(false)} />}
 
+      {story && <Cutscene key={story} scene={story} onDone={() => void act({ type: "seeStory", id: story }, phase)} />}
       {card && <TitleCard key={card.key} day={card.day} time={card.time} line={card.line} onDone={() => setCard(null)} />}
 
       {failed && (

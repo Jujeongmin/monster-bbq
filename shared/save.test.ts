@@ -34,6 +34,7 @@ const FRESH = {
   lastService: null,
   bossKey: false,
   pages: [],
+  story: [],
   charcoal: 0,
   stars: {},
   vip: { spent: 0, day: 0 },
@@ -64,6 +65,7 @@ describe("readSave (version 9)", () => {
     lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 0, drinks: 0, cleaned: 0, happy: 3, repDelta: 1, dishes: [{ dish: "grilled_belly", plates: 3, gold: 120 }] },
     bossKey: true,
     pages: ["forest"],
+    story: ["prologue"],
     charcoal: 40,
     stars: { melee: 3, grilled_belly: 1 },
     vip: { spent: 600, day: 3 },
@@ -107,6 +109,10 @@ describe("readSave (version 9)", () => {
     expect(old.lastService?.dishes).toEqual([]);
     const odd = readSave({ ...valid, lastService: { ...valid.lastService, dishes: [{ dish: "unicorn", plates: 1, gold: 9 }, { dish: "grilled_belly", plates: 3, gold: 120 }] } });
     expect(odd.lastService?.dishes).toEqual([{ dish: "grilled_belly", plates: 3, gold: 120 }]);
+  });
+  it("reads the story scenes seen, none for an older save, and drops unknown ones", () => {
+    expect(readSave({ ...valid, story: undefined }).story).toEqual([]);
+    expect(readSave({ ...valid, story: ["prologue", "nope", "prologue", "prologue_dusk"] }).story).toEqual(["prologue", "prologue_dusk"]);
   });
   it("drops a broken service, summary or reputation instead of failing", () => {
     const r = readSave({ ...valid, reputation: -5, service: { id: 3 }, lastService: { id: "x", served: "lots" } });

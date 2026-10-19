@@ -14,15 +14,26 @@ import "./dialogue.css";
 export type LidFace = "normal" | "angry" | "smug" | "surprised";
 export type YokaiFace = "normal" | "happy" | "scared" | "sulky";
 export type Yokai = "dokkaebi" | "gumiho" | "reaper" | "ghost";
-export type Face = LidFace | YokaiFace;
-export type DialogueLine = { who: "lid"; face: LidFace; text: string } | { who: Yokai; face: YokaiFace; text: string };
+export type HeroFace = "fine" | "tired";
+export type BandalFace = "idle" | "smile" | "startled";
+export type Face = LidFace | YokaiFace | HeroFace | BandalFace | "normal";
+// the grandson, Bandal and Grandma's letter joined the lid and the yokai for the prologue (2026-10-19)
+export type DialogueLine =
+  | { who: "lid"; face: LidFace; text: string }
+  | { who: Yokai; face: YokaiFace; text: string }
+  | { who: "hero"; face: HeroFace; text: string }
+  | { who: "bandal"; face: BandalFace; text: string }
+  | { who: "letter"; face: "normal"; text: string };
 type Speaker = DialogueLine["who"];
 
 const LID_FACES: LidFace[] = ["normal", "angry", "smug", "surprised"];
 const YOKAI_FACES: YokaiFace[] = ["normal", "happy", "scared", "sulky"];
-const NAME: Record<Speaker, StringKey> = { lid: "kitchen.lid", dokkaebi: "who.dokkaebi", gumiho: "who.gumiho", reaper: "who.reaper", ghost: "who.ghost" };
-const portrait = (who: Speaker, face: Face) => artUrl(who === "lid" ? `test/lid/${face}.png` : `test/yokai/${who}_${face}.png`);
-const facesOf = (who: Speaker): Face[] => (who === "lid" ? LID_FACES : YOKAI_FACES);
+const NAME: Record<Speaker, StringKey> = { lid: "kitchen.lid", dokkaebi: "who.dokkaebi", gumiho: "who.gumiho", reaper: "who.reaper", ghost: "who.ghost", hero: "who.hero", bandal: "who.bandal", letter: "who.letter" };
+// the grandson's face is the stamina ring's (art/test/ui/stamina), Bandal's the kitchen's (art/test/bandal);
+// the letter has no face
+const portrait = (who: Speaker, face: Face) =>
+  artUrl(who === "lid" ? `test/lid/${face}.png` : who === "hero" ? `test/ui/stamina/face_${face}.png` : who === "bandal" ? `test/bandal/${face}.png` : `test/yokai/${who}_${face}.png`);
+const facesOf = (who: Speaker): Face[] => (who === "lid" ? LID_FACES : who === "hero" ? ["fine", "tired"] : who === "bandal" ? ["idle", "smile", "startled"] : who === "letter" ? [] : YOKAI_FACES);
 const LETTER_MS = 35;
 
 export function Dialogue({ lines, onDone }: { lines: DialogueLine[]; onDone: () => void }) {
@@ -61,13 +72,15 @@ export function Dialogue({ lines, onDone }: { lines: DialogueLine[]; onDone: () 
   const frame = document.querySelector(".frame");
   if (!line || !frame) return null;
   const out = state.shown >= line.text.length;
-  const bust = line.who !== "lid";
+  // the lid and the grandson sit in the bar; the yokai and Bandal stand over it; the letter has no face
+  const bust = line.who !== "lid" && line.who !== "hero" && line.who !== "letter";
+  const inBar = line.who === "lid" || line.who === "hero";
   const speakers = [...new Set(lines.map((l) => l.who))];
   return createPortal(
     <div className="dialogue" role="dialog" aria-live="polite" onPointerDown={advance}>
-      {bust && <img className="dialogue-bust" src={portrait(line.who, line.face)} alt="" />}
-      <div className="dialogue-box">
-        {!bust && <img className="dialogue-face" src={portrait(line.who, line.face)} alt="" />}
+      {bust && <img className={`dialogue-bust ${line.who}`} src={portrait(line.who, line.face)} alt="" />}
+      <div className={`dialogue-box${line.who === "letter" ? " letter" : ""}`}>
+        {inBar && <img className={`dialogue-face ${line.who}`} src={portrait(line.who, line.face)} alt="" />}
         <span className={`dialogue-name ${line.who}`}>{t(NAME[line.who])}</span>
         <p className="dialogue-text">
           {line.text.slice(0, state.shown)}

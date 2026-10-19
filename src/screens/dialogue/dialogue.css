@@ -55,3 +55,12 @@
 }
 @keyframes dialogue-blink { 50% { opacity: 0; } }
 .dialogue-preload { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* the prologue's speakers (2026-10-19): the grandson's 20x16 face at four game pixels an art pixel in the
+   bar, Bandal's 45x40 kitchen picture at three standing over it, the letter in the bar with no face */
+.dialogue-face.hero { width: calc(80px * var(--s)); left: calc(24px * var(--s)); }
+.dialogue-bust.bandal { width: calc(135px * var(--s)); }
+.dialogue-box.letter { padding-left: calc(28px * var(--s)); }
+.dialogue-box.letter .dialogue-text { font-style: normal; color: #fff3d0; }
+.dialogue-name.bandal { color: #e8d0b0; }
+.dialogue-name.letter { color: #e8c060; }

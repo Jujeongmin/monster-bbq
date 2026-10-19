@@ -1,0 +1,31 @@
+/* A story scene over everything (under the dialogue bar): the cut's picture filling the frame. The stand-in
+   pictures are approved art, scaled by whole numbers and composed, never drawn here. */
+.story { position: absolute; inset: 0; z-index: 40; background: #0e0806; overflow: hidden; }
+.story-pic { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; animation: story-in 0.4s steps(8) both; }
+@keyframes story-in { from { opacity: 0; } }
+.story-pic.own { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.story-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.story-pic.dim .story-bg { filter: brightness(0.55); }
+.story-pic.dusty .story-bg { filter: sepia(0.6) brightness(0.6) contrast(0.9); }
+.story-pic.dusk .story-bg { filter: sepia(0.5) hue-rotate(-15deg) brightness(0.45); }
+.story-pic.dark { background: #1a0f0a; }
+/* 1: the answers stack up on the phone */
+.story-pic.phone { flex-direction: column; gap: calc(6px * var(--s)); justify-content: flex-start; padding-top: calc(30px * var(--s)); background: #0b0b12; }
+.story-note { padding: calc(2px * var(--s)) calc(10px * var(--s)); font: var(--fs) "Galmuri11", monospace; animation: note-in 0.25s steps(4) both; }
+@keyframes note-in { from { opacity: 0; transform: translateY(calc(-8px * var(--s))); } }
+/* 2: the parcel, too heavy, wobbling */
+.story-parcel { height: calc(130px * var(--s)); image-rendering: pixelated; animation: heavy 0.9s steps(6) infinite; transform-origin: 50% 100%; margin-bottom: calc(60px * var(--s)); }
+@keyframes heavy { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-3deg) translateY(calc(-3px * var(--s))); } 50% { transform: rotate(0) translateY(0); } 75% { transform: rotate(3deg) translateY(calc(-2px * var(--s))); } }
+/* 4: the lid jolts awake */
+.story-lid { position: relative; width: calc(240px * var(--s)); image-rendering: pixelated; margin-bottom: calc(60px * var(--s)); animation: jolt 0.5s steps(6) both; }
+@keyframes jolt { 0% { transform: translateY(calc(20px * var(--s))) rotate(0); } 30% { transform: translateY(calc(-14px * var(--s))) rotate(-6deg); } 55% { transform: rotate(5deg); } 80% { transform: rotate(-2deg); } 100% { transform: none; } }
+/* 5: Bandal stands to attention in the kitchen window */
+.story-bandal { position: relative; width: calc(180px * var(--s)); image-rendering: pixelated; margin-bottom: calc(60px * var(--s)); }
+/* 6: the grandson with the lid on his back */
+.story-hero { position: relative; width: calc(210px * var(--s)); image-rendering: pixelated; margin-bottom: calc(40px * var(--s)); }
+/* 7: foxfires and guests lining up at the door at dusk */
+.story-yokai { position: absolute; bottom: calc(80px * var(--s)); width: calc(78px * var(--s)); image-rendering: pixelated; filter: brightness(0.35) sepia(1) hue-rotate(-20deg); animation: lineup 1.6s steps(8) both; }
+@keyframes lineup { from { opacity: 0; transform: translateX(calc(-20px * var(--s))); } }
+.ui-sq.story-skip { height: auto; white-space: nowrap; position: absolute; right: calc(10px * var(--s)); top: calc(10px * var(--s)); z-index: 55; width: auto; padding: 0 calc(6px * var(--s)); font-size: var(--fs-small); }
+.story-more { position: absolute; right: calc(16px * var(--s)); bottom: calc(14px * var(--s)); color: #b1895c; font: var(--fs) "Galmuri11", monospace; animation: dialogue-blink 0.8s steps(2, jump-none) infinite; }
+@media (prefers-reduced-motion: reduce) { .story-pic, .story-note, .story-parcel, .story-lid, .story-yokai { animation: none; } }

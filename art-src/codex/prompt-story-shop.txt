@@ -1,0 +1,7 @@
+Use your image generation tool (do not write code to draw) to create ONE image: Cut 3: the outside-to-inside view of a dusty, long-closed countryside grill shop 'Halmae Dolpanjip' at dawn: cobwebs, dust in the light, chairs upside down on a long wooden counter; on the wall hangs a HUGE monster horn and a big scaled shield like trophies, far too big for a little shop.
+
+Style: match the attached references exactly (the first is the game's approved shop interior, the second the approved small icons scaled up 8 times). Real low-resolution pixel art like the references: chunky square pixels, a dark 1-pixel outline on characters, flat colours with 2-3 shades per material, no gradients, no glow, no soft painting, no anti-aliasing. Comic and cute, warm palette, a cozy Korean countryside grill shop story. The main character is a cute chibi teenage boy: spiky black hair, red bandana, big brown eyes, green hooded jacket, cream apron (as in the game).
+
+Save as art-src/codex/raw/story_shop.png — a 16:9 image exactly 1536x864, one full-frame picture (no panel border, no text, no letters, no speech bubbles, no UI).
+
+Reply only with the saved file path.

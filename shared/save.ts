@@ -5,6 +5,7 @@ import { BALANCE } from "./balance";
 import { isAwakenTarget, MAX_STARS, type AwakenTarget } from "./awaken";
 import type { Period } from "./content/floors";
 import { isSideWeaponId, type SideWeaponId } from "./content/sideWeapons";
+import { isStoryId, type StoryId } from "./content/story";
 import { isUpgradeId, type UpgradeId } from "./content/upgrades";
 import { MAX_DISH_LEVEL, MAX_SETS, type MenuLine, type TonightDish } from "./kitchen/dish";
 
@@ -81,6 +82,8 @@ export interface SaveData {
   // bosses gave back ("forest" = chapter 1)
   bossKey: boolean;
   pages: string[];
+  // story scenes already seen (shared/content/story.ts); older saves read as none
+  story: StoryId[];
   // golden charcoal, awakening stars, VIP and the shop's record (06b-1)
   charcoal: number;
   stars: Partial<Record<AwakenTarget, number>>;
@@ -110,6 +113,7 @@ export function newSave(): SaveData {
     lastService: null,
     bossKey: false,
     pages: [],
+    story: [],
     charcoal: 0,
     stars: {},
     vip: { spent: 0, day: 0 },
@@ -337,6 +341,7 @@ export function readSave(raw: unknown): SaveData {
     lastService: readSummary(r.lastService),
     bossKey: r.bossKey === true,
     pages: readList(r.pages, (p): p is string => p === "forest"),
+    story: readList(r.story, isStoryId),
     charcoal: count(r.charcoal),
     stars: readStars(r.stars),
     vip: { spent: count(vip.spent), day: count(vip.day) },

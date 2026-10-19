@@ -14,6 +14,7 @@ import { FLOORS, isFloorId, type FloorId } from "./content/floors";
 import { levelCost, MAX_SETS, planShop, takeSets, type MenuLine } from "./kitchen/dish";
 import { settleService } from "./service/settle";
 import { vipLevel } from "./shop";
+import { isStoryId } from "./content/story";
 import type { SaveData, Zone } from "./save";
 
 // What a hunt report lists, in the order things happened (hunt v3 design 5.3): each monster taken and how
@@ -33,7 +34,8 @@ export type Action =
   | { type: "packLunch"; dishes: string[] }
   | { type: "endDay" }
   | { type: "awaken"; target: string; from: number }
-  | { type: "claimVipDaily" };
+  | { type: "claimVipDaily" }
+  | { type: "seeStory"; id: string };
 
 // What only the server may decide: its clock and its dice.
 export interface ActionContext {
@@ -286,6 +288,10 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       return awaken(save, a);
     case "claimVipDaily":
       return claimVipDaily(save);
+    case "seeStory":
+      // a scene watched (or skipped): remembered once, nothing else changes
+      if (!isStoryId(a.id)) return { save, error: "bad_action" };
+      return { save: save.story.includes(a.id) ? save : { ...save, story: [...save.story, a.id] } };
     case "upgradeDish":
       return upgradeDish(save, a);
     case "openShop":
