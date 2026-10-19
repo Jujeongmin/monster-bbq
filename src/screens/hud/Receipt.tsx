@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { SaveData } from "../../../shared/save";
 import { artUrl, hasArt } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
-import { HUD_ART, receiptAt, receiptLines } from "./hud";
+import { HUD_ART, RECEIPT, receiptAt, receiptLines } from "./hud";
 import { Scene } from "./Scene";
 
 // The night's receipt (Dave-style UI design 7): over the shop, the lines come up one by one and the total
@@ -11,16 +11,19 @@ export function Receipt({ save, busy, onNext }: { save: SaveData; busy: boolean;
   const s = save.lastService;
   const r = s ? receiptLines(s, save.reputation) : { lines: [], total: 0 };
   const [ms, setMs] = useState(0);
+  // the clock runs only until the receipt is all out (or tapped)
+  const endMs = RECEIPT.lineMs * r.lines.length + RECEIPT.rollMs;
   useEffect(() => {
     const t0 = performance.now();
     let raf = 0;
     const tick = (now: number) => {
-      setMs((m) => (m === Infinity ? m : now - t0));
-      raf = requestAnimationFrame(tick);
+      const t = now - t0;
+      setMs((m) => (m === Infinity ? m : t));
+      if (t < endMs) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [endMs]);
   const at = receiptAt(ms, r.lines.length, r.total);
   // the drawn receipt paper once it is in, else the card frame
   const paper = hasArt(HUD_ART.receipt);

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { useEffect, useRef, useState } from "react";
+import { holdLoop } from "../holdLoop";
 import { canUse3D } from "../shop3d/input";
 import { ShopStage } from "../shop3d/ShopStage";
 import { ServiceScene } from "./ServiceScene";
@@ -35,15 +36,9 @@ function Service2D({ shop, hold, onEnd }: { shop: ServiceData; hold: boolean; on
     g.scene.add("shop", ServiceScene, true, start.current);
     g.events.on("service:end", (r: ShopReport) => onEndRef.current(r));
     game.current = g;
-    g.events.once(Phaser.Core.Events.POST_STEP, () => holdRef.current && g.loop.sleep());
     return () => g.destroy(true);
   }, []);
-  useEffect(() => {
-    if (!game.current) return;
-    const g = game.current;
-    if (hold) g.isRunning ? g.loop.sleep() : g.events.once(Phaser.Core.Events.POST_STEP, () => holdRef.current && g.loop.sleep());
-    else g.loop.wake();
-  }, [hold]);
+  useEffect(() => holdLoop(game.current, hold, holdRef), [hold]);
 
   return <div ref={host} className="service-stage" />;
 }

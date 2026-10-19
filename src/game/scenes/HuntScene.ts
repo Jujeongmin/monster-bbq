@@ -339,8 +339,6 @@ export class HuntScene extends Phaser.Scene {
     for (const e of this.floorDef.exits) this.add.image(e.x, e.y, "exit").setOrigin(0.5, 0.9).setDepth(e.y);
     if (this.floorDef.down) this.add.image(this.floorDef.down.x, this.floorDef.down.y, "stairs").setOrigin(0.5, 0.7).setDepth(this.floorDef.down.y - 20);
     createCharacterAnims(this);
-    // a handle for the check scripts (development only)
-    if (import.meta.env.DEV) (window as unknown as { __hunt?: HuntScene }).__hunt = this;
 
     this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_down_1").setOrigin(0.5, HUNTER_FEET).setScale(CHAR_SCALE);
     this.fx = this.add.graphics().setDepth(5000);
@@ -371,6 +369,8 @@ export class HuntScene extends Phaser.Scene {
     this.face = hud(this.add.image(RING.x, RING.y, "stamina_face_fine").setScale(KIT));
     this.staminaText = hud(this.add.text(RING.x, RING.y + RING.r + 8, "", { ...TEXT, fontStyle: "bold" }).setOrigin(0.5));
     this.shownStamina = -1;
+    // a new floor is a new scene's HUD: draw the bag again
+    this.shownBag = -1;
     const hx = RING.x + RING.r + 12;
     this.floorText = hud(this.add.text(hx, RING.y - 16, t("hunt.floorShort", { n: this.run.floor }), { ...TEXT, fontSize: "18px", fontStyle: "bold" }).setOrigin(0, 0.5));
     hud(this.add.text(hx + this.floorText.width + 6, RING.y - 14, t(`floor.${this.run.floor}` as StringKey), hudStyle).setOrigin(0, 0.5));
@@ -1567,7 +1567,12 @@ export class HuntScene extends Phaser.Scene {
     const bag = bagLevel(count, this.bagSlots);
     if (count !== this.shownBag) {
       // something went in: the bundle hops (not on the first draw)
-      if (this.shownBag >= 0 && count > this.shownBag) this.tweens.add({ targets: this.bagIcon, y: RING.y + 8, duration: 80, yoyo: true });
+      if (this.shownBag >= 0 && count > this.shownBag) {
+        // one hop at a time, always from its own place
+        this.tweens.killTweensOf(this.bagIcon);
+        this.bagIcon.y = RING.y + 12;
+        this.tweens.add({ targets: this.bagIcon, y: RING.y + 8, duration: 80, yoyo: true });
+      }
       this.shownBag = count;
       this.bagGauge.set(bag.fill);
       this.bagCountText.setText(`${count}/${this.bagSlots}`).setColor(bag.state === "full" ? "#ff7070" : bag.state === "heavy" ? "#ffd166" : "#fff3d8");

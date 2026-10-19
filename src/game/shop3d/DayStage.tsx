@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { t } from "../../i18n";
-import { LAYOUT } from "../service/shift";
+import { seatXs } from "../service/shift";
 import { daySpots, DAY_START, nearSpot, walk, type DayScene, type Spot, type SpotId } from "./day";
 import { moveFrom } from "./input";
 import { displayScale, FLOOR_Y, Z } from "./layout";
@@ -33,9 +33,8 @@ export function DayStage({ scene, stools, active, onSpot, onFail }: { scene: Day
   }, []);
 
   useEffect(() => {
-    // the stools as the night sets them out (same spacing as the night's rules)
-    const [a, b] = LAYOUT.counter;
-    const seatsX = Array.from({ length: stools }, (_, i) => Math.round(a + ((b - a) / stools) * (i + 0.5)));
+    // the stools as the night sets them out
+    const seatsX = seatXs(stools);
     let view: ShopView;
     try {
       view = new ShopView(canvas.current!, seatsX, true);
@@ -81,9 +80,10 @@ export function DayStage({ scene, stools, active, onSpot, onFail }: { scene: Day
       };
       view.render(look, dt / 1000);
       const s = live.current.active ? nearSpot(x, spots) : null;
-      const key = s ? `${s.id}:${s.open}:${s.label}` : null;
+      // the bubble only re-renders when its spot, its words or its place on screen change
       const at = s ? view.project(s.x, FLOOR_Y + 82, Z.waiter) : null;
-      if (key !== shown || (s && at)) {
+      const key = s && at ? `${s.id}:${s.open}:${s.label}:${at.x}:${at.y}` : null;
+      if (key !== shown) {
         shown = key;
         setNear(s && at ? { spot: s, x: at.x, y: at.y } : null);
       }

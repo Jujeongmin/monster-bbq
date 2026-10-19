@@ -26,6 +26,12 @@ export const LAYOUT = {
   reach: 34,
   guestSpeed: 135,
 };
+// Where `stools` stools stand along the counter (the night's rules and the shop by day share it).
+export function seatXs(stools: number): number[] {
+  const [a, b] = LAYOUT.counter;
+  const step = (b - a) / stools;
+  return Array.from({ length: stools }, (_, i) => Math.round(a + step * (i + 0.5)));
+}
 const CARRY = 1; // one plate or drink at a time, like Dave
 const AFTER_DRINK_MS = 12_000;
 
@@ -119,13 +125,11 @@ export class Shift {
   constructor(cfg: ShiftConfig, saved?: ShiftState) {
     this.cfg = cfg;
     this.prices = new Map(cfg.dishes.map((d) => [d.dish, d.price]));
-    const [a, b] = LAYOUT.counter;
-    const step = (b - a) / cfg.stools;
     this.s = saved ?? {
       clock: 0,
       arrived: 0,
       guests: [],
-      seats: Array.from({ length: cfg.stools }, (_, i) => ({ x: Math.round(a + step * (i + 0.5)), guest: null, dirty: false, scrubs: 0, messBy: null })),
+      seats: seatXs(cfg.stools).map((x) => ({ x, guest: null, dirty: false, scrubs: 0, messBy: null })),
       plates: Object.fromEntries(cfg.dishes.map((d) => [d.dish, d.plates])),
       kitchen: [],
       pass: [],

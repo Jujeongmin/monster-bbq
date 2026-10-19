@@ -101,6 +101,10 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   const [hub, setHub] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
   const [panel, setPanel] = useState<"kitchen" | "side" | null>(null);
   useEffect(() => setPanel(null), [phase]);
+  // every evening's kitchen opens on the cookbook, as it did before the notebook could turn its tabs
+  useEffect(() => {
+    if (phase === "kitchen") setKitchenTab("cookbook");
+  }, [phase]);
   const dayScene: DayScene | null = !save || save.hunt ? null : phase === "hunt" ? "prep" : phase === "lunch" ? "lunch" : phase === "kitchen" ? "kitchen" : null;
   // the evening kitchen's tab, which the notebook's cookbook and menu board apps turn to
   const [kitchenTab, setKitchenTab] = useState<KitchenTab>("cookbook");
@@ -153,7 +157,11 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     if (app === "bag") setWin("bag");
     else if (app === "upgrade" || app === "awaken") setShopping(app);
     else if (app === "shop") setStore(true);
-    else if (phase === "kitchen") setKitchenTab(app);
+    else if (phase === "kitchen") {
+      // the kitchen's own tab; by day it is a window opened at Bandal, so open it too
+      setKitchenTab(app);
+      if (hub) setPanel("kitchen");
+    }
     else if (app === "cookbook") setWin("cookbook");
   }
 
