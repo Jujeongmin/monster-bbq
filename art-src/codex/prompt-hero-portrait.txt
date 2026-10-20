@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create ONE image: two RPG dialogue portraits of the boy hero of a cozy, comic Korean BBQ restaurant game, to sit in the dialogue bar beside the approved portraits of his partner Ttukkeong-i (the grumpy talking pot lid).
+
+The attached pictures:
+- the first, scaled up 6 times: on the left two of the approved lid portraits — match their pixel art EXACTLY (the same pixel size: every art pixel a crisp 6x6 block on a 6-pixel grid, the same 1-art-pixel dark outline, flat colours with 2-3 tone cel shading, one small highlight, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise). On the right, the boy's tiny old face icon, only to show who he is: it is far too coarse; do NOT copy its big blocky pixels.
+- the second: the boy himself (copy his identity exactly: spiky black hair, red bandana tied with its tails flying at the back, big brown eyes, green hooded jacket, a brown leather strap across his chest, cream apron).
+
+Each portrait: the boy's head and shoulders (a bust cut at the chest), facing slightly RIGHT, cute chibi proportions (big head), drawn at the SAME pixel size as the lid portraits: the whole bust about 60 art pixels tall and 70 art pixels wide (360x420 image pixels at most). No hands, no props, no lid.
+
+Save as art-src/codex/raw/hero_portraits.png — exactly 1440x576: two equal cells (720x576) side by side, one bust centred in each with its chest cut on the same baseline near the bottom of the cell. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no halo, no shadow). No text, no frames, no grid lines. Nothing touches its cell edge.
+
+cell 1 FINE: a small determined smile, eyebrows up, eyes bright and open — ready to work.
+cell 2 TIRED: worn out and a little sad, eyebrows drooping, half-closed eyes looking down, a small sweat drop at the temple, mouth a small flat line.
+
+Reply only with the saved file path.

@@ -29,10 +29,10 @@ type Speaker = DialogueLine["who"];
 const LID_FACES: LidFace[] = ["normal", "angry", "smug", "surprised"];
 const YOKAI_FACES: YokaiFace[] = ["normal", "happy", "scared", "sulky"];
 const NAME: Record<Speaker, StringKey> = { lid: "kitchen.lid", dokkaebi: "who.dokkaebi", gumiho: "who.gumiho", reaper: "who.reaper", ghost: "who.ghost", hero: "who.hero", bandal: "who.bandal", letter: "who.letter" };
-// the grandson's face is the stamina ring's (art/test/ui/stamina), Bandal's the kitchen's (art/test/bandal);
+// the grandson's portrait is drawn like the lid's (art/test/hero, 120x96), Bandal's the kitchen's (art/test/bandal);
 // the letter has no face
 const portrait = (who: Speaker, face: Face) =>
-  artUrl(who === "lid" ? `test/lid/${face}.png` : who === "hero" ? `test/ui/stamina/face_${face}.png` : who === "bandal" ? `test/bandal/${face}.png` : `test/yokai/${who}_${face}.png`);
+  artUrl(who === "lid" ? `test/lid/${face}.png` : who === "hero" ? `test/hero/portrait_${face}.png` : who === "bandal" ? `test/bandal/${face}.png` : `test/yokai/${who}_${face}.png`);
 const facesOf = (who: Speaker): Face[] => (who === "lid" ? LID_FACES : who === "hero" ? ["fine", "tired"] : who === "bandal" ? ["idle", "smile", "startled"] : who === "letter" ? [] : YOKAI_FACES);
 const LETTER_MS = 35;
 

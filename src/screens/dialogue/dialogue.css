@@ -56,9 +56,9 @@
 @keyframes dialogue-blink { 50% { opacity: 0; } }
 .dialogue-preload { position: absolute; width: 0; height: 0; overflow: hidden; }
 
-/* the prologue's speakers (2026-10-19): the grandson's 20x16 face at four game pixels an art pixel in the
-   bar, Bandal's 45x40 kitchen picture at three standing over it, the letter in the bar with no face */
-.dialogue-face.hero { width: calc(80px * var(--s)); left: calc(24px * var(--s)); }
+/* the prologue's speakers (2026-10-19): the grandson's portrait in the bar like the lid's (120x96, one game
+   pixel an art pixel: 2026-10-20, his stamina-ring face blown up 4x was too coarse and covered the words),
+   Bandal's 45x40 kitchen picture at three standing over it, the letter in the bar with no face */
 .dialogue-bust.bandal { width: calc(135px * var(--s)); }
 .dialogue-box.letter { padding-left: calc(28px * var(--s)); }
 .dialogue-box.letter .dialogue-text { font-style: normal; color: #fff3d0; }

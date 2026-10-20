@@ -15,10 +15,10 @@ export const Z = { backWall: -90, bandal: -38, pass: -30, station: -12, waiter: 
 export const FLOOR_Y = -4;
 // the low counter, waist high on the grandchild; it runs over the stools' span and stops short of the
 // drink cart behind its right end (the cart would be cut off by it)
-export const COUNTER = { h: 26, d: 14, x0: toWorldX(LAYOUT.counter[0]) - 10, x1: toWorldX(LAYOUT.counter[1]) - 10 };
+export const COUNTER = { h: 21, d: 14, x0: toWorldX(LAYOUT.counter[0]) - 10, x1: toWorldX(LAYOUT.counter[1]) - 10 };
 // the kitchen's pass, a lower box the grandchild works in front of; Bandal stands behind it
 export const PASS = { x: toWorldX(LAYOUT.pass) + 10, w: 80, h: 22, d: 12 };
-export const HUNTER_FEET = 7; // the hunter's 105 px frames have the feet on row 98
+export const HUNTER_FEET = 7; // the grandchild's 105 px frames (hunt and shop) have the feet on row 98
 // fixed, tilted down a little, following the grandchild along the counter (no free turning)
 export const CAMERA = { pitch: 0.22, follow: 25, rate: 4 };
 

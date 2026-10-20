@@ -21,6 +21,8 @@ const PLAQUES = [186, 212.5, 237, 263, 289, 315.5];
 const PLAQUE_ROW = 66;
 const WALL_H = 201;
 const GUEST_HEAD = 50; // a bubble sits on top of a guest this high
+// the grandchild in the shop, at the guests' scale, in the hunt frames' 105 px box (feet on row 98)
+const HERO = ["walk_0", "walk_1", "walk_2", "walk_3", "carry_0", "carry_1", "carry_2", "carry_3", "serve", "scrub_0", "scrub_1", "pour", "stand"];
 const PROPS = ["stool", "plate_dirty", "drink_cart", "coal_box", "cup_tea", "cup_cider", "bowl_sikhye"];
 
 function textureUrls(day: boolean): Record<string, string> {
@@ -32,26 +34,27 @@ function textureUrls(day: boolean): Record<string, string> {
   for (const d of Object.keys(DISHES)) urls[`dish_${d}`] = artUrl(hasArt(`test/shop/dishes/${d}.png`) ? `test/shop/dishes/${d}.png` : `test/dishes/${d}.png`);
   for (const y of YOKAI) for (const p of YK_POSES) urls[`yk_${y}_${p}`] = artUrl(`test/yokai/counter/${y}_${p}.png`);
   for (const b of BANDAL) urls[`bandal_${b}`] = artUrl(`test/bandal/${b}.png`);
-  for (const row of ["side", "slash", "throw"]) for (let i = 0; i < 4; i++) urls[`hunter_${row}_${i}`] = artUrl(`test/hunter/${row}_${i}.png`);
+  for (const h of HERO) urls[`hero_${h}`] = artUrl(`test/shop3d/hero/${h}.png`);
   return urls;
 }
 
-// the grandchild's frame for a pose (the hunt's frames stand in until the shop outfit is drawn)
-function waiterTex(pose: Pose, time: number): string {
+// the grandchild's frame for a pose. With a dish he holds the plate drawn in his carry frames (always the
+// same plate: user, 2026-10-20) instead of the dish floating over him; a drink still floats.
+function waiterTex(pose: Pose, time: number, dish: boolean): string {
   const step = Math.floor(time / 125) % 4;
   switch (pose) {
     case "walk":
     case "carry":
-      return `hunter_side_${step}`;
+      return dish ? `hero_carry_${step}` : `hero_walk_${step}`;
     case "serve":
-      return "hunter_throw_2";
+      return "hero_serve";
     case "pour":
-      return "hunter_throw_0";
+      return "hero_pour";
     case "grind":
     case "scrub":
-      return `hunter_slash_${step}`;
+      return `hero_scrub_${Math.floor(time / 200) % 2}`;
     default:
-      return "hunter_side_1";
+      return dish ? "hero_carry_1" : "hero_stand";
   }
 }
 
@@ -150,7 +153,7 @@ export class ShopView {
       this.messes.push(this.board("prop_plate_dirty").place(wx, FLOOR_Y + COUNTER.h, Z.counter + 1).setVisible(false));
     }
     // the grandchild and what he carries
-    this.waiter = this.board("hunter_side_1", HUNTER_FEET);
+    this.waiter = this.board("hero_stand", HUNTER_FEET);
     this.waiterShadow = this.shadow(12);
     this.carried = this.board("prop_cup_tea").setVisible(false);
     // light: a dim warm room, four lanterns, a little from the front, and Bandal's charcoal fire
@@ -197,10 +200,12 @@ export class ShopView {
     const t = this.time;
     // the grandchild
     const wx = toWorldX(look.waiter.x);
-    this.waiter.setTexture(waiterTex(look.waiter.pose, t)).setFlip(look.waiter.flip).place(wx, FLOOR_Y, Z.waiter);
+    const dish = !!look.waiter.carried?.startsWith("dish_");
+    this.waiter.setTexture(waiterTex(look.waiter.pose, t, dish)).setFlip(look.waiter.flip).place(wx, FLOOR_Y, Z.waiter);
     this.waiterShadow.position.set(wx, FLOOR_Y + 0.2, Z.waiter);
-    this.carried.setVisible(!!look.waiter.carried);
-    if (look.waiter.carried) this.carried.setTexture(look.waiter.carried).place(wx, FLOOR_Y + 64, Z.waiter + 1);
+    // a drink floats just over his head (he is 48 px tall in the shop)
+    this.carried.setVisible(!!look.waiter.carried && !dish);
+    if (look.waiter.carried && !dish) this.carried.setTexture(look.waiter.carried).place(wx, FLOOR_Y + 54, Z.waiter + 1);
     // Bandal and the fire that follows the charcoal
     this.bandal.setTexture(look.bandal);
     this.fire.intensity = 0.3 + 2.2 * (look.coal / 100);
