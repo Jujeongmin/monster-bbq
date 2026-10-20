@@ -32,7 +32,7 @@ export function seatXs(stools: number): number[] {
   const step = (b - a) / stools;
   return Array.from({ length: stools }, (_, i) => Math.round(a + step * (i + 0.5)));
 }
-const CARRY = 1; // one plate or drink at a time, like Dave
+export const CARRY = 1; // one plate or drink at a time, like Dave
 const AFTER_DRINK_MS = 12_000;
 
 export type GuestPhase = "queue" | "walk" | "seated" | "eating" | "thirsty" | "leaving" | "gone";
@@ -443,7 +443,7 @@ export class Shift {
 
   // Which carried item the guest takes now (-1: nothing they want): the dish they ordered, the tea they
   // asked for before or during the meal, the cider or sikhye they asked for after it.
-  private giftFor(g: Guest): number {
+  giftFor(g: Guest): number {
     const tray = this.s.tray;
     if (g.phase === "seated" && g.ordered && g.servedMs === null) {
       const i = tray.findIndex((t) => t.kind === "dish" && t.dish === g.dish);

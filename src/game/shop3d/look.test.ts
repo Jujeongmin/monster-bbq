@@ -3,7 +3,7 @@ import { BALANCE } from "../../../shared/balance";
 import { RECIPES } from "../../../shared/content/recipes";
 import type { Customer } from "../../../shared/service/plan";
 import { LAYOUT, Shift, type ShiftConfig } from "../service/shift";
-import { lookAt, type Pose } from "./look";
+import { lookAt, patienceTier, promptOf, type Pose } from "./look";
 
 const SV = BALANCE.service;
 const guest = (id: string, arriveMs: number, over: Partial<Customer> = {}): Customer => ({ id, kind: 0, arriveMs, dish: "grilled_belly", patienceMs: 40_000, drink: "none", messy: false, ...over });
@@ -70,5 +70,55 @@ describe("what the 3D night shows (lookAt)", () => {
     serveFirst(sh);
     const back = new Shift(cfg([guest("c0", 0, { messy: true })]), JSON.parse(JSON.stringify(sh.s)));
     expect(lookAt(back, 0, 0, HOLD)).toEqual(lookAt(sh, 0, 0, HOLD));
+  });
+});
+
+describe("what E does at the nearest thing (promptOf)", () => {
+  it("offers to take a plate at the pass, and says why not when the hands are full or nothing is ready", () => {
+    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 0)]));
+    run(sh, SETTLE + 100);
+    sh.s.x = LAYOUT.pass;
+    expect(promptOf(sh)).toMatchObject({ at: { kind: "pass" }, verb: "take", ok: false, why: "cooking" });
+    run(sh, RECIPES.grilled_belly.cookMs);
+    expect(promptOf(sh)).toEqual({ at: { kind: "pass" }, verb: "take", ok: true, why: null });
+    sh.act();
+    run(sh, RECIPES.grilled_belly.cookMs + 100);
+    expect(promptOf(sh)).toMatchObject({ verb: "take", ok: false, why: "handsFull" });
+  });
+  it("offers to give the guest their dish, or says another dish is in hand", () => {
+    const sh = new Shift(cfg([guest("c0", 0)]));
+    run(sh, SETTLE + RECIPES.grilled_belly.cookMs + 100);
+    sh.s.x = LAYOUT.pass;
+    sh.act();
+    sh.s.x = sh.s.seats[0].x;
+    expect(promptOf(sh)).toMatchObject({ at: { kind: "seat", seat: 0 }, verb: "give", ok: true, why: null });
+    sh.s.tray = [{ kind: "dish", dish: "garlic_neck" }];
+    expect(promptOf(sh)).toMatchObject({ verb: "give", ok: false, why: "otherDish" });
+  });
+  it("offers to scrub a messy seat and to add charcoal below 100", () => {
+    const sh = new Shift(cfg([guest("c0", 0, { messy: true })]));
+    serveFirst(sh);
+    run(sh, SV.eatMs + 2000);
+    sh.s.x = sh.s.seats[0].x;
+    expect(promptOf(sh)).toMatchObject({ at: { kind: "seat", seat: 0 }, verb: "scrub", ok: true });
+    sh.s.x = LAYOUT.coalBox;
+    sh.s.coal = 50;
+    expect(promptOf(sh)).toMatchObject({ at: { kind: "coal" }, verb: "coal", ok: true });
+  });
+  it("offers to pour only when a guest wants a drink", () => {
+    const sh = new Shift(cfg([guest("c0", 0)]));
+    sh.s.x = LAYOUT.drinkCart;
+    expect(promptOf(sh)).toMatchObject({ at: { kind: "drinks" }, verb: "pour", ok: false, why: "noDrink" });
+  });
+  it("shows nothing out of reach, at a full charcoal box, or at an empty seat", () => {
+    const sh = new Shift(cfg([]));
+    sh.s.x = sh.s.seats[1].x;
+    expect(promptOf(sh)).toBeNull();
+    sh.s.x = LAYOUT.coalBox;
+    sh.s.coal = 100;
+    expect(promptOf(sh)).toBeNull();
+  });
+  it("colours patience green, then yellow from half, red from three quarters", () => {
+    expect([0, 0.49, 0.5, 0.74, 0.75, 1].map(patienceTier)).toEqual(["ok", "ok", "warn", "warn", "late", "late"]);
   });
 });

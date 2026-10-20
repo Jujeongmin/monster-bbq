@@ -1,4 +1,4 @@
-import type { Guest, Shift } from "../service/shift";
+import { CARRY, type Guest, type Shift } from "../service/shift";
 import { Z } from "./layout";
 
 // What the 3D night shop shows this frame (shop 3D design 4-6), worked out from the night's state alone so
@@ -9,6 +9,17 @@ import { Z } from "./layout";
 
 export type Pose = "stand" | "walk" | "carry" | "serve" | "scrub" | "grind" | "pour";
 export type Glow = { kind: "pass" } | { kind: "drinks" } | { kind: "coal" } | { kind: "seat"; seat: number; mess: boolean } | { kind: "guest"; id: string };
+// What the action key does at the nearest thing (shop remake step 3): a bubble over it says so, grey with
+// the reason when it cannot right now.
+export type PromptVerb = "take" | "give" | "scrub" | "coal" | "pour";
+export type PromptWhy = "handsFull" | "cooking" | "otherDish" | "noDrink";
+export interface Prompt {
+  at: { kind: "pass" } | { kind: "drinks" } | { kind: "coal" } | { kind: "seat"; seat: number };
+  verb: PromptVerb;
+  ok: boolean;
+  why: PromptWhy | null;
+}
+export type PatienceTier = "ok" | "warn" | "late";
 export interface GuestLook {
   id: string;
   tex: string;
@@ -32,6 +43,7 @@ export interface ShopLook {
   coal: number;
   pour: number | null;
   glow: Glow | null;
+  prompt: Prompt | null;
   plates: Record<string, number>;
   served: number;
   gold: number;
@@ -74,6 +86,39 @@ function bubbleOf(shift: Shift, g: Guest): GuestLook["bubble"] {
   return { icon, patience, shake: patience > 0.75 || dirty };
 }
 
+const can = (at: Prompt["at"], verb: PromptVerb): Prompt => ({ at, verb, ok: true, why: null });
+const cannot = (at: Prompt["at"], verb: PromptVerb, why: PromptWhy): Prompt => ({ at, verb, ok: false, why });
+
+export function promptOf(shift: Shift): Prompt | null {
+  const s = shift.s;
+  const t = shift.target();
+  if (!t) return null;
+  const full = s.tray.length >= CARRY;
+  switch (t.kind) {
+    case "pass":
+      if (!s.pass.length) return s.kitchen.length ? cannot(t, "take", "cooking") : null;
+      return full ? cannot(t, "take", "handsFull") : can(t, "take");
+    case "coal":
+      return s.coal < 100 ? can(t, "coal") : null;
+    case "drinks":
+      if (!s.pouring && shift.drinkWanted() === null) return cannot(t, "pour", "noDrink");
+      return full && !s.pouring ? cannot(t, "pour", "handsFull") : can(t, "pour");
+    case "seat": {
+      const at = { kind: "seat" as const, seat: t.seat };
+      const seat = s.seats[t.seat];
+      if (seat.dirty) return can(at, "scrub");
+      const g = s.guests.find((x) => x.id === seat.guest);
+      if (!g) return null;
+      if (shift.giftFor(g) >= 0) return can(at, "give");
+      const wantsDish = g.phase === "seated" && g.ordered && g.servedMs === null;
+      return wantsDish && s.tray.some((i) => i.kind === "dish") ? cannot(at, "give", "otherDish") : null;
+    }
+  }
+}
+
+// the bubble's patience colour: green, yellow from half, red from three quarters
+export const patienceTier = (p: number): PatienceTier => (p < 0.5 ? "ok" : p < 0.75 ? "warn" : "late");
+
 function glowOf(shift: Shift): Glow | null {
   const target = shift.canAct() ? shift.target() : null;
   if (!target) return null;
@@ -102,6 +147,7 @@ export function lookAt(shift: Shift, time: number, moveX: number, hold: { poseUn
     coal: s.coal,
     pour: s.pouring ? s.pouring.fill : null,
     glow: glowOf(shift),
+    prompt: promptOf(shift),
     plates: { ...s.plates } as Record<string, number>,
     served: s.guests.filter((g) => g.servedMs !== null).length,
     gold: shift.earned(),
