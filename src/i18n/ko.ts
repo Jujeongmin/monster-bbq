@@ -408,6 +408,8 @@ export const ko = {
   "shop.soon": "준비 중",
   "shop.once": "계정당 1번",
   "shop.price": "{vx} VX",
+  "shop.have": "가진 황금 숯 {n}",
+  "shop.buy": "{vx} VX로 사기",
   "shop.checking": "결제를 확인하는 중…",
   "shop.open": "상점",
   "hud.charcoal": "황금 숯 {n}",

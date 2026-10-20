@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { SaveData } from "../../../shared/save";
 import { artUrl } from "../../game/art";
 import { itemName, t, type StringKey } from "../../i18n";
+import { MenuLine } from "./Book";
 import { ItemIcon } from "../kitchen/ItemIcon";
 import { BAG_TABS, bagRows, HUD_ART, type BagTab } from "./hud";
 
@@ -40,9 +41,7 @@ export function Bag({ save, shut = 0, onClose }: { save: SaveData; shut?: number
           ))}
         </div>
         <p className="bag-info">{sel ? t("bag.info", { name: itemName(sel.key), n: sel.count }) : t("bag.hint")}</p>
-        <button className="ui-btn bag-close" onClick={close}>
-          {t("upgrade.close")}
-        </button>
+        <MenuLine className="bag-close" label={t("upgrade.close")} onPress={close} />
       </div>
     </div>
   );

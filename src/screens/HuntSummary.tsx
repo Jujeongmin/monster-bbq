@@ -5,6 +5,7 @@ import { starsOf } from "../../shared/hunt/stars";
 import { artUrl } from "../game/art";
 import { Scene } from "./hud/Scene";
 import { itemName, t } from "../i18n";
+import { MenuLine } from "./hud/Book";
 
 // Home from the hunt (hunt v3 design 5.2): what was taken, row by row by stars, and the parts that came
 // home (the save's items after the server settled the hunt, against before); the den's key or a boss's
@@ -58,9 +59,7 @@ export function HuntSummary({ events, ko, lost, before, after, gotKey, gotPage, 
           </div>
         )}
         <div className="dayflow-actions">
-          <button className="ui-btn" onClick={onDone}>
-            {t("summary.next")}
-          </button>
+          <MenuLine label={t("summary.next")} onPress={onDone} />
         </div>
       </div>
     </Scene>

@@ -82,3 +82,12 @@
 .post-card.rare .name { color: #3a6ab0; } .post-card.hero .name { color: #8a3ab0; } .post-card.legend .name { color: #c88a10; }
 @keyframes post-in { from { opacity: 0; transform: translateY(calc(4px * var(--s))); } }
 @media (prefers-reduced-motion: reduce) { .post-card { animation: none; } }
+
+/* cookbook and shop on the book */
+.book .row-dish { display: inline-flex; width: calc(18px * var(--s)); height: calc(16px * var(--s)); overflow: hidden; align-items: center; justify-content: center; }
+.book .row-dish .dish-icon { width: calc(18px * var(--s)) !important; image-rendering: pixelated; }
+.cookbook-detail { align-items: center; text-align: center; }
+.cookbook-detail .dish-slots { display: flex; gap: calc(3px * var(--s)); justify-content: center; }
+.book .shop-vip { display: flex; align-items: center; gap: calc(4px * var(--s)); }
+.shop-detail .shop-band { align-self: flex-start; position: static; }
+.shop-go { align-self: flex-start; margin-top: calc(4px * var(--s)); }

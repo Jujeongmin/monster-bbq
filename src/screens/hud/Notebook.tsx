@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { artUrl } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
+import { MenuLine } from "./Book";
 import { HUD_ART, notebookApps, type App, type Phase } from "./hud";
 
 // Grandma's notebook (Dave-style UI design 6, Dave's phone): every window of the day as an app. Pressed
@@ -44,9 +45,7 @@ export function Notebook({ phase, shut = 0, fresh = [], onApp, onClose }: { phas
                 ))}
             </div>
           ))}
-          <button className="ui-btn notebook-close" onClick={() => close("close")}>
-            {t("upgrade.close")}
-          </button>
+          <MenuLine className="notebook-close" label={t("upgrade.close")} onPress={() => close("close")} />
         </div>
         {/* the notebook itself, closed, flying in over the right page; its cover swings open on the spine
             (user, 2026-10-16: the notebook, not a brown panel) */}

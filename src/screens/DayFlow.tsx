@@ -28,6 +28,7 @@ import { vipLevel } from "../../shared/shop";
 import { Bag } from "./hud/Bag";
 import { DayHud } from "./hud/DayHud";
 import { Notebook } from "./hud/Notebook";
+import { CookbookBook } from "./kitchen/CookbookBook";
 import { Friends } from "./hud/Friends";
 import "./hud/friends.css";
 import { Receipt } from "./hud/Receipt";
@@ -44,7 +45,6 @@ import type { StoryId } from "../../shared/content/story";
 import { DayStage } from "../game/shop3d/DayStage";
 import type { DayScene } from "../game/shop3d/day";
 import { canUse3D } from "../game/shop3d/input";
-import { Cookbook } from "./kitchen/Cookbook";
 import "./dayflow.css";
 
 // One day (hunt v3 design 3): morning hunt -> lunch -> afternoon hunt -> kitchen -> service -> settle -> next day. Every change goes through the transport
@@ -374,15 +374,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
       {win === "friends" && <Friends save={save} busy={busy} act={actSave} onShop={() => setStore(true)} onClose={() => setWin(null)} />}
       {win === "friends" && !seenTips.has("friends") && <LidLine face={TIP_FACE.friends} text={t("tip.friends")} low />}
-      {win === "cookbook" && (
-        <div className="hud-win" onClick={() => setWin(null)}>
-          <div className="ui-frame hud-cookbook" onClick={(e) => e.stopPropagation()}>
-            {/* to read only: research is the evening kitchen's */}
-            <Cookbook save={save} busy act={() => {}} onResearch={() => {}} />
-          </div>
-          <button className="ui-btn hud-cookbook-close" onClick={() => setWin(null)}>{t("upgrade.close")}</button>
-        </div>
-      )}
+      {win === "cookbook" && <CookbookBook save={save} onClose={() => setWin(null)} />}
       {store && <Shop save={save} items={storeItems} checking={checking} onBuy={buy} onClose={() => setStore(false)} />}
 
       {story && <Cutscene key={story} scene={story} onDone={() => setWatched((w) => [...w, story])} />}

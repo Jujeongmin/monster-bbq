@@ -121,6 +121,9 @@ canvas { image-rendering: pixelated; display: block; }
 .menu-item { position: relative; padding: calc(2px * var(--s)) calc(10px * var(--s)); background: none; border: 0; cursor: pointer; color: var(--cream); font: 700 var(--fs) / 1 "Galmuri11", monospace; text-shadow: var(--s) var(--s) 0 #2b1408; }
 .menu-item:hover, .menu-item:focus-visible { color: #ffd166; outline: none; }
 .menu-item:hover::before, .menu-item:focus-visible::before { content: "▶"; position: absolute; right: 100%; }
+/* on paper: the ▶ line in ink */
+.menu-item.ink { color: var(--ink); text-shadow: none; }
+.menu-item.ink:hover, .menu-item.ink:focus-visible { color: #a03a10; }
 .ui-ribbon {
   border-style: solid;
   border-color: transparent;

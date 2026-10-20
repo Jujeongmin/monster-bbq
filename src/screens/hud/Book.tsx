@@ -9,20 +9,28 @@ import "./book.css";
 // buying shows its price on a card, and closing is a ▶ line that Space, Enter or Esc presses.
 
 // Space or Enter presses the ▶ line, Esc too (kept from everything else, so a focused button is not also
-// pressed by the same key).
+// pressed by the same key). With windows over windows (the shop over the upgrades), only the newest
+// line answers.
+const lines: object[] = [];
 export function useLineKeys(onPress: (() => void) | null) {
   const press = useRef(onPress);
   press.current = onPress;
   useEffect(() => {
+    const me = {};
+    lines.push(me);
     const on = (e: KeyboardEvent) => {
-      if (!press.current || (e.key !== " " && e.key !== "Enter" && e.key !== "Escape")) return;
+      if (!press.current || lines[lines.length - 1] !== me || (e.key !== " " && e.key !== "Enter" && e.key !== "Escape")) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       if (e.type === "keydown" && !e.repeat) press.current();
     };
     addEventListener("keydown", on, true);
     addEventListener("keyup", on, true);
-    return () => (removeEventListener("keydown", on, true), removeEventListener("keyup", on, true));
+    return () => {
+      lines.splice(lines.indexOf(me), 1);
+      removeEventListener("keydown", on, true);
+      removeEventListener("keyup", on, true);
+    };
   }, []);
 }
 

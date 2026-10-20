@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { DishId } from "../../../shared/content/dishes";
 import type { AddOption } from "../../../shared/service/addMenu";
 import { t, type StringKey } from "../../i18n";
+import { MenuLine } from "../hud/Book";
 import { DishIcon } from "./DishIcon";
 
 // Bandal's menu board during the night (shop remake step 4): what the fridge still makes, each line with
@@ -41,9 +42,7 @@ export function AddMenu({ options, slots, busy, error, onAdd, onClose }: { optio
           </div>
         ))}
         <p className="add-menu-status">{busy ? t("addMenu.sending") : error}</p>
-        <button className="ui-btn" disabled={busy} onClick={onClose}>
-          {t("upgrade.close")}
-        </button>
+        <MenuLine label={t("upgrade.close")} onPress={() => !busy && onClose()} />
       </div>
     </div>
   );

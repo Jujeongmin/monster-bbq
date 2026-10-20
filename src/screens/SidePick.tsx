@@ -6,6 +6,7 @@ import { artUrl } from "../game/art";
 import { HUD_ART } from "./hud/hud";
 import { Scene } from "./hud/Scene";
 import { t, type StringKey } from "../i18n";
+import { MenuLine } from "./hud/Book";
 
 // Setting out (hunt v3 design 4.4): which side weapon to take, one per hunt, with its shots for the whole
 // hunt. Ones not bought yet show where to get them. The last choice is remembered on this device. The
@@ -55,9 +56,7 @@ export function SidePick({ save, busy, onGo, onCancel }: { save: SaveData; busy:
         {SIDE_WEAPONS.some((id) => !ownsSide(save, id)) && <p className="side-hint">{t("side.lockedHint")}</p>}
         <div className="dayflow-actions">
           {onCancel && (
-            <button className="ui-btn" disabled={busy} onClick={onCancel}>
-              {t("upgrade.close")}
-            </button>
+            <MenuLine label={t("upgrade.close")} onPress={() => !busy && onCancel()} />
           )}
           <button className="ui-btn" disabled={busy} onClick={go}>
             {t("side.go")}

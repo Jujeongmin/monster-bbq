@@ -409,6 +409,8 @@ export const en: Record<keyof typeof ko, string> = {
   "shop.soon": "Coming soon",
   "shop.once": "Once per account",
   "shop.price": "{vx} VX",
+  "shop.have": "Golden charcoal on hand: {n}",
+  "shop.buy": "Buy for {vx} VX",
   "shop.checking": "Checking your purchase…",
   "shop.open": "Shop",
   "hud.charcoal": "Golden charcoal {n}",

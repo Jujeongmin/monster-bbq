@@ -28,7 +28,7 @@
 /* the bag: the open bojagi cloth at its own size (200x133 art pixels), everything on its plain middle
    (art x 36-166, y 25-106), the close button hanging under it */
 .bag { position: relative; box-sizing: border-box; width: calc(200 * var(--k)); height: calc(133 * var(--k)); padding: calc(25 * var(--k)) calc(34 * var(--k)) calc(27 * var(--k)) calc(36 * var(--k)); display: flex; flex-direction: column; align-items: center; background: center / 100% 100% no-repeat; image-rendering: pixelated; color: var(--cream); }
-.bag-close { position: absolute; top: calc(100% + 4px * var(--s)); left: 0; right: 0; width: max-content; margin: 0 auto; }
+.bag-close, .menu-item.bag-close { position: absolute; top: calc(100% + 4px * var(--s)); left: 0; right: 0; width: max-content; margin: 0 auto; }
 .bag-tabs { display: flex; gap: calc(2px * var(--s)); margin-bottom: calc(-2px * var(--s)); align-self: flex-start; }
 .bag-grid { align-self: stretch; flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; padding: calc(4px * var(--s)) 0; display: grid; grid-template-columns: repeat(auto-fill, calc(56px * var(--s))); gap: calc(4px * var(--s)); align-content: start; justify-content: center; }
 .bag-cell { position: relative; width: calc(56px * var(--s)); height: calc(56px * var(--s)); padding: 0; background: none; cursor: pointer; font: inherit; }
@@ -100,7 +100,7 @@
 .receipt-total { margin: calc(4px * var(--s)) 0 calc(6px * var(--s)); text-align: right; font: 700 var(--fs) "Galmuri11", monospace; color: var(--paper-ink-soft); }
 .receipt-total.done { color: #c88a10; }
 .receipt-skip { margin: 0; text-align: center; font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
-.receipt .ui-btn { align-self: center; }
+.receipt .ui-btn, .receipt .menu-item { align-self: center; }
 /* the hunt's haul pops in, one slot after another */
 .summary-items .summary-item { animation: haul-in 0.24s steps(4) both; }
 @keyframes haul-in { from { opacity: 0; transform: scale(0.4); } }

@@ -10,6 +10,7 @@ import { DishUpgrade } from "./DishUpgrade";
 import { LunchPick } from "./LunchPick";
 import { MenuPick } from "./MenuPick";
 import { ResearchCutIn } from "./ResearchCutIn";
+import { MenuLine as CloseLine } from "../hud/Book";
 import "./kitchen.css";
 
 // The evening kitchen (restaurant v2 design 5, mock-ups approved 2026-10-15): the shop behind, dimmed; the
@@ -79,14 +80,14 @@ export function Kitchen({
       </div>
       {mode === "lunch" ? (
         <div className="kitchen-lunch-actions">
-          {onClose && <button className="ui-btn" onClick={onClose}>{t("upgrade.close")}</button>}
-          <button className="ui-btn" disabled={busy} onClick={onSkip}>{t("lunch.skip")}</button>
+          {onClose && <CloseLine label={t("upgrade.close")} onPress={onClose} />}
+          <button className="menu-item" disabled={busy} onClick={onSkip}>{t("lunch.skip")}</button>
           <button className="ui-btn" disabled={busy} onClick={onHunt}>{t("lunch.goHunt")}</button>
         </div>
       ) : (
         <div className="kitchen-lunch-actions">
-          {onClose && <button className="ui-btn" onClick={onClose}>{t("upgrade.close")}</button>}
-          <button className="ui-btn" disabled={busy} onClick={onRest}>
+          {onClose && <CloseLine label={t("upgrade.close")} onPress={onClose} />}
+          <button className="menu-item" disabled={busy} onClick={onRest}>
             {t("kitchen.rest")}
           </button>
           <button className="ui-btn kitchen-open" disabled={busy || !canOpen(save.items, save.dishes, menu)} onClick={() => onReady?.(menu)}>

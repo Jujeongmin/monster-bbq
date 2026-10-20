@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { SaveData } from "../../../shared/save";
 import { artUrl, hasArt } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
+import { MenuLine } from "./Book";
 import { HUD_ART, RECEIPT, receiptAt, receiptLines } from "./hud";
 import { Scene } from "./Scene";
 
@@ -42,9 +43,7 @@ export function Receipt({ save, busy, onNext }: { save: SaveData; busy: boolean;
         </ul>
         {s && <p className={`receipt-total${at.done ? " done" : ""}`}>{t("receipt.total", { gold: at.total.toLocaleString() })}</p>}
         {at.done || !s ? (
-          <button className="ui-btn" disabled={busy} onClick={onNext}>
-            {t("nextDay")}
-          </button>
+          <MenuLine className="ink" label={t("nextDay")} onPress={() => !busy && onNext()} />
         ) : (
           <p className="receipt-skip">{t("receipt.skip")}</p>
         )}
