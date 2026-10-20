@@ -1,4 +1,5 @@
 import type { SideWeaponId } from "../../../shared/content/sideWeapons";
+import { useEffect } from "react";
 import { artUrl } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
 
@@ -28,6 +29,19 @@ function rows(touch: boolean, side: SideWeaponId): Row[] {
 }
 
 export function ControlsPanel({ touch, side, onClose }: { touch: boolean; side: SideWeaponId; onClose: () => void }) {
+  // Space, Enter or E closes it (the line with the ▶). Caught first and kept from the hunt, so the same
+  // Space is not also a slash once the hunt moves again.
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => {
+      if (e.key !== " " && e.key !== "Enter" && e.key.toLowerCase() !== "e") return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (e.type === "keydown" && !e.repeat) onClose();
+    };
+    addEventListener("keydown", on, true);
+    addEventListener("keyup", on, true);
+    return () => (removeEventListener("keydown", on, true), removeEventListener("keyup", on, true));
+  }, [onClose]);
   return (
     <div className="dayflow-screen controls-screen">
       <div className="ui-frame controls" role="dialog" aria-label={t("controls.title")}>

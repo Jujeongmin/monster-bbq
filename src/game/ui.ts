@@ -71,9 +71,15 @@ export function addButton(scene: Phaser.Scene, x: number, y: number, text: strin
   };
 }
 
+export interface MenuItem extends UiButton {
+  setLit(on: boolean): void;
+  press(): void;
+}
+
 // A menu line (the pause menu: user, 2026-10-20, buttons there doubled the panel): plain lettering, a ▶
-// beside the one under the pointer, which turns gold.
-export function addMenuItem(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void): UiButton {
+// beside the one picked, which turns gold. The pointer picks it by passing over (onHover) and presses it;
+// the scene moves the pick with the keys and presses it with Space.
+export function addMenuItem(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void, onHover?: () => void): MenuItem {
   const label = scene.add.text(0, 0, text, { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
   const mark = scene.add.text(0, 0, "▶", { ...TEXT, color: "#ffd166" }).setOrigin(1, 0.5).setVisible(false);
   const place = () => mark.setX(-label.width / 2 - 6);
@@ -81,12 +87,14 @@ export function addMenuItem(scene: Phaser.Scene, x: number, y: number, text: str
   const box = scene.add.container(x, y, [mark, label]).setSize(Math.max(120, label.width + 40), 22);
   box.setInteractive({ useHandCursor: true });
   const lit = (on: boolean) => (mark.setVisible(on), label.setColor(on ? "#ffd166" : "#fff3d8"));
-  box.on("pointerover", () => lit(true));
-  box.on("pointerout", () => lit(false));
+  box.on("pointerover", () => (onHover ? onHover() : lit(true)));
+  if (!onHover) box.on("pointerout", () => lit(false));
   box.on("pointerup", onClick);
   return {
     box,
     label,
+    setLit: lit,
+    press: onClick,
     setEnabled() {},
     setText(t: string) {
       label.setText(t);

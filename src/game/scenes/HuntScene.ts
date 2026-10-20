@@ -31,7 +31,7 @@ import { bagLevel } from "../hunt/bagGauge";
 import { angerFlock, CHAR_SCALE, createMob, drawMob, isMobVulnerable, isTargetable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { fleerHit } from "../../../shared/hunt/fleer";
 import { joystickVector } from "../joystick";
-import { addGauge, addMenuItem, KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiButton, type UiGauge } from "../ui";
+import { addGauge, addMenuItem, KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type MenuItem, type UiGauge } from "../ui";
 
 // The forest hunt (plan 03, hunt v3), quarter view, Dave-the-Diver controls.
 // PC: WASD / arrows move, aim with the mouse, left click = harpoon (and mash while capturing), right click
@@ -145,7 +145,7 @@ interface Node {
   taken: boolean;
 }
 
-type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "C" | "E" | "SPACE" | "ESC" | "ONE" | "TWO" | "THREE", Phaser.Input.Keyboard.Key>;
+type Keys = Record<"W" | "A" | "S" | "D" | "Z" | "J" | "X" | "K" | "C" | "E" | "SPACE" | "ESC" | "ONE" | "TWO" | "THREE" | "UP" | "DOWN" | "ENTER", Phaser.Input.Keyboard.Key>;
 
 // a side weapon shot in flight: pebble, dart or net (straight, like the harpoon), or a thrown firecracker
 interface Dart {
@@ -228,6 +228,9 @@ export class HuntScene extends Phaser.Scene {
   private autoMashMs = 0;
   private paused = false;
   private pauseMenu: Phaser.GameObjects.Container | null = null;
+  // the pause menu's lines and the one picked (W/S or the arrows move it, Space, Enter or E press it)
+  private pauseItems: MenuItem[] = [];
+  private pausePick = 0;
   private ammoText!: Phaser.GameObjects.Text;
   private ammoIcon!: Phaser.GameObjects.Image;
   private ammoSlot: Phaser.GameObjects.NineSlice | null = null;
@@ -356,7 +359,7 @@ export class HuntScene extends Phaser.Scene {
 
     const keyboard = this.input.keyboard!;
     this.cursors = keyboard.createCursorKeys();
-    this.keys = keyboard.addKeys("W,A,S,D,Z,J,X,K,C,E,SPACE,ESC,ONE,TWO,THREE") as Keys;
+    this.keys = keyboard.addKeys("W,A,S,D,Z,J,X,K,C,E,SPACE,ESC,ONE,TWO,THREE,UP,DOWN,ENTER") as Keys;
 
     // touch controls on touch devices (add ?touch to the URL to try them with a mouse)
     this.touch = this.sys.game.device.input.touch || new URLSearchParams(location.search).has("touch");
@@ -439,7 +442,7 @@ export class HuntScene extends Phaser.Scene {
     if (this.ended) return;
     if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) this.togglePause();
     // paused: nothing moves and stamina holds
-    if (this.paused) return;
+    if (this.paused) return this.pauseKeys();
     if (this.hitStopMs > 0) {
       this.hitStopMs -= dt;
       if (this.hitStopMs <= 0) this.anims.resumeAll();
@@ -1300,11 +1303,11 @@ export class HuntScene extends Phaser.Scene {
     this.tweens.pauseAll();
     const panel = kitSlice(this, 0, 0, "panel", 200, 124, 5, 5, 5, 5);
     const title = this.add.text(0, -40, t("hunt.paused"), { ...TEXT, fontStyle: "bold", color: "#d8c4a4" }).setOrigin(0.5);
-    let toggle: UiButton;
+    let toggle: MenuItem;
     const label = () => t(this.autoMash ? "hunt.autoMashOn" : "hunt.autoMashOff");
-    const resume = addMenuItem(this, 0, -12, t("hunt.resume"), () => this.togglePause());
+    const resume = addMenuItem(this, 0, -12, t("hunt.resume"), () => this.togglePause(), () => this.pickPause(0));
     // the controls panel, drawn by the page over the paused hunt
-    const controls = addMenuItem(this, 0, 12, t("controls.title"), () => this.game.events.emit("hunt:controls"));
+    const controls = addMenuItem(this, 0, 12, t("controls.title"), () => this.game.events.emit("hunt:controls"), () => this.pickPause(1));
     toggle = addMenuItem(this, 0, 36, label(), () => {
       this.autoMash = !this.autoMash;
       try {
@@ -1313,8 +1316,24 @@ export class HuntScene extends Phaser.Scene {
         // private mode: the switch lasts this hunt only
       }
       toggle.setText(label());
-    });
+    }, () => this.pickPause(2));
     this.pauseMenu = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2, [panel, title, resume.box, controls.box, toggle.box]).setScrollFactor(0).setDepth(20000);
+    this.pauseItems = [resume, controls, toggle];
+    this.pickPause(0);
+  }
+
+  private pickPause(i: number) {
+    this.pausePick = (i + this.pauseItems.length) % this.pauseItems.length;
+    this.pauseItems.forEach((m, n) => m.setLit(n === this.pausePick));
+  }
+
+  private pauseKeys() {
+    const k = this.keys;
+    const JD = Phaser.Input.Keyboard.JustDown;
+    if (!this.pauseMenu) return;
+    if (JD(k.W) || JD(k.UP)) this.pickPause(this.pausePick - 1);
+    else if (JD(k.S) || JD(k.DOWN)) this.pickPause(this.pausePick + 1);
+    else if (JD(k.SPACE) || JD(k.ENTER) || JD(k.E)) this.pauseItems[this.pausePick].press();
   }
 
   // ---------------------------------------------------------------- monsters and stingers
