@@ -47,8 +47,10 @@ canvas { image-rendering: pixelated; display: block; }
 }
 /* dark walnut: the big frame a screen sits in (cream text) */
 .ui-frame {
-  border: calc(5 * var(--k)) solid transparent;
-  border-image: url("../art/test/ui2/panel.png") 5 fill / calc(5 * var(--k)) stretch;
+  /* cut at the frame's real edge (7 art pixels with its dark inner line), not 5 */
+  border: solid transparent;
+  border-width: calc(7 * var(--k));
+  border-image: url("../art/test/ui2/panel.png") 7 fill / calc(7 * var(--k)) stretch;
   image-rendering: pixelated;
   color: var(--cream);
 }
