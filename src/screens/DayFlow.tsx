@@ -362,7 +362,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {shopping && phase !== "service" && <Upgrades tab={shopping} save={save} busy={busy} act={(a) => void act(a, phase)} onShop={() => setStore(true)} onClose={() => setShopping(null)} />}
       {win === "notebook" && <Notebook phase={phase} shut={shut} fresh={fresh} onApp={openApp} onClose={() => setWin(null)} />}
       {charcoalLine && <LidLine face={TIP_FACE.charcoal} text={t("tip.charcoal")} />}
-      {goal && !covered && <GoalLine text={t(goal.goal)} place={save.hunt ? "middle" : showDayHud(phase, false) ? "date" : "top"} />}
+      {/* the goal line only for the first hunt's controls; by day the arrow alone says where to go (user, 2026-10-20) */}
+      {goal && save.hunt && !covered && <GoalLine text={t(goal.goal)} place="middle" />}
       {goalTip && <LidLine key={goalTip} face={TIP_FACE[goalTip as Exclude<TipId, "awakenApp">]} text={t(`tip.${goalTip}` as StringKey)} low />}
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
       {win === "friends" && <Friends save={save} busy={busy} act={actSave} onShop={() => setStore(true)} onClose={() => setWin(null)} />}

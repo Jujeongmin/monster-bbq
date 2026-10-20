@@ -8,6 +8,9 @@ import type { ShopLook } from "./look";
 import { ShopView } from "./ShopView";
 import "./shop3d.css";
 
+// the door's arrow over the doorway in the picture (the door's spot is where the aisle ends, right of it)
+const DOOR_ARROW_X = 72;
+
 // The shop by day (user, 2026-10-16): the night's room in daylight with no guests, the grandchild walking the
 // aisle (A/D or the stick, Shift runs); at the door or at Bandal a bubble says what the action key (E or
 // Space, the action button on touch) does there. `active` is false while a window is open over it: it stops
@@ -94,7 +97,7 @@ export function DayStage({ scene, stools, active, point = null, onSpot, onFail }
       }
       // the arrow over the spot to go to, until the grandchild stands at it
       const goal = live.current.point ? daySpots(live.current.scene).find((p) => p.id === live.current.point) : null;
-      const to = goal && s?.id !== goal.id ? view.project(goal.x, FLOOR_Y + 104, Z.waiter) : null;
+      const to = goal && s?.id !== goal.id ? view.project(goal.id === "door" ? DOOR_ARROW_X : goal.x, FLOOR_Y + 104, Z.waiter) : null;
       const arrowKey = to ? `${to.x}:${to.y}` : null;
       if (arrowKey !== arrowShown) {
         arrowShown = arrowKey;
