@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 P=$(pwd)
-NAMES="phone parcel shop lid bandal lidback dusk"
+NAMES="phone parcel shop lid0 lid1 lid bandal lidback dusk"
 if [ "${1:-}" != "shrink" ]; then
   for n in $NAMES; do
     codex exec --skip-git-repo-check -s workspace-write -C "$P" --image art/test/shop/bg.png art-src/codex/raw/ref_hud_icons_x8.png - < "art-src/codex/prompt-story-$n.txt"

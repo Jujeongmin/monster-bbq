@@ -12,21 +12,31 @@ export interface StoryLine {
   face: string;
   key: StringKey;
 }
-// `pic`: the cut's picture (art/test/story/<pic>.png once drawn; the scene stands in with approved art)
+// `pic`: the cut's picture (art/test/story/<pic>.png once drawn; the scene stands in with approved art).
+// `caption`: one plain line at the top tying the cut to the one before (2026-10-20: the cuts read as
+// unconnected). `at`: where each speaker stands in the picture (percent of its width, height), marked while
+// they talk, so the line in the bar is seen to come from them.
 export interface Cut {
-  pic: "phone" | "parcel" | "shop" | "lid" | "bandal" | "lidback" | "dusk";
+  pic: "phone" | "parcel" | "shop" | "lid0" | "lid1" | "lid" | "bandal" | "lidback" | "dusk";
+  caption?: StringKey;
+  at?: Partial<Record<Speaker, [number, number]>>;
   lines: StoryLine[];
 }
 
 export const SCENES: Record<StoryId, Cut[]> = {
   prologue: [
-    { pic: "phone", lines: [{ who: "hero", face: "tired", key: "story.p1" }] },
-    { pic: "parcel", lines: [{ who: "hero", face: "tired", key: "story.p2a" }, { who: "letter", face: "normal", key: "story.p2b" }] },
-    { pic: "shop", lines: [] },
-    { pic: "lid", lines: [{ who: "lid", face: "angry", key: "story.p4" }] },
-    { pic: "bandal", lines: [{ who: "bandal", face: "idle", key: "story.p5" }] },
+    { pic: "phone", caption: "story.cap.phone", lines: [{ who: "hero", face: "tired", key: "story.p1" }] },
+    { pic: "parcel", caption: "story.cap.parcel", at: { hero: [50, 8] }, lines: [{ who: "hero", face: "tired", key: "story.p2a" }, { who: "letter", face: "normal", key: "story.p2b" }] },
+    { pic: "shop", caption: "story.cap.shop", lines: [] },
+    // the lid wakes in three beats (2026-10-20): still under the dust, one eye snaps open, up and shouting
+    { pic: "lid0", lines: [] },
+    { pic: "lid1", caption: "story.cap.lid1", lines: [] },
+    { pic: "lid", at: { lid: [62, 26], hero: [27, 40] }, lines: [{ who: "lid", face: "angry", key: "story.p4" }] },
+    { pic: "bandal", caption: "story.cap.bandal", at: { bandal: [53, 6], hero: [17, 46] }, lines: [{ who: "bandal", face: "idle", key: "story.p5" }] },
     {
       pic: "lidback",
+      caption: "story.cap.lidback",
+      at: { lid: [60, 38], hero: [47, 24] },
       lines: [
         { who: "lid", face: "normal", key: "story.p6a" },
         { who: "hero", face: "fine", key: "story.p6b" },
@@ -34,7 +44,7 @@ export const SCENES: Record<StoryId, Cut[]> = {
       ],
     },
   ],
-  prologue_dusk: [{ pic: "dusk", lines: [{ who: "lid", face: "smug", key: "story.p7" }] }],
+  prologue_dusk: [{ pic: "dusk", caption: "story.cap.dusk", at: { lid: [12, 30] }, lines: [{ who: "lid", face: "smug", key: "story.p7" }] }],
 };
 
 // The scene due now, if any: only on day 1 (a save already past it never sees the prologue), the prologue

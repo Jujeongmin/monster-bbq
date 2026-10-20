@@ -28,4 +28,10 @@
 @keyframes lineup { from { opacity: 0; transform: translateX(calc(-20px * var(--s))); } }
 .ui-sq.story-skip { height: auto; white-space: nowrap; position: absolute; right: calc(10px * var(--s)); top: calc(10px * var(--s)); z-index: 55; width: auto; padding: 0 calc(6px * var(--s)); font-size: var(--fs-small); }
 .story-more { position: absolute; right: calc(16px * var(--s)); bottom: calc(14px * var(--s)); color: #b1895c; font: var(--fs) "Galmuri11", monospace; animation: dialogue-blink 0.8s steps(2, jump-none) infinite; }
+/* the line at the top tying each cut to the one before (2026-10-20) */
+.story-caption { position: absolute; left: calc(14px * var(--s)); right: 30%; top: calc(10px * var(--s)); margin: 0; z-index: 2; text-align: left; font: var(--fs) "Galmuri11", monospace; color: #fff3d8; text-shadow: var(--s) var(--s) 0 #1a0f0a, calc(-1 * var(--s)) var(--s) 0 #1a0f0a, var(--s) calc(-1 * var(--s)) 0 #1a0f0a, calc(-1 * var(--s)) calc(-1 * var(--s)) 0 #1a0f0a; animation: story-in 0.6s 0.2s steps(8) both; pointer-events: none; }
+/* who is talking: a mark bobbing over them */
+.story-who { position: absolute; z-index: 2; transform: translate(-50%, -100%); font: 700 calc(22px * var(--s)) "Galmuri11", monospace; color: #ffd166; text-shadow: var(--s) var(--s) 0 #1a0f0a, calc(-1 * var(--s)) var(--s) 0 #1a0f0a, var(--s) calc(-1 * var(--s)) 0 #1a0f0a, calc(-1 * var(--s)) calc(-1 * var(--s)) 0 #1a0f0a, 0 calc(2 * var(--s)) 0 #1a0f0a; animation: who-bob 0.6s steps(3) infinite alternate; pointer-events: none; }
+@keyframes who-bob { to { margin-top: calc(-4px * var(--s)); } }
+.story-lid.still { animation: none; }
 @media (prefers-reduced-motion: reduce) { .story-pic, .story-note, .story-parcel, .story-lid, .story-yokai { animation: none; } }

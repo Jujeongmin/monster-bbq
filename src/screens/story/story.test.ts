@@ -16,9 +16,21 @@ describe("the prologue", () => {
     expect(storyDue({ ...newSave(), day: 4 }, "hunt")).toBeNull();
     expect(storyDue({ ...newSave(), hunt: { id: "h", seed: 1, startedAt: 0, zone: "forest", period: "morning", side: "sling" } }, "hunt")).toBeNull();
   });
-  it("has the approved seven cuts, every line written", () => {
+  it("has the approved cuts (the lid now waking in three), every line and caption written", () => {
     const cuts = [...SCENES.prologue, ...SCENES.prologue_dusk];
-    expect(cuts.map((c) => c.pic)).toEqual(["phone", "parcel", "shop", "lid", "bandal", "lidback", "dusk"]);
-    for (const c of cuts) for (const l of c.lines) expect(ko[l.key]).toBeTruthy();
+    expect(cuts.map((c) => c.pic)).toEqual(["phone", "parcel", "shop", "lid0", "lid1", "lid", "bandal", "lidback", "dusk"]);
+    for (const c of cuts) for (const k of [...c.lines.map((l) => l.key), ...(c.caption ? [c.caption] : [])]) expect(ko[k]).toBeTruthy();
+  });
+});
+
+describe("the prologue reads in order (2026-10-20)", () => {
+  it("wakes the lid in three cuts: still, one eye open, then up and shouting", () => {
+    expect(SCENES.prologue.map((c) => c.pic)).toEqual(["phone", "parcel", "shop", "lid0", "lid1", "lid", "bandal", "lidback"]);
+  });
+  it("ties the cuts together with a caption, and marks where each speaker stands in the picture", () => {
+    for (const pic of ["phone", "parcel", "shop", "lid1", "bandal", "lidback"]) expect(SCENES.prologue.find((c) => c.pic === pic)!.caption).toBe(`story.cap.${pic}`);
+    expect(SCENES.prologue_dusk[0].caption).toBe("story.cap.dusk");
+    for (const cut of [...SCENES.prologue, ...SCENES.prologue_dusk])
+      for (const l of cut.lines) if (l.who === "lid" || l.who === "bandal") expect(cut.at?.[l.who], `${cut.pic} ${l.who}`).toBeDefined();
   });
 });

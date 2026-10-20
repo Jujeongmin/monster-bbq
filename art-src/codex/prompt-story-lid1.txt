@@ -1,0 +1,7 @@
+Use your image generation tool (do not write code to draw) to create ONE image: Cut 4b of the prologue: a close-up of the same dusty round cast-iron pot lid on the cauldron (as in the attached cut), filling most of the frame: ONE grumpy eye has just snapped open on the front of the lid (a black bead eye with a white highlight and a thick angry eyebrow), the other still closed, dust and little flakes of rust falling off, small comic shock lines around it (drawn as pixel lines, no text). The boy's startled face peeks in at the bottom-left corner.
+
+Style: match the attached references exactly (the first is the game's approved shop interior, the second the approved small icons scaled up 8 times). Real low-resolution pixel art like the references: chunky square pixels, a dark 1-pixel outline on characters, flat colours with 2-3 shades per material, no gradients, no glow, no soft painting, no anti-aliasing. Comic and cute, warm palette, a cozy Korean countryside grill shop story. The main character is a cute chibi teenage boy: spiky black hair, red bandana, big brown eyes, green hooded jacket, cream apron (as in the game).
+
+Save as art-src/codex/raw/story_lid1.png — a 16:9 image exactly 1536x864, one full-frame picture (no panel border, no text, no letters, no speech bubbles, no UI).
+
+Reply only with the saved file path.

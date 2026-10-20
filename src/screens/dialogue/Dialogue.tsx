@@ -36,8 +36,10 @@ const portrait = (who: Speaker, face: Face) =>
 const facesOf = (who: Speaker): Face[] => (who === "lid" ? LID_FACES : who === "hero" ? ["fine", "tired"] : who === "bandal" ? ["idle", "smile", "startled"] : who === "letter" ? [] : YOKAI_FACES);
 const LETTER_MS = 35;
 
-export function Dialogue({ lines, onDone }: { lines: DialogueLine[]; onDone: () => void }) {
+export function Dialogue({ lines, onDone, onLine }: { lines: DialogueLine[]; onDone: () => void; onLine?: (index: number) => void }) {
   const [state, setState] = useState<DialogueState>(start);
+  // the line up now, for a scene that marks its speaker in the picture
+  useEffect(() => onLine?.(state.index), [state.index]);
   const stateRef = useRef(state);
   stateRef.current = state;
   const done = useRef(false);
