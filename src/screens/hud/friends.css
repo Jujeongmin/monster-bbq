@@ -1,0 +1,26 @@
+/* Grandma's old friends (staff design 6): on Bandal's pegboard like the upgrades, cards pinned to it */
+.friends-slots, .friends-rates { align-self: center; margin: 0 0 calc(4px * var(--s)); padding: 0 calc(8px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; }
+.friends-list { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(4px * var(--s)); align-content: start; text-align: left; padding: 0 calc(10 * var(--k)); }
+.friends-list::-webkit-scrollbar { display: none; }
+.friend-card { display: flex; flex-direction: column; gap: calc(1px * var(--s)); line-height: 1.2; color: var(--ink); font: var(--fs-small) "Galmuri9", monospace; }
+.friend-card.unknown { opacity: 0.55; justify-content: center; align-items: center; min-height: calc(40px * var(--s)); }
+.friend-name { font: 700 var(--fs) "Galmuri11", monospace; }
+.friend-rarity { color: var(--paper-ink-soft); font-weight: 400; }
+.friend-card.rare .friend-rarity { color: #3a6ab0; }
+.friend-card.hero .friend-rarity { color: #8a3ab0; }
+.friend-card.legend .friend-rarity { color: #c88a10; }
+.friend-stats { display: grid; grid-template-columns: 1fr 1fr; }
+.friend-skill, .friend-story { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.friend-skill { color: #6a3a10; }
+.friend-story { color: var(--paper-ink-soft); }
+.friend-card.result .friend-story { white-space: normal; }
+.friend-pos { display: flex; flex-wrap: wrap; gap: calc(2px * var(--s)); margin-top: calc(1px * var(--s)); }
+.ui-sq.awaken-kind.friend-pos-btn { padding: 0 calc(4px * var(--s)); }
+.friend-awaken { align-self: flex-start; font: var(--fs-small) "Galmuri9", monospace; padding-top: 0; padding-bottom: 0; max-width: 100%; white-space: nowrap; overflow: hidden; }
+.friends-post { flex: 1; display: flex; flex-direction: column; align-items: center; gap: calc(6px * var(--s)); }
+.friends-buttons { display: flex; gap: calc(6px * var(--s)); }
+.friends-results { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; align-content: flex-start; display: flex; flex-wrap: wrap; justify-content: center; gap: calc(6px * var(--s)); }
+.friend-card.result { width: calc(104px * var(--s)); align-items: center; text-align: center; animation: friend-flip 0.4s steps(6) both; }
+@keyframes friend-flip { from { transform: rotateY(90deg); opacity: 0.3; } }
+.friend-new { font-weight: 700; color: #c83a2a; }
+@media (prefers-reduced-motion: reduce) { .friend-card.result { animation: none; } }

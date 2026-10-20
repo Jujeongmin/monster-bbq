@@ -43,7 +43,7 @@
 .notebook { position: relative; width: calc(168 * var(--k)); height: calc(112 * var(--k)); background: center / 100% 100% no-repeat; image-rendering: pixelated; color: var(--ink); }
 .notebook-page { position: absolute; left: calc(16 * var(--k)); top: calc(8 * var(--k)); width: calc(58 * var(--k)); height: calc(92 * var(--k)); display: flex; flex-direction: column; justify-content: space-around; }
 .notebook-page.right { left: calc(90 * var(--k)); }
-.notebook-app { display: grid; grid-template-columns: calc(32px * var(--s)) minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; column-gap: calc(6px * var(--s)); min-height: calc(26 * var(--k)); padding: 0 calc(4px * var(--s)); border: 0; background: none; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+.notebook-app { display: grid; grid-template-columns: calc(32px * var(--s)) minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; column-gap: calc(6px * var(--s)); min-height: calc(21 * var(--k)); padding: 0 calc(4px * var(--s)); border: 0; background: none; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
 .notebook-app:hover:not(:disabled) { background: rgba(120, 70, 30, 0.12); }
 .notebook-app img { grid-row: 1 / 3; height: calc(28px * var(--s)); width: calc(32px * var(--s)); object-fit: contain; image-rendering: pixelated; }
 .notebook-name { font-weight: 700; line-height: 1.1; white-space: nowrap; }
@@ -162,4 +162,5 @@
 .lid-line { position: absolute; left: 50%; top: calc(40px * var(--s)); transform: translateX(-50%); z-index: 12; display: flex; align-items: center; gap: calc(6px * var(--s)); padding: calc(2px * var(--s)) calc(12px * var(--s)) calc(2px * var(--s)) calc(4px * var(--s)); white-space: nowrap; pointer-events: none; animation: lid-line-in 0.3s steps(6) both; }
 .lid-line-face { position: relative; flex: none; width: calc(104px * var(--s)); height: calc(60px * var(--s)); overflow: hidden; }
 .lid-line-face img { position: absolute; left: calc(-8px * var(--s)); top: calc(-16px * var(--s)); width: calc(120px * var(--s)); height: calc(96px * var(--s)); image-rendering: pixelated; }
+.lid-line.low { top: auto; bottom: calc(44px * var(--s)); }
 @keyframes lid-line-in { from { opacity: 0; transform: translate(-50%, calc(-12px * var(--s))); } }

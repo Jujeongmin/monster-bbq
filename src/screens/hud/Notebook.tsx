@@ -26,12 +26,12 @@ export function Notebook({ phase, shut = 0, fresh = [], onApp, onClose }: { phas
           else onApp(closing);
         }}
       >
-        {/* the open notebook (168x112 art pixels): three apps on each page, the close button under it */}
+        {/* the open notebook (168x112 art pixels): four apps on the left page, three on the right */}
         <div className="notebook" style={{ backgroundImage: `url(${artUrl(HUD_ART.notebookOpen)})` }} role="dialog" aria-label={t("notebook.title")}>
-          {[0, 3].map((from) => (
+          {[0, 4].map((from) => (
             <div key={from} className={`notebook-page${from ? " right" : ""}`}>
               {notebookApps(phase)
-                .slice(from, from + 3)
+                .slice(from, from ? undefined : 4)
                 .map(({ app, open }) => (
                   <button key={app} className="notebook-app" disabled={!open} onClick={() => close(app)}>
                     <img src={artUrl(HUD_ART.apps[app])} alt="" />

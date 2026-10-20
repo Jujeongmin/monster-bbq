@@ -28,13 +28,16 @@ import { vipLevel } from "../../shared/shop";
 import { Bag } from "./hud/Bag";
 import { DayHud } from "./hud/DayHud";
 import { Notebook } from "./hud/Notebook";
+import { Friends } from "./hud/Friends";
+import "./hud/friends.css";
 import { Receipt } from "./hud/Receipt";
 import { knowsCharcoal, sceneOf, showDayHud, timeOfDay, transitionCard, type App, type Phase, type Scene } from "./hud/hud";
 import { LidLine } from "./hud/LidLine";
 import { markSeen, readSeen, TIP_FACE, tipStore, type TipId } from "./tips";
 import { TitleCard } from "./hud/TitleCard";
 import { Cutscene } from "./story/Cutscene";
-import { storyDue } from "./story/story";
+import { storyDue, storyUnsaved } from "./story/story";
+import type { StoryId } from "../../shared/content/story";
 import { DayStage } from "../game/shop3d/DayStage";
 import type { DayScene } from "../game/shop3d/day";
 import { canUse3D } from "../game/shop3d/input";
@@ -59,7 +62,9 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the side weapon window at lunch (in the morning it shows by itself before the hunt)
   const [picking, setPicking] = useState(false);
   // the bag or Grandma's notebook, opened from the day's HUD
-  const [win, setWin] = useState<"bag" | "notebook" | "cookbook" | null>(null);
+  const [win, setWin] = useState<"bag" | "notebook" | "cookbook" | "friends" | null>(null);
+  // story scenes played to the end here (saved by the server just after; see storyDue)
+  const [watched, setWatched] = useState<StoryId[]>([]);
   // a key asked the open window to close (it plays its closing, then calls back)
   const [shut, setShut] = useState(0);
   // the hunt just settled: what was taken, the fridge, the den's key and the pages before it, for the summary
@@ -107,6 +112,11 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   const charcoalLine = knows && !seenTips.has("charcoal") && phase !== "service" && !save?.hunt;
   const fresh: App[] = knows && !seenTips.has("awakenApp") ? ["awaken"] : [];
   useEffect(() => {
+    if (win !== "friends" || seenTips.has("friends")) return;
+    const id = setTimeout(() => see("friends"), 5000);
+    return () => clearTimeout(id);
+  }, [win]);
+  useEffect(() => {
     if (!charcoalLine) return;
     const id = setTimeout(() => see("charcoal"), 4000);
     return () => clearTimeout(id);
@@ -123,7 +133,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   }, [scene]);
   // the story scene due now (the prologue on the first morning, its dusk cut on the first evening), shown
   // once the title card is gone; seeing it (or skipping it) is saved
-  const story = save && !card ? storyDue(save, phase) : null;
+  const story = save && !card ? storyDue(save, phase, watched) : null;
   // the shop by day, walked (a window opens from the door or Bandal), where WebGL works
   const [hub, setHub] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
   const [panel, setPanel] = useState<"kitchen" | "side" | null>(null);
@@ -158,6 +168,33 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       return { dishes: next.service?.dishes ?? [] };
     } catch (e) {
       return { error: e instanceof Error ? e.message : "" };
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }
+
+  // An action whose new save the window itself reads (Grandma's old friends): the save, or null when it
+  // was refused (the page's error panel says why).
+  // a scene watched here goes to the server once nothing else is on its way (a failed save shows the
+  // error panel, whose retry sends it again)
+  const unsavedStory = save ? storyUnsaved(save, watched) : null;
+  useEffect(() => {
+    if (unsavedStory && !busy && !failed) void act({ type: "seeStory", id: unsavedStory }, phase);
+  }, [unsavedStory, busy, failed]);
+
+  async function actSave(action: Action): Promise<SaveData | null> {
+    if (busyRef.current) return null;
+    busyRef.current = true;
+    setBusy(true);
+    setFailed(null);
+    try {
+      const next = await transport.act(action);
+      setSave(next);
+      return next;
+    } catch (e) {
+      setFailed({ action, next: phase, code: e instanceof Error ? e.message : "" });
+      return null;
     } finally {
       busyRef.current = false;
       setBusy(false);
@@ -205,6 +242,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     if (app === "awaken" && fresh.includes("awaken")) see("awakenApp");
     if (app === "bag") setWin("bag");
     else if (app === "upgrade" || app === "awaken") setShopping(app);
+    else if (app === "friends") setWin("friends");
     else if (app === "shop") setStore(true);
     else if (phase === "kitchen") {
       // the kitchen's own tab; by day it is a window opened at Bandal, so open it too
@@ -300,6 +338,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {win === "notebook" && <Notebook phase={phase} shut={shut} fresh={fresh} onApp={openApp} onClose={() => setWin(null)} />}
       {charcoalLine && <LidLine face={TIP_FACE.charcoal} text={t("tip.charcoal")} />}
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
+      {win === "friends" && <Friends save={save} busy={busy} act={actSave} onShop={() => setStore(true)} onClose={() => setWin(null)} />}
+      {win === "friends" && !seenTips.has("friends") && <LidLine face={TIP_FACE.friends} text={t("tip.friends")} low />}
       {win === "cookbook" && (
         <div className="hud-win" onClick={() => setWin(null)}>
           <div className="ui-frame hud-cookbook" onClick={(e) => e.stopPropagation()}>
@@ -311,7 +351,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       )}
       {store && <Shop save={save} items={storeItems} checking={checking} onBuy={buy} onClose={() => setStore(false)} />}
 
-      {story && <Cutscene key={story} scene={story} onDone={() => void act({ type: "seeStory", id: story }, phase)} />}
+      {story && <Cutscene key={story} scene={story} onDone={() => setWatched((w) => [...w, story])} />}
       {card && <TitleCard key={card.key} day={card.day} time={card.time} line={card.line} onDone={() => setCard(null)} />}
 
       {failed && (

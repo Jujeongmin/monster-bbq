@@ -17,7 +17,7 @@ export const HUD_ART = {
   time: { morning: hud("time_morning"), noon: hud("time_noon"), afternoon: hud("time_afternoon"), evening: hud("time_evening"), night: hud("time_night") } as Record<TimeOfDay, string>,
   bag: hud("bag"),
   notebook: "test/ui/icon_notebook.png",
-  apps: { bag: hud("app_bag"), upgrade: hud("app_upgrade"), awaken: hud("app_awaken"), cookbook: hud("app_cookbook"), menu: hud("app_menu"), shop: hud("app_shop") } as Record<App, string>,
+  apps: { bag: hud("app_bag"), upgrade: hud("app_upgrade"), awaken: hud("app_awaken"), friends: "test/bandal/smile.png", cookbook: hud("app_cookbook"), menu: hud("app_menu"), shop: hud("app_shop") } as Record<App, string>,
   receipt: hud("receipt"),
   // each window its own material (design 8, approved 2026-10-20): the bag an open bojagi cloth, the
   // upgrades Bandal's pegboard, setting out a weapon rack, the notebook closed and open
@@ -68,8 +68,9 @@ export function bagRows(items: Record<string, number>, tab: BagTab): BagCell[] {
   return cells.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id) || Number(b.premium) - Number(a.premium));
 }
 
-export type App = "bag" | "upgrade" | "awaken" | "cookbook" | "menu" | "shop";
-const APPS: App[] = ["bag", "upgrade", "awaken", "cookbook", "menu", "shop"];
+export type App = "bag" | "upgrade" | "awaken" | "friends" | "cookbook" | "menu" | "shop";
+// four apps on the left page, three on the right (Grandma's old friends joined, staff design 6)
+const APPS: App[] = ["bag", "upgrade", "awaken", "friends", "cookbook", "menu", "shop"];
 
 // The notebook's apps (Dave's phone): the menu board is set only in the evening kitchen.
 export function notebookApps(phase: Phase): { app: App; open: boolean }[] {

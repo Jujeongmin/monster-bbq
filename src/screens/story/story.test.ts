@@ -1,9 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { newSave } from "../../../shared/save";
 import { ko } from "../../i18n/ko";
-import { SCENES, storyDue } from "./story";
+import { SCENES, storyDue, storyUnsaved } from "./story";
 
 describe("the prologue", () => {
+  it("ends on the last tap even before the server has saved it, and is sent until it is", () => {
+    const s = newSave();
+    // watched here, not saved yet (the server busy or the reply lost): over, and still to send
+    expect(storyDue(s, "hunt", ["prologue"])).toBeNull();
+    expect(storyUnsaved(s, ["prologue"])).toBe("prologue");
+    expect(storyUnsaved({ ...s, story: ["prologue"] }, ["prologue"])).toBeNull();
+    // the dusk cut still follows a prologue watched here
+    expect(storyDue(s, "kitchen", ["prologue"])).toBe("prologue_dusk");
+  });
+
   it("plays on the first morning before the first hunt, its dusk cut on the first evening", () => {
     const s = newSave();
     expect(storyDue(s, "hunt")).toBe("prologue");

@@ -49,9 +49,17 @@ export const SCENES: Record<StoryId, Cut[]> = {
 
 // The scene due now, if any: only on day 1 (a save already past it never sees the prologue), the prologue
 // on the first morning before setting out, its dusk cut on the first evening once the prologue was seen.
-export function storyDue(save: Pick<SaveData, "day" | "hunt" | "story">, phase: Phase): StoryId | null {
+// `watched`: scenes played to the end on this page, over at once though the server may not have saved
+// them yet (a busy or failed save must not leave the last cut stuck on screen).
+export function storyDue(save: Pick<SaveData, "day" | "hunt" | "story">, phase: Phase, watched: StoryId[] = []): StoryId | null {
   if (save.day !== 1 || save.hunt) return null;
-  if (phase === "hunt" && !save.story.includes("prologue")) return "prologue";
-  if (phase === "kitchen" && save.story.includes("prologue") && !save.story.includes("prologue_dusk")) return "prologue_dusk";
+  const seen = (id: StoryId) => save.story.includes(id) || watched.includes(id);
+  if (phase === "hunt" && !seen("prologue")) return "prologue";
+  if (phase === "kitchen" && seen("prologue") && !seen("prologue_dusk")) return "prologue_dusk";
   return null;
+}
+
+// A scene watched here that the save does not have yet: the one to send.
+export function storyUnsaved(save: Pick<SaveData, "story">, watched: StoryId[]): StoryId | null {
+  return watched.find((id) => !save.story.includes(id)) ?? null;
 }
