@@ -1,0 +1,84 @@
+/* Grandma's notebook open (art/test/ui/book.png, 460x233, one art pixel to one UI pixel): the pages are the
+   cream areas measured on the art (left x 24-214, right 245-434, y 11-214) */
+.book-screen { background: rgba(20, 10, 4, 0.55); }
+.book { position: relative; width: calc(460px * var(--s)); height: calc(233px * var(--s)); background-size: 100% 100%; image-rendering: pixelated; color: var(--ink); font: var(--fs-small) "Galmuri9", monospace; animation: book-in 0.25s steps(5) both; }
+@keyframes book-in { from { opacity: 0; transform: translateY(calc(8px * var(--s))); } }
+@media (prefers-reduced-motion: reduce) { .book { animation: none; } }
+.book-page { position: absolute; top: calc(15px * var(--s)); bottom: calc(22px * var(--s)); display: flex; flex-direction: column; gap: calc(4px * var(--s)); min-height: 0; text-align: left; }
+.book-page.left { left: calc(28px * var(--s)); width: calc(182px * var(--s)); }
+.book-page.right { left: calc(249px * var(--s)); width: calc(182px * var(--s)); }
+/* bookmarks: the kit's tabs sticking up over the cover's top edge */
+.book-tabs { position: absolute; left: 0; right: 0; top: calc(-22px * var(--s)); display: flex; justify-content: center; gap: calc(2px * var(--s)); }
+.book-close { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(-22px * var(--s)); }
+.book-page .menu-item { color: var(--ink); text-shadow: none; font-size: var(--fs-small); }
+.book-page .menu-item:hover, .book-page .menu-item:focus-visible { color: #a03a10; }
+/* under the book, on the dark: the close line in the game's light lettering */
+.book-close .menu-item { color: var(--brass); }
+
+/* the ▶ line Space presses: its ▶ always shown */
+.menu-item.marked::before { content: "▶"; position: absolute; right: 100%; }
+
+/* a list on the left page: one line each, the picked one on a card */
+.book-list { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; display: flex; flex-direction: column; gap: 0; }
+.book-list::-webkit-scrollbar { display: none; }
+.book-row { display: grid; grid-template-columns: calc(18px * var(--s)) minmax(0, 1fr) auto; align-items: center; column-gap: calc(4px * var(--s)); padding: 0 calc(3px * var(--s)); border: calc(5px * var(--s)) solid transparent; border-image: none; background: none; color: var(--ink); font: var(--fs-small) "Galmuri9", monospace; text-align: left; cursor: pointer; }
+.book-row.on { border-image: url("../../../art/test/ui2/card.png") 5 fill / calc(5px * var(--s)) round; }
+.book-row img { width: calc(14px * var(--s)); height: calc(14px * var(--s)); object-fit: contain; image-rendering: pixelated; }
+.book-row .name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.book-row .sub { color: var(--paper-ink-soft); white-space: nowrap; }
+.book-row.off { opacity: 0.55; }
+
+/* the picked one on the right page */
+.book-detail { display: flex; flex-direction: column; gap: calc(4px * var(--s)); }
+.book-detail .head { display: flex; align-items: center; gap: calc(8px * var(--s)); }
+.book-detail .head img { width: calc(32px * var(--s)); height: calc(32px * var(--s)); object-fit: contain; image-rendering: pixelated; }
+.book-detail h3 { margin: 0; font: 700 var(--fs) "Galmuri11", monospace; }
+.book-detail .soft { color: var(--paper-ink-soft); }
+.book-detail .fx { font: var(--fs) "Galmuri11", monospace; }
+.book-chips { display: flex; gap: calc(2px * var(--s)); }
+
+/* a price, and the card that buys */
+.price { display: inline-flex; gap: calc(8px * var(--s)); align-items: center; font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink); }
+.price > span { display: inline-flex; align-items: center; gap: calc(2px * var(--s)); }
+.price img { height: calc(12px * var(--s)); image-rendering: pixelated; }
+.price .short { color: #c0301c; }
+.buy-card { align-self: flex-start; display: inline-flex; align-items: center; gap: calc(8px * var(--s)); padding: calc(1px * var(--s)) calc(6px * var(--s)); color: var(--ink); font: 700 var(--fs) "Galmuri11", monospace; cursor: pointer; }
+.buy-card:hover:not(:disabled) { filter: brightness(1.06); }
+.buy-card:active:not(:disabled) { transform: translateY(var(--s)); }
+.buy-card:disabled { cursor: default; filter: grayscale(0.6); opacity: 0.8; }
+.book-note { margin: 0; color: var(--paper-ink-soft); }
+.book-link { align-self: flex-start; padding-left: 0; }
+.book .upgrade-owned { justify-content: flex-start; margin: 0; }
+.book .upgrade-mats { display: flex; flex-wrap: wrap; gap: calc(6px * var(--s)); }
+
+/* old friends on the book */
+.book .row-face { width: calc(20px * var(--s)); height: calc(16px * var(--s)); image-rendering: pixelated; }
+.book .friend-row { grid-template-columns: calc(20px * var(--s)) minmax(0, 1fr) auto; }
+.book .friend-row.rare .name, .book .friend-detail.rare .friend-rarity, .post-rates .rare { color: #3a6ab0; }
+.book .friend-row.hero .name, .book .friend-detail.hero .friend-rarity, .post-rates .hero { color: #8a3ab0; }
+.book .friend-row.legend .name, .book .friend-detail.legend .friend-rarity, .post-rates .legend { color: #c88a10; }
+.book .detail-face { width: calc(60px * var(--s)); height: calc(48px * var(--s)); image-rendering: pixelated; }
+.book .friend-detail { gap: calc(3px * var(--s)); }
+.book .friend-gauges { display: flex; flex-direction: column; gap: calc(1px * var(--s)); }
+.book .friend-gauge-row { display: grid; grid-template-columns: calc(34px * var(--s)) auto; align-items: center; gap: calc(6px * var(--s)); }
+.book .friend-gauge-row .friend-pos-btn { width: 100%; height: calc(16px * var(--s)); padding: 0; border-width: calc(2px * var(--s)); border-image-width: calc(3px * var(--s)); font: 700 var(--fs-small) / 1 "Galmuri9", monospace; display: flex; align-items: center; justify-content: center; }
+.book .friend-pips { display: flex; gap: calc(1px * var(--s)); }
+.book .friend-pips img { width: calc(8px * var(--s)); height: calc(10px * var(--s)); image-rendering: pixelated; }
+.book .friend-skill { color: #6a3a10; }
+.book .buy-card .short { color: #c0301c; }
+.book .buy-card > span:not(.price) { font: var(--fs-small) "Galmuri9", monospace; }
+
+/* postcards */
+.post-rates { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(3px * var(--s)); font: var(--fs) "Galmuri11", monospace; }
+.post-rates li { display: flex; justify-content: space-between; max-width: calc(120px * var(--s)); }
+.post-send { gap: calc(6px * var(--s)); }
+.post-ten { align-self: flex-start; font-size: var(--fs-small); }
+.post-results { display: grid; grid-template-columns: 1fr 1fr; gap: calc(2px * var(--s)) calc(6px * var(--s)); }
+.post-card { display: grid; grid-template-columns: calc(20px * var(--s)) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: calc(4px * var(--s)); align-items: center; animation: post-in 0.3s steps(4) both; }
+.post-card .row-face { grid-row: 1 / 3; }
+.post-card .name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.post-card .new { color: #c0301c; font-weight: 700; }
+.post-card .sub { color: var(--paper-ink-soft); }
+.post-card.rare .name { color: #3a6ab0; } .post-card.hero .name { color: #8a3ab0; } .post-card.legend .name { color: #c88a10; }
+@keyframes post-in { from { opacity: 0; transform: translateY(calc(4px * var(--s))); } }
+@media (prefers-reduced-motion: reduce) { .post-card { animation: none; } }

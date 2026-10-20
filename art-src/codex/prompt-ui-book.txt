@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image: the background of the windows that open from Grandma's notebook in a cozy, comic Korean BBQ restaurant pixel-art game — Grandma's notebook lying OPEN, seen straight from above, filling the picture, so the window's contents sit on its two pages.
+
+STYLE — the most important rule: it is the SAME notebook as the attached pictures (the first: the notebook open, the second: its closed cover, both scaled up 6 times, magenta around them only to show their outline). Copy exactly: the brown leather cover with the darker brown edge, the brass corner pieces, the cream paper with its faint ruled feel, the dark 1-art-pixel outline, real low-resolution pixel art (every art pixel an exact crisp square block on one even grid), FLAT colours with 2-3 shades, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise. SIMPLE and calm: the pages must stay almost empty so text and cards read clearly on them — no drawings, no writing, no doodles, no stains, no stickers on the pages.
+
+Layout: the open book fills the whole image edge to edge. The leather cover shows as a frame about 10 art pixels wide all around, with a brass corner piece at each of the four corners. Inside, two cream pages side by side with a narrow soft fold (spine shadow, about 4 art pixels) down the exact middle. The pages are flat (no curl), with a thin slightly darker line just inside each page's outer edge.
+
+Save as art-src/codex/raw/ui_book.png — exactly 1840x932 pixels, every art pixel a 4x4 block (so the book is 460x233 art pixels). No magenta in this one: the book covers everything. No text, no grid lines, no UI.
+
+Reply only with the saved file path.

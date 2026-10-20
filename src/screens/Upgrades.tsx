@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { Action } from "../../shared/actions";
-import { AwakenList } from "./Awaken";
+import { AwakenDetail, AwakenList, awakenTargets } from "./Awaken";
+import type { AwakenTarget } from "../../shared/awaken";
+import { BookWindow, BuyCard, Price } from "./hud/Book";
 import { BALANCE } from "../../shared/balance";
 import { ITEMS, type ItemId } from "../../shared/content/items";
 import type { UpgradeId } from "../../shared/content/upgrades";
@@ -8,7 +10,6 @@ import { isLocked, level, maxLevel, nextCost, nextMats } from "../../shared/grow
 import type { SaveData } from "../../shared/save";
 import { artUrl, hasArt } from "../game/art";
 import { t, type StringKey } from "../i18n";
-import { HUD_ART } from "./hud/hud";
 
 // The upgrade shop (growth design 2): gold for the hunt, the gear and the shop; the gear also takes the deep
 // floors' materials (plan 08c). Every purchase goes through the server (buyUpgrade); the screen shows what
@@ -20,7 +21,7 @@ const GROUPS: Record<Group, UpgradeId[]> = {
   gear: ["boots", "lantern", "tank", "armor"],
   shop: ["menu", "seats", "shoes", "coalBin", "staffSlots"],
 };
-// one tab per group and the awakening, every card the same size, so nothing scrolls (user, 2026-10-16)
+// one bookmark per group and the awakening; the list on the left page, the picked one on the right (user, 2026-10-20)
 type Tab = Group | "awaken";
 const TABS: Tab[] = ["hunt", "gear", "shop", "awaken"];
 const ICON: Record<UpgradeId, string> = {
@@ -104,71 +105,85 @@ export function Upgrades({ tab: first = "upgrade", save, busy, act, onShop, onCl
   // upgrades (gold) or awakening (stars, gold and golden charcoal — 06b-1)
   const [tab, setTab] = useState<Tab>(first === "awaken" ? "awaken" : "hunt");
   const [awaken, setAwaken] = useState<"gear" | "dish">("gear");
+  const [picked, setPicked] = useState<UpgradeId | null>(null);
+  const [pickedStar, setPickedStar] = useState<AwakenTarget | null>(null);
+  const group = tab === "awaken" ? null : GROUPS[tab];
+  const id = group ? (picked && group.includes(picked) ? picked : group[0]) : null;
+  const star = pickedStar && awakenTargets(awaken).includes(pickedStar) ? pickedStar : awakenTargets(awaken)[0];
+  const tabs = TABS.map((k) => (
+    <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
+      {t(k === "awaken" ? "upgrade.tab.awaken" : (`upgrade.group.${k}` as StringKey))}
+    </button>
+  ));
+  if (!group || !id)
+    return (
+      <BookWindow
+        label={t("upgrade.tab.awaken")}
+        tabs={tabs}
+        onClose={onClose}
+        left={<AwakenList kind={awaken} onKind={setAwaken} picked={star} onPick={setPickedStar} save={save} />}
+        right={<AwakenDetail target={star} save={save} busy={busy} act={act} onShop={onShop} />}
+      />
+    );
+  const lv = level(save, id);
+  const cost = nextCost(save, id);
+  const locked = isLocked(save, id);
+  const mats = nextMats(save, id);
+  const why = cost === null ? t("upgrade.max") : locked ? t("upgrade.locked") : mats.some((m) => have(m.item) < m.n) ? t("upgrade.noMats") : null;
+  const src = icon(ICON[id]);
   return (
-    <div className="dayflow-screen">
-      <div className="upgrades" style={{ borderImageSource: `url(${artUrl(HUD_ART.board)})` }}>
-        <div className="upgrade-tabs">
-          {TABS.map((k) => (
-            <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
-              {t(k === "awaken" ? "upgrade.tab.awaken" : (`upgrade.group.${k}` as StringKey))}
-            </button>
-          ))}
-        </div>
-        {tab === "awaken" ? (
-          <>
-            <div className="awaken-kinds">
-              {(["gear", "dish"] as const).map((k) => (
-                <button key={k} className={`ui-sq awaken-kind${k === awaken ? " on" : ""}`} onClick={() => setAwaken(k)}>
-                  {t(`awaken.kind.${k}` as StringKey)}
-                </button>
-              ))}
-            </div>
-            <AwakenList kind={awaken} save={save} busy={busy} act={act} onShop={onShop} />
-          </>
-        ) : (
+    <BookWindow
+      label={t(`upgrade.group.${tab}` as StringKey)}
+      tabs={tabs}
+      onClose={onClose}
+      left={
         <>
           {tab === "gear" && (
             <div className="upgrade-owned">
-              {t("upgrade.owned")} {owned.length > 0 ? owned.map((id) => <Mat key={id} id={id} n={`×${have(id)}`} />) : "-"}
+              {t("upgrade.owned")} {owned.length > 0 ? owned.map((m) => <Mat key={m} id={m} n={`×${have(m)}`} />) : "-"}
             </div>
           )}
-          <div className={`upgrades-list${GROUPS[tab].length <= 6 ? " wide" : ""}`}>
-              {GROUPS[tab].map((id) => {
-                const lv = level(save, id);
-                const cost = nextCost(save, id);
-                const locked = isLocked(save, id);
-                const mats = nextMats(save, id);
-                const why = cost === null ? t("upgrade.max") : locked ? t("upgrade.locked") : save.gold < cost ? t("upgrade.noGold") : mats.some((m) => have(m.item) < m.n) ? t("upgrade.noMats") : null;
-                const src = icon(ICON[id]);
-                return (
-                  <div key={id} className="ui-box upgrade-row">
-                    {src ? <img className="upgrade-icon" src={src} alt="" /> : <span className="upgrade-icon" />}
-                    <span className="upgrade-name">
-                      {t(`upgrade.${id}` as StringKey)} <span className="upgrade-lv">{t("upgrade.level", { lv, max: maxLevel(id) })}</span>
-                    </span>
-                    <span className="upgrade-fx">{cost === null ? t("upgrade.max") : effect(id, lv)}</span>
-                    {mats.length > 0 && (
-                      <span className="upgrade-mats">
-                        {mats.map((m) => (
-                          <Mat key={m.item} id={m.item} n={`${have(m.item)}/${m.n}`} short={have(m.item) < m.n} />
-                        ))}
-                      </span>
-                    )}
-                    <button className="ui-btn" disabled={busy || why !== null} onClick={() => act({ type: "buyUpgrade", id })}>
-                      {why ?? t("upgrade.buy", { cost: cost! })}
-                    </button>
-                  </div>
-                );
-              })}
+          <div className="book-list">
+            {group.map((u) => {
+              const s = icon(ICON[u]);
+              return (
+                <button key={u} className={`book-row${u === id ? " on" : ""}${isLocked(save, u) ? " off" : ""}`} onClick={() => setPicked(u)}>
+                  {s ? <img src={s} alt="" /> : <span />}
+                  <span className="name">{t(`upgrade.${u}` as StringKey)}</span>
+                  <span className="sub">{t("upgrade.level", { lv: level(save, u), max: maxLevel(u) })}</span>
+                </button>
+              );
+            })}
           </div>
         </>
-        )}
-        <div className="dayflow-actions">
-          <button className="ui-btn" onClick={onClose}>
-            {t("upgrade.close")}
-          </button>
+      }
+      right={
+        <div className="book-detail">
+          <div className="head">
+            {src ? <img src={src} alt="" /> : <span />}
+            <span>
+              <h3>{t(`upgrade.${id}` as StringKey)}</h3>
+              <span className="soft">{t("upgrade.level", { lv, max: maxLevel(id) })}</span>
+            </span>
+          </div>
+          <p className="fx">{cost === null ? t("upgrade.max") : effect(id, lv)}</p>
+          {mats.length > 0 && (
+            <span className="upgrade-mats">
+              {mats.map((m) => (
+                <Mat key={m.item} id={m.item} n={`${have(m.item)}/${m.n}`} short={have(m.item) < m.n} />
+              ))}
+            </span>
+          )}
+          {why ? (
+            <p className="soft">{why}</p>
+          ) : (
+            <BuyCard disabled={busy || save.gold < cost!} onClick={() => act({ type: "buyUpgrade", id })}>
+              <Price gold={cost!} haveGold={save.gold} haveCharcoal={save.charcoal} />
+              {t("upgrade.up")}
+            </BuyCard>
+          )}
         </div>
-      </div>
-    </div>
+      }
+    />
   );
 }

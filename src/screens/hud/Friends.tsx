@@ -7,23 +7,24 @@ import type { SaveData } from "../../../shared/save";
 import { staffAwakenCost } from "../../../shared/staff/actions";
 import { artUrl, hasArt } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
+import { BookWindow, BuyCard, Price } from "./Book";
 import { knowsCharcoal } from "./hud";
 import { PIP_COUNT, pipsOf } from "./pips";
 
-// Grandma's old friends in her notebook (staff design 6): the friends who came (their stats, skill and
-// line about Grandma, stars and shards, the position they work), and the postcards that call more — with
-// the rates shown as the law asks and how far the sure legend is. Pictures stand in until approved.
+// Grandma's old friends in her notebook (staff design 6), on the notebook's two pages (user, 2026-10-20):
+// the friends down the left page and the one picked on the right; the postcards with their rates (shown as
+// the law asks) and how far the sure legend is on the left, sending them and what came on the right.
 type Tab = "friends" | "postcards";
-// a friend's card portrait once approved and in (art/test/staff/<id>/portrait.png, 120x96)
-const Face = ({ id }: { id: StaffId }) => (hasArt(`test/staff/${id}/portrait.png`) ? <img className="friend-face" src={artUrl(`test/staff/${id}/portrait.png`)} alt="" /> : null);
 type Result = { id: StaffId; isNew: boolean; shards: number };
+const portrait = (id: StaffId) => `test/staff/${id}/portrait.png`;
+const Face = ({ id, className = "" }: { id: StaffId; className?: string }) => (hasArt(portrait(id)) ? <img className={className} src={artUrl(portrait(id))} alt="" /> : <span className={className} />);
+const stars = (n: number) => ("★".repeat(Math.min(5, n)) || "☆") + (n > 5 ? `+${n - 5}` : "");
 
 export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; busy: boolean; act: (a: Action) => Promise<SaveData | null>; onShop: () => void; onClose: () => void }) {
   const [tab, setTab] = useState<Tab>(Object.keys(save.staff.owned).length ? "friends" : "postcards");
   const [results, setResults] = useState<Result[] | null>(null);
   const [picked, setPicked] = useState<StaffId | null>(null);
   const st = save.staff;
-  const knows = knowsCharcoal(save);
 
   async function send(count: 1 | 10, free = false) {
     const before = st.owned;
@@ -39,104 +40,51 @@ export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; 
     setResults(out);
   }
 
-  return (
-    <div className="dayflow-screen">
-      <div className="upgrades friends" style={{ borderImageSource: `url(${artUrl("test/ui/hud/upgrade_board.png")})` }}>
-        <div className="upgrade-tabs">
-          {(["friends", "postcards"] as Tab[]).map((k) => (
-            <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => (setTab(k), setResults(null))}>
-              {t(`friends.tab.${k}` as StringKey)}
-            </button>
-          ))}
-        </div>
-        {tab === "friends" ? (
-          <FriendsTab save={save} busy={busy} act={act} picked={picked} onPick={setPicked} />
-        ) : (
-          <div className="friends-post">
-            <p className="ui-plate friends-rates">
-              {RARITIES.slice()
-                .reverse()
-                .map((r) => `${t(`staff.rarity.${r}` as StringKey)} ${Math.round(BALANCE.staff.rates[r] * 100)}%`)
-                .join(" · ")}
-              {" · "}
-              {t("friends.pity", { n: BALANCE.staff.pity - st.sinceLegend })}
-            </p>
-            <div className="friends-buttons">
-              {!st.freeUsed && (
-                <button className="ui-btn" disabled={busy} onClick={() => void send(1, true)}>
-                  {t("friends.free")}
-                </button>
-              )}
-              {knows && (
-                <>
-                  <button className="ui-btn" disabled={busy || save.charcoal < BALANCE.staff.cost.one} onClick={() => void send(1)}>
-                    {t("friends.one", { n: BALANCE.staff.cost.one })}
-                  </button>
-                  <button className="ui-btn" disabled={busy || save.charcoal < BALANCE.staff.cost.ten} onClick={() => void send(10)}>
-                    {t("friends.ten", { n: BALANCE.staff.cost.ten })}
-                  </button>
-                  {save.charcoal < BALANCE.staff.cost.one && (
-                    <button className="ui-btn" onClick={onShop}>
-                      {t("awaken.getCharcoal")}
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-            {results && (
-              <div className={`friends-results${results.length > 1 ? " many" : ""}`}>
-                {results.map((r, i) => (
-                  <div key={r.id} className={`ui-box friend-card result ${STAFF[r.id].rarity}`} style={{ animationDelay: `${i * 0.25}s` }}>
-                    <Face id={r.id} />
-                    <span className="friend-name">{t(`staff.name.${r.id}` as StringKey)}</span>
-                    <span className="friend-rarity">{t(`staff.rarity.${STAFF[r.id].rarity}` as StringKey)}</span>
-                    <span className="friend-new">{r.isNew ? t("friends.new") : t("friends.shards", { n: r.shards })}</span>
-                    {r.isNew && results.length === 1 && <span className="friend-story">“{t(`staff.story.${r.id}` as StringKey)}”</span>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        <div className="dayflow-actions">
-          <button className="ui-btn" onClick={onClose}>
-            {t("upgrade.close")}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// The friends as Dave's staff window (user, 2026-10-20): how many work tonight, the friends down the left
-// (face, name, where they work), the one picked on the right (portrait, a gauge per position, skill,
-// awakening).
-function FriendsTab({ save, busy, act, picked, onPick }: { save: SaveData; busy: boolean; act: (a: Action) => Promise<SaveData | null>; picked: StaffId | null; onPick: (id: StaffId) => void }) {
-  const st = save.staff;
+  const tabs = (["friends", "postcards"] as Tab[]).map((k) => (
+    <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => (setTab(k), setResults(null))}>
+      {t(`friends.tab.${k}` as StringKey)}
+    </button>
+  ));
   const owned = STAFF_IDS.filter((id) => st.owned[id]);
   const posOf = (id: StaffId) => (Object.entries(st.roster).find(([, who]) => who === id)?.[0] ?? null) as Position | null;
   const id = picked && st.owned[picked] ? picked : (owned[0] ?? null);
-  const mine = id ? st.owned[id]! : null;
+
+  if (tab === "postcards")
+    return (
+      <BookWindow
+        label={t("friends.tab.postcards")}
+        tabs={tabs}
+        onClose={onClose}
+        left={<PostcardRates save={save} />}
+        right={results ? <PostcardResults results={results} onAgain={() => setResults(null)} /> : <PostcardSend save={save} busy={busy} onSend={send} onShop={onShop} />}
+      />
+    );
+
   return (
-    <>
-      <span className="friends-slots">{t("friends.slots", { used: Object.keys(st.roster).length, max: staffSlots(save) })}</span>
-      <div className="friends-body">
-        <div className="friends-list">
-          {owned.map((f) => {
-            const at = posOf(f);
-            return (
-              <button key={f} className={`ui-box friend-item ${STAFF[f].rarity}${f === id ? " on" : ""}`} onClick={() => onPick(f)}>
-                {hasArt(`test/staff/${f}/portrait.png`) ? <Face id={f} /> : <span />}
-                <span className="friend-name">{t(`staff.name.${f}` as StringKey)}</span>
-                <span className="friend-at">{at ? t(`staff.pos.${at}` as StringKey).split(" ")[0] : ""}</span>
-              </button>
-            );
-          })}
-          {owned.length < STAFF_IDS.length && <p className="friends-unmet">{t("friends.unmet", { n: STAFF_IDS.length - owned.length })}</p>}
-        </div>
-        {id && mine && <FriendDetail id={id} mine={mine} at={posOf(id)} save={save} busy={busy} act={act} />}
-      </div>
-    </>
+    <BookWindow
+      label={t("notebook.app.friends")}
+      tabs={tabs}
+      onClose={onClose}
+      left={
+        <>
+          <p className="book-note">{t("friends.slots", { used: Object.keys(st.roster).length, max: staffSlots(save) })}</p>
+          <div className="book-list">
+            {owned.map((f) => {
+              const at = posOf(f);
+              return (
+                <button key={f} className={`book-row friend-row ${STAFF[f].rarity}${f === id ? " on" : ""}`} onClick={() => setPicked(f)}>
+                  <Face id={f} className="row-face" />
+                  <span className="name">{t(`staff.name.${f}` as StringKey)}</span>
+                  <span className="sub">{at ? t(`staff.pos.${at}` as StringKey).split(" ")[0] : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+          {owned.length < STAFF_IDS.length && <p className="book-note">{t("friends.unmet", { n: STAFF_IDS.length - owned.length })}</p>}
+        </>
+      }
+      right={id ? <FriendDetail id={id} mine={st.owned[id]!} at={posOf(id)} save={save} busy={busy} act={act} /> : <p className="book-note">{t("friends.none")}</p>}
+    />
   );
 }
 
@@ -152,47 +100,118 @@ function StatPips({ value }: { value: number }) {
   );
 }
 
-// The picked friend: portrait and who they are on the left, and on the right how good they are at each
-// position as a gauge (user, 2026-10-20) — tapping a position puts them there — with charm, which helps
-// the whole night, under them; then the skill and awakening (their line about Grandma shows when they come).
+// The picked friend: portrait, name, rarity and stars; how good they are at each position (pressing the
+// position puts them there), charm (the whole night) under them; the skill; awakening.
 function FriendDetail({ id, mine, at, save, busy, act }: { id: StaffId; mine: { stars: number; shards: number }; at: Position | null; save: SaveData; busy: boolean; act: (a: Action) => Promise<SaveData | null> }) {
   const cost = staffAwakenCost(mine.stars + 1);
   const best = POSITIONS.reduce((a, b) => (statOf(id, POSITION_STAT[b], mine.stars) > statOf(id, POSITION_STAT[a], mine.stars) ? b : a));
   return (
-    <div className={`ui-box friend-detail ${STAFF[id].rarity}`}>
-      <div className="friend-head">
-        <span className="friend-who-big">
-          <span className="friend-big">{hasArt(`test/staff/${id}/portrait.png`) && <img src={artUrl(`test/staff/${id}/portrait.png`)} alt="" />}</span>
-          <span className="friend-name">{t(`staff.name.${id}` as StringKey)}</span>
-          <span className="friend-rarity">
-            {t(`staff.rarity.${STAFF[id].rarity}` as StringKey)} <span className="friend-stars">{"★".repeat(Math.min(5, mine.stars)) || "☆"}{mine.stars > 5 ? `+${mine.stars - 5}` : ""}</span>
-          </span>
-        </span>
-        <span className="friend-gauges">
-          {POSITIONS.map((p) => {
-            const v = statOf(id, POSITION_STAT[p], mine.stars);
-            return (
-              <span key={p} className={`friend-gauge-row${p === best ? " best" : ""}`}>
-                <button className={`ui-sq awaken-kind friend-pos-btn${at === p ? " on" : ""}`} disabled={busy} onClick={() => void act({ type: "assignStaff", position: p, staffId: at === p ? null : id })}>
-                  {t(`staff.pos.${p}` as StringKey).split(" ")[0]}
-                </button>
-                <StatPips value={v} />
-              </span>
-            );
-          })}
-          <span className="friend-gauge-row charm">
-            {/* charm is not a position: the same plate, nothing to press */}
-            <span className="ui-sq awaken-kind friend-pos-btn friend-charm">{t("staff.stat.charm")}</span>
-            <StatPips value={statOf(id, "charm", mine.stars)} />
-          </span>
+    <div className={`book-detail friend-detail ${STAFF[id].rarity}`}>
+      <div className="head">
+        <Face id={id} className="detail-face" />
+        <span>
+          <h3>{t(`staff.name.${id}` as StringKey)}</h3>
+          <span className="friend-rarity">{t(`staff.rarity.${STAFF[id].rarity}` as StringKey)}</span> <span className="friend-stars">{stars(mine.stars)}</span>
         </span>
       </div>
-      <div className="friend-foot">
-        <span className="friend-skill">{t(`staff.skill.${id}` as StringKey)}</span>
-        <button className="ui-btn friend-awaken" disabled={busy || mine.shards < cost.shards || save.gold < cost.gold} onClick={() => void act({ type: "awakenStaff", staffId: id, from: mine.stars })}>
-          {t("friends.awaken", { shards: cost.shards, have: mine.shards, gold: cost.gold })}
-        </button>
+      <span className="friend-gauges">
+        {POSITIONS.map((p) => (
+          <span key={p} className={`friend-gauge-row${p === best ? " best" : ""}`}>
+            <button className={`ui-sq awaken-kind friend-pos-btn${at === p ? " on" : ""}`} disabled={busy} onClick={() => void act({ type: "assignStaff", position: p, staffId: at === p ? null : id })}>
+              {t(`staff.pos.${p}` as StringKey).split(" ")[0]}
+            </button>
+            <StatPips value={statOf(id, POSITION_STAT[p], mine.stars)} />
+          </span>
+        ))}
+        <span className="friend-gauge-row charm">
+          {/* charm is not a position: the same plate, nothing to press */}
+          <span className="ui-sq awaken-kind friend-pos-btn friend-charm">{t("staff.stat.charm")}</span>
+          <StatPips value={statOf(id, "charm", mine.stars)} />
+        </span>
+      </span>
+      <span className="friend-skill">{t(`staff.skill.${id}` as StringKey)}</span>
+      <BuyCard disabled={busy || mine.shards < cost.shards || save.gold < cost.gold} onClick={() => void act({ type: "awakenStaff", staffId: id, from: mine.stars })}>
+        <Price gold={cost.gold} haveGold={save.gold} haveCharcoal={save.charcoal} />
+        <span className={mine.shards < cost.shards ? "short" : ""}>{t("friends.shardsNeed", { have: mine.shards, need: cost.shards })}</span>
+        {t("awaken.go")}
+      </BuyCard>
+    </div>
+  );
+}
+
+// The postcards' left page: each rarity's chance in its own colour, and how many more to a sure legend.
+function PostcardRates({ save }: { save: SaveData }) {
+  return (
+    <div className="book-detail">
+      <h3>{t("friends.ratesTitle")}</h3>
+      <ul className="post-rates">
+        {RARITIES.slice()
+          .reverse()
+          .map((r) => (
+            <li key={r} className={r}>
+              <span>{t(`staff.rarity.${r}` as StringKey)}</span>
+              <b>{Math.round(BALANCE.staff.rates[r] * 100)}%</b>
+            </li>
+          ))}
+      </ul>
+      <p className="fx">{t("friends.pity", { n: BALANCE.staff.pity - save.staff.sinceLegend })}</p>
+      <p className="book-note">{t("friends.tenHero")}</p>
+    </div>
+  );
+}
+
+// The right page: the one free postcard, one, or ten (the main action, red).
+function PostcardSend({ save, busy, onSend, onShop }: { save: SaveData; busy: boolean; onSend: (count: 1 | 10, free?: boolean) => void; onShop: () => void }) {
+  const st = save.staff;
+  const knows = knowsCharcoal(save);
+  const C = BALANCE.staff.cost;
+  return (
+    <div className="book-detail post-send">
+      <h3>{t("friends.sendTitle")}</h3>
+      {!st.freeUsed && (
+        <BuyCard disabled={busy} onClick={() => onSend(1, true)}>
+          {t("friends.free")}
+        </BuyCard>
+      )}
+      {knows ? (
+        <>
+          <BuyCard disabled={busy || save.charcoal < C.one} onClick={() => onSend(1)}>
+            <Price charcoal={C.one} haveGold={save.gold} haveCharcoal={save.charcoal} />
+            {t("friends.oneShort")}
+          </BuyCard>
+          <button className="ui-btn post-ten" disabled={busy || save.charcoal < C.ten} onClick={() => onSend(10)}>
+            {t("friends.tenShort", { n: C.ten })}
+          </button>
+          {save.charcoal < C.one && (
+            <button className="menu-item book-link" onClick={onShop}>
+              {t("awaken.getCharcoal")}
+            </button>
+          )}
+        </>
+      ) : (
+        st.freeUsed && <p className="book-note">{t("awaken.charcoalWhere")}</p>
+      )}
+    </div>
+  );
+}
+
+// What came: each friend once (doubles counted as shards), the new ones first.
+function PostcardResults({ results, onAgain }: { results: Result[]; onAgain: () => void }) {
+  const sorted = [...results].sort((a, b) => Number(b.isNew) - Number(a.isNew));
+  return (
+    <div className="book-detail">
+      <div className="post-results">
+        {sorted.map((r, i) => (
+          <div key={r.id} className={`post-card ${STAFF[r.id].rarity}`} style={{ animationDelay: `${i * 0.12}s` }}>
+            <Face id={r.id} className="row-face" />
+            <span className="name">{t(`staff.name.${r.id}` as StringKey)}</span>
+            <span className={r.isNew ? "new" : "sub"}>{r.isNew ? t("friends.new") : t("friends.shards", { n: r.shards })}</span>
+          </div>
+        ))}
       </div>
+      <button className="menu-item book-link" onClick={onAgain}>
+        {t("friends.again")}
+      </button>
     </div>
   );
 }
