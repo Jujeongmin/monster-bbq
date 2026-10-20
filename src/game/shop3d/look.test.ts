@@ -3,7 +3,7 @@ import { BALANCE } from "../../../shared/balance";
 import { RECIPES } from "../../../shared/content/recipes";
 import type { Customer } from "../../../shared/service/plan";
 import { LAYOUT, Shift, type ShiftConfig } from "../service/shift";
-import { lookAt, patienceTier, promptOf, type Pose } from "./look";
+import { lookAt, patienceTier, promptOf, serveGrade, type Pose } from "./look";
 
 const SV = BALANCE.service;
 const guest = (id: string, arriveMs: number, over: Partial<Customer> = {}): Customer => ({ id, kind: 0, arriveMs, dish: "grilled_belly", patienceMs: 40_000, drink: "none", messy: false, ...over });
@@ -121,4 +121,8 @@ describe("what E does at the nearest thing (promptOf)", () => {
   it("colours patience green, then yellow from half, red from three quarters", () => {
     expect([0, 0.49, 0.5, 0.74, 0.75, 1].map(patienceTier)).toEqual(["ok", "ok", "warn", "warn", "late", "late"]);
   });
+});
+
+it("names a serve fast under 0.4 of the patience, good under 0.75, late after (a reaction, no money)", () => {
+  expect([0, 0.39, 0.4, 0.74, 0.75].map(serveGrade)).toEqual(["fast", "fast", "good", "good", "late"]);
 });

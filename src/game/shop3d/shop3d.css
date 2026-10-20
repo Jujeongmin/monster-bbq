@@ -55,3 +55,17 @@
 /* when the plates run out or the shop closes: a ribbon pops in the middle, holds, and goes (the night goes on) */
 .s3-band { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); z-index: 11; padding: 2px 16px; font-size: 18px; white-space: nowrap; pointer-events: none; animation: s3-band 1.6s steps(16) both; }
 @keyframes s3-band { 0% { opacity: 0; transform: translateX(-50%) scale(0.6); } 15% { opacity: 1; transform: translateX(-50%) scale(1.08); } 22%, 80% { opacity: 1; transform: translateX(-50%) scale(1); } 100% { opacity: 0; transform: translateX(-50%) scale(1); } }
+
+/* shop remake step 3: effects, all in steps */
+/* a guest's bubble pops in when they order */
+.s3-bubble { animation: s3-bubble-in 0.2s steps(4) both; }
+@keyframes s3-bubble-in { from { scale: 0.3; } 60% { scale: 1.15; } }
+/* coins jump off the served guest and fly to the gold */
+.s3-coin { position: absolute; width: 16px; margin: -8px 0 0 -8px; image-rendering: pixelated; pointer-events: none; z-index: 6; animation: s3-coin 0.7s steps(12) both; }
+@keyframes s3-coin { 0% { transform: translate(0, 0); opacity: 1; } 25% { transform: translate(calc(var(--dx) * 0.05), -26px); } 95% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+/* a word stamped big: lands large, settles, fades */
+.s3-stamp { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: 16px; text-shadow: 1px 1px 0 #2b1408, -1px 1px 0 #2b1408, 1px -1px 0 #2b1408, -1px -1px 0 #2b1408; pointer-events: none; z-index: 6; animation: s3-stamp 1.2s steps(12) both; }
+@keyframes s3-stamp { 0% { scale: 2.2; opacity: 0; } 12% { scale: 0.9; opacity: 1; } 20%, 70% { scale: 1; opacity: 1; } 100% { scale: 1; opacity: 0; } }
+/* a guest storming out shakes the room a little */
+.s3-layer.shake { animation: s3-shake 0.2s steps(4); }
+@keyframes s3-shake { 25% { translate: 2px 0; } 50% { translate: -2px 1px; } 75% { translate: 1px -1px; } }

@@ -71,7 +71,7 @@ export type Target = { kind: "seat"; seat: number } | { kind: "pass" } | { kind:
 export type ShiftEvent =
   | { type: "arrive" | "sit" | "order" | "eat" | "leave"; guest: string }
   | { type: "angry"; guest: string }
-  | { type: "served"; guest: string; dish: DishId; tip: number }
+  | { type: "served"; guest: string; dish: DishId; tip: number; ratio: number } // ratio: the patience the wait used
   | { type: "drink"; guest: string; pour: Pour }
   | { type: "cooked"; dish: DishId }
   | { type: "take"; n: number }
@@ -463,7 +463,7 @@ export class Shift {
       g.phase = "eating";
       g.timerMs = SV.eatMs;
       const price = this.prices.get(item.dish) ?? 0;
-      this.events.push({ type: "served", guest: g.id, dish: item.dish, tip: tipFor(price, false) });
+      this.events.push({ type: "served", guest: g.id, dish: item.dish, tip: tipFor(price, false), ratio: g.servedMs / g.patienceMs });
       this.events.push({ type: "eat", guest: g.id });
     } else {
       g.pour = item.pour;

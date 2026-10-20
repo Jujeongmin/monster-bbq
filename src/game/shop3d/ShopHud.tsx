@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { BALANCE } from "../../../shared/balance";
 import { t, type StringKey } from "../../i18n";
 import { LidLine } from "../../screens/hud/LidLine";
@@ -22,6 +23,19 @@ export interface Tip {
   id: string;
   face: LidFace;
   text: string;
+}
+// a coin flying from a served guest to the gold (tx, ty), or a word stamped big (a serve's grade, a pour)
+export interface Fx {
+  id: number;
+  kind: "coin" | "stamp";
+  x: number;
+  y: number;
+  tx?: number;
+  ty?: number;
+  delay?: number;
+  text?: string;
+  tone?: string;
+  born: number;
 }
 export interface Band {
   id: number;
@@ -48,6 +62,7 @@ export interface HudProps {
   pops: Pop[];
   tip: Tip | null;
   band: Band | null;
+  fx: Fx[];
   touch: boolean;
   stickX: number;
   onClose: () => void;
@@ -82,8 +97,17 @@ function PromptBubble({ prompt, anchors, touch }: { prompt: Prompt; anchors: Anc
   );
 }
 
+// the gold on the top strip rolls up to its new value instead of jumping
+function useRolling(value: number, time: number): number {
+  const r = useRef({ from: value, to: value, start: time });
+  if (value !== r.current.to) r.current = { from: rolled(r.current, time), to: value, start: time };
+  return rolled(r.current, time);
+}
+const rolled = (r: { from: number; to: number; start: number }, time: number) => Math.round(r.from + (r.to - r.from) * Math.min(1, (time - r.start) / 500));
+
 export function ShopHud(p: HudProps) {
   const { look } = p;
+  const gold = useRolling(look.gold, p.time);
   const STICK = { x: 110, y: 440, r: 40 };
   const stick = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
@@ -96,7 +120,7 @@ export function ShopHud(p: HudProps) {
       <div className="s3-topbar">
         <img className="s3-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />
         <span>
-          {t("service.tally", { served: look.served, total: p.total, gold: look.gold })} · {t("service.platesLeft", { n: look.platesLeft })}
+          {t("service.tally", { served: look.served, total: p.total, gold })} · {t("service.platesLeft", { n: look.platesLeft })}
         </span>
         <span className="s3-clock">{p.clock}</span>
       </div>
@@ -136,6 +160,15 @@ export function ShopHud(p: HudProps) {
             ▼
           </span>
         </>
+      )}
+      {p.fx.map((f) =>
+        f.kind === "coin" ? (
+          <img key={f.id} className="s3-coin" src={artUrl("test/ui/icon_gold.png")} alt="" style={{ left: f.x, top: f.y, animationDelay: `${f.delay ?? 0}ms`, "--dx": `${(f.tx ?? f.x) - f.x}px`, "--dy": `${(f.ty ?? f.y) - f.y}px` } as React.CSSProperties} />
+        ) : (
+          <span key={f.id} className="s3-stamp" style={{ left: f.x, top: f.y, color: f.tone }}>
+            {f.text}
+          </span>
+        ),
       )}
       {p.pops.map((o) => (
         <span key={o.id} className="s3-pop" style={{ left: o.x, top: o.y, color: o.color }}>

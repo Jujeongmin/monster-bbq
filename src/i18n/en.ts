@@ -219,6 +219,9 @@ export const en: Record<keyof typeof ko, string> = {
   "tip.charcoal": "Grandma's secret golden charcoal. It awakens your gear and dishes.",
   "service.band.soldOut": "Sold out!",
   "service.band.closing": "Closing time!",
+  "service.grade.fast": "Fast!",
+  "service.grade.good": "Good",
+  "service.grade.late": "Late",
   // what the action key does at the nearest thing in the night shop (shop remake step 3)
   "prompt.take": "Take dish",
   "prompt.give": "Serve",

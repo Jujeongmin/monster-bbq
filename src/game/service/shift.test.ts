@@ -222,3 +222,17 @@ describe("the night at the counter (Dave's rules)", () => {
     expect(again.s.pass).toEqual(["grilled_belly"]);
   });
 });
+
+describe("what a serve tells the screen", () => {
+  it("carries how much of the guest's patience the wait used", () => {
+    const sh = new Shift(cfg([guest("c0", 0)]));
+    run(sh, SETTLE + RECIPES.grilled_belly.cookMs + 100);
+    sh.drain();
+    sh.s.x = LAYOUT.pass;
+    sh.act();
+    sh.s.guests[0].waitedMs = 10_000;
+    sh.s.x = sh.s.seats[0].x;
+    sh.act();
+    expect(sh.drain().find((e) => e.type === "served")).toMatchObject({ type: "served", guest: "c0", ratio: 0.25 });
+  });
+});

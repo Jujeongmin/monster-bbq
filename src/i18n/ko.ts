@@ -218,6 +218,9 @@ export const ko = {
   "tip.charcoal": "할미 비법 황금 숯이껑. 장비랑 요리를 각성시키껑.",
   "service.band.soldOut": "다 팔렸다!",
   "service.band.closing": "영업 끝!",
+  "service.grade.fast": "빠름!",
+  "service.grade.good": "좋아",
+  "service.grade.late": "늦었어",
   // what the action key does at the nearest thing in the night shop (shop remake step 3)
   "prompt.take": "요리 받기",
   "prompt.give": "내려놓기",

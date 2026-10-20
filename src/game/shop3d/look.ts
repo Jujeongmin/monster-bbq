@@ -20,6 +20,7 @@ export interface Prompt {
   why: PromptWhy | null;
 }
 export type PatienceTier = "ok" | "warn" | "late";
+export type ServeGrade = "fast" | "good" | "late";
 export interface GuestLook {
   id: string;
   tex: string;
@@ -118,6 +119,10 @@ export function promptOf(shift: Shift): Prompt | null {
 
 // the bubble's patience colour: green, yellow from half, red from three quarters
 export const patienceTier = (p: number): PatienceTier => (p < 0.5 ? "ok" : p < 0.75 ? "warn" : "late");
+
+// how a guest takes their dish, by the share of their patience the wait used: only a reaction, the tip
+// does not depend on it (shared/service/settle tipFor)
+export const serveGrade = (ratio: number): ServeGrade => (ratio < 0.4 ? "fast" : ratio < 0.75 ? "good" : "late");
 
 function glowOf(shift: Shift): Glow | null {
   const target = shift.canAct() ? shift.target() : null;

@@ -6,9 +6,9 @@ import { loadShift, saveShift } from "../service/night";
 import { LAYOUT, Shift, type ShiftEvent } from "../service/shift";
 import { clockText, type ServiceData, type ShopReport } from "../service/types";
 import { displayScale, FLOOR_Y, COUNTER, Z } from "./layout";
-import { lookAt, type Pose, type ShopLook } from "./look";
+import { lookAt, serveGrade, type Pose, type ShopLook } from "./look";
 import { moveFrom } from "./input";
-import { ShopHud, type Anchors, type Band, type Pop, type Tip } from "./ShopHud";
+import { ShopHud, type Anchors, type Band, type Fx, type Pop, type Tip } from "./ShopHud";
 import { ShopView } from "./ShopView";
 
 // The 3D night shop in a page (shop 3D design 7): the same loop the 2D ServiceScene ran. Walk, tick the
@@ -20,6 +20,9 @@ const MAX_DT_MS = 50;
 const POP_MS = 1500;
 const TIP_MS = 4000; // the lid's line stays this long (the clock of the night, so a pause holds it)
 const BAND_MS = 1600;
+const FX_MS = 1200;
+const SHAKE_MS = 200;
+const GOLD_AT = { x: 22, y: 16 }; // the coin icon on the top strip, where flying coins land
 
 // local storage for the seen tips, or none where the page may not use it
 const tipStore = (): Storage | null => {
@@ -38,6 +41,8 @@ interface Hud {
   pops: Pop[];
   tip: Tip | null;
   band: Band | null;
+  fx: Fx[];
+  shake: boolean;
 }
 
 // `hold`: the day's title card is over the shop, so the night waits (no clock, no guests) until it is gone.
@@ -103,6 +108,10 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
     const seen = readSeen(tipStore());
     let tip: { id: Exclude<TipId, "awakenApp">; left: number } | null = null;
     let band: { id: number; key: StringKey; born: number } | null = null;
+    // the effects events start (never the state): a reloaded night does not burst into coins
+    let fx: Fx[] = [];
+    let shakeAt = -Infinity;
+    const stamp = (at: { x: number; y: number }, text: string, tone: string) => fx.push({ id: ++popId, kind: "stamp", x: at.x, y: at.y, text, tone, born: now });
 
     const pop = (at: { x: number; y: number }, text: string, color: string) => pops.push({ id: ++popId, x: at.x, y: at.y, text, color, born: now });
     const guestAt = (id: string) => {
@@ -153,7 +162,13 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
         case "served": {
           hold.poseUntil = now + 250;
           const at = guestAt(e.guest);
-          if (at) pop(at, t("service.tip", { n: e.tip }), "#ffd166");
+          if (at) {
+            pop(at, t("service.tip", { n: e.tip }), "#ffd166");
+            const grade = serveGrade(e.ratio);
+            stamp({ x: at.x, y: at.y - 22 }, t(`service.grade.${grade}`), grade === "fast" ? "#ffd166" : grade === "good" ? "#bfe8a0" : "#d8c4a4");
+            // a few coins jump off the guest and fly to the gold
+            for (let i = 0; i < 4; i++) fx.push({ id: ++popId, kind: "coin", x: at.x + (i - 1.5) * 8, y: at.y, tx: GOLD_AT.x, ty: GOLD_AT.y, delay: i * 70, born: now });
+          }
           bandal = { tex: "bandal_smile", until: now + 700 };
           break;
         }
@@ -163,6 +178,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
         case "angry": {
           const at = guestAt(e.guest);
           if (at) pop(at, t("service.angry"), "#ff8080");
+          shakeAt = now;
           break;
         }
         case "scrub":
@@ -170,7 +186,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
           if (e.done) pop(view.project(shift.s.seats[e.seat].x, FLOOR_Y + COUNTER.h + 20, Z.counter), t("service.tip", { n: e.tip }), "#ffd166");
           break;
         case "pour":
-          pop(view.project(LAYOUT.drinkCart, FLOOR_Y + 60, Z.station), t(`service.pour.${e.pour}`), e.pour === "perfect" ? "#ffd166" : e.pour === "good" ? "#bfe8a0" : "#ff8080");
+          stamp(view.project(LAYOUT.drinkCart, FLOOR_Y + 66, Z.station), t(`service.pour.${e.pour}`), e.pour === "perfect" ? "#ffd166" : e.pour === "good" ? "#bfe8a0" : "#ff8080");
           break;
         case "coal":
           hold.busy = "grind";
@@ -225,6 +241,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
       view.render(look, isPaused ? 0 : dt / 1000);
       pops = pops.filter((p) => time - p.born < POP_MS);
       if (band && time - band.born > BAND_MS) band = null;
+      fx = fx.filter((f) => time - f.born < FX_MS);
       setHud({
         look,
         anchors: view.anchors(look),
@@ -233,6 +250,8 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
         pops: [...pops],
         tip: tip && { id: tip.id, face: TIP_FACE[tip.id], text: t(`tip.${tip.id}` as StringKey) },
         band: band && { id: band.id, text: t(band.key) },
+        fx: [...fx],
+        shake: time - shakeAt < SHAKE_MS,
       });
       raf = requestAnimationFrame(frame);
     };
@@ -268,7 +287,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
 
   return (
     <div ref={stage} className="s3-stage">
-      <div className="s3-layer" style={{ transform: `scale(${scale})` }}>
+      <div className={`s3-layer${hud?.shake ? " shake" : ""}`} style={{ transform: `scale(${scale})` }}>
         <canvas ref={canvas} width={960} height={540} />
         {hud && (
           <ShopHud
@@ -284,6 +303,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
             pops={hud.pops}
             tip={hud.tip}
             band={hud.band}
+            fx={hud.fx}
             touch={touch}
             stickX={stickX}
             onClose={() => ctl.current.close()}
