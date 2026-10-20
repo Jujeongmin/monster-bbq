@@ -90,7 +90,7 @@ export class ServiceScene extends Phaser.Scene {
   private clock!: Phaser.GameObjects.Text;
   private closeButton!: UiButton;
   private pauseButton!: UiButton;
-  private keys!: Record<"A" | "D" | "LEFT" | "RIGHT" | "SHIFT" | "SPACE", Phaser.Input.Keyboard.Key>;
+  private keys!: Record<"A" | "D" | "LEFT" | "RIGHT" | "SHIFT" | "SPACE" | "E", Phaser.Input.Keyboard.Key>;
   private stickPointer: number | null = null;
   private stickX = 0;
   private stickKnob!: Phaser.GameObjects.Arc;
@@ -176,9 +176,12 @@ export class ServiceScene extends Phaser.Scene {
     this.closeButton.box.setDepth(1000);
 
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys("A,D,LEFT,RIGHT,SHIFT,SPACE") as typeof this.keys;
-    this.keys.SPACE.on("down", () => this.press());
-    this.keys.SPACE.on("up", () => this.release());
+    this.keys = kb.addKeys("A,D,LEFT,RIGHT,SHIFT,SPACE,E") as typeof this.keys;
+    // the action key: E as by day and in the hunt (user, 2026-10-20), or Space
+    for (const key of [this.keys.SPACE, this.keys.E]) {
+      key.on("down", () => this.press());
+      key.on("up", () => this.release());
+    }
     if (this.sys.game.device.input.touch || new URLSearchParams(location.search).has("touch")) this.createTouchControls();
   }
 

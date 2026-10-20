@@ -204,7 +204,8 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
       if (k === "a" || k === "arrowleft") keys.left = down;
       else if (k === "d" || k === "arrowright") keys.right = down;
       else if (k === "shift") keys.run = down;
-      else if (k === " ") {
+      // the action key: E as by day and in the hunt (user, 2026-10-20), or Space
+      else if (k === " " || k === "e") {
         e.preventDefault();
         if (down && !e.repeat) press();
         if (!down) release();
