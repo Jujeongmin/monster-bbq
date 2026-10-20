@@ -51,7 +51,7 @@ describe("awakening", () => {
   });
   it("waits while a hunt or a night service is on", () => {
     expect(awaken(rich({ hunt: { id: "h", seed: 1, zone: "forest", period: "morning", side: "sling", startedAt: 1 } }), "melee").error).toBe("wrong_stage");
-    expect(awaken(rich({ service: { id: "s", seed: 1, startedAt: 1, dishes: [] } }), "melee").error).toBe("wrong_stage");
+    expect(awaken(rich({ service: { id: "s", seed: 1, startedAt: 1, dishes: [], planMenu: [], adds: [] } }), "melee").error).toBe("wrong_stage");
   });
 });
 

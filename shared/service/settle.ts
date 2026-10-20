@@ -38,8 +38,9 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
   const svc = save.service;
   const bad = { save, error: "bad_service" };
   if (!svc || a.serviceId !== svc.id || !Array.isArray(a.served) || !Array.isArray(a.left) || a.served.length > MAX_SERVED || a.left.length > MAX_SERVED) return bad;
+  // tonight's dishes (with any added during the night), and the guests planned from the opening menu
   const menu = svc.dishes.map((d) => d.dish);
-  const customers = new Map(planService(svc.seed, { day: save.day, reputation: save.reputation, menu }).map((c) => [c.id, c]));
+  const customers = new Map(planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.planMenu }).map((c) => [c.id, c]));
   const plates = new Map(svc.dishes.map((d) => [d.dish, d.plates]));
   const price = new Map(svc.dishes.map((d) => [d.dish, d.price]));
   const seen = new Set<string>();

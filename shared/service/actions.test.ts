@@ -127,3 +127,9 @@ describe("finishService (restaurant v2 stage 2: the waiter carries, tips, drinks
     expect(applyAction(kitchen, report([]), after(late)).error).toBe("bad_service");
   });
 });
+
+describe("openShop keeps the menu it opened with (shop remake step 4)", () => {
+  it("records the opening menu as planMenu, with no adds yet", () => {
+    expect(opened().service).toMatchObject({ planMenu: ["grilled_belly", "garlic_neck"], adds: [] });
+  });
+});

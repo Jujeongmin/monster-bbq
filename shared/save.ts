@@ -30,6 +30,10 @@ export interface PendingService {
   seed: number;
   startedAt: number;
   dishes: TonightDish[];
+  // the menu the shop opened with: tonight's guests are planned from it, whatever is added later (shop
+  // remake step 4), and the adds already applied (each addId once)
+  planMenu: DishId[];
+  adds: string[];
 }
 
 // The last settled service, for the settle screen (and to ignore a resent report).
@@ -185,7 +189,11 @@ function readTonight(raw: unknown): TonightDish[] {
 function readService(raw: unknown): PendingService | null {
   const r = raw as Partial<PendingService> | null;
   if (!r || typeof r !== "object" || typeof r.id !== "string" || typeof r.seed !== "number" || typeof r.startedAt !== "number") return null;
-  return { id: r.id, seed: r.seed, startedAt: r.startedAt, dishes: readTonight(r.dishes) };
+  const dishes = readTonight(r.dishes);
+  // an older save opened with exactly its dishes
+  const plan = Array.isArray(r.planMenu) ? r.planMenu.filter(isDishId) : [];
+  const adds = Array.isArray(r.adds) ? r.adds.filter((x): x is string => typeof x === "string").slice(-50) : [];
+  return { id: r.id, seed: r.seed, startedAt: r.startedAt, dishes, planMenu: plan.length ? plan : dishes.map((d) => d.dish), adds };
 }
 
 function readUpgrades(raw: unknown): Partial<Record<UpgradeId, number>> {

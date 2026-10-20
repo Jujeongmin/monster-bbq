@@ -61,7 +61,7 @@ describe("readSave (version 9)", () => {
     reputation: 12,
     upgrades: { melee: 2 },
     lunchbox: ["grilled_belly"],
-    service: { id: "s1", seed: 9, startedAt: 2000, dishes: [{ dish: "grilled_belly", plates: 8, price: 46 }] },
+    service: { id: "s1", seed: 9, startedAt: 2000, dishes: [{ dish: "grilled_belly", plates: 8, price: 46 }], planMenu: ["grilled_belly"], adds: [] },
     lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 0, drinks: 0, cleaned: 0, happy: 3, repDelta: 1, dishes: [{ dish: "grilled_belly", plates: 3, gold: 120 }] },
     bossKey: true,
     pages: ["forest"],
@@ -224,5 +224,16 @@ describe("seat levels past the new top", () => {
     expect([four.upgrades.seats, four.gold]).toEqual([3, 3_200]);
     const three = readSave({ ...newSave(), gold: 0, upgrades: { seats: 3 } });
     expect([three.upgrades.seats, three.gold]).toEqual([3, 0]);
+  });
+});
+
+describe("tonight's opening menu (shop remake step 4)", () => {
+  it("reads planMenu from an older save's dishes", () => {
+    const s = readSave({ ...newSave(), stage: "kitchen", service: { id: "s", seed: 1, startedAt: 0, dishes: [{ dish: "grilled_belly", plates: 3, price: 40 }] } });
+    expect(s.service).toMatchObject({ planMenu: ["grilled_belly"], adds: [] });
+  });
+  it("keeps a saved planMenu and its adds", () => {
+    const s = readSave({ ...newSave(), stage: "kitchen", service: { id: "s", seed: 1, startedAt: 0, dishes: [{ dish: "grilled_belly", plates: 3, price: 40 }, { dish: "garlic_neck", plates: 3, price: 50 }], planMenu: ["grilled_belly"], adds: ["a1"] } });
+    expect(s.service).toMatchObject({ planMenu: ["grilled_belly"], adds: ["a1"] });
   });
 });
