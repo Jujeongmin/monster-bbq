@@ -1,5 +1,7 @@
 import { BALANCE } from "../../../shared/balance";
 import { t, type StringKey } from "../../i18n";
+import { LidLine } from "../../screens/hud/LidLine";
+import type { LidFace } from "../../screens/dialogue/Dialogue";
 import { artUrl } from "../art";
 import { patienceTier, type Prompt, type ShopLook } from "./look";
 import "./shop3d.css";
@@ -15,6 +17,15 @@ export interface Pop {
   y: number;
   text: string;
   color: string;
+}
+export interface Tip {
+  id: string;
+  face: LidFace;
+  text: string;
+}
+export interface Band {
+  id: number;
+  text: string;
 }
 export interface Anchors {
   guests: Record<string, { x: number; y: number }>;
@@ -35,6 +46,8 @@ export interface HudProps {
   closeDisabled: boolean;
   paused: boolean;
   pops: Pop[];
+  tip: Tip | null;
+  band: Band | null;
   touch: boolean;
   stickX: number;
   onClose: () => void;
@@ -129,6 +142,12 @@ export function ShopHud(p: HudProps) {
           {o.text}
         </span>
       ))}
+      {p.tip && <LidLine key={p.tip.id} face={p.tip.face} text={p.tip.text} />}
+      {p.band && (
+        <div key={p.band.id} className="ui-ribbon s3-band">
+          {p.band.text}
+        </div>
+      )}
       {p.touch && (
         <>
           <div className="s3-stick" style={{ left: STICK.x - STICK.r, top: STICK.y - STICK.r }} onPointerDown={(e) => (e.currentTarget.setPointerCapture(e.pointerId), stick(e))} onPointerMove={(e) => e.buttons && stick(e)} onPointerUp={() => p.onStick(null)} onPointerCancel={() => p.onStick(null)}>

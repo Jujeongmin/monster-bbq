@@ -208,6 +208,17 @@ export const en: Record<keyof typeof ko, string> = {
   "service.coalOut": "Out of charcoal! Bandal waits",
   "service.closing": "10 pm, closing time! Only those inside now",
   "service.closed": "Closed",
+  // the lid's first-time lines in the night shop, and the bands (shop remake step 3)
+  "tip.open": "Take the dish in the bubble from the pass and bring it over!",
+  "tip.cooked": "It's ready! Go to the pass and press E.",
+  "tip.carry": "Take it to the guest who ordered it.",
+  "tip.coalLow": "Charcoal's running low! Tap E at the charcoal box.",
+  "tip.drink": "A barley tea guest. Hold at the cart, let go at the line.",
+  "tip.mess": "Clear the leftovers, or no one can sit there.",
+  "tip.angry": "Too slow and they storm out. That costs reputation.",
+  "tip.charcoal": "Grandma's secret golden charcoal. It awakens your gear and dishes.",
+  "service.band.soldOut": "Sold out!",
+  "service.band.closing": "Closing time!",
   // what the action key does at the nearest thing in the night shop (shop remake step 3)
   "prompt.take": "Take dish",
   "prompt.give": "Serve",

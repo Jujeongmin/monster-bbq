@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { BALANCE } from "../../../shared/balance";
-import { t } from "../../i18n";
+import { t, type StringKey } from "../../i18n";
+import { markSeen, nightTipDue, readSeen, TIP_FACE, type TipId } from "../../screens/tips";
 import { loadShift, saveShift } from "../service/night";
 import { LAYOUT, Shift, type ShiftEvent } from "../service/shift";
 import { clockText, type ServiceData, type ShopReport } from "../service/types";
 import { displayScale, FLOOR_Y, COUNTER, Z } from "./layout";
 import { lookAt, type Pose, type ShopLook } from "./look";
 import { moveFrom } from "./input";
-import { ShopHud, type Anchors, type Pop } from "./ShopHud";
+import { ShopHud, type Anchors, type Band, type Pop, type Tip } from "./ShopHud";
 import { ShopView } from "./ShopView";
 
 // The 3D night shop in a page (shop 3D design 7): the same loop the 2D ServiceScene ran. Walk, tick the
@@ -17,6 +18,17 @@ import { ShopView } from "./ShopView";
 
 const MAX_DT_MS = 50;
 const POP_MS = 1500;
+const TIP_MS = 4000; // the lid's line stays this long (the clock of the night, so a pause holds it)
+const BAND_MS = 1600;
+
+// local storage for the seen tips, or none where the page may not use it
+const tipStore = (): Storage | null => {
+  try {
+    return localStorage;
+  } catch {
+    return null;
+  }
+};
 
 interface Hud {
   look: ShopLook;
@@ -24,6 +36,8 @@ interface Hud {
   clock: string;
   time: number;
   pops: Pop[];
+  tip: Tip | null;
+  band: Band | null;
 }
 
 // `hold`: the day's title card is over the shop, so the night waits (no clock, no guests) until it is gone.
@@ -85,6 +99,10 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
     let pops: (Pop & { born: number })[] = [];
     let popId = 0;
     let now = 0;
+    // the lid's first-time lines (one at a time) and the bands when the plates run out or the shop closes
+    const seen = readSeen(tipStore());
+    let tip: { id: Exclude<TipId, "awakenApp">; left: number } | null = null;
+    let band: { id: number; key: StringKey; born: number } | null = null;
 
     const pop = (at: { x: number; y: number }, text: string, color: string) => pops.push({ id: ++popId, x: at.x, y: at.y, text, color, born: now });
     const guestAt = (id: string) => {
@@ -163,11 +181,11 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
           break;
         case "soldOut":
           setCloseStep((c) => (c === 0 ? 1 : c));
-          pop(top, t("service.soldOut"), "#ffd166");
+          band = { id: ++popId, key: "service.band.soldOut", born: now };
           break;
         case "closing":
           setCloseStep((c) => (c === 0 ? 1 : c));
-          pop(top, t("service.closing"), "#ffd166");
+          band = { id: ++popId, key: "service.band.closing", born: now };
           break;
       }
     };
@@ -184,7 +202,18 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
           savedAt = shift.s.clock;
           saveShift(sessionStorage, shop.serviceId, shift.s);
         }
-        for (const e of shift.drain()) handle(e);
+        const events = shift.drain();
+        for (const e of events) handle(e);
+        // the lid's line counts down with the night; when none is up, the next first-time moment gets one
+        if (tip && (tip.left -= dt) <= 0) tip = null;
+        if (!tip) {
+          const id = nightTipDue(shift, events, seen);
+          if (id && id !== "charcoal" && id !== "awakenApp") {
+            tip = { id, left: TIP_MS };
+            seen.add(id);
+            markSeen(tipStore(), id);
+          }
+        }
         if (shift.done) {
           ended = true;
           saveShift(sessionStorage, shop.serviceId, shift.s);
@@ -195,7 +224,16 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
       if (time < bandal.until) look.bandal = bandal.tex;
       view.render(look, isPaused ? 0 : dt / 1000);
       pops = pops.filter((p) => time - p.born < POP_MS);
-      setHud({ look, anchors: view.anchors(look), clock: shift.s.clock >= BALANCE.service.openMs ? t("service.closed") : clockText(shift.s.clock), time, pops: [...pops] });
+      if (band && time - band.born > BAND_MS) band = null;
+      setHud({
+        look,
+        anchors: view.anchors(look),
+        clock: shift.s.clock >= BALANCE.service.openMs ? t("service.closed") : clockText(shift.s.clock),
+        time,
+        pops: [...pops],
+        tip: tip && { id: tip.id, face: TIP_FACE[tip.id], text: t(`tip.${tip.id}` as StringKey) },
+        band: band && { id: band.id, text: t(band.key) },
+      });
       raf = requestAnimationFrame(frame);
     };
 
@@ -244,6 +282,8 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
             closeDisabled={closeStep === 2}
             paused={paused}
             pops={hud.pops}
+            tip={hud.tip}
+            band={hud.band}
             touch={touch}
             stickX={stickX}
             onClose={() => ctl.current.close()}

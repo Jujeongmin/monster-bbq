@@ -207,6 +207,17 @@ export const ko = {
   "service.coalOut": "숯이 떨어졌다! 반달이가 기다려",
   "service.closing": "22시, 영업 끝! 남은 손님만 받아요",
   "service.closed": "마감",
+  // the lid's first-time lines in the night shop, and the bands (shop remake step 3)
+  "tip.open": "말풍선 요리를 창구에서 받아 갖다주껑!",
+  "tip.cooked": "다 됐껑! 창구로 가서 E껑.",
+  "tip.carry": "그 요리 시킨 손님한테 가껑.",
+  "tip.coalLow": "숯 떨어진다껑! 숯통에서 E 연타껑.",
+  "tip.drink": "보리차 손님이껑. 수레에서 꾹 눌렀다 선에서 떼껑.",
+  "tip.mess": "잔반 치우껑. 안 치우면 다음 손님 못 앉껑.",
+  "tip.angry": "늦으면 화내고 가껑. 평판 깎이껑.",
+  "tip.charcoal": "할미 비법 황금 숯이껑. 장비랑 요리를 각성시키껑.",
+  "service.band.soldOut": "다 팔렸다!",
+  "service.band.closing": "영업 끝!",
   // what the action key does at the nearest thing in the night shop (shop remake step 3)
   "prompt.take": "요리 받기",
   "prompt.give": "내려놓기",
