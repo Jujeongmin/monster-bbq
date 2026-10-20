@@ -80,7 +80,8 @@ export type ShiftEvent =
   | { type: "scrub"; seat: number; done: boolean; tip: number }
   | { type: "pour"; pour: Pour }
   | { type: "closing" }
-  | { type: "soldOut" };
+  | { type: "soldOut" }
+  | { type: "reopened" };
 
 export interface ShiftConfig {
   customers: Customer[];
@@ -106,6 +107,8 @@ export interface ShiftState {
   busyMs: number;
   pouring: { drink: Exclude<Drink, "none">; fill: number } | null;
   ordersClosed: boolean;
+  // who closed the orders: a sell-out reopens when plates are added (shop remake step 4), the others do not
+  closedBy: "soldOut" | "player" | "clock" | null;
   left: string[];
   cleaned: string[];
   seated: number; // guests seated so far (spreads them over the stools)
@@ -120,11 +123,17 @@ export class Shift {
   s: ShiftState;
   readonly cfg: ShiftConfig;
   private prices: Map<DishId, number>;
+  // tonight's dishes in menu order, growing when one is added during the night
+  private menu: DishId[];
   private events: ShiftEvent[] = [];
+  // set by the page while more can still be added to the menu: a sold-out night then waits for it (or for
+  // the hall to be closed) instead of ending when the last guest leaves
+  waitForMenu = false;
 
   constructor(cfg: ShiftConfig, saved?: ShiftState) {
     this.cfg = cfg;
     this.prices = new Map(cfg.dishes.map((d) => [d.dish, d.price]));
+    this.menu = cfg.dishes.map((d) => d.dish);
     this.s = saved ?? {
       clock: 0,
       arrived: 0,
@@ -140,10 +149,12 @@ export class Shift {
       busyMs: 0,
       pouring: null,
       ordersClosed: false,
+      closedBy: null,
       left: [],
       cleaned: [],
       seated: 0,
     };
+    this.s.closedBy ??= null; // a night saved before this field
   }
 
   // the events since the last call
@@ -163,6 +174,8 @@ export class Shift {
   }
 
   get done(): boolean {
+    const s = this.s;
+    if (this.waitForMenu && s.closedBy === "soldOut" && s.arrived < this.cfg.customers.length && s.clock < SV.openMs) return false;
     const all = this.s.arrived >= this.cfg.customers.length || this.s.ordersClosed;
     return all && (this.cfg.customers.length > 0 || this.s.ordersClosed) && this.s.guests.every((g) => g.phase === "gone");
   }
@@ -173,6 +186,7 @@ export class Shift {
     // closing time: no one else comes in
     if (!s.ordersClosed && s.clock >= SV.openMs) {
       s.ordersClosed = true;
+      s.closedBy = "clock";
       this.events.push({ type: "closing" });
     }
     // the waiter: hands busy, pouring, or walking the aisle
@@ -190,6 +204,7 @@ export class Shift {
     // nothing left to order: no one else comes in
     if (!s.ordersClosed && this.platesLeft() === 0 && !s.guests.some((g) => g.phase === "queue" || g.phase === "walk" || (g.phase === "seated" && !g.ordered))) {
       s.ordersClosed = true;
+      s.closedBy = "soldOut";
       this.events.push({ type: "soldOut" });
     }
   }
@@ -252,7 +267,7 @@ export class Shift {
   private order(g: Guest): boolean {
     const s = this.s;
     const avail = (d: DishId) => (s.plates[d] ?? 0) > 0 || this.spare(d, g) > 0;
-    const dish = avail(g.dish) ? g.dish : (this.cfg.dishes.map((d) => d.dish).find(avail) ?? null);
+    const dish = avail(g.dish) ? g.dish : (this.menu.find(avail) ?? null);
     if (!dish) return false;
     g.dish = dish;
     if (this.spare(dish, g) <= 0) {
@@ -502,13 +517,29 @@ export class Shift {
     return pour;
   }
 
+  // Plates added to the menu during the night (shop remake step 4): a new dish joins tonight's list; a
+  // night closed by a sell-out opens again before closing time.
+  addPlates(dish: DishId, plates: number, price: number) {
+    const s = this.s;
+    s.plates[dish] = (s.plates[dish] ?? 0) + plates;
+    if (!this.menu.includes(dish)) this.menu.push(dish);
+    if (!this.prices.has(dish)) this.prices.set(dish, price);
+    if (s.ordersClosed && s.closedBy === "soldOut" && s.clock < SV.openMs) {
+      s.ordersClosed = false;
+      s.closedBy = null;
+      this.events.push({ type: "reopened" });
+    }
+  }
+
   // First press: no one else comes in. Second: whoever still waits for a dish leaves angry.
   closeOrders() {
     this.s.ordersClosed = true;
+    this.s.closedBy = "player";
   }
 
   closeHall() {
     this.s.ordersClosed = true;
+    this.s.closedBy = "player";
     for (const g of this.s.guests) if ((g.phase === "queue" || g.phase === "walk" || g.phase === "seated") && g.servedMs === null) this.storm(g);
   }
 

@@ -236,3 +236,60 @@ describe("what a serve tells the screen", () => {
     expect(sh.drain().find((e) => e.type === "served")).toMatchObject({ type: "served", guest: "c0", ratio: 0.25 });
   });
 });
+
+describe("more dishes during the night (shop remake step 4)", () => {
+  const one = { dishes: [{ dish: "grilled_belly" as const, plates: 1, price: 40 }] };
+  const soldOut = (sh: Shift) => {
+    for (let t = 0; t < 30_000 && !sh.s.ordersClosed; t += 50) sh.tick(50);
+    expect(sh.drain().some((e) => e.type === "soldOut")).toBe(true);
+  };
+  it("reopens orders after a sell-out when plates are added, and the next guest comes in", () => {
+    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 20_000)], one));
+    soldOut(sh);
+    sh.addPlates("grilled_belly", 2, 40);
+    expect(sh.drain()).toContainEqual({ type: "reopened" });
+    expect(sh.s.ordersClosed).toBe(false);
+    run(sh, 21_000 - sh.s.clock);
+    expect(sh.s.arrived).toBe(2);
+  });
+  it("does not reopen orders the player closed", () => {
+    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 20_000)], one));
+    run(sh, 1000);
+    sh.closeOrders();
+    sh.addPlates("grilled_belly", 2, 40);
+    expect(sh.s.ordersClosed).toBe(true);
+    expect(sh.drain().some((e) => e.type === "reopened")).toBe(false);
+  });
+  it("does not reopen after closing time", () => {
+    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 20_000)], one));
+    soldOut(sh);
+    sh.s.clock = SV.openMs + 1;
+    sh.addPlates("grilled_belly", 2, 40);
+    expect(sh.s.ordersClosed).toBe(true);
+  });
+  it("lets guests order a dish added tonight", () => {
+    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 20_000)], one));
+    soldOut(sh);
+    sh.addPlates("garlic_neck", 3, 50);
+    // c1 walks to a free stool further along, then orders
+    run(sh, 20_000 - sh.s.clock + SETTLE + 6000);
+    expect(sh.s.guests.find((g) => g.id === "c1")).toMatchObject({ dish: "garlic_neck", ordered: true });
+  });
+  it("waits after a sell-out while more could be added, until the player closes the hall", () => {
+    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 60_000)], one));
+    soldOut(sh);
+    goTo(sh, LAYOUT.pass);
+    run(sh, RECIPES.grilled_belly.cookMs + 200);
+    sh.act();
+    goTo(sh, sh.s.seats[0].x);
+    sh.act();
+    run(sh, SV.eatMs + 3000);
+    sh.waitForMenu = true;
+    expect(sh.done).toBe(false);
+    sh.waitForMenu = false;
+    expect(sh.done).toBe(true);
+    sh.waitForMenu = true;
+    sh.closeHall();
+    expect(sh.done).toBe(true);
+  });
+});
