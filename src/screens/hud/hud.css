@@ -59,18 +59,24 @@
 @keyframes nb-fly { 0% { transform: translate(-40vw, 38vh) scale(0.12); } 80% { transform: translate(0, 0) scale(1.03); } 100% { transform: none; } }
 /* the closed notebook (84x110 art pixels) lying on the right page, its spine on the open book's spine, so
    the cover swings over to the left */
-.nb-cover { position: absolute; left: calc(81 * var(--k)); top: calc(1 * var(--k)); width: calc(84 * var(--k)); height: calc(110 * var(--k)); image-rendering: pixelated; transform-origin: 0 50%; backface-visibility: hidden; pointer-events: none; animation: nb-open 0.7s 0.7s steps(16) both; }
-@keyframes nb-open { from { transform: rotateY(0); } 90% { opacity: 1; } to { transform: rotateY(-170deg); opacity: 0; visibility: hidden; } }
-/* the pages under it: hidden while it flies, opening out as the cover turns */
-.nb-book .notebook { animation: nb-pages 0.45s 0.85s steps(9) both; }
-@keyframes nb-pages { from { opacity: 0; transform: scale(0.72, 0.9); } }
-.nb-win.closing { animation: nb-undim 0.3s 0.5s steps(6) both; }
+.nb-cover { position: absolute; left: calc(81 * var(--k)); top: calc(1 * var(--k)); width: calc(84 * var(--k)); height: calc(110 * var(--k)); image-rendering: pixelated; transform-origin: 0 50%; backface-visibility: hidden; pointer-events: none; animation: nb-open 0.5s 0.7s steps(10) both; }
+/* the cover turns until it stands on its spine (past that its back would show), then the open book is there */
+@keyframes nb-open { from { transform: rotateY(0); } 99% { transform: rotateY(-90deg); visibility: visible; } to { transform: rotateY(-90deg); visibility: hidden; } }
+/* the open book only once the cover has turned (user, 2026-10-20: the pages showed while it was still
+   opening), its apps a moment after */
+.nb-book .notebook { animation: nb-pages 0.01s 1.2s both; }
+@keyframes nb-pages { from { visibility: hidden; } }
+.nb-book .notebook-page, .nb-book .notebook-close { animation: nb-apps 0.2s 1.3s steps(4) both; }
+@keyframes nb-apps { from { opacity: 0; } }
+.nb-win.closing { animation: nb-undim 0.3s 0.45s steps(6) both; }
 @keyframes nb-undim { to { background-color: rgba(20, 10, 4, 0); } }
-.nb-win.closing .notebook { animation: nb-pages-out 0.2s steps(4) both; }
-@keyframes nb-pages-out { to { opacity: 0; transform: scale(0.72, 0.9); } }
-.nb-win.closing .nb-cover { animation: nb-shut 0.35s 0.12s steps(9) both; }
-@keyframes nb-shut { from { transform: rotateY(-170deg); opacity: 0; } 15% { opacity: 1; } to { transform: rotateY(0); opacity: 1; } }
-.nb-win.closing .nb-book { animation: nb-down 0.35s 0.5s steps(9) both; }
+.nb-win.closing .notebook-page, .nb-win.closing .notebook-close { animation: nb-apps-out 0.12s steps(3) both; }
+@keyframes nb-apps-out { to { opacity: 0; } }
+.nb-win.closing .notebook { animation: nb-pages-out 0.01s 0.12s both; }
+@keyframes nb-pages-out { to { visibility: hidden; } }
+.nb-win.closing .nb-cover { animation: nb-shut 0.3s 0.12s steps(8) both; }
+@keyframes nb-shut { from { transform: rotateY(-90deg); visibility: visible; } to { transform: rotateY(0); visibility: visible; } }
+.nb-win.closing .nb-book { animation: nb-down 0.35s 0.45s steps(9) both; }
 @keyframes nb-down { from { transform: none; } to { transform: translate(-40vw, 38vh) scale(0.12); } }
 /* the cookbook to read, outside the evening kitchen (research only there) */
 .hud-cookbook { position: relative; width: 92%; height: 84%; padding: calc(6px * var(--s)); overflow: auto; }
@@ -147,5 +153,5 @@
 .hud-cookbook { transform-origin: 0 50%; animation: book-open 0.36s steps(9) both; }
 @keyframes book-open { from { transform: perspective(calc(900px * var(--s))) rotateY(-80deg); opacity: 0.5; } }
 @media (prefers-reduced-motion: reduce) {
-  .nb-win, .nb-book, .nb-cover, .nb-book .notebook, .bag, .bag-cell, .upgrades, .side-pick, .side-card, .kitchen-pop *, .store .shop, .receipt, .hunt-summary, .hud-cookbook { animation-duration: 0.01s !important; animation-delay: 0s !important; }
+  .nb-win, .nb-book, .nb-cover, .nb-book .notebook, .nb-book .notebook-page, .nb-book .notebook-close, .bag, .bag-cell, .upgrades, .side-pick, .side-card, .kitchen-pop *, .store .shop, .receipt, .hunt-summary, .hud-cookbook { animation-duration: 0.01s !important; animation-delay: 0s !important; }
 }
