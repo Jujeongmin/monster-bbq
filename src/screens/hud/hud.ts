@@ -16,7 +16,8 @@ const hud = (name: string) => `test/ui/hud/${name}.png`;
 export const HUD_ART = {
   time: { morning: hud("time_morning"), noon: hud("time_noon"), afternoon: hud("time_afternoon"), evening: hud("time_evening"), night: hud("time_night") } as Record<TimeOfDay, string>,
   bag: hud("bag"),
-  notebook: "test/ui/icon_notebook.png",
+  // the HUD button: the notebook's own closed cover, grill on it (user, 2026-10-20)
+  notebook: hud("notebook_closed"),
   apps: { bag: hud("app_bag"), upgrade: hud("app_upgrade"), awaken: hud("app_awaken"), friends: "test/bandal/smile.png", cookbook: hud("app_cookbook"), menu: hud("app_menu"), shop: hud("app_shop") } as Record<App, string>,
   receipt: hud("receipt"),
   // each window its own material (design 8, approved 2026-10-20): the bag an open bojagi cloth, the

@@ -33,6 +33,8 @@ import "./hud/friends.css";
 import { Receipt } from "./hud/Receipt";
 import { knowsCharcoal, sceneOf, showDayHud, timeOfDay, transitionCard, type App, type Phase, type Scene } from "./hud/hud";
 import { LidLine } from "./hud/LidLine";
+import { GoalLine } from "./hud/GoalLine";
+import { dayGoal, huntGoal, type HuntStep } from "./tutorial";
 import { markSeen, readSeen, TIP_FACE, tipStore, type TipId } from "./tips";
 import { TitleCard } from "./hud/TitleCard";
 import { Cutscene } from "./story/Cutscene";
@@ -134,9 +136,30 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the story scene due now (the prologue on the first morning, its dusk cut on the first evening), shown
   // once the title card is gone; seeing it (or skipping it) is saved
   const story = save && !card ? storyDue(save, phase, watched) : null;
+  // the first day's tutorial (A): the goal now, where to go, the lid's line the first time
+  const [lunchVisited, setLunchVisited] = useState(false);
+  const [huntTut, setHuntTut] = useState<HuntStep | null>(null);
+  const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
+  const tutorialHunt = !!save?.hunt && save.day === 1 && save.hunt.period === "morning";
+  const goal = !save
+    ? null
+    : save.hunt
+      ? tutorialHunt && phase === "hunt"
+        ? { ...huntGoal(huntTut ?? "move", touch), point: null }
+        : null
+      : dayGoal(save, phase, { lunchVisited: lunchVisited || save.lunchbox.length > 0 });
+
   // the shop by day, walked (a window opens from the door or Bandal), where WebGL works
   const [hub, setHub] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
   const [panel, setPanel] = useState<"kitchen" | "side" | null>(null);
+  // windows over the day hide it; in the hunt only the title card or an error can (the day's windows are shut)
+  const covered = save?.hunt ? !!(card || failed) : !!(story || card || summary || shopping || store || win || panel || picking || failed);
+  const goalTip = goal?.tip && !seenTips.has(goal.tip) && !covered && !charcoalLine ? goal.tip : null;
+  useEffect(() => {
+    if (!goalTip) return;
+    const id = setTimeout(() => see(goalTip), 5000);
+    return () => clearTimeout(id);
+  }, [goalTip]);
   useEffect(() => setPanel(null), [phase]);
   // every evening's kitchen opens on the cookbook, as it did before the notebook could turn its tabs
   useEffect(() => {
@@ -278,7 +301,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         <PhaserGame
           key={save.hunt.id}
           hold={!!card}
-          hunt={{ huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, side: save.hunt.side, ammo: ammoOf(save, save.hunt.side), harpoonLevel: level(save, "ranged"), sleepFallMs: sleepFallMs(save), sidePower: sidePower(save, save.hunt.side), stats: huntStats(save), gear: { boots: level(save, "boots") >= 1, light: lightRadius(save), key: save.bossKey }, bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
+          onTutorial={setHuntTut}
+          hunt={{ tutorial: tutorialHunt, huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, side: save.hunt.side, ammo: ammoOf(save, save.hunt.side), harpoonLevel: level(save, "ranged"), sleepFallMs: sleepFallMs(save), sidePower: sidePower(save, save.hunt.side), stats: huntStats(save), gear: { boots: level(save, "boots") >= 1, light: lightRadius(save), key: save.bossKey }, bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
           onHuntEnd={(r: HuntResult) => {
             const before = save.items;
             const had = { hadKey: save.bossKey, hadPages: save.pages };
@@ -305,7 +329,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           scene={dayScene}
           stools={stools(save)}
           active={!panel && !picking && !win && !shopping && !store && !summary && !card && !busy && !story}
-          onSpot={(id) => (id === "door" ? (dayScene === "lunch" ? setPicking(true) : setPanel("side")) : setPanel("kitchen"))}
+          point={goal?.point ?? null}
+          onSpot={(id) => (id === "bandal" && dayScene === "lunch" && setLunchVisited(true), id === "door" ? (dayScene === "lunch" ? setPicking(true) : setPanel("side")) : setPanel("kitchen"))}
           onFail={() => setHub(false)}
         />
       )}
@@ -337,6 +362,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {shopping && phase !== "service" && <Upgrades tab={shopping} save={save} busy={busy} act={(a) => void act(a, phase)} onShop={() => setStore(true)} onClose={() => setShopping(null)} />}
       {win === "notebook" && <Notebook phase={phase} shut={shut} fresh={fresh} onApp={openApp} onClose={() => setWin(null)} />}
       {charcoalLine && <LidLine face={TIP_FACE.charcoal} text={t("tip.charcoal")} />}
+      {goal && !covered && <GoalLine text={t(goal.goal)} place={save.hunt ? "middle" : showDayHud(phase, false) ? "date" : "top"} />}
+      {goalTip && <LidLine key={goalTip} face={TIP_FACE[goalTip as Exclude<TipId, "awakenApp">]} text={t(`tip.${goalTip}` as StringKey)} low />}
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
       {win === "friends" && <Friends save={save} busy={busy} act={actSave} onShop={() => setStore(true)} onClose={() => setWin(null)} />}
       {win === "friends" && !seenTips.has("friends") && <LidLine face={TIP_FACE.friends} text={t("tip.friends")} low />}

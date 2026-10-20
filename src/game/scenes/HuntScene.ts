@@ -5,6 +5,7 @@ import type { DishId } from "../../../shared/content/dishes";
 import { ITEMS, itemKey, parseItemKey, type ItemId } from "../../../shared/content/items";
 import { OBJECT_KINDS } from "../../../shared/content/objects";
 import { addToBag, bagCount } from "../../../shared/hunt/bag";
+import { huntStep, type HuntStep } from "../../screens/tutorial";
 import { computeHit, coneTargets, nextComboStep, recordHit, type WeaponKind } from "../../../shared/hunt/combat";
 import { MONSTERS } from "../../../shared/content/monsters";
 import type { SideWeaponId } from "../../../shared/content/sideWeapons";
@@ -92,6 +93,9 @@ export interface HuntData {
   // the side weapon's awakening (06b-1): × its effect (pebble damage, net hold, firecracker stun); the
   // sleep darts a monster takes ÷ it (the server counts the same)
   sidePower: number;
+  // the first hunt teaches its controls one at a time (tutorial A): the scene reports each step done as
+  // "hunt:tutorial" and points at the cart once it is time to go home
+  tutorial?: boolean;
   // set by the scene itself when it restarts on the next floor
   run?: Run;
 }
@@ -104,6 +108,8 @@ interface Run {
   bag: Record<string, number>;
   report: HuntEvent[];
   eaten: boolean[];
+  // the first hunt's controls already done (tutorial A)
+  tut: string[];
   // side weapon shots left (one supply for the whole hunt)
   ammo: number;
 }
@@ -251,7 +257,7 @@ export class HuntScene extends Phaser.Scene {
     const devFloor = import.meta.env.DEV ? Number(new URLSearchParams(location.search).get("floor")) : NaN;
     const first: FloorId = isFloorId(devFloor) ? devFloor : 1;
     const downs: HuntEvent[] = Array.from({ length: first - 1 }, (_, i) => ({ down: (i + 2) as FloorId }));
-    this.run = data.run ?? { floor: first, stamina: data.stats.maxHp, bag: {}, report: downs, eaten: data.lunchbox.map(() => false), ammo: data.ammo };
+    this.run = data.run ?? { floor: first, stamina: data.stats.maxHp, bag: {}, report: downs, eaten: data.lunchbox.map(() => false), ammo: data.ammo, tut: [] };
     this.bagSlots = data.bagSlots;
     this.lunch = [];
     this.speedUntil = 0;
@@ -649,6 +655,7 @@ export class HuntScene extends Phaser.Scene {
 
     const move = this.readMove();
     const moving = move.x !== 0 || move.y !== 0;
+    if (moving) this.tutDone("move");
     if (moving) {
       this.gathering = null;
       const speed = H.player.speed * (this.time.now < this.speedUntil ? BALANCE.lunch.speedMul : 1);
@@ -878,6 +885,7 @@ export class HuntScene extends Phaser.Scene {
     this.run.bag = r.bag;
     g.node.taken = true;
     this.run.report.push({ gather: g.node.node.id });
+    this.tutDone("gather");
     this.tweens.add({ targets: g.node.sprite, alpha: 0, y: g.node.sprite.y - 6, duration: 300, onComplete: () => g.node.sprite.destroy() });
     this.popItem(g.node.node.x, g.node.node.y - 30, key);
   }
@@ -885,6 +893,7 @@ export class HuntScene extends Phaser.Scene {
   // ---------------------------------------------------------------- harpoon and slash
 
   private throwHarpoon(at: Vec) {
+    this.tutDone("harpoon");
     const p = this.player;
     p.aim = unit({ x: at.x - p.pos.x, y: at.y - this.hand().y }, p.aim);
     p.harpoonCooldownMs = this.ranged.cooldownMs;
@@ -943,6 +952,7 @@ export class HuntScene extends Phaser.Scene {
   }
 
   private slash() {
+    this.tutDone("slash");
     const p = this.player;
     const weapon = this.melee;
     p.comboStep = nextComboStep(p.comboStep, p.msSinceSwing, true, "melee", H.hit);
@@ -1591,6 +1601,7 @@ export class HuntScene extends Phaser.Scene {
       const beat = Math.max(Math.exp(-((ph / 0.07) ** 2)), 0.7 * Math.exp(-(((ph - 0.22) / 0.07) ** 2)));
       this.lowGlow.setAlpha((0.6 + 0.4 * (1 - left)) * (0.6 + 0.4 * beat));
     }
+    this.tutCheck();
     this.drawExitArrow();
     this.ammoText.setText(`${this.run.ammo}/${this.huntData.ammo}`).setColor(this.run.ammo === 0 ? "#9a8f84" : this.run.ammo <= AMMO_LOW ? "#ff7070" : "#fff3d8");
     this.ammoIcon.setAlpha(this.run.ammo > 0 ? 1 : 0.4);
@@ -1600,6 +1611,20 @@ export class HuntScene extends Phaser.Scene {
       this.ammoShown = this.run.ammo;
       this.tweens.add({ targets: this.ammoText, scale: 1.4, duration: 90, yoyo: true });
     }
+  }
+
+  // ---------------------------------------------------------------- the first hunt (tutorial A)
+  private tutStep: HuntStep | null = null;
+  private tutDone(step: string) {
+    if (this.huntData.tutorial && !this.run.tut.includes(step)) this.run.tut.push(step);
+  }
+  // the step due now, told to the page when it changes (each floor tells it again)
+  private tutCheck() {
+    if (!this.huntData.tutorial) return;
+    const step = huntStep(new Set(this.run.tut), bagCount(this.run.bag));
+    if (step === this.tutStep) return;
+    this.tutStep = step;
+    this.game.events.emit("hunt:tutorial", step);
   }
 
   // The nearest cart: an arrow beside the hunter pointing at it, pushed in to the screen's edge when the
@@ -1612,7 +1637,7 @@ export class HuntScene extends Phaser.Scene {
     const urgent = bagCount(this.run.bag) >= this.bagSlots || this.run.stamina / this.maxStamina < LOW_STAMINA;
     const off = !cam.worldView.contains(e.x, e.y);
     const near = distance(p, e) <= USE_RANGE * 2;
-    this.exitArrow.setVisible(!this.player.down && !near && (off || urgent));
+    this.exitArrow.setVisible(!this.player.down && !near && (off || urgent || this.tutStep === "cart"));
     if (!this.exitArrow.visible) return;
     const a = Math.atan2(e.y - p.y, e.x - p.x);
     // from the hunter's place on screen (his middle, not his feet), 40 px toward the cart, kept 16 px inside

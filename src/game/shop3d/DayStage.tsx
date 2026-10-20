@@ -12,13 +12,15 @@ import "./shop3d.css";
 // aisle (A/D or the stick, Shift runs); at the door or at Bandal a bubble says what the action key (E or
 // Space, the action button on touch) does there. `active` is false while a window is open over it: it stops
 // listening and walking. A failed start (WebGL, textures) calls onFail so the page can use buttons instead.
-export function DayStage({ scene, stools, active, onSpot, onFail }: { scene: DayScene; stools: number; active: boolean; onSpot: (id: SpotId) => void; onFail: () => void }) {
+// `point`: the first day's arrow over where to go now (tutorial A), hidden once the grandchild is there.
+export function DayStage({ scene, stools, active, point = null, onSpot, onFail }: { scene: DayScene; stools: number; active: boolean; point?: SpotId | null; onSpot: (id: SpotId) => void; onFail: () => void }) {
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [scale, setScale] = useState(1);
   const [near, setNear] = useState<{ spot: Spot; x: number; y: number } | null>(null);
-  const live = useRef({ scene, active, onSpot, onFail });
-  live.current = { scene, active, onSpot, onFail };
+  const live = useRef({ scene, active, point, onSpot, onFail });
+  live.current = { scene, active, point, onSpot, onFail };
+  const [arrow, setArrow] = useState<{ x: number; y: number } | null>(null);
   const ctl = useRef({ act: () => {}, stick: (_x: number) => {} });
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
   const [stickX, setStickX] = useState(0);
@@ -50,6 +52,7 @@ export function DayStage({ scene, stools, active, onSpot, onFail }: { scene: Day
     let raf = 0;
     let last = performance.now();
     let shown: string | null = null;
+    let arrowShown: string | null = null;
     const act = () => {
       if (!live.current.active) return;
       const s = nearSpot(x, daySpots(live.current.scene));
@@ -88,6 +91,14 @@ export function DayStage({ scene, stools, active, onSpot, onFail }: { scene: Day
       if (key !== shown) {
         shown = key;
         setNear(s && at ? { spot: s, x: at.x, y: at.y } : null);
+      }
+      // the arrow over the spot to go to, until the grandchild stands at it
+      const goal = live.current.point ? daySpots(live.current.scene).find((p) => p.id === live.current.point) : null;
+      const to = goal && s?.id !== goal.id ? view.project(goal.x, FLOOR_Y + 104, Z.waiter) : null;
+      const arrowKey = to ? `${to.x}:${to.y}` : null;
+      if (arrowKey !== arrowShown) {
+        arrowShown = arrowKey;
+        setArrow(to);
       }
       raf = requestAnimationFrame(frame);
     };
@@ -136,6 +147,11 @@ export function DayStage({ scene, stools, active, onSpot, onFail }: { scene: Day
             <div className={`ui-bubble day-prompt${near.spot.open ? "" : " closed"}`} style={{ left: near.x, top: near.y }}>
               {near.spot.open && !touch && <span className="day-key">E</span>}
               {t(near.spot.label)}
+            </div>
+          )}
+          {arrow && active && (
+            <div className="day-arrow" style={{ left: arrow.x, top: arrow.y }} aria-hidden>
+              ▼
             </div>
           )}
           {active && !near && <div className="day-hint">{t(touch ? "day.hintTouch" : "day.hint")}</div>}

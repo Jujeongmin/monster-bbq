@@ -8,6 +8,7 @@
 /* the notebook and the bag: the picture itself, big, with its key and name under it (no box) */
 .dh-big { position: absolute; bottom: calc(4px * var(--s)); padding: 0; border: 0; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: calc(1px * var(--s)); color: var(--cream); font: 700 var(--fs-small) "Galmuri11", monospace; text-shadow: var(--s) var(--s) 0 #2b1408; filter: drop-shadow(0 calc(2px * var(--s)) 0 rgba(20, 10, 4, 0.6)); }
 .dh-big img { height: calc(62px * var(--s)); image-rendering: pixelated; transition: transform 0.08s steps(2); }
+.dh-note img { height: calc(55px * var(--s)); } /* the 110 px cover at one art pixel per screen pixel at 1280x720 */
 .dh-bag img { height: calc(52px * var(--s)); }
 .dh-big:hover img { transform: translateY(calc(-2px * var(--s))); }
 .dh-big:active img { transform: translateY(calc(1px * var(--s))) scale(0.96); }
@@ -164,3 +165,10 @@
 .lid-line-face img { position: absolute; left: calc(-8px * var(--s)); top: calc(-16px * var(--s)); width: calc(120px * var(--s)); height: calc(96px * var(--s)); image-rendering: pixelated; }
 .lid-line.low { top: auto; bottom: calc(44px * var(--s)); }
 @keyframes lid-line-in { from { opacity: 0; transform: translate(-50%, calc(-12px * var(--s))); } }
+/* the first day's goal line (tutorial A): under the date plate, or at the top where there is none */
+.goal-line { position: absolute; left: calc(14px * var(--s)); top: calc(44px * var(--s)); z-index: 11; display: flex; align-items: center; gap: calc(6px * var(--s)); padding: calc(1px * var(--s)) calc(8px * var(--s)); font: 700 var(--fs-small) "Galmuri11", monospace; color: var(--ink); white-space: nowrap; pointer-events: none; animation: goal-in 0.3s steps(6) both; }
+.goal-line.top { top: calc(10px * var(--s)); }
+.goal-line.middle { top: calc(10px * var(--s)); left: 50%; translate: -50% 0; }
+.goal-label { color: #a03a10; }
+@keyframes goal-in { from { opacity: 0; transform: translateX(calc(-12px * var(--s))); } }
+@media (prefers-reduced-motion: reduce) { .goal-line { animation: none; } }
