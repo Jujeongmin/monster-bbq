@@ -11,6 +11,8 @@ export const STATS: Stat[] = ["serving", "cooking", "dexterity", "charm"];
 // where a friend works in the night: serving, helping Bandal, drinks, charcoal, clearing leftovers
 export const POSITIONS = ["serve", "kitchen", "drinks", "coal", "clean"] as const;
 export type Position = (typeof POSITIONS)[number];
+// the stat each position works by (staff design 4); charm counts for the whole night wherever they are
+export const POSITION_STAT: Record<Position, Stat> = { serve: "serving", kitchen: "cooking", drinks: "dexterity", coal: "dexterity", clean: "dexterity" };
 
 export const isStaffId = (v: unknown): v is StaffId => typeof v === "string" && (STAFF_IDS as readonly string[]).includes(v);
 export const isPosition = (v: unknown): v is Position => typeof v === "string" && (POSITIONS as readonly string[]).includes(v);

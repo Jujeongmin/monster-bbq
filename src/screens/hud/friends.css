@@ -70,3 +70,23 @@
 .friend-detail .friend-pos { align-items: center; flex-wrap: nowrap; }
 .friend-detail .friend-awaken { margin-left: auto; }
 .friends-slot-empty { display: flex; align-items: center; justify-content: center; font: var(--fs-small) "Galmuri9", monospace; white-space: nowrap; }
+
+/* the picked friend: who on the left, a gauge per position on the right (user, 2026-10-20) */
+.friend-head { display: grid; grid-template-columns: calc(120px * var(--s)) minmax(0, 1fr); gap: calc(10px * var(--s)); align-items: center; }
+.friend-who-big { display: flex; flex-direction: column; align-items: center; gap: calc(1px * var(--s)); text-align: center; }
+.friend-gauges { display: flex; flex-direction: column; gap: calc(3px * var(--s)); }
+.friend-gauge-row { display: grid; grid-template-columns: calc(40px * var(--s)) minmax(0, 1fr) calc(22px * var(--s)); align-items: center; gap: calc(6px * var(--s)); color: var(--paper-ink-soft); }
+.friend-gauge-row b { text-align: right; font: var(--fs) "Galmuri11", monospace; }
+.friend-gauge-row.best b { color: var(--ink); font-weight: 700; }
+.friend-gauge-row .friend-pos-btn { width: 100%; padding: 0; }
+.friend-gauge-row.charm { margin-top: calc(2px * var(--s)); }
+.friend-gauge-label { text-align: center; }
+.friend-gauge { position: relative; height: calc(7 * var(--k)); box-sizing: border-box; border: solid transparent; border-width: calc(2 * var(--k)) calc(3 * var(--k)); border-image: url("../../../art/test/ui2/gauge_empty.png") 2 3 fill / calc(2 * var(--k)) calc(3 * var(--k)) stretch; image-rendering: pixelated; }
+.friend-gauge-full { position: absolute; left: calc(-3 * var(--k)); top: calc(-2 * var(--k)); height: calc(7 * var(--k)); box-sizing: border-box; border: solid transparent; border-width: calc(2 * var(--k)) calc(3 * var(--k)); border-image: url("../../../art/test/ui2/gauge_full.png") 2 3 fill / calc(2 * var(--k)) calc(3 * var(--k)) stretch; image-rendering: pixelated; }
+.friend-gauge-full { max-width: calc(100% + 6 * var(--k)); }
+.friend-gauges { gap: calc(2px * var(--s)); }
+.friend-gauge-row .friend-pos-btn { height: calc(15px * var(--s)); line-height: 1; }
+.friend-foot { display: flex; align-items: center; gap: calc(8px * var(--s)); }
+.friend-foot .friend-skill { flex: 1; min-width: 0; color: #6a3a10; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.friend-foot .friend-awaken { margin: 0; flex: none; }
+.friends-slots { align-self: center; margin: 0 0 calc(4px * var(--s)); }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STAFF, STAFF_IDS, statOf } from "./staff";
+import { POSITION_STAT, STAFF, STAFF_IDS, statOf } from "./staff";
 
 describe("Grandma's old friends", () => {
   it("are four common, four rare, two hero and two legend", () => {
@@ -16,5 +16,11 @@ describe("Grandma's old friends", () => {
   it("grow a tenth a star", () => {
     expect(statOf("jang", "cooking", 2)).toBe(145);
     expect(statOf("park", "dexterity", 0)).toBe(70);
+  });
+});
+
+describe("what each position asks for (staff design 4)", () => {
+  it("serving for serving, cooking for the kitchen, dexterity for drinks, charcoal and clearing", () => {
+    expect(POSITION_STAT).toEqual({ serve: "serving", kitchen: "cooking", drinks: "dexterity", coal: "dexterity", clean: "dexterity" });
   });
 });
