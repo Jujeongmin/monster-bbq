@@ -181,7 +181,8 @@ function FriendDetail({ id, mine, at, save, busy, act }: { id: StaffId; mine: { 
             );
           })}
           <span className="friend-gauge-row charm">
-            <span className="friend-gauge-label">{t("staff.stat.charm")}</span>
+            {/* charm is not a position: the same plate, nothing to press */}
+            <span className="ui-sq awaken-kind friend-pos-btn friend-charm">{t("staff.stat.charm")}</span>
             <StatPips value={statOf(id, "charm", mine.stars)} />
           </span>
         </span>

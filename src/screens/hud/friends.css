@@ -94,3 +94,4 @@
 .friend-gauge-row { grid-template-columns: calc(40px * var(--s)) auto; }
 .friend-pips { display: flex; gap: calc(2px * var(--s)); }
 .friend-pips img { width: calc(16px * var(--s)); height: calc(20px * var(--s)); image-rendering: pixelated; }
+.friend-charm { display: flex; align-items: center; justify-content: center; box-sizing: border-box; cursor: default; }
