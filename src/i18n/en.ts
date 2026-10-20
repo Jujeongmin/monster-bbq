@@ -81,6 +81,7 @@ export const en: Record<keyof typeof ko, string> = {
   "service.angry": "Angry! Reputation −2",
   "error.no_menu": "Pick tonight's menu first.",
   "error.no_ingredients": "No ingredients for the menu. Bring some back from the hunt.",
+  "error.no_slot": "No menu slot left",
   "error.closeShop": "Stay closed tonight",
   "error.bad_hunt": "This hunt's haul was not accepted.",
   "error.emptyHanded": "Come home empty-handed",

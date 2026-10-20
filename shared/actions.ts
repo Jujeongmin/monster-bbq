@@ -12,6 +12,7 @@ import { dropFor } from "./hunt/drops";
 import { planFloor, type FloorPlan } from "./hunt/plan";
 import { FLOORS, isFloorId, type FloorId } from "./content/floors";
 import { levelCost, MAX_SETS, planShop, takeSets, type MenuLine } from "./kitchen/dish";
+import { addToMenu } from "./service/addMenu";
 import { settleService } from "./service/settle";
 import { vipLevel } from "./shop";
 import { isStoryId } from "./content/story";
@@ -29,6 +30,7 @@ export type Action =
   | { type: "research"; dish: string }
   | { type: "upgradeDish"; dish: string; from?: number }
   | { type: "openShop"; menu: { dish: string; sets: number }[] }
+  | { type: "addToMenu"; serviceId: string; dish: string; sets: number; addId: string }
   | { type: "finishService"; serviceId: string; served: { customer: string; dish: string; waitMs: number; drink?: string }[]; left: string[]; cleaned?: string[] }
   | { type: "buyUpgrade"; id: string }
   | { type: "packLunch"; dishes: string[] }
@@ -294,6 +296,8 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       return { save: save.story.includes(a.id) ? save : { ...save, story: [...save.story, a.id] } };
     case "upgradeDish":
       return upgradeDish(save, a);
+    case "addToMenu":
+      return addToMenu(save, a);
     case "openShop":
       return openShop(save, a, ctx);
     case "finishService":

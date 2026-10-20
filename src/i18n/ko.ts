@@ -80,6 +80,7 @@ export const ko = {
   "service.angry": "화났다! 평판 −2",
   "error.no_menu": "오늘 메뉴를 먼저 골라 주세요.",
   "error.no_ingredients": "메뉴 재료가 없어요. 사냥에서 가져오자.",
+  "error.no_slot": "메뉴 칸이 꽉 찼어요",
   "error.closeShop": "오늘은 문 닫기",
   "error.bad_hunt": "이번 사냥 결과를 인정받지 못했다.",
   "error.emptyHanded": "빈손으로 돌아가기",
