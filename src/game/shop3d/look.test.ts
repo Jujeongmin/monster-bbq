@@ -126,3 +126,9 @@ describe("what E does at the nearest thing (promptOf)", () => {
 it("names a serve fast under 0.4 of the patience, good under 0.75, late after (a reaction, no money)", () => {
   expect([0, 0.39, 0.4, 0.74, 0.75].map(serveGrade)).toEqual(["fast", "fast", "good", "good", "late"]);
 });
+
+it("offers the menu at an empty pass when nothing is cooking", () => {
+  const sh = new Shift(cfg([]));
+  sh.s.x = LAYOUT.pass;
+  expect(promptOf(sh)).toEqual({ at: { kind: "pass" }, verb: "menu", ok: true, why: null });
+});

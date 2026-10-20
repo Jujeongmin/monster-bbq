@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { BALANCE } from "../../../shared/balance";
-import { DISHES } from "../../../shared/content/dishes";
+import { DISHES, type DishId } from "../../../shared/content/dishes";
 import { t, type StringKey } from "../../i18n";
 import { artUrl, hasArt } from "../art";
 import { createCharacterAnims, loadCharacterArt } from "../hunt/anims";
@@ -112,6 +112,14 @@ export class ServiceScene extends Phaser.Scene {
     const saved = loadShift(sessionStorage, data.serviceId);
     this.shift = new Shift(cfg, saved && saved.seats.length === data.stools ? saved : undefined);
     this.savedAt = this.shift.s.clock;
+    // plates added to the menu from the page (shop remake step 4), and whether more could still be
+    this.game.events.off("service:addPlates");
+    this.game.events.off("service:waitForMenu");
+    this.game.events.on("service:addPlates", (dish: DishId, plates: number, price: number) => {
+      this.shift.addPlates(dish, plates, price);
+      saveShift(sessionStorage, data.serviceId, this.shift.s);
+    });
+    this.game.events.on("service:waitForMenu", (wait: boolean) => void (this.shift.waitForMenu = wait));
     this.paused = false;
     this.ended = false;
     this.views = new Map();

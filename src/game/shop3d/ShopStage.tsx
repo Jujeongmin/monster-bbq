@@ -8,7 +8,11 @@ import { LAYOUT, Shift, type ShiftEvent } from "../service/shift";
 import { clockText, type ServiceData, type ShopReport } from "../service/types";
 import { displayScale, FLOOR_Y, COUNTER, PASS, Z } from "./layout";
 import { artUrl, hasArt } from "../art";
-import { lookAt, patienceTier, serveGrade, type Pose, type ShopLook } from "./look";
+import { lookAt, patienceTier, promptOf, serveGrade, type Pose, type ShopLook } from "./look";
+import type { DishId } from "../../../shared/content/dishes";
+import type { TonightDish } from "../../../shared/kitchen/dish";
+import type { AddOption } from "../../../shared/service/addMenu";
+import { AddMenu } from "../../screens/kitchen/AddMenu";
 import { moveFrom } from "./input";
 import { ShopHud, type Anchors, type Band, type Fx, type Pop, type Tip } from "./ShopHud";
 import { ShopView } from "./ShopView";
@@ -46,8 +50,25 @@ interface Hud {
   shake: boolean;
 }
 
+// Adding to the menu during the night (shop remake step 4): what can be added, the menu slots, and the
+// request to the server (the save's tonight's dishes after it, or the refusal's code).
+export interface AddMenuHook {
+  options: AddOption[];
+  slots: { used: number; max: number };
+  send: (dish: DishId, sets: number) => Promise<{ dishes: TonightDish[] } | { error: string }>;
+}
+
 // `hold`: the day's title card is over the shop, so the night waits (no clock, no guests) until it is gone.
-export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: ServiceData; hold?: boolean; onEnd: (r: ShopReport) => void; onFail: () => void }) {
+export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop: ServiceData; hold?: boolean; addMenu?: AddMenuHook; onEnd: (r: ShopReport) => void; onFail: () => void }) {
+  const addMenuRef = useRef(addMenu);
+  addMenuRef.current = addMenu;
+  // Bandal's menu board: open (the night waits), sending, and why it was refused
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuOpenRef = useRef(false);
+  menuOpenRef.current = menuOpen;
+  const [menuBusy, setMenuBusy] = useState(false);
+  const [menuError, setMenuError] = useState<string | null>(null);
+  const addRef = useRef<(dish: DishId, sets: number) => void>(() => {});
   const holdRef = useRef(hold);
   holdRef.current = hold;
   const stage = useRef<HTMLDivElement>(null);
@@ -151,8 +172,39 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
     };
     const top = { x: 480, y: 90 };
 
+    // tonight's plates as this page knows them, to add only what the server added
+    const made = new Map(shop.dishes.map((d) => [d.dish, d.plates]));
+    addRef.current = async (dish, sets) => {
+      const hook = addMenuRef.current;
+      if (!hook) return;
+      setMenuBusy(true);
+      setMenuError(null);
+      const r = await hook.send(dish, sets);
+      setMenuBusy(false);
+      if (!alive) return;
+      if ("error" in r) {
+        // the refusals a player can act on have their own words; anything else (offline, busy) says try again
+        setMenuError(r.error === "no_ingredients" || r.error === "no_slot" ? t(`error.${r.error}`) : t("error.retry"));
+        return;
+      }
+      for (const d of r.dishes) {
+        const extra = d.plates - (made.get(d.dish) ?? 0);
+        if (extra > 0) shift.addPlates(d.dish, extra, d.price);
+        made.set(d.dish, d.plates);
+      }
+      // right away: the night is paused, so the every-second save would not run before a reload
+      saveShift(sessionStorage, shop.serviceId, shift.s);
+      bandal = { tex: "bandal_serve", until: now + 700 };
+      setMenuOpen(false);
+    };
     const press = () => {
-      if (isPaused || ended || holdRef.current) return;
+      if (isPaused || ended || holdRef.current || menuOpenRef.current) return;
+      // at an empty pass: Bandal's menu board
+      if (promptOf(shift)?.verb === "menu" && addMenuRef.current) {
+        setMenuError(null);
+        setMenuOpen(true);
+        return;
+      }
       if (shift.target()?.kind === "drinks") shift.pourStart();
       else shift.act();
     };
@@ -242,6 +294,11 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
           setCloseStep((c) => (c === 0 ? 1 : c));
           band = { id: ++popId, key: "service.band.closing", born: now };
           break;
+        case "reopened":
+          setCloseStep(0);
+          band = { id: ++popId, key: "service.band.reopened", born: now };
+          sfx.play("bell");
+          break;
       }
     };
 
@@ -251,7 +308,8 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
       const dt = Math.min(time - last, MAX_DT_MS);
       last = time;
       const move = moveFrom(keys, stick);
-      if (!isPaused && !ended && !holdRef.current) {
+      shift.waitForMenu = (addMenuRef.current?.options.length ?? 0) > 0;
+      if (!isPaused && !ended && !holdRef.current && !menuOpenRef.current) {
         shift.tick(dt, move);
         if (shift.s.clock - savedAt > 1000) {
           savedAt = shift.s.clock;
@@ -365,6 +423,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
             onStick={(x) => ctl.current.stick(x)}
           />
         )}
+        {menuOpen && addMenu && <AddMenu options={addMenu.options} slots={addMenu.slots} busy={menuBusy} error={menuError} onAdd={(d, n) => addRef.current(d, n)} onClose={() => !menuBusy && setMenuOpen(false)} />}
       </div>
     </div>
   );

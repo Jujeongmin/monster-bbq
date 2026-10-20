@@ -11,7 +11,7 @@ export type Pose = "stand" | "walk" | "carry" | "serve" | "scrub" | "grind" | "p
 export type Glow = { kind: "pass" } | { kind: "drinks" } | { kind: "coal" } | { kind: "seat"; seat: number; mess: boolean } | { kind: "guest"; id: string };
 // What the action key does at the nearest thing (shop remake step 3): a bubble over it says so, grey with
 // the reason when it cannot right now.
-export type PromptVerb = "take" | "give" | "scrub" | "coal" | "pour";
+export type PromptVerb = "take" | "give" | "scrub" | "coal" | "pour" | "menu";
 export type PromptWhy = "handsFull" | "cooking" | "otherDish" | "noDrink";
 export interface Prompt {
   at: { kind: "pass" } | { kind: "drinks" } | { kind: "coal" } | { kind: "seat"; seat: number };
@@ -97,7 +97,8 @@ export function promptOf(shift: Shift): Prompt | null {
   const full = s.tray.length >= CARRY;
   switch (t.kind) {
     case "pass":
-      if (!s.pass.length) return s.kitchen.length ? cannot(t, "take", "cooking") : null;
+      // nothing ready and nothing cooking: Bandal's menu board, to add more (shop remake step 4)
+      if (!s.pass.length) return s.kitchen.length ? cannot(t, "take", "cooking") : can(t, "menu");
       return full ? cannot(t, "take", "handsFull") : can(t, "take");
     case "coal":
       return s.coal < 100 ? can(t, "coal") : null;

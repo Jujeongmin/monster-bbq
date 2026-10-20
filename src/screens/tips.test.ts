@@ -22,6 +22,11 @@ describe("the lid's first-time tips in the night shop", () => {
     expect(nightTipDue(sh, [{ type: "take", n: 1 }], new Set(["open", "cooked"]))).toBe("carry");
     expect(nightTipDue(sh, [{ type: "angry", guest: "c0" }], new Set(["open"]))).toBe("angry");
   });
+  it("calls a sell-out once", () => {
+    const sh = new Shift(cfg([guest("c0")]));
+    expect(nightTipDue(sh, [{ type: "soldOut" }], new Set(["open"]))).toBe("soldOut");
+    expect(nightTipDue(sh, [{ type: "soldOut" }], new Set(["open", "soldOut"]))).toBeNull();
+  });
   it("does not repeat a tip already seen", () => {
     const sh = new Shift(cfg([guest("c0")]));
     expect(nightTipDue(sh, [{ type: "cooked", dish: "grilled_belly" }], new Set(["open", "cooked"]))).toBeNull();

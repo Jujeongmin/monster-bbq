@@ -9,6 +9,8 @@
   display: flex; gap: calc(6px * var(--s)); align-items: center; color: var(--red);
 }
 .service-stage { position: absolute; inset: 0; background: var(--wood-dark); }
+/* the 2D shop's menu board button (shop remake step 4), clear of the scene's own buttons at the top */
+.service-add-menu { position: absolute; left: 50%; top: calc(8px * var(--s)); transform: translateX(-50%); z-index: 3; }
 .dayflow-actions { display: flex; gap: calc(6px * var(--s)); justify-content: center; }
 /* upgrade shop */
 /* between the day HUD's top row and its bottom-right buttons */

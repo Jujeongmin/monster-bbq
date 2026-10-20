@@ -107,3 +107,12 @@ button.lunch-slot { cursor: pointer; }
 .lunch-speed { color: var(--good); }
 .lunch-card:disabled { cursor: default; filter: grayscale(0.8) brightness(0.85); }
 .lunch-heal { font-weight: 700; color: var(--good); }
+
+/* Bandal's menu board during the night (shop remake step 4): over the dimmed night, the night waits */
+.add-menu-win { position: absolute; inset: 0; z-index: 14; display: flex; align-items: center; justify-content: center; background: rgba(20, 10, 4, 0.55); }
+.add-menu { width: min(92%, calc(460px * var(--s))); max-height: 90%; overflow: auto; scrollbar-width: none; padding: calc(6px * var(--s)) calc(10px * var(--s)); display: flex; flex-direction: column; gap: calc(5px * var(--s)); align-items: stretch; color: var(--ink); }
+.add-menu h2 { margin: 0; font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink); text-align: center; }
+.add-menu-slots { font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
+.add-menu-line { height: calc(56px * var(--s)); }
+.add-menu-none, .add-menu-status { margin: 0; min-height: calc(14px * var(--s)); text-align: center; color: var(--paper-ink-soft); }
+.add-menu > .ui-btn { align-self: center; }

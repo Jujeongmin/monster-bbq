@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
-import { ammoOf, bagSlots, coalPerDish, huntStats, level, lightRadius, sleepFallMs, stools, walkMul } from "../../shared/growth";
+import { ammoOf, bagSlots, coalPerDish, huntStats, level, lightRadius, menuSlots, sleepFallMs, stools, walkMul } from "../../shared/growth";
 import type { HuntEvent } from "../../shared/actions";
 import type { SideWeaponId } from "../../shared/content/sideWeapons";
 import { BALANCE } from "../../shared/balance";
 import { sidePower } from "../../shared/awaken";
-import { dishPrice, type MenuLine } from "../../shared/kitchen/dish";
+import { dishPrice, type MenuLine, type TonightDish } from "../../shared/kitchen/dish";
+import { addOptions } from "../../shared/service/addMenu";
+import type { DishId } from "../../shared/content/dishes";
+import type { AddMenuHook } from "../game/shop3d/ShopStage";
 import { planService } from "../../shared/service/plan";
 import type { ServedEntry } from "../../shared/service/settle";
 import type { SaveData } from "../../shared/save";
@@ -139,6 +142,27 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   }
 
   // true once the server saved it; on failure the banner offers a retry (or says what is missing)
+  // More dishes during the night (shop remake step 4): the request from Bandal's menu board, its refusal
+  // shown in that window (not the page's error panel), the save taken in when it goes through.
+  async function addToMenu(dish: DishId, sets: number): Promise<{ dishes: TonightDish[] } | { error: string }> {
+    const svc = save?.service;
+    if (!svc) return { error: "wrong_stage" };
+    if (busyRef.current) return { error: "busy" };
+    busyRef.current = true;
+    setBusy(true);
+    try {
+      const addId = `${Date.now().toString(36)}${Math.floor(Math.random() * 1e9).toString(36)}`;
+      const next = await transport.act({ type: "addToMenu", serviceId: svc.id, dish, sets, addId });
+      setSave(next);
+      return { dishes: next.service?.dishes ?? [] };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "" };
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }
+
   async function act(action: Action, next: Phase): Promise<boolean> {
     if (busyRef.current) return false;
     busyRef.current = true;
@@ -258,7 +282,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         />
       )}
       {phase === "kitchen" && (!hub || panel === "kitchen") && <Kitchen tab={kitchenTab} onTab={setKitchenTab} save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} onClose={hub ? () => setPanel(null) : undefined} />}
-      {phase === "service" && save.service && <Night save={save} hold={!!card} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
+      {phase === "service" && save.service && <Night save={save} hold={!!card} addMenu={{ options: addOptions(save), slots: { used: save.service.dishes.length, max: menuSlots(save) }, send: addToMenu }} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
       {phase === "settle" && <Receipt save={save} busy={busy} onNext={() => act({ type: "endDay" }, "hunt")} />}
 
       {/* the morning: pick the side weapon, then set out; at lunch the same window opens from its button */}
@@ -309,9 +333,9 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
 
 // Tonight's service: the customers the server's seed brings (same plan as the server checks) and the
 // plates the menu board made.
-function Night({ save, hold, onEnd }: { save: SaveData; hold: boolean; onEnd: (r: { served: ServedEntry[]; left: string[]; cleaned: string[] }) => void }) {
+function Night({ save, hold, addMenu, onEnd }: { save: SaveData; hold: boolean; addMenu: AddMenuHook; onEnd: (r: { served: ServedEntry[]; left: string[]; cleaned: string[] }) => void }) {
   const svc = save.service!;
   const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.planMenu });
   const shop = { serviceId: svc.id, customers, dishes: svc.dishes, stools: stools(save), walkMul: walkMul(save), coalPerDish: coalPerDish(save) };
-  return <ServiceGame key={svc.id} shop={shop} hold={hold} onEnd={onEnd} />;
+  return <ServiceGame key={svc.id} shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} />;
 }
