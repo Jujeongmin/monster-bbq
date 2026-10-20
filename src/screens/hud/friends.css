@@ -1,7 +1,4 @@
 /* Grandma's old friends (staff design 6): on Bandal's pegboard like the upgrades, cards pinned to it */
-.friends-slots, .friends-rates { align-self: center; margin: 0 0 calc(4px * var(--s)); padding: 0 calc(8px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; }
-.friends-list { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(4px * var(--s)); align-content: start; text-align: left; padding: 0 calc(10 * var(--k)); }
-.friends-list::-webkit-scrollbar { display: none; }
 .friend-card { display: flex; flex-direction: column; gap: calc(1px * var(--s)); line-height: 1.2; color: var(--ink); font: var(--fs-small) "Galmuri9", monospace; }
 .friend-card.unknown { opacity: 0.55; justify-content: center; align-items: center; min-height: calc(40px * var(--s)); }
 .friend-name { font: 700 var(--fs) "Galmuri11", monospace; }
@@ -30,5 +27,46 @@
 .friend-face { position: absolute; right: calc(2px * var(--s)); top: calc(-6px * var(--s)); width: calc(60px * var(--s)); height: calc(48px * var(--s)); image-rendering: pixelated; pointer-events: none; }
 .friend-card.result .friend-face { position: static; width: calc(120px * var(--s)); height: calc(96px * var(--s)); margin: calc(-8px * var(--s)) 0 calc(-4px * var(--s)); }
 /* the text beside the portrait stops short of it */
-.friend-card:not(.result):has(.friend-face) .friend-name, .friend-card:not(.result):has(.friend-face) .friend-stats { margin-right: calc(60px * var(--s)); }
 .friends-results.many .friend-face { width: calc(60px * var(--s)); height: calc(48px * var(--s)); margin: 0; }
+
+
+/* Dave's staff window (user, 2026-10-20): positions along the top, the list on the left, the picked friend on the right */
+.friends-rates { align-self: center; margin: 0 0 calc(4px * var(--s)); padding: 0 calc(8px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; }
+.friends-slots-row { display: flex; align-items: center; justify-content: center; gap: calc(4px * var(--s)); margin-bottom: calc(4px * var(--s)); }
+.friends-slots { font: 700 var(--fs-small) "Galmuri9", monospace; color: var(--ink); margin-right: calc(4px * var(--s)); }
+.friends-slot { display: flex; flex-direction: column; align-items: center; width: calc(48px * var(--s)); padding: 0; font: var(--fs-small) "Galmuri9", monospace; color: var(--ink); cursor: pointer; }
+.friends-slot img, .friends-slot-empty { position: static; width: calc(30px * var(--s)); height: calc(24px * var(--s)); image-rendering: pixelated; }
+.friends-slot.on { filter: brightness(1.1); }
+.friends-body { flex: 1; min-height: 0; display: grid; grid-template-columns: calc(150px * var(--s)) minmax(0, 1fr); gap: calc(6px * var(--s)); padding: 0 calc(10 * var(--k)); text-align: left; }
+.friends-list { min-height: 0; overflow: auto; scrollbar-width: none; display: flex; flex-direction: column; gap: calc(2px * var(--s)); }
+.friends-list::-webkit-scrollbar { display: none; }
+.friend-item { display: grid; grid-template-columns: calc(30px * var(--s)) minmax(0, 1fr) auto; align-items: center; column-gap: calc(4px * var(--s)); padding: 0 calc(2px * var(--s)); color: var(--ink); font: var(--fs-small) "Galmuri9", monospace; text-align: left; cursor: pointer; }
+.friend-item img { position: static; width: calc(30px * var(--s)); height: calc(24px * var(--s)); image-rendering: pixelated; }
+.friend-item .friend-name { font: 700 var(--fs-small) "Galmuri11", monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.friend-item:not(.on) { filter: brightness(0.88); }
+.friend-at { color: #6a3a10; }
+.friend-detail { min-height: 0; overflow: auto; scrollbar-width: none; display: flex; flex-direction: column; gap: calc(3px * var(--s)); color: var(--ink); font: var(--fs-small) "Galmuri9", monospace; }
+.friend-head { display: flex; gap: calc(8px * var(--s)); align-items: flex-end; }
+.friend-big { flex: none; width: calc(120px * var(--s)); height: calc(96px * var(--s)); }
+.friend-big img { width: 100%; height: 100%; image-rendering: pixelated; }
+.friend-title { display: flex; flex-direction: column; gap: calc(3px * var(--s)); min-width: 0; padding-bottom: calc(4px * var(--s)); }
+.friend-detail .friend-name { font: 700 var(--fs) "Galmuri11", monospace; }
+.friend-stars { color: #c88a10; }
+.friend-detail .friend-stats { display: grid; grid-template-columns: auto auto; column-gap: calc(10px * var(--s)); row-gap: calc(2px * var(--s)); color: var(--paper-ink-soft); }
+.friend-detail .friend-stats b { font-size: var(--fs); }
+.friend-detail .friend-stats .best { color: var(--ink); }
+.friend-detail .friend-skill, .friend-detail .friend-story { margin: 0; }
+.friend-detail .friend-pos { display: flex; gap: calc(2px * var(--s)); margin-top: calc(2px * var(--s)); }
+.friend-detail .friend-pos-btn { padding: 0 calc(4px * var(--s)); white-space: nowrap; }
+.friend-detail .friend-awaken { align-self: flex-start; }
+.friends-unmet { margin: calc(2px * var(--s)) 0 0; text-align: center; color: var(--paper-ink-soft); font: var(--fs-small) "Galmuri9", monospace; }
+.friend-item.rare .friend-name, .friend-detail.rare .friend-rarity { color: #3a6ab0; }
+.friend-item.hero .friend-name, .friend-detail.hero .friend-rarity { color: #8a3ab0; }
+.friend-item.legend .friend-name, .friend-detail.legend .friend-rarity { color: #c88a10; }
+.friend-detail > * { flex: none; }
+.friend-head { align-items: center; }
+.friend-title .friend-skill { color: #6a3a10; }
+.friend-title .friend-story { color: var(--paper-ink-soft); }
+.friend-detail .friend-pos { align-items: center; flex-wrap: nowrap; }
+.friend-detail .friend-awaken { margin-left: auto; }
+.friends-slot-empty { display: flex; align-items: center; justify-content: center; font: var(--fs-small) "Galmuri9", monospace; white-space: nowrap; }

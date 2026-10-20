@@ -20,11 +20,9 @@ type Result = { id: StaffId; isNew: boolean; shards: number };
 export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; busy: boolean; act: (a: Action) => Promise<SaveData | null>; onShop: () => void; onClose: () => void }) {
   const [tab, setTab] = useState<Tab>(Object.keys(save.staff.owned).length ? "friends" : "postcards");
   const [results, setResults] = useState<Result[] | null>(null);
+  const [picked, setPicked] = useState<StaffId | null>(null);
   const st = save.staff;
-  const slots = staffSlots(save);
-  const used = Object.keys(st.roster).length;
   const knows = knowsCharcoal(save);
-  const posOf = (id: StaffId) => (Object.entries(st.roster).find(([, who]) => who === id)?.[0] ?? null) as Position | null;
 
   async function send(count: 1 | 10, free = false) {
     const before = st.owned;
@@ -51,52 +49,7 @@ export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; 
           ))}
         </div>
         {tab === "friends" ? (
-          <>
-            <p className="ui-plate friends-slots">{t("friends.slots", { used, max: slots })}</p>
-            <div className="friends-list">
-              {STAFF_IDS.map((id) => {
-                const mine = st.owned[id];
-                const rarity = t(`staff.rarity.${STAFF[id].rarity}` as StringKey);
-                if (!mine)
-                  return (
-                    <div key={id} className="ui-box friend-card unknown">
-                      <span className="friend-name">???</span>
-                      <span className="friend-rarity">{rarity}</span>
-                    </div>
-                  );
-                const cost = staffAwakenCost(mine.stars + 1);
-                const at = posOf(id);
-                return (
-                  <div key={id} className={`ui-box friend-card ${STAFF[id].rarity}`}>
-                    <Face id={id} />
-                    <span className="friend-name">
-                      {t(`staff.name.${id}` as StringKey)} <span className="friend-rarity">{rarity}</span> {"★".repeat(Math.min(5, mine.stars))}
-                      {mine.stars > 5 ? `+${mine.stars - 5}` : ""}
-                    </span>
-                    <span className="friend-stats">
-                      {STATS.map((s) => (
-                        <span key={s}>
-                          {t(`staff.stat.${s}` as StringKey)} <b>{statOf(id, s, mine.stars)}</b>
-                        </span>
-                      ))}
-                    </span>
-                    <span className="friend-skill">{t(`staff.skill.${id}` as StringKey)}</span>
-                    <span className="friend-story">“{t(`staff.story.${id}` as StringKey)}”</span>
-                    <span className="friend-pos">
-                      {POSITIONS.map((p) => (
-                        <button key={p} className={`ui-sq awaken-kind friend-pos-btn${at === p ? " on" : ""}`} disabled={busy} onClick={() => void act({ type: "assignStaff", position: p, staffId: at === p ? null : id })}>
-                          {t(`staff.pos.${p}` as StringKey)}
-                        </button>
-                      ))}
-                    </span>
-                    <button className="ui-btn friend-awaken" disabled={busy || mine.shards < cost.shards || save.gold < cost.gold} onClick={() => void act({ type: "awakenStaff", staffId: id, from: mine.stars })}>
-                      {t("friends.awaken", { shards: cost.shards, have: mine.shards, gold: cost.gold })}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </>
+          <FriendsTab save={save} busy={busy} act={act} picked={picked} onPick={setPicked} />
         ) : (
           <div className="friends-post">
             <p className="ui-plate friends-rates">
@@ -149,6 +102,86 @@ export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; 
             {t("upgrade.close")}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// The friends as Dave's staff window (user, 2026-10-20): who works where along the top, the friends down the
+// left (face, name, where they work), the one picked on the right (portrait, stats with the best one
+// standing out, skill, their line about Grandma, position, awakening).
+function FriendsTab({ save, busy, act, picked, onPick }: { save: SaveData; busy: boolean; act: (a: Action) => Promise<SaveData | null>; picked: StaffId | null; onPick: (id: StaffId) => void }) {
+  const st = save.staff;
+  const owned = STAFF_IDS.filter((id) => st.owned[id]);
+  const posOf = (id: StaffId) => (Object.entries(st.roster).find(([, who]) => who === id)?.[0] ?? null) as Position | null;
+  const id = picked && st.owned[picked] ? picked : (owned[0] ?? null);
+  const mine = id ? st.owned[id]! : null;
+  return (
+    <>
+      <div className="friends-slots-row">
+        <span className="friends-slots">{t("friends.slots", { used: Object.keys(st.roster).length, max: staffSlots(save) })}</span>
+        {POSITIONS.map((p) => {
+          const who = st.roster[p];
+          return (
+            <button key={p} className={`ui-box friends-slot${who && who === id ? " on" : ""}`} onClick={() => who && onPick(who)}>
+              {who && hasArt(`test/staff/${who}/portrait.png`) ? <Face id={who} /> : <span className="friends-slot-empty">{who ? t(`staff.name.${who}` as StringKey) : ""}</span>}
+              <span>{t(`staff.pos.${p}` as StringKey).split(" ")[0]}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="friends-body">
+        <div className="friends-list">
+          {owned.map((f) => {
+            const at = posOf(f);
+            return (
+              <button key={f} className={`ui-box friend-item ${STAFF[f].rarity}${f === id ? " on" : ""}`} onClick={() => onPick(f)}>
+                <Face id={f} />
+                <span className="friend-name">{t(`staff.name.${f}` as StringKey)}</span>
+                <span className="friend-at">{at ? t(`staff.pos.${at}` as StringKey) : ""}</span>
+              </button>
+            );
+          })}
+          {owned.length < STAFF_IDS.length && <p className="friends-unmet">{t("friends.unmet", { n: STAFF_IDS.length - owned.length })}</p>}
+        </div>
+        {id && mine && <FriendDetail id={id} mine={mine} at={posOf(id)} save={save} busy={busy} act={act} />}
+      </div>
+    </>
+  );
+}
+
+function FriendDetail({ id, mine, at, save, busy, act }: { id: StaffId; mine: { stars: number; shards: number }; at: Position | null; save: SaveData; busy: boolean; act: (a: Action) => Promise<SaveData | null> }) {
+  const cost = staffAwakenCost(mine.stars + 1);
+  const best = STATS.reduce((a, b) => (statOf(id, b, mine.stars) > statOf(id, a, mine.stars) ? b : a));
+  return (
+    <div className={`ui-box friend-detail ${STAFF[id].rarity}`}>
+      <div className="friend-head">
+        <span className="friend-big">{hasArt(`test/staff/${id}/portrait.png`) && <img src={artUrl(`test/staff/${id}/portrait.png`)} alt="" />}</span>
+        <span className="friend-title">
+          <span className="friend-name">{t(`staff.name.${id}` as StringKey)}</span>
+          <span className="friend-rarity">
+            {t(`staff.rarity.${STAFF[id].rarity}` as StringKey)} <span className="friend-stars">{"★".repeat(Math.min(5, mine.stars)) || "☆"}{mine.stars > 5 ? `+${mine.stars - 5}` : ""}</span>
+          </span>
+          <span className="friend-stats">
+            {STATS.map((s) => (
+              <span key={s} className={s === best ? "best" : ""}>
+                {t(`staff.stat.${s}` as StringKey)} <b>{statOf(id, s, mine.stars)}</b>
+              </span>
+            ))}
+          </span>
+          <span className="friend-skill">{t(`staff.skill.${id}` as StringKey)}</span>
+          <span className="friend-story">“{t(`staff.story.${id}` as StringKey)}”</span>
+        </span>
+      </div>
+      <div className="friend-pos">
+        {POSITIONS.map((p) => (
+          <button key={p} className={`ui-sq awaken-kind friend-pos-btn${at === p ? " on" : ""}`} disabled={busy} onClick={() => void act({ type: "assignStaff", position: p, staffId: at === p ? null : id })}>
+            {t(`staff.pos.${p}` as StringKey).split(" ")[0]}
+          </button>
+        ))}
+        <button className="ui-btn friend-awaken" disabled={busy || mine.shards < cost.shards || save.gold < cost.gold} onClick={() => void act({ type: "awakenStaff", staffId: id, from: mine.stars })}>
+          {t("friends.awaken", { shards: cost.shards, have: mine.shards, gold: cost.gold })}
+        </button>
       </div>
     </div>
   );
