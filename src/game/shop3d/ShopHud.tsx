@@ -67,6 +67,8 @@ export interface HudProps {
   stickX: number;
   onClose: () => void;
   onPause: () => void;
+  muted: boolean;
+  onMute: () => void;
   onPress: () => void;
   onRelease: () => void;
   onStick: (x: number | null) => void;
@@ -130,6 +132,9 @@ export function ShopHud(p: HudProps) {
         </button>
         <button className="ui-btn" onClick={p.onPause}>
           {p.paused ? t("service.resume") : t("service.pause")}
+        </button>
+        <button className="ui-btn" onClick={p.onMute}>
+          {p.muted ? t("service.unmute") : t("service.mute")}
         </button>
       </div>
       {p.dishes.map((d, i) =>

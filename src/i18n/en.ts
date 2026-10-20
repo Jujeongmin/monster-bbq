@@ -222,6 +222,8 @@ export const en: Record<keyof typeof ko, string> = {
   "service.grade.fast": "Fast!",
   "service.grade.good": "Good",
   "service.grade.late": "Late",
+  "service.mute": "Sound off",
+  "service.unmute": "Sound on",
   // golden charcoal before the shop (shop remake step 3)
   "summary.charcoal": "Got {n} golden charcoal!",
   "awaken.noCharcoal": "Need golden charcoal",

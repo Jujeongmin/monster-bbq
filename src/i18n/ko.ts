@@ -221,6 +221,8 @@ export const ko = {
   "service.grade.fast": "빠름!",
   "service.grade.good": "좋아",
   "service.grade.late": "늦었어",
+  "service.mute": "소리 끄기",
+  "service.unmute": "소리 켜기",
   // golden charcoal before the shop (shop remake step 3)
   "summary.charcoal": "황금 숯 {n}개를 얻었다!",
   "awaken.noCharcoal": "황금 숯 부족",

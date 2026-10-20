@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { BALANCE } from "../../../shared/balance";
+import { sfx } from "../../audio/sfx";
 import { t, type StringKey } from "../../i18n";
 import { markSeen, nightTipDue, readSeen, TIP_FACE, tipStore, type TipId } from "../../screens/tips";
 import { loadShift, saveShift } from "../service/night";
 import { LAYOUT, Shift, type ShiftEvent } from "../service/shift";
 import { clockText, type ServiceData, type ShopReport } from "../service/types";
 import { displayScale, FLOOR_Y, COUNTER, Z } from "./layout";
-import { lookAt, serveGrade, type Pose, type ShopLook } from "./look";
+import { lookAt, patienceTier, serveGrade, type Pose, type ShopLook } from "./look";
 import { moveFrom } from "./input";
 import { ShopHud, type Anchors, type Band, type Fx, type Pop, type Tip } from "./ShopHud";
 import { ShopView } from "./ShopView";
@@ -53,6 +54,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
   const [scale, setScale] = useState(1);
   const [hud, setHud] = useState<Hud | null>(null);
   const [paused, setPaused] = useState(false);
+  const [muted, setMuted] = useState(() => sfx.isMuted());
   const [closeStep, setCloseStep] = useState<0 | 1 | 2>(0); // 0 open, 1 orders closed, 2 hall closed
   const [stickX, setStickX] = useState(0);
   const ctl = useRef({ press: () => {}, release: () => {}, stick: (_x: number | null) => {}, pause: () => {}, close: () => {} });
@@ -105,6 +107,34 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
     let shakeAt = -Infinity;
     const stamp = (at: { x: number; y: number }, text: string, tone: string) => fx.push({ id: ++popId, kind: "stamp", x: at.x, y: at.y, text, tone, born: now });
 
+    // each event's sound (shop remake step 3); the night calls this only while it runs, so a pause is quiet
+    const sound = (e: ShiftEvent) => {
+      switch (e.type) {
+        case "order":
+          return sfx.play("order");
+        case "cooked":
+          return sfx.play("cooked");
+        case "take":
+          return sfx.play("take");
+        case "served":
+          return sfx.play("coin");
+        case "angry":
+          return sfx.play("angry");
+        case "pour":
+          return sfx.play(e.pour === "perfect" ? "pourPerfect" : e.pour === "good" ? "pourGood" : "pourBad");
+        case "coal":
+          return sfx.play("coal");
+        case "noCoal":
+          return sfx.play("coalOut");
+        case "scrub":
+          return sfx.play(e.done ? "scrubDone" : "scrub");
+        case "soldOut":
+        case "closing":
+          return sfx.play("bell");
+      }
+    };
+    // a guest whose patience just turned red ticks once
+    const late = new Set<string>();
     const pop = (at: { x: number; y: number }, text: string, color: string) => pops.push({ id: ++popId, x: at.x, y: at.y, text, color, born: now });
     const guestAt = (id: string) => {
       const g = shift.s.guests.find((x) => x.id === id);
@@ -146,6 +176,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
     };
 
     const handle = (e: ShiftEvent) => {
+      sound(e);
       switch (e.type) {
         case "take":
         case "drink":
@@ -212,6 +243,12 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
         }
         const events = shift.drain();
         for (const e of events) handle(e);
+        for (const g of lookAt(shift, now, 0, hold).guests) {
+          if (g.bubble && patienceTier(g.bubble.patience) === "late" && g.bubble.patience > 0) {
+            if (!late.has(g.id)) sfx.play("tick");
+            late.add(g.id);
+          } else late.delete(g.id);
+        }
         // the lid's line counts down with the night; when none is up, the next first-time moment gets one
         if (tip && (tip.left -= dt) <= 0) tip = null;
         if (!tip) {
@@ -249,6 +286,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
     };
 
     const key = (down: boolean) => (e: KeyboardEvent) => {
+      sfx.unlock();
       const k = e.key.toLowerCase();
       if (k === "a" || k === "arrowleft") keys.left = down;
       else if (k === "d" || k === "arrowright") keys.right = down;
@@ -300,7 +338,13 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
             stickX={stickX}
             onClose={() => ctl.current.close()}
             onPause={() => ctl.current.pause()}
-            onPress={() => ctl.current.press()}
+            muted={muted}
+            onMute={() => {
+              sfx.unlock();
+              sfx.setMuted(!muted);
+              setMuted(!muted);
+            }}
+            onPress={() => (sfx.unlock(), ctl.current.press())}
             onRelease={() => ctl.current.release()}
             onStick={(x) => ctl.current.stick(x)}
           />
