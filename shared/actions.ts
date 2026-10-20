@@ -17,7 +17,7 @@ import { assignStaff, awakenStaff, summon } from "./staff/actions";
 import { settleService } from "./service/settle";
 import { vipLevel } from "./shop";
 import { isStoryId } from "./content/story";
-import type { SaveData, Zone } from "./save";
+import type { PendingService, SaveData, Zone } from "./save";
 
 // What a hunt report lists, in the order things happened (hunt v3 design 5.3): each monster taken and how
 // (the server turns that into parts by stars), each gathering spot, each way down to that floor. The
@@ -223,6 +223,16 @@ function upgradeDish(save: SaveData, a: Record<string, unknown>): { save: SaveDa
 // Tonight's menu board (restaurant v2 design 3): researched dishes, each once, up to the menu slots,
 // 1..MAX_SETS sets each. The sets come out of the fridge now and become tonight's plates; what is left
 // at closing is thrown away. The server's seed brings the customers.
+// the friends at work tonight, with their stars, fixed when the shop opens (staff design 5)
+function tonightStaff(save: SaveData): PendingService["staff"] {
+  const out: PendingService["staff"] = {};
+  for (const [pos, id] of Object.entries(save.staff.roster)) {
+    const mine = id ? save.staff.owned[id] : undefined;
+    if (id && mine) out[pos as keyof typeof out] = { id, stars: mine.stars };
+  }
+  return out;
+}
+
 function openShop(save: SaveData, a: Record<string, unknown>, ctx: ActionContext): { save: SaveData; error?: string } {
   if (save.stage !== "kitchen") return { save, error: "wrong_stage" };
   // already open (a retry after a lost reply): tonight stands as it was opened, nothing taken twice
@@ -241,7 +251,7 @@ function openShop(save: SaveData, a: Record<string, unknown>, ctx: ActionContext
   if (!plan) return { save, error: "no_ingredients" };
   const seed = Math.floor(ctx.random() * 2 ** 31);
   const id = `s${ctx.now.toString(36)}${Math.floor(ctx.random() * 1e9).toString(36)}`;
-  return { save: { ...save, items: plan.items, menu: lines, service: { id, seed, startedAt: ctx.now, dishes: plan.dishes, planMenu: lines.map((l) => l.dish), adds: [], staff: {} } } };
+  return { save: { ...save, items: plan.items, menu: lines, service: { id, seed, startedAt: ctx.now, dishes: plan.dishes, planMenu: lines.map((l) => l.dish), adds: [], staff: tonightStaff(save) } } };
 }
 
 // The server's rules for every change to a save (the in-page LocalTransport runs the same code).

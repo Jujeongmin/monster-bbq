@@ -7,6 +7,7 @@ import { BALANCE } from "../../shared/balance";
 import { sidePower } from "../../shared/awaken";
 import { dishPrice, type MenuLine, type TonightDish } from "../../shared/kitchen/dish";
 import { addOptions } from "../../shared/service/addMenu";
+import { staffEffects } from "../../shared/staff/effects";
 import type { DishId } from "../../shared/content/dishes";
 import type { AddMenuHook } from "../game/shop3d/ShopStage";
 import { planService } from "../../shared/service/plan";
@@ -335,7 +336,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
 // plates the menu board made.
 function Night({ save, hold, addMenu, onEnd }: { save: SaveData; hold: boolean; addMenu: AddMenuHook; onEnd: (r: { served: ServedEntry[]; left: string[]; cleaned: string[] }) => void }) {
   const svc = save.service!;
-  const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.planMenu });
+  const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.planMenu, extra: staffEffects(svc.staff).extraGuests });
   const shop = { serviceId: svc.id, customers, dishes: svc.dishes, stools: stools(save), walkMul: walkMul(save), coalPerDish: coalPerDish(save) };
   return <ServiceGame key={svc.id} shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} />;
 }

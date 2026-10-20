@@ -133,3 +133,39 @@ describe("openShop keeps the menu it opened with (shop remake step 4)", () => {
     expect(opened().service).toMatchObject({ planMenu: ["grilled_belly", "garlic_neck"], adds: [] });
   });
 });
+
+describe("tonight's friends and the settlement (staff design 5)", () => {
+  const withJang: SaveData = { ...kitchen, staff: { ...kitchen.staff, owned: { jang: { shards: 0, stars: 0 } }, roster: { kitchen: "jang" } } };
+  const open = (s: SaveData) => {
+    const r = applyAction(s, { type: "openShop", menu: [{ dish: "grilled_belly", sets: 1 }, { dish: "garlic_neck", sets: 1 }] }, ctx(1_000_000));
+    if (r.error) throw new Error(r.error);
+    return r.save;
+  };
+  it("fixes the roster when the shop opens", () => {
+    expect(open(withJang).service!.staff).toEqual({ kitchen: { id: "jang", stars: 0 } });
+  });
+  it("settles with the roster the shop opened with, accepting a plate cooked faster with a kitchen helper", () => {
+    const s0 = open(withJang);
+    const later = { ...s0, staff: { ...s0.staff, roster: {} } };
+    const c = planService(s0.service!.seed, { day: kitchen.day, reputation: kitchen.reputation, menu: ["grilled_belly", "garlic_neck"] })[0];
+    const wait = Math.ceil(RECIPES.grilled_belly.cookMs * 0.5);
+    const r = applyAction(later, { type: "finishService", serviceId: s0.service!.id, served: [{ customer: c.id, dish: "grilled_belly", waitMs: wait }], left: [] }, ctx(s0.service!.startedAt + c.arriveMs + 200_000));
+    expect(r.error).toBeUndefined();
+  });
+  it("refuses one faster than even the helper allows", () => {
+    const s0 = open(withJang);
+    const c = planService(s0.service!.seed, { day: kitchen.day, reputation: kitchen.reputation, menu: ["grilled_belly", "garlic_neck"] })[0];
+    const wait = Math.floor(RECIPES.grilled_belly.cookMs * 0.5) - 100;
+    const r = applyAction(s0, { type: "finishService", serviceId: s0.service!.id, served: [{ customer: c.id, dish: "grilled_belly", waitMs: wait }], left: [] }, ctx(s0.service!.startedAt + 200_000));
+    expect(r.error).toBe("bad_service");
+  });
+  it("counts Baekhwa's extra guests", () => {
+    const s0 = open({ ...kitchen, staff: { ...kitchen.staff, owned: { baekhwa: { shards: 0, stars: 0 } }, roster: { serve: "baekhwa" } } });
+    const base = planService(s0.service!.seed, { day: kitchen.day, reputation: kitchen.reputation, menu: ["grilled_belly", "garlic_neck"] });
+    const all = planService(s0.service!.seed, { day: kitchen.day, reputation: kitchen.reputation, menu: ["grilled_belly", "garlic_neck"], extra: 2 });
+    expect(all.length).toBe(base.length + 2);
+    const extra = all[all.length - 1];
+    const r = applyAction(s0, { type: "finishService", serviceId: s0.service!.id, served: [{ customer: extra.id, dish: "grilled_belly", waitMs: RECIPES.grilled_belly.cookMs }], left: [] }, ctx(s0.service!.startedAt + extra.arriveMs + 200_000));
+    expect(r.error).toBeUndefined();
+  });
+});

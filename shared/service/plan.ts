@@ -27,10 +27,11 @@ export function customerCount(reputation: number): number {
   return Math.max(SV.minCustomers, Math.min(SV.maxCustomers, SV.baseCustomers + Math.floor(reputation / SV.perReputation)));
 }
 
-export function planService(seed: number, opts: { day: number; reputation: number; menu: DishId[] }): Customer[] {
+export function planService(seed: number, opts: { day: number; reputation: number; menu: DishId[]; extra?: number }): Customer[] {
   if (opts.menu.length === 0) return [];
   const rand = seededRandom(seed);
-  const count = customerCount(opts.reputation);
+  // Baekhwa brings a couple more (staff design), never past the night's limit
+  const count = Math.min(SV.maxCustomers, customerCount(opts.reputation) + (opts.extra ?? 0));
   const between = (lo: number, hi: number) => Math.round(lo + rand() * (hi - lo));
   const D = SV.drinks;
   // spread over the open hours: even slots, each arrival moved a little inside its slot

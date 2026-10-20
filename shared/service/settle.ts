@@ -2,6 +2,7 @@ import { BALANCE } from "../balance";
 import { isDishId, type DishId } from "../content/dishes";
 import { RECIPES } from "../content/recipes";
 import type { SaveData } from "../save";
+import { staffEffects } from "../staff/effects";
 import { planService } from "./plan";
 
 const SV = BALANCE.service;
@@ -40,7 +41,9 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
   if (!svc || a.serviceId !== svc.id || !Array.isArray(a.served) || !Array.isArray(a.left) || a.served.length > MAX_SERVED || a.left.length > MAX_SERVED) return bad;
   // tonight's dishes (with any added during the night), and the guests planned from the opening menu
   const menu = svc.dishes.map((d) => d.dish);
-  const customers = new Map(planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.planMenu }).map((c) => [c.id, c]));
+  // tonight's friends: faster cooking, longer patience, more guests and tips (staff design 5)
+  const fx = staffEffects(svc.staff);
+  const customers = new Map(planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.planMenu, extra: fx.extraGuests }).map((c) => [c.id, c]));
   const plates = new Map(svc.dishes.map((d) => [d.dish, d.plates]));
   const price = new Map(svc.dishes.map((d) => [d.dish, d.price]));
   const seen = new Set<string>();
@@ -57,7 +60,7 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
     const left = plates.get(e.dish) ?? 0;
     if (!c || left < 1) return bad;
     const wait = e.waitMs;
-    if (typeof wait !== "number" || !Number.isFinite(wait) || wait < RECIPES[e.dish].cookMs || wait > c.patienceMs || c.arriveMs + wait > elapsed) return bad;
+    if (typeof wait !== "number" || !Number.isFinite(wait) || wait < Math.floor(RECIPES[e.dish].cookMs * fx.cookMul) || wait > Math.ceil(c.patienceMs * fx.patienceMul * (fx.calm ? 1.5 : 1)) || c.arriveMs + wait > elapsed) return bad;
     if (e.drink !== undefined && (!isPour(e.drink) || c.drink === "none")) return bad;
     plates.set(e.dish, left - 1);
     seen.add(e.customer);
@@ -66,7 +69,7 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
     const line = sold.get(e.dish) ?? { plates: 0, gold: 0 };
     sold.set(e.dish, { plates: line.plates + 1, gold: line.gold + p });
     const perfectTea = c.drink === "tea" && e.drink === "perfect";
-    tips += tipFor(p, perfectTea);
+    tips += Math.round(tipFor(p, perfectTea) * fx.tipMul);
     if (e.drink && c.drink !== "none") drinks += Math.round(SV.drinks.price[c.drink] * (e.drink === "perfect" ? SV.drinks.perfectMul : 1));
     if (e.drink === "bad") badPours++;
   }
