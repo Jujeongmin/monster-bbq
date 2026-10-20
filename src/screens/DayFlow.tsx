@@ -25,7 +25,9 @@ import { Bag } from "./hud/Bag";
 import { DayHud } from "./hud/DayHud";
 import { Notebook } from "./hud/Notebook";
 import { Receipt } from "./hud/Receipt";
-import { sceneOf, showDayHud, timeOfDay, transitionCard, type App, type Phase, type Scene } from "./hud/hud";
+import { knowsCharcoal, sceneOf, showDayHud, timeOfDay, transitionCard, type App, type Phase, type Scene } from "./hud/hud";
+import { LidLine } from "./hud/LidLine";
+import { markSeen, readSeen, TIP_FACE, tipStore, type TipId } from "./tips";
 import { TitleCard } from "./hud/TitleCard";
 import { Cutscene } from "./story/Cutscene";
 import { storyDue } from "./story/story";
@@ -62,6 +64,12 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   const busyRef = useRef(false);
   // the VX shop (06b-1): open or not, Verse8's list of products, and a purchase being checked
   const [store, setStore] = useState(false);
+  // first-time lines and marks seen on this browser (shop remake step 3)
+  const [seenTips, setSeenTips] = useState(() => readSeen(tipStore()));
+  const see = (id: TipId) => {
+    markSeen(tipStore(), id);
+    setSeenTips((s) => new Set([...s, id]));
+  };
   const [storeItems, setStoreItems] = useState<ShopItem[]>([]);
   const [checking, setChecking] = useState(false);
   useEffect(
@@ -89,6 +97,16 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   useEffect(load, [transport]);
   // the upgrade shop belongs to the screen it was opened from: a new stage closes it
   useEffect(() => (setShopping(null), setWin(null)), [phase]);
+  // golden charcoal is introduced the first time this save has it: the lid's line once (not over the hunt or
+  // the night, which have their own screens), and a "new" mark on the awakening app until it is opened
+  const knows = !!save && knowsCharcoal(save);
+  const charcoalLine = knows && !seenTips.has("charcoal") && phase !== "service" && !save?.hunt;
+  const fresh: App[] = knows && !seenTips.has("awakenApp") ? ["awaken"] : [];
+  useEffect(() => {
+    if (!charcoalLine) return;
+    const id = setTimeout(() => see("charcoal"), 4000);
+    return () => clearTimeout(id);
+  }, [charcoalLine]);
   // Dave's title card when the day moves on to another stage (not on the first screen)
   const scene: Scene | null = save ? sceneOf(phase, save.hunt?.period ?? null) : null;
   const lastScene = useRef<Scene | null>(null);
@@ -159,6 +177,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // An app of Grandma's notebook: its window, or in the evening kitchen the kitchen's own tab.
   function openApp(app: App) {
     setWin(null);
+    if (app === "awaken" && fresh.includes("awaken")) see("awakenApp");
     if (app === "bag") setWin("bag");
     else if (app === "upgrade" || app === "awaken") setShopping(app);
     else if (app === "shop") setStore(true);
@@ -245,7 +264,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {/* the morning: pick the side weapon, then set out; at lunch the same window opens from its button */}
       {phase === "hunt" && save.stage === "hunt" && !save.hunt && !failed && (!hub || panel === "side") && <SidePick save={save} busy={busy} onGo={setOut} onCancel={hub ? () => setPanel(null) : undefined} />}
       {phase === "lunch" && picking && <SidePick save={save} busy={busy} onGo={setOut} onCancel={() => setPicking(false)} />}
-      {summary && phase !== "hunt" && <HuntSummary events={summary.events} ko={summary.ko} lost={summary.lost} before={summary.before} after={save.items} gotKey={!summary.hadKey && save.bossKey} gotPage={!summary.hadPages.includes("forest") && save.pages.includes("forest")} onShop={() => setStore(true)} onDone={() => setSummary(null)} />}
+      {summary && phase !== "hunt" && <HuntSummary events={summary.events} ko={summary.ko} lost={summary.lost} before={summary.before} after={save.items} gotKey={!summary.hadKey && save.bossKey} gotPage={!summary.hadPages.includes("forest") && save.pages.includes("forest")} onDone={() => setSummary(null)} />}
 
       {/* the VIP's charcoal: in the morning before the hunt, once a day */}
       {phase === "hunt" && save.stage === "hunt" && !save.hunt && vipLevel(save.vip.spent) > 0 && save.vip.day !== save.day && (
@@ -253,7 +272,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       )}
       {/* the notebook's windows; the upgrades act at whatever stage of the day they were opened in */}
       {shopping && phase !== "service" && <Upgrades tab={shopping} save={save} busy={busy} act={(a) => void act(a, phase)} onShop={() => setStore(true)} onClose={() => setShopping(null)} />}
-      {win === "notebook" && <Notebook phase={phase} shut={shut} onApp={openApp} onClose={() => setWin(null)} />}
+      {win === "notebook" && <Notebook phase={phase} shut={shut} fresh={fresh} onApp={openApp} onClose={() => setWin(null)} />}
+      {charcoalLine && <LidLine face={TIP_FACE.charcoal} text={t("tip.charcoal")} />}
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
       {win === "cookbook" && (
         <div className="hud-win" onClick={() => setWin(null)}>

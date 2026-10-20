@@ -1,4 +1,5 @@
 import type { HuntEvent } from "../../shared/actions";
+import { BALANCE } from "../../shared/balance";
 import { parseItemKey, type ItemId } from "../../shared/content/items";
 import { starsOf } from "../../shared/hunt/stars";
 import { artUrl } from "../game/art";
@@ -8,7 +9,7 @@ import { itemName, t } from "../i18n";
 // Home from the hunt (hunt v3 design 5.2): what was taken, row by row by stars, and the parts that came
 // home (the save's items after the server settled the hunt, against before); the den's key or a boss's
 // notebook page when this hunt brought one (plan 08d).
-export function HuntSummary({ events, ko, lost, before, after, gotKey, gotPage, onShop, onDone }: { events: HuntEvent[]; ko: boolean; lost: Record<string, number>; before: Record<string, number>; after: Record<string, number>; gotKey: boolean; gotPage: boolean; onShop: () => void; onDone: () => void }) {
+export function HuntSummary({ events, ko, lost, before, after, gotKey, gotPage, onDone }: { events: HuntEvent[]; ko: boolean; lost: Record<string, number>; before: Record<string, number>; after: Record<string, number>; gotKey: boolean; gotPage: boolean; onDone: () => void }) {
   const counts = [3, 2, 1].map((n) => ({ n, count: events.filter((e) => "take" in e && starsOf(e.how) === n).length }));
   const gained = Object.entries(after)
     .map(([k, v]) => [k, v - (before[k] ?? 0)] as const)
@@ -38,6 +39,7 @@ export function HuntSummary({ events, ko, lost, before, after, gotKey, gotPage, 
         </div>
         {gotKey && <p className="summary-news">{t("summary.key")}</p>}
         {gotPage && <p className="summary-news">{t("summary.page")}</p>}
+        {gotPage && <p className="summary-news">{t("summary.charcoal", { n: BALANCE.shop.bossCharcoal })}</p>}
         {ko && (
           // what the knockout took: each lost stack greyed and crossed out (Dave's lost-items list)
           <div className="summary-lost">
@@ -56,9 +58,6 @@ export function HuntSummary({ events, ko, lost, before, after, gotKey, gotPage, 
           </div>
         )}
         <div className="dayflow-actions">
-          <button className="ui-btn" onClick={onShop}>
-            {t("shop.open")}
-          </button>
           <button className="ui-btn" onClick={onDone}>
             {t("summary.next")}
           </button>

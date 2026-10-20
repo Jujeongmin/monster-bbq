@@ -1,6 +1,6 @@
 import type { DishId } from "../../../shared/content/dishes";
 import { isItemId, ITEMS, parseItemKey, type ItemId } from "../../../shared/content/items";
-import type { ServiceSummary } from "../../../shared/save";
+import type { SaveData, ServiceSummary } from "../../../shared/save";
 import type { StringKey } from "../../i18n";
 
 // What the day's screens show (Dave-style UI design): the time of day and whether the shared HUD is up,
@@ -128,4 +128,10 @@ const SCENE_TIME: Record<Scene, TimeOfDay> = { prep: "morning", "hunt-morning": 
 export function transitionCard(prev: Scene | null, next: Scene): { time: TimeOfDay; line: StringKey } | null {
   if (prev === null || prev === next || next === "settle") return null;
   return { time: SCENE_TIME[next], line: CARD_LINE[next] };
+}
+
+// Whether this save knows golden charcoal (shop remake step 3: the shop is not pushed before): it has had
+// some (the first chapter boss, a purchase, VIP), or has awakened something with it.
+export function knowsCharcoal(save: Pick<SaveData, "charcoal" | "stars" | "shop" | "pages">): boolean {
+  return save.charcoal > 0 || Object.values(save.stars).some((n) => (n ?? 0) > 0) || save.shop.purchases.length > 0 || save.pages.includes("forest");
 }

@@ -2,7 +2,7 @@ import type { SaveData } from "../../../shared/save";
 import { vipLevel } from "../../../shared/shop";
 import { artUrl } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
-import { HUD_ART, type TimeOfDay } from "./hud";
+import { HUD_ART, knowsCharcoal, type TimeOfDay } from "./hud";
 import "./hud.css";
 
 // The day's HUD like Dave's (Dave-style UI design 4): the time of day and the day at the top left, gold and golden charcoal at the top right, Grandma's notebook big at
@@ -24,10 +24,13 @@ export function DayHud({ save, time, quiet = false, onBag, onNotebook }: { save:
           <img className="ui-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />
           {save.gold.toLocaleString()}
         </span>
-        <span title={t("hud.charcoal", { n: save.charcoal })}>
-          <img className="ui-icon ui-icon-lg" src={artUrl("test/ui/icon_golden_charcoal.png")} alt="" />
-          {save.charcoal.toLocaleString()}
-        </span>
+        {/* golden charcoal only once it is known (shop remake step 3) */}
+        {knowsCharcoal(save) && (
+          <span title={t("hud.charcoal", { n: save.charcoal })}>
+            <img className="ui-icon ui-icon-lg" src={artUrl("test/ui/icon_golden_charcoal.png")} alt="" />
+            {save.charcoal.toLocaleString()}
+          </span>
+        )}
         {vip > 0 && (
           <span>
             <img className="ui-icon ui-icon-lg" src={artUrl("test/ui/vip_badge.png")} alt="" />

@@ -161,9 +161,6 @@ export function Upgrades({ tab: first = "upgrade", save, busy, act, onShop, onCl
         </>
         )}
         <div className="dayflow-actions">
-          <button className="ui-btn" onClick={onShop}>
-            {t("shop.open")}
-          </button>
           <button className="ui-btn" onClick={onClose}>
             {t("upgrade.close")}
           </button>

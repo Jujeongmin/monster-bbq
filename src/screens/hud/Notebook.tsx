@@ -7,7 +7,7 @@ import { HUD_ART, notebookApps, type App, type Phase } from "./hud";
 // at the HUD's bottom right, the notebook flies up from its button and its cover swings open onto the apps
 // (user, 2026-10-16); closing folds it back down. The menu board opens only in the evening kitchen; a closed
 // app says where it opens.
-export function Notebook({ phase, shut = 0, onApp, onClose }: { phase: Phase; shut?: number; onApp: (app: App) => void; onClose: () => void }) {
+export function Notebook({ phase, shut = 0, fresh = [], onApp, onClose }: { phase: Phase; shut?: number; fresh?: App[]; onApp: (app: App) => void; onClose: () => void }) {
   const [closing, setClosing] = useState<App | "close" | null>(null);
   const close = (then: App | "close") => setClosing((c) => c ?? then);
   // its key pressed again: fold back like the close button
@@ -35,7 +35,10 @@ export function Notebook({ phase, shut = 0, onApp, onClose }: { phase: Phase; sh
                 .map(({ app, open }) => (
                   <button key={app} className="notebook-app" disabled={!open} onClick={() => close(app)}>
                     <img src={artUrl(HUD_ART.apps[app])} alt="" />
-                    <span className="notebook-name">{t(`notebook.app.${app}` as StringKey)}</span>
+                    <span className="notebook-name">
+                      {t(`notebook.app.${app}` as StringKey)}
+                      {fresh.includes(app) && <span className="notebook-new">{t("notebook.new")}</span>}
+                    </span>
                     {!open && <span className="notebook-why">{t("notebook.eveningOnly")}</span>}
                   </button>
                 ))}

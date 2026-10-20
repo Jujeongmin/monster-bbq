@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BALANCE } from "../../../shared/balance";
 import { t, type StringKey } from "../../i18n";
-import { markSeen, nightTipDue, readSeen, TIP_FACE, type TipId } from "../../screens/tips";
+import { markSeen, nightTipDue, readSeen, TIP_FACE, tipStore, type TipId } from "../../screens/tips";
 import { loadShift, saveShift } from "../service/night";
 import { LAYOUT, Shift, type ShiftEvent } from "../service/shift";
 import { clockText, type ServiceData, type ShopReport } from "../service/types";
@@ -24,14 +24,6 @@ const FX_MS = 1200;
 const SHAKE_MS = 200;
 const GOLD_AT = { x: 22, y: 16 }; // the coin icon on the top strip, where flying coins land
 
-// local storage for the seen tips, or none where the page may not use it
-const tipStore = (): Storage | null => {
-  try {
-    return localStorage;
-  } catch {
-    return null;
-  }
-};
 
 interface Hud {
   look: ShopLook;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { bagRows, notebookApps, receiptAt, receiptLines, sceneOf, showDayHud, timeOfDay, transitionCard, RECEIPT } from "./hud";
+import { newSave } from "../../../shared/save";
+import { bagRows, knowsCharcoal, notebookApps, receiptAt, receiptLines, sceneOf, showDayHud, timeOfDay, transitionCard, RECEIPT } from "./hud";
 
 const summary = { id: "s", served: 8, left: 4, sales: 360, tips: 61, drinks: 15, cleaned: 1, happy: 8, repDelta: 0, dishes: [{ dish: "grilled_belly" as const, plates: 4, gold: 160 }, { dish: "garlic_neck" as const, plates: 4, gold: 200 }] };
 
@@ -81,4 +82,14 @@ describe("the title card between the stages of the day", () => {
     expect(sceneOf("hunt", "afternoon")).toBe("hunt-afternoon");
     expect(sceneOf("kitchen", null)).toBe("kitchen");
   });
+});
+
+describe("golden charcoal is offered only once it is known", () => {
+  it("does not know golden charcoal on a new save", () => expect(knowsCharcoal(newSave())).toBe(false));
+  it("knows it after the first chapter boss, a purchase or VIP charcoal", () => {
+    expect(knowsCharcoal({ ...newSave(), pages: ["forest"] })).toBe(true);
+    expect(knowsCharcoal({ ...newSave(), shop: { firstBuy: [], purchases: ["p1"] } })).toBe(true);
+    expect(knowsCharcoal({ ...newSave(), charcoal: 2 })).toBe(true);
+  });
+  it("knows charcoal after spending it all", () => expect(knowsCharcoal({ ...newSave(), charcoal: 0, stars: { melee: 1 } })).toBe(true));
 });

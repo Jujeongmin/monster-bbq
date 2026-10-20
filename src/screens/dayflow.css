@@ -84,3 +84,6 @@
 .awaken-stars { color: var(--red); font: var(--fs-small) "Galmuri9", monospace; }
 .awaken-short { color: var(--red); }
 .awaken-off { opacity: 0.55; }
+
+/* golden charcoal not known yet: where it comes from, once over the awakening cards (shop remake step 3) */
+.awaken-hint { align-self: center; margin: 0 0 calc(4px * var(--s)); padding: 0 calc(8px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; }

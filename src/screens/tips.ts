@@ -10,6 +10,15 @@ export type TipId = "open" | "cooked" | "carry" | "coalLow" | "drink" | "mess" |
 export const COAL_LOW = 30;
 const KEY = "monster-bbq:tips";
 
+// local storage for the seen tips, or none where the page may not use it
+export function tipStore(): Storage | null {
+  try {
+    return localStorage;
+  } catch {
+    return null;
+  }
+}
+
 export const TIP_FACE: Record<Exclude<TipId, "awakenApp">, LidFace> = {
   open: "smug",
   cooked: "normal",
