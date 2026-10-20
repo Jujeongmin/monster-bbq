@@ -3,12 +3,17 @@ import { SIDE_WEAPONS, type SideWeaponId } from "../../shared/content/sideWeapon
 import { ammoOf, ownsSide } from "../../shared/growth";
 import type { SaveData } from "../../shared/save";
 import { artUrl } from "../game/art";
+import { HUD_ART } from "./hud/hud";
 import { Scene } from "./hud/Scene";
 import { t, type StringKey } from "../i18n";
 
 // Setting out (hunt v3 design 4.4): which side weapon to take, one per hunt, with its shots for the whole
-// hunt. Ones not bought yet show where to get them. The last choice is remembered on this device.
+// hunt. Ones not bought yet show where to get them. The last choice is remembered on this device. The
+// weapons hang on a weapon rack (design 8): one on each of its four pegs, the name on the beam below, the
+// shots on the shelf.
 const LAST_KEY = "monster-bbq:side";
+// the rack's four pegs, in art pixels from its left edge (art/test/ui/hud/weapon_rack.png)
+const PEGS = [46, 84, 123, 162];
 
 function lastSide(save: SaveData): SideWeaponId {
   try {
@@ -33,13 +38,13 @@ export function SidePick({ save, busy, onGo, onCancel }: { save: SaveData; busy:
   };
   return (
     <Scene>
-      <div className="ui-panel side-pick">
+      <div className="side-pick">
         <h2>{t("side.title")}</h2>
-        <div className="side-list">
+        <div className="side-rack" style={{ backgroundImage: `url(${artUrl(HUD_ART.rack)})` }}>
           {SIDE_WEAPONS.map((id, i) => {
             const owned = ownsSide(save, id);
             return (
-              <button key={id} className={`ui-box side-card${id === side ? " on" : ""}`} style={{ "--i": i } as React.CSSProperties} disabled={!owned} onClick={() => setSide(id)}>
+              <button key={id} className={`side-card${id === side ? " on" : ""}`} style={{ "--i": i, "--peg": PEGS[i] } as React.CSSProperties} disabled={!owned} onClick={() => setSide(id)}>
                 <img src={artUrl(`test/ui/side/${id}.png`)} alt="" />
                 <span className="side-name">{t(`hunt.side.${id}` as StringKey)}</span>
                 <span className="side-ammo">{owned ? t("side.ammo", { n: ammoOf(save, id) }) : t("side.locked")}</span>
@@ -47,6 +52,7 @@ export function SidePick({ save, busy, onGo, onCancel }: { save: SaveData; busy:
             );
           })}
         </div>
+        {SIDE_WEAPONS.some((id) => !ownsSide(save, id)) && <p className="side-hint">{t("side.lockedHint")}</p>}
         <div className="dayflow-actions">
           {onCancel && (
             <button className="ui-btn" disabled={busy} onClick={onCancel}>

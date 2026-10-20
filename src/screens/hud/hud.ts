@@ -19,6 +19,13 @@ export const HUD_ART = {
   notebook: "test/ui/icon_notebook.png",
   apps: { bag: hud("app_bag"), upgrade: hud("app_upgrade"), awaken: hud("app_awaken"), cookbook: hud("app_cookbook"), menu: hud("app_menu"), shop: hud("app_shop") } as Record<App, string>,
   receipt: hud("receipt"),
+  // each window its own material (design 8, approved 2026-10-20): the bag an open bojagi cloth, the
+  // upgrades Bandal's pegboard, setting out a weapon rack, the notebook closed and open
+  bagCloth: hud("bag_cloth"),
+  board: hud("upgrade_board"),
+  rack: hud("weapon_rack"),
+  notebookClosed: hud("notebook_closed"),
+  notebookOpen: hud("notebook_open"),
   shopBg: "test/shop/bg.png",
 };
 

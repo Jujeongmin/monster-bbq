@@ -24,9 +24,12 @@
 /* a window over the day: the screen behind dimmed, a tap outside closes it */
 .hud-win { position: absolute; inset: 0; z-index: 8; display: flex; align-items: center; justify-content: center; background: rgba(20, 10, 4, 0.55); }
 .hud-win h2 { margin: 0 0 calc(4px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink); }
-.bag { width: min(92%, calc(440px * var(--s))); padding: calc(6px * var(--s)) calc(10px * var(--s)); display: flex; flex-direction: column; align-items: center; color: var(--ink); }
+/* the bag: the open bojagi cloth at its own size (200x133 art pixels), everything on its plain middle
+   (art x 36-166, y 25-106), the close button hanging under it */
+.bag { position: relative; box-sizing: border-box; width: calc(200 * var(--k)); height: calc(133 * var(--k)); padding: calc(25 * var(--k)) calc(34 * var(--k)) calc(27 * var(--k)) calc(36 * var(--k)); display: flex; flex-direction: column; align-items: center; background: center / 100% 100% no-repeat; image-rendering: pixelated; color: var(--cream); }
+.bag-close { position: absolute; top: calc(100% + 4px * var(--s)); left: 0; right: 0; width: max-content; margin: 0 auto; }
 .bag-tabs { display: flex; gap: calc(2px * var(--s)); margin-bottom: calc(-2px * var(--s)); align-self: flex-start; }
-.bag-grid { align-self: stretch; min-height: calc(120px * var(--s)); max-height: calc(170px * var(--s)); overflow: auto; padding: calc(6px * var(--s)); display: grid; grid-template-columns: repeat(auto-fill, calc(56px * var(--s))); gap: calc(4px * var(--s)); align-content: start; justify-content: center; }
+.bag-grid { align-self: stretch; flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; padding: calc(4px * var(--s)) 0; display: grid; grid-template-columns: repeat(auto-fill, calc(56px * var(--s))); gap: calc(4px * var(--s)); align-content: start; justify-content: center; }
 .bag-cell { position: relative; width: calc(56px * var(--s)); height: calc(56px * var(--s)); padding: 0; background: none; cursor: pointer; font: inherit; }
 .bag-cell.on { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(var(--k) 0 0 #ffd65a) drop-shadow(calc(-1 * var(--k)) 0 0 #ffd65a) drop-shadow(0 var(--k) 0 #ffd65a) drop-shadow(0 calc(-1 * var(--k)) 0 #ffd65a); }
 /* the item at twice its pixels (21 art px → 42), the slot sized round it */
@@ -34,16 +37,19 @@
 .bag-cell .item-star { font-size: var(--fs); right: calc(-4px * var(--s)); top: calc(-6px * var(--s)); }
 .bag-count { position: absolute; right: calc(1px * var(--s)); bottom: calc(-1px * var(--s)); font: 700 var(--fs-small) "Galmuri9", monospace; color: var(--cream); text-shadow: var(--s) var(--s) 0 #2b1408; }
 .bag-empty { grid-column: 1 / -1; text-align: center; color: #d8c4a4; padding-top: calc(40px * var(--s)); }
-.bag-info { margin: calc(4px * var(--s)) 0; min-height: calc(14px * var(--s)); color: var(--paper-ink-soft); }
-.notebook { padding: calc(6px * var(--s)) calc(10px * var(--s)); display: flex; flex-direction: column; align-items: center; color: var(--ink); }
-.notebook-apps { display: grid; grid-template-columns: repeat(3, calc(100px * var(--s))); gap: calc(6px * var(--s)); margin-bottom: calc(6px * var(--s)); }
-/* the card frame takes 10 px a side: the tile is tall enough for the picture, the name and the reason
-   line, which keeps its place on every tile so the pictures line up (the menu board's was cut) */
-.notebook-app { height: calc(86px * var(--s)); padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(2px * var(--s)); font: inherit; color: var(--ink); cursor: pointer; overflow: hidden; }
-.notebook-app img { height: calc(28px * var(--s)); width: calc(32px * var(--s)); object-fit: contain; image-rendering: pixelated; }
-.notebook-name { font-weight: 700; line-height: 1; }
-.notebook-why { font: var(--fs-small) / 1 "Galmuri9", monospace; color: var(--paper-ink-soft); }
-.notebook-app:disabled { cursor: default; filter: grayscale(1) brightness(0.85); }
+.bag-info { margin: calc(2px * var(--s)) 0 0; min-height: calc(14px * var(--s)); color: var(--cream); text-shadow: var(--s) var(--s) 0 #2b1408; }
+/* the open notebook at its own size (168x112 art pixels): three apps on each ruled page (left page art x
+   16-74, right 90-148, y 8-100), the close button under the book */
+.notebook { position: relative; width: calc(168 * var(--k)); height: calc(112 * var(--k)); background: center / 100% 100% no-repeat; image-rendering: pixelated; color: var(--ink); }
+.notebook-page { position: absolute; left: calc(16 * var(--k)); top: calc(8 * var(--k)); width: calc(58 * var(--k)); height: calc(92 * var(--k)); display: flex; flex-direction: column; justify-content: space-around; }
+.notebook-page.right { left: calc(90 * var(--k)); }
+.notebook-app { display: grid; grid-template-columns: calc(32px * var(--s)) minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; column-gap: calc(6px * var(--s)); min-height: calc(26 * var(--k)); padding: 0 calc(4px * var(--s)); border: 0; background: none; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+.notebook-app:hover:not(:disabled) { background: rgba(120, 70, 30, 0.12); }
+.notebook-app img { grid-row: 1 / 3; height: calc(28px * var(--s)); width: calc(32px * var(--s)); object-fit: contain; image-rendering: pixelated; }
+.notebook-name { font-weight: 700; line-height: 1.1; white-space: nowrap; }
+.notebook-why { font: var(--fs-small) / 1 "Galmuri9", monospace; color: var(--paper-ink-soft); white-space: nowrap; }
+.notebook-app:disabled { cursor: default; filter: grayscale(1) opacity(0.7); }
+.notebook-close { position: absolute; top: calc(100% + 6px * var(--s)); left: 0; right: 0; width: max-content; margin: 0 auto; }
 /* opening like Dave's phone (user, 2026-10-16): the closed notebook flies from its button to the middle of
    the screen, rests a moment, then its cover swings open slowly; closing shuts the cover first, then it
    flies back down to its button */
@@ -51,8 +57,9 @@
 @keyframes nb-dim { from { background-color: rgba(20, 10, 4, 0); } }
 .nb-book { position: relative; perspective: calc(900px * var(--s)); transform-origin: 50% 50%; animation: nb-fly 0.5s steps(12) both; }
 @keyframes nb-fly { 0% { transform: translate(-40vw, 38vh) scale(0.12); } 80% { transform: translate(0, 0) scale(1.03); } 100% { transform: none; } }
-/* the closed notebook: the notebook picture 8 times over (29x31 art pixels), centred on the pages */
-.nb-cover { position: absolute; left: calc(50% - 116px * var(--s)); top: calc(50% - 124px * var(--s)); width: calc(232px * var(--s)); height: calc(248px * var(--s)); image-rendering: pixelated; transform-origin: 8% 50%; backface-visibility: hidden; pointer-events: none; animation: nb-open 0.7s 0.7s steps(16) both; }
+/* the closed notebook (84x110 art pixels) lying on the right page, its spine on the open book's spine, so
+   the cover swings over to the left */
+.nb-cover { position: absolute; left: calc(81 * var(--k)); top: calc(1 * var(--k)); width: calc(84 * var(--k)); height: calc(110 * var(--k)); image-rendering: pixelated; transform-origin: 0 50%; backface-visibility: hidden; pointer-events: none; animation: nb-open 0.7s 0.7s steps(16) both; }
 @keyframes nb-open { from { transform: rotateY(0); } 90% { opacity: 1; } to { transform: rotateY(-170deg); opacity: 0; visibility: hidden; } }
 /* the pages under it: hidden while it flies, opening out as the cover turns */
 .nb-book .notebook { animation: nb-pages 0.45s 0.85s steps(9) both; }

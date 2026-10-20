@@ -8,6 +8,7 @@ import { isLocked, level, maxLevel, nextCost, nextMats } from "../../shared/grow
 import type { SaveData } from "../../shared/save";
 import { artUrl, hasArt } from "../game/art";
 import { t, type StringKey } from "../i18n";
+import { HUD_ART } from "./hud/hud";
 
 // The upgrade shop (growth design 2): gold for the hunt, the gear and the shop; the gear also takes the deep
 // floors' materials (plan 08c). Every purchase goes through the server (buyUpgrade); the screen shows what
@@ -102,7 +103,7 @@ export function Upgrades({ tab: first = "upgrade", save, busy, act, onShop, onCl
   const [awaken, setAwaken] = useState<"gear" | "dish">("gear");
   return (
     <div className="dayflow-screen">
-      <div className="ui-panel upgrades">
+      <div className="upgrades" style={{ borderImageSource: `url(${artUrl(HUD_ART.board)})` }}>
         <div className="upgrade-tabs">
           {TABS.map((k) => (
             <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>

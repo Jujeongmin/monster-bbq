@@ -26,26 +26,28 @@ export function Notebook({ phase, shut = 0, onApp, onClose }: { phase: Phase; sh
           else onApp(closing);
         }}
       >
-        <div className="ui-panel notebook">
-          <h2>{t("notebook.title")}</h2>
-          <div className="notebook-apps">
-            {notebookApps(phase).map(({ app, open }) => (
-              <button key={app} className="ui-box notebook-app" disabled={!open} onClick={() => close(app)}>
-                <img src={artUrl(HUD_ART.apps[app])} alt="" />
-                <span className="notebook-name">{t(`notebook.app.${app}` as StringKey)}</span>
-                <span className="notebook-why" style={{ visibility: open ? "hidden" : "visible" }}>
-                  {t("notebook.eveningOnly")}
-                </span>
-              </button>
-            ))}
-          </div>
-          <button className="ui-btn" onClick={() => close("close")}>
+        {/* the open notebook (168x112 art pixels): three apps on each page, the close button under it */}
+        <div className="notebook" style={{ backgroundImage: `url(${artUrl(HUD_ART.notebookOpen)})` }} role="dialog" aria-label={t("notebook.title")}>
+          {[0, 3].map((from) => (
+            <div key={from} className={`notebook-page${from ? " right" : ""}`}>
+              {notebookApps(phase)
+                .slice(from, from + 3)
+                .map(({ app, open }) => (
+                  <button key={app} className="notebook-app" disabled={!open} onClick={() => close(app)}>
+                    <img src={artUrl(HUD_ART.apps[app])} alt="" />
+                    <span className="notebook-name">{t(`notebook.app.${app}` as StringKey)}</span>
+                    {!open && <span className="notebook-why">{t("notebook.eveningOnly")}</span>}
+                  </button>
+                ))}
+            </div>
+          ))}
+          <button className="ui-btn notebook-close" onClick={() => close("close")}>
             {t("upgrade.close")}
           </button>
         </div>
-        {/* the notebook itself, big and closed, flying in; its cover swings open on the spine (user, 2026-10-16:
-            the notebook, not a brown panel) */}
-        <img className="nb-cover" src={artUrl(HUD_ART.notebook)} alt="" aria-hidden />
+        {/* the notebook itself, closed, flying in over the right page; its cover swings open on the spine
+            (user, 2026-10-16: the notebook, not a brown panel) */}
+        <img className="nb-cover" src={artUrl(HUD_ART.notebookClosed)} alt="" aria-hidden />
       </div>
     </div>
   );

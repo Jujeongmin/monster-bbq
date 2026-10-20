@@ -12,6 +12,10 @@
 .dayflow-actions { display: flex; gap: calc(6px * var(--s)); justify-content: center; }
 /* upgrade shop */
 /* between the day HUD's top row and its bottom-right buttons */
+/* Bandal's pegboard (216x128 art pixels) as nine pieces: the corners keep the two nails at the top, the
+   edges and the pegged middle repeat whole (middle 126x90 = 14x10 holes of 9 px, so the holes line up),
+   the cards hang on it */
+.upgrades { border-style: solid; border-color: transparent; border-width: calc(24 * var(--k)) calc(14 * var(--k)) calc(14 * var(--k)); border-image-slice: 24 46 14 44 fill; border-image-width: calc(24 * var(--k)) calc(46 * var(--k)) calc(14 * var(--k)) calc(44 * var(--k)); border-image-repeat: repeat; image-rendering: pixelated; color: var(--ink); }
 .upgrades { width: 96%; height: calc(100% - 74px * var(--s)); margin-top: calc(4px * var(--s)); display: flex; flex-direction: column; text-align: center; }
 .upgrades h2 { margin: 0 0 calc(4px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink); }
 /* one group per tab, three columns of cards all the same height (name, effect, materials), so a tab fits
@@ -40,15 +44,24 @@
 .upgrades > .ui-btn { align-self: center; padding-left: calc(16px * var(--s)); padding-right: calc(16px * var(--s)); }
 
 /* setting out: the side weapon cards (hunt v3 design 4.4) */
-.side-pick { min-width: calc(420px * var(--s)); padding: calc(6px * var(--s)) calc(10px * var(--s)); text-align: center; }
+/* setting out: the weapon rack at its own size (208x104 art pixels), a weapon on each top peg (pegs at
+   art y 28), its name and shots under the lower beam (y 71-87, clear of its pegs; the shelf's grain hid
+   any words on it) */
+.side-pick { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .side-pick h2, .hunt-summary h2 { margin: 0 0 calc(6px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--ink); }
-.side-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(6px * var(--s)); margin-bottom: calc(8px * var(--s)); }
-.side-card { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: calc(2px * var(--s)); padding: calc(4px * var(--s)) 0; background: none; font: inherit; cursor: pointer; }
-.side-card img { width: calc(50px * var(--s)); height: calc(50px * var(--s)); object-fit: contain; image-rendering: pixelated; }
-.side-card.on { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(var(--k) 0 0 #ffd65a) drop-shadow(calc(-1 * var(--k)) 0 0 #ffd65a) drop-shadow(0 var(--k) 0 #ffd65a) drop-shadow(0 calc(-1 * var(--k)) 0 #ffd65a); }
-.side-card:disabled { cursor: default; filter: grayscale(1) brightness(0.8); }
-.side-name { font-weight: 700; color: var(--ink); }
-.side-ammo { font: var(--fs-small) "Galmuri9", monospace; color: var(--paper-ink-soft); }
+.side-pick h2 { color: var(--cream); text-shadow: var(--s) var(--s) 0 #2b1408; }
+.side-rack { position: relative; width: calc(208 * var(--k)); height: calc(104 * var(--k)); margin-bottom: calc(8px * var(--s)); background: center / 100% 100% no-repeat; image-rendering: pixelated; }
+.side-card { position: absolute; left: calc((var(--peg) - 19) * var(--k)); top: calc(28 * var(--k)); width: calc(38 * var(--k)); height: calc(60 * var(--k)); padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
+.side-card img { position: absolute; left: 0; right: 0; top: 0; margin: 0 auto; width: calc(50px * var(--s)); height: calc(50px * var(--s)); object-fit: contain; image-rendering: pixelated; }
+.side-card.on img { filter: drop-shadow(0 0 0 #ffd65a) drop-shadow(var(--k) 0 0 #ffd65a) drop-shadow(calc(-1 * var(--k)) 0 0 #ffd65a) drop-shadow(0 var(--k) 0 #ffd65a) drop-shadow(0 calc(-1 * var(--k)) 0 #ffd65a); }
+.side-card:disabled { cursor: default; }
+.side-card:disabled img { filter: grayscale(1) brightness(0.7); }
+.side-name, .side-ammo { position: absolute; left: 0; right: 0; line-height: 1.1; word-break: keep-all; color: var(--cream); text-shadow: var(--s) var(--s) 0 #2b1408; }
+.side-name { top: calc(43 * var(--k)); font-weight: 700; }
+.side-card.on .side-name { color: #ffd65a; }
+.side-ammo { top: calc(51 * var(--k)); font: var(--fs-small) / 1.1 "Galmuri9", monospace; }
+.side-card:disabled .side-name, .side-card:disabled .side-ammo { color: #b8a690; }
+.side-hint { margin: calc(-4px * var(--s)) 0 calc(4px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; color: #d8c4a4; text-shadow: var(--s) var(--s) 0 #2b1408; }
 /* home from the hunt: what was taken by stars, and the parts */
 .hunt-summary { min-width: calc(300px * var(--s)); padding: calc(6px * var(--s)) calc(12px * var(--s)); text-align: center; color: var(--ink); }
 .summary-stars { list-style: none; margin: 0 0 calc(6px * var(--s)); padding: 0; display: flex; flex-direction: column; gap: calc(2px * var(--s)); }
