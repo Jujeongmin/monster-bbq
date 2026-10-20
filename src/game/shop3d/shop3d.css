@@ -61,7 +61,7 @@
 .s3-bubble { animation: s3-bubble-in 0.2s steps(4) both; }
 @keyframes s3-bubble-in { from { scale: 0.3; } 60% { scale: 1.15; } }
 /* coins jump off the served guest and fly to the gold */
-.s3-coin { position: absolute; width: 16px; margin: -8px 0 0 -8px; image-rendering: pixelated; pointer-events: none; z-index: 6; animation: s3-coin 0.7s steps(12) both; }
+.s3-coin { position: absolute; width: 32px; margin: -16px 0 0 -16px; image-rendering: pixelated; pointer-events: none; z-index: 6; animation: s3-coin 0.7s steps(12) both; }
 @keyframes s3-coin { 0% { transform: translate(0, 0); opacity: 1; } 25% { transform: translate(calc(var(--dx) * 0.05), -26px); } 95% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
 /* a word stamped big: lands large, settles, fades */
 .s3-stamp { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: 16px; text-shadow: 1px 1px 0 #2b1408, -1px 1px 0 #2b1408, 1px -1px 0 #2b1408, -1px -1px 0 #2b1408; pointer-events: none; z-index: 6; animation: s3-stamp 1.2s steps(12) both; }

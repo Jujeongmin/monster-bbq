@@ -207,7 +207,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
         }
         case "cooked":
           bandal = { tex: "bandal_serve", until: now + 500 };
-          sprite(FX.steam, view.project(LAYOUT.pass, FLOOR_Y + PASS.h + 14, Z.pass));
+          sprite(FX.steam, view.project(LAYOUT.pass - 30, FLOOR_Y + PASS.h + 30, Z.pass));
           break;
         case "angry": {
           const at = guestAt(e.guest);

@@ -1,0 +1,28 @@
+order 2357 Bubble pop up alert notification
+order 2354 Message pop alert
+tick 1061 Clock ticker single
+cooked 1791 Cooking bell ding
+cooked 931 Service bell
+take 2933 Dish placed in a wood table
+take 1799 Bowl placed on table
+coin 1993 Clinking coins
+coin 1999 Gold coin prize
+angry 744 Trombone disappoint
+angry 2876 Funny fail low tone
+pourPerfect 2000 Melodic gold price
+pourPerfect 3151 Positive game alert
+pourGood 2836 Glasses clinking
+pourBad 950 Game show wrong answer buzz
+pourBad 946 Wrong answer fail notification
+coal 1345 Short fire whoosh
+coal 1326 Wizard fire woosh
+coalOut 240 Failure arcade alert notification
+scrub 3087 Long broom or wipe sweep sound
+scrub 3085 Chalkboard eraser
+scrubDone 866 Fairy arcade sparkle
+bell 586 Attention bell ding
+bell 931 Service bell
+coalOut 1792 Cooking stopwatch alert
+coalOut 2868 Double beep tone alert
+coalOut 2324 Negative guitar tone
+coalOut 993 Classic short alarm
