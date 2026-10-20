@@ -1,0 +1,24 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a sprite sheet of the character in the attached pictures WORKING IN GRANDMA'S GRILL SHOP, for a cozy, comic Korean BBQ restaurant game. Copy his identity exactly from the approved pictures: spiky black hair, red bandana, green hooded jacket, cream apron, brown gloves and boots, a brown leather strap across his chest, and Ttukkeong-i, the grumpy talking cast-iron pot lid (dark iron dome, round knob, two small side handles, angry eyebrows and a wobbly frown, warm brown highlight) strapped on his back like a turtle shell. In the shop he carries NO harpoon and NO weapon at all. Same chunky cute chibi pixel-art style, same dark outline, same big head, same proportions, and the SAME SIZE as in the walk strip (the second picture): every pose as tall as the walking poses.
+
+Same real low-resolution pixel art as the walk strip: every art pixel an exact, crisp square block on one even grid, FLAT colours with 2-3 shades per material, NO gradients, NO glow, NO soft shading, NO anti-aliasing.
+
+Save as art-src/codex/raw/shop3d_hero.png — exactly 1920x768: a grid of 5 columns x 2 rows of equal square cells (384x384 each), one full-body pose centred in each cell, all poses the same size with the feet on the same baseline near the bottom of the cell. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no motion lines, no steam, no sparkles. No pose touches its cell edge.
+
+FACING for every frame: pure side profile facing camera-RIGHT, like the walk strip. The lid bulges behind him (to the left) with its grumpy face looking back.
+
+Row 1 — CARRYING a dish (a 4-frame walk to the right, exactly the leg pattern of the walk strip):
+cell 1: near leg (lighter boot) forward, heel down; far leg back on its toe.
+cell 2: passing, legs together under the body, body one pixel higher.
+cell 3: far leg (darker) forward, heel down; near leg back on its toe.
+cell 4: passing, body one pixel higher.
+In all four he holds ONE small round white plate of grilled pork belly level in front of his chest with both hands, the arms bent and steady (no arm swing).
+cell 5 SET DOWN: standing, leaning forward a little, both arms reaching out to the right at waist height, setting the same plate down on a counter in front of him (draw only the plate, no counter).
+
+Row 2:
+cell 6 SCRUB 1: standing, leaning forward, one arm stretched out to the right at waist height wiping with a small cream cloth, the cloth to the right.
+cell 7 SCRUB 2: the same, the cloth hand pulled back nearer the body (two frames of wiping).
+cell 8 POUR: standing, holding a small green bottle tilted down to the right over a small glass held in the other hand at chest height (no liquid stream beyond one or two pixels).
+cell 9 STAND: standing still and relaxed, hands at his sides, a small proud smile, the lid grumpy as always.
+cell 10: leave EMPTY (only magenta).
+
+Reply only with the saved file path.

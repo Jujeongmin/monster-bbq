@@ -1,0 +1,18 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a sprite sheet of four yokai guests SEATED ON BAR STOOLS, seen FROM BEHIND, for a cozy, comic Korean BBQ restaurant game (Grandma's grill shop; the guests sit at the counter with their backs to the camera).
+
+The attached picture is the game's approved art, scaled up 6 times: each guest from behind on a stool in three poses (row 1 the red dokkaebi with a spiked club, row 2 the white nine-tailed gumiho, row 3 the reaper in a wide black gat hat and long black hair, row 4 the long-haired ghost in white with blue wisps) and, top right, the EMPTY STOOL (round red cushion, walnut legs, brass ring).
+Copy every guest's identity, colours and outline exactly. Same real low-resolution pixel art:
+- every art pixel is an exact, crisp square block of 6x6 image pixels on a 6-pixel grid (the image must shrink 6 times with no loss);
+- a 1-art-pixel dark outline, FLAT colours with 2-3 shades per material, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise.
+
+THE MOST IMPORTANT RULE: every guest sits on EXACTLY the empty stool from the attached picture — the same stool, same shape, same size (21 art pixels wide, 25 art pixels tall: 126x150 image pixels), same colours, its legs fully visible under the guest and its feet on the cell's baseline. Today the guests sit on stools wider than the empty one; fix that: the stool must not grow, the guest's body may overhang its sides a little. Each guest about 48-50 art pixels tall from the stool's feet to the top of the head or hat (gumiho tails and the reaper's hat brim may be wider than the stool).
+
+Save as art-src/codex/raw/shop3d_seated.png — exactly 864x1536: a grid of 3 columns x 4 rows of equal cells (288x384 each), one guest-on-stool centred across in each cell with the stool's feet on the same baseline near the bottom of the cell. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no halo, no shadow, no floor). No text, no grid lines. Nothing touches its cell edge.
+
+Rows (one guest per row): row 1 dokkaebi, row 2 gumiho, row 3 reaper, row 4 ghost.
+Columns (one pose per column, the stool never moves):
+column 1 SIT: waiting, sitting still and upright, as in the picture's left column.
+column 2 EAT: leaning a little forward, one arm raised to the mouth holding chopsticks with a bite of grilled meat, as in the middle column.
+column 3 HAPPY: leaning back a little, content, two small pink pixel hearts floating beside the head, as in the right column.
+
+Reply only with the saved file path.
