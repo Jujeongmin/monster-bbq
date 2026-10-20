@@ -117,6 +117,10 @@ canvas { image-rendering: pixelated; display: block; }
   image-rendering: pixelated;
   color: #4a2a12; font-weight: 700;
 }
+/* the brass plate as a quiet button (menus: user, 2026-10-20, red was too loud there) */
+.brass-btn { font: 700 var(--fs) / 1 "Galmuri11", monospace; padding: calc(2px * var(--s)) calc(10px * var(--s)); background: none; cursor: pointer; }
+.brass-btn:active:not(:disabled) { filter: brightness(0.88); transform: translateY(var(--s)); }
+.brass-btn:disabled { filter: grayscale(1) brightness(0.8); cursor: default; }
 .ui-ribbon {
   border-style: solid;
   border-color: transparent;

@@ -34,6 +34,7 @@ import { Receipt } from "./hud/Receipt";
 import { knowsCharcoal, sceneOf, showDayHud, timeOfDay, transitionCard, type App, type Phase, type Scene } from "./hud/hud";
 import { LidLine } from "./hud/LidLine";
 import { GoalLine } from "./hud/GoalLine";
+import { ControlsPanel } from "./hud/ControlsPanel";
 import { dayGoal, huntGoal, type HuntStep } from "./tutorial";
 import { markSeen, readSeen, TIP_FACE, tipStore, type TipId } from "./tips";
 import { TitleCard } from "./hud/TitleCard";
@@ -139,6 +140,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the first day's tutorial (A): the goal now, where to go, the lid's line the first time
   const [lunchVisited, setLunchVisited] = useState(false);
   const [huntTut, setHuntTut] = useState<HuntStep | null>(null);
+  // the hunt's controls: before the first hunt starts (once), and from the hunt's pause menu
+  const [controlsAsked, setControlsAsked] = useState(false);
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
   const tutorialHunt = !!save?.hunt && save.day === 1 && save.hunt.period === "morning";
   const goal = !save
@@ -152,8 +155,9 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the shop by day, walked (a window opens from the door or Bandal), where WebGL works
   const [hub, setHub] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
   const [panel, setPanel] = useState<"kitchen" | "side" | null>(null);
-  // windows over the day hide it; in the hunt only the title card or an error can (the day's windows are shut)
-  const covered = save?.hunt ? !!(card || failed) : !!(story || card || summary || shopping || store || win || panel || picking || failed);
+  const controlsOpen = !!save?.hunt && !card && (controlsAsked || (tutorialHunt && !seenTips.has("huntControls")));
+  // windows over the day hide it; in the hunt only the title card, the controls or an error can (the day's windows are shut)
+  const covered = save?.hunt ? !!(card || failed || controlsOpen) : !!(story || card || summary || shopping || store || win || panel || picking || failed);
   const goalTip = goal?.tip && !seenTips.has(goal.tip) && !covered && !charcoalLine ? goal.tip : null;
   useEffect(() => {
     if (!goalTip) return;
@@ -300,8 +304,9 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {phase === "hunt" && save.hunt && (
         <PhaserGame
           key={save.hunt.id}
-          hold={!!card}
+          hold={!!card || controlsOpen}
           onTutorial={setHuntTut}
+          onControls={() => setControlsAsked(true)}
           hunt={{ tutorial: tutorialHunt, huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, side: save.hunt.side, ammo: ammoOf(save, save.hunt.side), harpoonLevel: level(save, "ranged"), sleepFallMs: sleepFallMs(save), sidePower: sidePower(save, save.hunt.side), stats: huntStats(save), gear: { boots: level(save, "boots") >= 1, light: lightRadius(save), key: save.bossKey }, bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
           onHuntEnd={(r: HuntResult) => {
             const before = save.items;
@@ -364,6 +369,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {charcoalLine && <LidLine face={TIP_FACE.charcoal} text={t("tip.charcoal")} />}
       {/* the goal line only for the first hunt's controls; by day the arrow alone says where to go (user, 2026-10-20) */}
       {goal && save.hunt && !covered && <GoalLine text={t(goal.goal)} place="middle" />}
+      {controlsOpen && save.hunt && <ControlsPanel touch={touch} side={save.hunt.side} onClose={() => (setControlsAsked(false), see("huntControls"))} />}
       {goalTip && <LidLine key={goalTip} face={TIP_FACE[goalTip as Exclude<TipId, "awakenApp">]} text={t(`tip.${goalTip}` as StringKey)} low />}
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
       {win === "friends" && <Friends save={save} busy={busy} act={actSave} onShop={() => setStore(true)} onClose={() => setWin(null)} />}

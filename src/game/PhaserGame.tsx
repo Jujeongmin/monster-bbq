@@ -8,14 +8,16 @@ import type { HuntStep } from "../screens/tutorial";
 // The Phaser canvas for one hunt (the server's seed), created once per mount (StrictMode mounts twice
 // in dev; the first game is destroyed on the cleanup). The scene's "hunt:end" event reaches onHuntEnd.
 // `hold`: the day's title card is over it, so the hunt waits (nothing moves, stamina holds) until it is gone.
-// onTutorial: the first hunt's step due now (tutorial A).
-export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial }: { hunt: HuntData; hold?: boolean; onHuntEnd: (result: HuntResult) => void; onTutorial?: (step: HuntStep) => void }) {
+// onTutorial: the first hunt's step due now (tutorial A); onControls: the pause menu asked for the controls.
+export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial, onControls }: { hunt: HuntData; hold?: boolean; onHuntEnd: (result: HuntResult) => void; onTutorial?: (step: HuntStep) => void; onControls?: () => void }) {
   const host = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const onEnd = useRef(onHuntEnd);
   onEnd.current = onHuntEnd;
   const onTut = useRef(onTutorial);
   onTut.current = onTutorial;
+  const onCtl = useRef(onControls);
+  onCtl.current = onControls;
 
   const holdRef = useRef(hold);
   holdRef.current = hold;
@@ -32,6 +34,7 @@ export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial }: { hunt
     game.scene.add("hunt", HuntScene, true, hunt);
     game.events.on("hunt:end", (result: HuntResult) => onEnd.current(result));
     game.events.on("hunt:tutorial", (step: HuntStep) => onTut.current?.(step));
+    game.events.on("hunt:controls", () => onCtl.current?.());
     gameRef.current = game;
     return () => game.destroy(true);
   }, []);

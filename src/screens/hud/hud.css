@@ -172,3 +172,11 @@
 .goal-label { color: #a03a10; }
 @keyframes goal-in { from { opacity: 0; transform: translateX(calc(-12px * var(--s))); } }
 @media (prefers-reduced-motion: reduce) { .goal-line { animation: none; } }
+/* the hunt's controls (user, 2026-10-20): over the held hunt, the frame from the approved kit */
+.controls-screen { z-index: 30; background: rgba(20, 10, 4, 0.55); }
+.controls { display: flex; flex-direction: column; align-items: center; gap: calc(6px * var(--s)); padding: calc(4px * var(--s)) calc(10px * var(--s)); }
+.controls h2 { margin: 0; font: 700 var(--fs) "Galmuri11", monospace; }
+.controls-rows { list-style: none; margin: 0; padding: 0; display: grid; row-gap: calc(4px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; }
+.controls-rows li { display: grid; grid-template-columns: calc(96px * var(--s)) calc(18px * var(--s)) auto; align-items: center; column-gap: calc(6px * var(--s)); }
+.controls-keys { display: flex; gap: calc(2px * var(--s)); justify-content: flex-end; }
+.controls-icon img { width: calc(16px * var(--s)); height: calc(16px * var(--s)); object-fit: contain; image-rendering: pixelated; display: block; }

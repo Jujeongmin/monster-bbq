@@ -1298,12 +1298,14 @@ export class HuntScene extends Phaser.Scene {
     }
     this.anims.pauseAll();
     this.tweens.pauseAll();
-    const panel = kitSlice(this, 0, 0, "panel", 220, 110, 5, 5, 5, 5);
-    const title = this.add.text(0, -36, t("hunt.paused"), { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
+    const panel = kitSlice(this, 0, 0, "panel", 220, 142, 5, 5, 5, 5);
+    const title = this.add.text(0, -52, t("hunt.paused"), { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
     let toggle: UiButton;
     const label = () => t(this.autoMash ? "hunt.autoMashOn" : "hunt.autoMashOff");
-    const resume = addButton(this, 0, -4, t("hunt.resume"), () => this.togglePause(), 140);
-    toggle = addButton(this, 0, 28, label(), () => {
+    const resume = addButton(this, 0, -20, t("hunt.resume"), () => this.togglePause(), 140, true);
+    // the controls panel, drawn by the page over the paused hunt
+    const controls = addButton(this, 0, 12, t("controls.title"), () => this.game.events.emit("hunt:controls"), 140, true);
+    toggle = addButton(this, 0, 44, label(), () => {
       this.autoMash = !this.autoMash;
       try {
         localStorage.setItem(AUTO_MASH_KEY, this.autoMash ? "1" : "0");
@@ -1311,8 +1313,8 @@ export class HuntScene extends Phaser.Scene {
         // private mode: the switch lasts this hunt only
       }
       toggle.setText(label());
-    }, 140);
-    this.pauseMenu = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2, [panel, title, resume.box, toggle.box]).setScrollFactor(0).setDepth(20000);
+    }, 140, true);
+    this.pauseMenu = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2, [panel, title, resume.box, controls.box, toggle.box]).setScrollFactor(0).setDepth(20000);
   }
 
   // ---------------------------------------------------------------- monsters and stingers
