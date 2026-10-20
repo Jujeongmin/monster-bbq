@@ -1,3 +1,4 @@
+import type { PendingService } from "../../../shared/save";
 import { BALANCE } from "../../../shared/balance";
 import type { TonightDish } from "../../../shared/kitchen/dish";
 import type { Customer } from "../../../shared/service/plan";
@@ -12,6 +13,8 @@ export interface ServiceData {
   stools: number;
   walkMul: number;
   coalPerDish: number;
+  // tonight's friends as the shop opened (staff design 5)
+  staff?: PendingService["staff"];
 }
 
 export type ServedReport = ServedEntry;

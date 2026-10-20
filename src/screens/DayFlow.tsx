@@ -337,6 +337,6 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
 function Night({ save, hold, addMenu, onEnd }: { save: SaveData; hold: boolean; addMenu: AddMenuHook; onEnd: (r: { served: ServedEntry[]; left: string[]; cleaned: string[] }) => void }) {
   const svc = save.service!;
   const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.planMenu, extra: staffEffects(svc.staff).extraGuests });
-  const shop = { serviceId: svc.id, customers, dishes: svc.dishes, stools: stools(save), walkMul: walkMul(save), coalPerDish: coalPerDish(save) };
+  const shop = { serviceId: svc.id, customers, dishes: svc.dishes, stools: stools(save), walkMul: walkMul(save), coalPerDish: coalPerDish(save), staff: svc.staff };
   return <ServiceGame key={svc.id} shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} />;
 }

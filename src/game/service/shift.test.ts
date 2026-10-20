@@ -293,3 +293,61 @@ describe("more dishes during the night (shop remake step 4)", () => {
     expect(sh.done).toBe(true);
   });
 });
+
+describe("friends at work in the night (staff design 5)", () => {
+  const staffed = (staff: ShiftConfig["staff"], customers = [guest("c0", 0)]) => new Shift({ ...cfg(customers), staff, rand: () => 0.1 });
+  it("a serving friend carries a ready plate to its guest", () => {
+    const sh = staffed({ serve: { id: "ppareun", stars: 0 } });
+    run(sh, SETTLE + RECIPES.grilled_belly.cookMs + 9000);
+    expect(sh.s.guests[0].servedMs).not.toBeNull();
+  });
+  it("a kitchen helper cooks faster", () => {
+    const sh = staffed({ kitchen: { id: "jang", stars: 0 } });
+    run(sh, SETTLE + 100);
+    expect(sh.s.kitchen[0].leftMs).toBeLessThanOrEqual(RECIPES.grilled_belly.cookMs * 0.5);
+  });
+  it("a drinks friend pours and carries tea", () => {
+    const sh = staffed({ drinks: { id: "dallae", stars: 0 } }, [guest("c0", 0, { drink: "tea" })]);
+    run(sh, SETTLE + 12_000);
+    expect(sh.s.guests[0].pour).not.toBeNull();
+    expect(sh.s.guests[0].pour).not.toBe("bad");
+  });
+  it("a charcoal friend keeps the box up", () => {
+    const sh = staffed({ coal: { id: "park", stars: 0 } }, []);
+    sh.s.coal = 30;
+    run(sh, 8000);
+    expect(sh.s.coal).toBeGreaterThanOrEqual(80);
+  });
+  it("a cleaning friend scrubs leftovers", () => {
+    const sh = staffed({ clean: { id: "sundeok", stars: 0 } }, [guest("c0", 0, { messy: true })]);
+    serveFirst(sh);
+    run(sh, SV.eatMs + 10_000);
+    expect(sh.s.seats[0].dirty).toBe(false);
+    expect(sh.s.cleaned).toContain("c0");
+  });
+  it("never takes what the waiter is carrying or scrubbing", () => {
+    const sh = staffed({ serve: { id: "ppareun", stars: 0 }, clean: { id: "sundeok", stars: 0 } });
+    // the serving friend starts far off, so the waiter reaches the plate first
+    for (const h of sh.s.helpers) h.x = LAYOUT.door;
+    run(sh, SETTLE + RECIPES.grilled_belly.cookMs + 100);
+    goTo(sh, LAYOUT.pass);
+    expect(sh.act()).toBe(true);
+    run(sh, 3000);
+    expect(sh.s.helpers.every((h) => h.carry.length === 0)).toBe(true);
+    goTo(sh, sh.s.seats[0].x);
+    expect(sh.act()).toBe(true);
+    expect(sh.drain().filter((e) => e.type === "served")).toHaveLength(1);
+    // the waiter scrubbing seat 1: the cleaning friend leaves it to him
+    sh.s.seats[1].dirty = true;
+    goTo(sh, sh.s.seats[1].x);
+    sh.act();
+    sh.tick(50);
+    expect(sh.s.helpers.find((h) => h.job === "clean")!.target).not.toBe("seat1");
+  });
+  it("Baekdu calms the first guest about to storm out", () => {
+    const sh = staffed({ coal: { id: "baekdu", stars: 0 } }, [guest("c0", 0, { patienceMs: 5000 })]);
+    run(sh, 5000 * 1.5);
+    expect(sh.drain().some((e) => e.type === "calmed")).toBe(true);
+    expect(sh.s.guests[0].angry).toBe(false);
+  });
+});

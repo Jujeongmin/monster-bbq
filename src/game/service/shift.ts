@@ -4,6 +4,9 @@ import { RECIPES } from "../../../shared/content/recipes";
 import type { TonightDish } from "../../../shared/kitchen/dish";
 import type { Customer, Drink } from "../../../shared/service/plan";
 import { tipFor, type Pour, type ServedEntry } from "../../../shared/service/settle";
+import { statOf, type Position, type StaffId } from "../../../shared/content/staff";
+import type { PendingService } from "../../../shared/save";
+import { staffEffects, type StaffEffects } from "../../../shared/staff/effects";
 
 // One night at the counter (restaurant v2 design 4, plan 07b, Dave's rules), kept out of Phaser so it
 // can be tested: while the clock runs guests come in at the seed's times, take a free stool (or wait by
@@ -81,7 +84,8 @@ export type ShiftEvent =
   | { type: "pour"; pour: Pour }
   | { type: "closing" }
   | { type: "soldOut" }
-  | { type: "reopened" };
+  | { type: "reopened" }
+  | { type: "calmed"; guest: string };
 
 export interface ShiftConfig {
   customers: Customer[];
@@ -89,6 +93,22 @@ export interface ShiftConfig {
   stools: number;
   walkMul: number;
   coalPerDish: number; // % of the box each dish Bandal starts burns
+  // tonight's friends as the shop opened (staff design 5), and the dice for their pours (tests fix it)
+  staff?: PendingService["staff"];
+  rand?: () => number;
+}
+
+// A friend at work: where they stand, what they carry, what they are busy with and aiming at (a guest's
+// id, "seat2", "coal", or "pour:tea" while pouring). The kitchen helper stands by Bandal and never walks.
+export interface Helper {
+  id: StaffId;
+  job: Position;
+  stars: number;
+  x: number;
+  facing: 1 | -1;
+  carry: TrayItem[];
+  busyMs: number;
+  target: string | null;
 }
 
 // Everything that changes during the night, plain data so a reload can pick it up again.
@@ -112,6 +132,8 @@ export interface ShiftState {
   left: string[];
   cleaned: string[];
   seated: number; // guests seated so far (spreads them over the stools)
+  helpers: Helper[];
+  calmUsed: boolean; // Old Baekdu calms one guest a night
 }
 
 export function judgePour(fill: number): Pour {
@@ -125,6 +147,8 @@ export class Shift {
   private prices: Map<DishId, number>;
   // tonight's dishes in menu order, growing when one is added during the night
   private menu: DishId[];
+  private readonly fx: StaffEffects;
+  private readonly rand: () => number;
   private events: ShiftEvent[] = [];
   // set by the page while more can still be added to the menu: a sold-out night then waits for it (or for
   // the hall to be closed) instead of ending when the last guest leaves
@@ -134,6 +158,8 @@ export class Shift {
     this.cfg = cfg;
     this.prices = new Map(cfg.dishes.map((d) => [d.dish, d.price]));
     this.menu = cfg.dishes.map((d) => d.dish);
+    this.fx = staffEffects(cfg.staff ?? {});
+    this.rand = cfg.rand ?? Math.random;
     this.s = saved ?? {
       clock: 0,
       arrived: 0,
@@ -153,8 +179,14 @@ export class Shift {
       left: [],
       cleaned: [],
       seated: 0,
+      helpers: [],
+      calmUsed: false,
     };
     this.s.closedBy ??= null; // a night saved before this field
+    this.s.calmUsed ??= false;
+    // tonight's friends, spread along the aisle by the pass (a reloaded night keeps where they were)
+    if (!this.s.helpers?.length)
+      this.s.helpers = Object.entries(cfg.staff ?? {}).map(([job, f], i): Helper => ({ id: f!.id, job: job as Position, stars: f!.stars, x: LAYOUT.pass - 40 * i, facing: -1, carry: [], busyMs: 0, target: null }));
   }
 
   // the events since the last call
@@ -201,6 +233,7 @@ export class Shift {
     this.arrivals();
     this.cook(dt);
     for (const g of s.guests) this.stepGuest(g, dt);
+    this.stepHelpers(dt);
     // nothing left to order: no one else comes in
     if (!s.ordersClosed && this.platesLeft() === 0 && !s.guests.some((g) => g.phase === "queue" || g.phase === "walk" || (g.phase === "seated" && !g.ordered))) {
       s.ordersClosed = true;
@@ -217,7 +250,8 @@ export class Shift {
         id: c.id,
         kind: c.kind,
         dish: c.dish,
-        patienceMs: c.patienceMs,
+        // tonight's friends make guests more patient (charm, rice cakes, Old Baekdu)
+        patienceMs: Math.round(c.patienceMs * this.fx.patienceMul),
         drink: c.drink,
         messy: c.messy,
         phase: "queue",
@@ -242,7 +276,7 @@ export class Shift {
     if (!job) return;
     if (!job.started) {
       if (s.coal <= 0) return;
-      s.coal = Math.max(0, s.coal - this.cfg.coalPerDish);
+      s.coal = Math.max(0, s.coal - this.cfg.coalPerDish * this.fx.coalMul);
       job.started = true;
       if (s.coal === 0) this.events.push({ type: "noCoal" });
     }
@@ -272,7 +306,7 @@ export class Shift {
     g.dish = dish;
     if (this.spare(dish, g) <= 0) {
       s.plates[dish] = (s.plates[dish] ?? 0) - 1;
-      s.kitchen.push({ dish, leftMs: RECIPES[dish].cookMs, started: false });
+      s.kitchen.push({ dish, leftMs: Math.round(RECIPES[dish].cookMs * this.fx.cookMul), started: false });
     }
     this.events.push({ type: "order", guest: g.id });
     return true;
@@ -283,7 +317,14 @@ export class Shift {
     const waiting = g.phase === "queue" || g.phase === "walk" || g.phase === "seated";
     if (waiting && g.servedMs === null) {
       g.waitedMs += dt;
-      if (g.waitedMs >= g.patienceMs) return this.storm(g);
+      if (g.waitedMs >= g.patienceMs) {
+        // Old Baekdu talks the first one down: half their patience back, once a night
+        if (this.fx.calm && !s.calmUsed) {
+          s.calmUsed = true;
+          g.waitedMs = g.patienceMs * 0.5;
+          this.events.push({ type: "calmed", guest: g.id });
+        } else return this.storm(g);
+      }
     }
     switch (g.phase) {
       case "queue": {
@@ -442,13 +483,7 @@ export class Shift {
         if (seat.dirty) {
           seat.scrubs++;
           s.busyMs = SV.scrub.pressMs;
-          const done = seat.scrubs >= SV.scrub.presses;
-          if (done) {
-            seat.dirty = false;
-            if (seat.messBy) s.cleaned.push(seat.messBy);
-            seat.messBy = null;
-          }
-          this.events.push({ type: "scrub", seat: t.seat, done, tip: done ? SV.cleanTip : 0 });
+          this.scrubbed(t.seat);
           return true;
         }
         return this.give(s.guests.find((g) => g.id === seat.guest)!);
@@ -473,26 +508,219 @@ export class Shift {
     const i = this.giftFor(g);
     if (i < 0) return false;
     const [item] = this.s.tray.splice(i, 1);
+    this.deliver(g, item);
+    return true;
+  }
+
+  // A plate or a drink reaches its guest (from the waiter or a friend).
+  private deliver(g: Guest, item: TrayItem) {
     if (item.kind === "dish") {
       g.servedMs = Math.round(g.waitedMs);
       g.phase = "eating";
       g.timerMs = SV.eatMs;
       const price = this.prices.get(item.dish) ?? 0;
-      this.events.push({ type: "served", guest: g.id, dish: item.dish, tip: tipFor(price, false), ratio: g.servedMs / g.patienceMs });
+      this.events.push({ type: "served", guest: g.id, dish: item.dish, tip: Math.round(tipFor(price, false) * this.fx.tipMul), ratio: g.servedMs / g.patienceMs });
       this.events.push({ type: "eat", guest: g.id });
     } else {
       g.pour = item.pour;
       this.events.push({ type: "drink", guest: g.id, pour: item.pour });
       if (g.phase === "thirsty") this.leave(g, g.messy);
     }
-    return true;
+  }
+
+  // ---- tonight's friends at work (staff design 5) ----
+
+  private stepHelpers(dt: number) {
+    for (const h of this.s.helpers) {
+      if (h.job === "kitchen") continue;
+      if (h.busyMs > 0) {
+        h.busyMs = Math.max(0, h.busyMs - dt);
+        if (h.busyMs === 0) this.helperDone(h);
+        continue;
+      }
+      // Old Park sees to the charcoal from wherever he works when it runs low
+      const job: Position = h.id === "park" && (this.s.coal < 20 || h.target === "coal") ? "coal" : h.job;
+      const goal = job === "serve" ? this.serveGoal(h) : job === "drinks" ? this.drinkGoal(h) : job === "coal" ? this.coalGoal(h) : this.cleanGoal(h);
+      if (!goal) {
+        h.target = null;
+        continue;
+      }
+      if (this.walkTo(h, goal.x, dt)) goal.act();
+    }
+  }
+
+  private helperSpeed(h: Helper): number {
+    return SV.walk.speed * this.cfg.walkMul * (0.5 + statOf(h.id, "serving", h.stars) / 100) * (h.id === "ppareun" ? 1.2 : 1);
+  }
+
+  private walkTo(h: Helper, x: number, dt: number): boolean {
+    const d = x - h.x;
+    if (Math.abs(d) <= 2) return true;
+    h.facing = d > 0 ? 1 : -1;
+    const step = (this.helperSpeed(h) * dt) / 1000;
+    h.x = Math.abs(d) <= step ? x : h.x + Math.sign(d) * step;
+    return false;
+  }
+
+  private taken(id: string, by: Helper) {
+    return this.s.helpers.some((o) => o !== by && o.target === id);
+  }
+
+  // guests waiting for a dish that no one is bringing yet
+  private waitingFor(dish: DishId, by: Helper): Guest[] {
+    const s = this.s;
+    const carried = [...s.tray, ...s.helpers.filter((o) => o !== by).flatMap((o) => o.carry)].filter((t) => t.kind === "dish" && t.dish === dish).length;
+    const waiting = s.guests.filter((g) => g.phase === "seated" && g.ordered && g.servedMs === null && g.dish === dish && !this.taken(g.id, by));
+    return waiting.slice(carried);
+  }
+
+  private serveGoal(h: Helper): { x: number; act: () => void } | null {
+    const s = this.s;
+    const item = h.carry[0];
+    if (item && item.kind === "dish") {
+      const g = s.guests.find((x) => x.id === h.target && x.phase === "seated" && x.servedMs === null && x.dish === item.dish) ?? this.waitingFor(item.dish, h)[0];
+      if (!g || g.seat === null) {
+        // no one wants it any more: back on the pass
+        if (s.pass.length < SV.pass) s.pass.push(item.dish);
+        h.carry.shift();
+        return null;
+      }
+      h.target = g.id;
+      return {
+        x: s.seats[g.seat].x,
+        act: () => {
+          h.carry.shift();
+          this.deliver(g, item);
+          h.target = null;
+        },
+      };
+    }
+    const dish = s.pass.find((d) => this.waitingFor(d, h).length > 0);
+    if (!dish) return null;
+    h.target = null;
+    return {
+      x: LAYOUT.pass,
+      act: () => {
+        // Little Kkaebi takes two when there are two to take
+        const room = h.id === "kkaebi" ? 2 : 1;
+        for (let n = 0; n < room; n++) {
+          const i = s.pass.findIndex((d) => this.waitingFor(d, h).length > h.carry.filter((c) => c.kind === "dish" && c.dish === d).length);
+          if (i < 0) break;
+          h.carry.push({ kind: "dish", dish: s.pass.splice(i, 1)[0] });
+        }
+      },
+    };
+  }
+
+  private drinkGoal(h: Helper): { x: number; act: () => void } | null {
+    const s = this.s;
+    const item = h.carry[0];
+    if (item && item.kind === "drink") {
+      const wants = (g: Guest) => g.drink === item.drink && !g.pour && (item.drink === "tea" ? g.ordered && (g.phase === "seated" || g.phase === "eating") : g.phase === "thirsty");
+      const g = s.guests.find((x) => x.id === h.target && wants(x)) ?? s.guests.find((x) => wants(x) && !this.taken(x.id, h));
+      if (!g || g.seat === null) {
+        h.carry.shift();
+        return null;
+      }
+      h.target = g.id;
+      return {
+        x: s.seats[g.seat].x,
+        act: () => {
+          h.carry.shift();
+          this.deliver(g, item);
+          h.target = null;
+        },
+      };
+    }
+    const drink = this.drinkWanted();
+    if (!drink) return null;
+    return {
+      x: LAYOUT.drinkCart,
+      act: () => {
+        h.target = `pour:${drink}`;
+        h.busyMs = SV.drinks.fillMs;
+      },
+    };
+  }
+
+  // a friend's pour: better hands pour PERFECT more often; Dallae never pours a BAD one, Hongmae pours
+  // PERFECT a fifth more often
+  private helperPour(h: Helper): Pour {
+    const dex = statOf(h.id, "dexterity", h.stars);
+    const perfect = Math.min(0.9, dex / 150 + (h.id === "hongmae" ? 0.2 : 0));
+    const bad = h.id === "dallae" ? 0 : Math.max(0, 0.3 - dex / 300);
+    const r = this.rand();
+    return r < perfect ? "perfect" : r < 1 - bad ? "good" : "bad";
+  }
+
+  private coalGoal(h: Helper): { x: number; act: () => void } | null {
+    const s = this.s;
+    if (s.coal >= SV.charcoal.high) {
+      if (h.target === "coal") h.target = null;
+      return null;
+    }
+    if (s.coal >= 40 && h.target !== "coal") return null;
+    h.target = "coal";
+    return {
+      x: LAYOUT.coalBox,
+      act: () => {
+        s.coal = Math.min(100, s.coal + SV.charcoal.press);
+        h.busyMs = SV.charcoal.pressMs;
+      },
+    };
+  }
+
+  private cleanGoal(h: Helper): { x: number; act: () => void } | null {
+    const s = this.s;
+    const w = this.target();
+    // the seat the waiter is scrubbing is his
+    const waiterAt = w?.kind === "seat" && s.busyMs > 0 ? w.seat : -1;
+    const ok = (i: number) => s.seats[i].dirty && i !== waiterAt && !this.taken(`seat${i}`, h);
+    const mine = h.target?.startsWith("seat") ? Number(h.target.slice(4)) : -1;
+    const i = mine >= 0 && ok(mine) ? mine : s.seats.findIndex((_, n) => ok(n));
+    if (i < 0) return null;
+    h.target = `seat${i}`;
+    return {
+      x: s.seats[i].x,
+      act: () => {
+        const seat = s.seats[i];
+        // Auntie Sundeok clears it in one go
+        seat.scrubs = h.id === "sundeok" ? SV.scrub.presses : seat.scrubs + 1;
+        this.scrubbed(i);
+        h.busyMs = Math.max(100, SV.scrub.pressMs * (1.5 - statOf(h.id, "dexterity", h.stars) / 100));
+      },
+    };
+  }
+
+  // a scrub at a seat (the waiter's or a friend's): done once the presses are in
+  private scrubbed(i: number) {
+    const seat = this.s.seats[i];
+    const done = seat.scrubs >= SV.scrub.presses;
+    if (done) {
+      seat.dirty = false;
+      if (seat.messBy) this.s.cleaned.push(seat.messBy);
+      seat.messBy = null;
+    }
+    this.events.push({ type: "scrub", seat: i, done, tip: done ? SV.cleanTip : 0 });
+  }
+
+  private helperDone(h: Helper) {
+    if (h.target?.startsWith("pour:")) {
+      const drink = h.target.slice(5) as Exclude<Drink, "none">;
+      const pour = this.helperPour(h);
+      h.carry.push({ kind: "drink", drink, pour });
+      this.events.push({ type: "pour", pour });
+      h.target = null;
+    }
   }
 
   // The drink someone is waiting for that is not being carried yet: tea for seated guests who ordered
   // first, then the after-meal drinks of the thirsty.
   drinkWanted(): Exclude<Drink, "none"> | null {
     const s = this.s;
-    const carried = (d: Drink) => s.tray.filter((t) => t.kind === "drink" && t.drink === d).length;
+    // carried by the waiter or a friend, or being poured by a friend
+    const carried = (d: Drink) =>
+      [...s.tray, ...s.helpers.flatMap((h) => h.carry)].filter((t) => t.kind === "drink" && t.drink === d).length + s.helpers.filter((h) => h.target === `pour:${d}`).length;
     const want = (d: Drink, ok: (g: Guest) => boolean) => s.guests.filter((g) => g.drink === d && !g.pour && ok(g)).length - carried(d);
     if (want("tea", (g) => g.ordered && (g.phase === "seated" || g.phase === "eating")) > 0) return "tea";
     for (const d of ["cider", "sikhye"] as const) if (want(d, (g) => g.phase === "thirsty") > 0) return d;

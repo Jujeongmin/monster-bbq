@@ -101,7 +101,7 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
 
   useEffect(() => {
     const shop = start.current;
-    const cfg = { customers: shop.customers, dishes: shop.dishes, stools: shop.stools, walkMul: shop.walkMul, coalPerDish: shop.coalPerDish };
+    const cfg = { customers: shop.customers, dishes: shop.dishes, stools: shop.stools, walkMul: shop.walkMul, coalPerDish: shop.coalPerDish, staff: shop.staff };
     // a reload picks the night up where it was (the ingredients went when the shop opened)
     const saved = loadShift(sessionStorage, shop.serviceId);
     const shift = new Shift(cfg, saved && saved.seats.length === shop.stools ? saved : undefined);

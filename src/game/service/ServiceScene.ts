@@ -107,7 +107,7 @@ export class ServiceScene extends Phaser.Scene {
 
   init(data: ServiceData) {
     this.data0 = data;
-    const cfg = { customers: data.customers, dishes: data.dishes, stools: data.stools, walkMul: data.walkMul, coalPerDish: data.coalPerDish };
+    const cfg = { customers: data.customers, dishes: data.dishes, stools: data.stools, walkMul: data.walkMul, coalPerDish: data.coalPerDish, staff: data.staff };
     // a reload picks the night up where it was (the ingredients went when the shop opened)
     const saved = loadShift(sessionStorage, data.serviceId);
     this.shift = new Shift(cfg, saved && saved.seats.length === data.stools ? saved : undefined);
