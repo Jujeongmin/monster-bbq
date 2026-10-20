@@ -73,6 +73,7 @@ export function DayStage({ scene, stools, active, onSpot, onFail }: { scene: Day
         coal: 40,
         pour: null,
         glow: null,
+        prompt: null,
         plates: {},
         served: 0,
         gold: 0,
