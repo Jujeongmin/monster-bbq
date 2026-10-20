@@ -23,7 +23,23 @@ fi
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_time.png 6 1 art-src/codex/out/hud --main time_morning:20 time_noon:20 time_afternoon:20 time_evening:16 time_night:18 bag:20
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_apps.png 6 1 art-src/codex/out/hud --main app_bag:28 app_upgrade:28 app_awaken:28 app_cookbook:28 app_menu:28 app_shop:28
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_receipt.png 1 1 art-src/codex/out/hud --main receipt:40:8
-python art-src/codex/pixelsnap.py art-src/codex/raw/hud_notebook.png 2 1 art-src/codex/out/hud --main notebook_closed:84:20 notebook_open:168:20
+# Codex drew the closed notebook narrow and the open one wide, not in two equal halves: split at the magenta
+# gap between them (a half-way cut sliced the open one), each piece padded with magenta
+python - <<'PY'
+from PIL import Image
+im = Image.open("art-src/codex/raw/hud_notebook.png").convert("RGB")
+px = im.load()
+gap = [x for x in range(im.width // 8, im.width * 7 // 8)
+       if all(px[x, y][0] > 200 and px[x, y][2] > 200 and px[x, y][1] < 80 for y in range(0, im.height, 2))]
+cut = (gap[0] + gap[-1]) // 2
+for name, box in [("closed", (0, 0, cut, im.height)), ("open", (cut, 0, im.width, im.height))]:
+    piece = im.crop(box)
+    padded = Image.new("RGB", (piece.width + 64, piece.height + 64), (255, 0, 255))
+    padded.paste(piece, (32, 32))
+    padded.save(f"art-src/codex/raw/hud_notebook_{name}.png")
+PY
+python art-src/codex/pixelsnap.py art-src/codex/raw/hud_notebook_closed.png 1 1 art-src/codex/out/hud --main notebook_closed:84:20
+python art-src/codex/pixelsnap.py art-src/codex/raw/hud_notebook_open.png 1 1 art-src/codex/out/hud --main notebook_open:168:20
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_bag_cloth.png 1 1 art-src/codex/out/hud --main bag_cloth:200:20
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_upgrade_board.png 1 1 art-src/codex/out/hud --main upgrade_board:216:20
 python art-src/codex/pixelsnap.py art-src/codex/raw/hud_weapon_rack.png 1 1 art-src/codex/out/hud --main weapon_rack:208:20

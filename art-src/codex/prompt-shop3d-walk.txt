@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a 4-frame WALK CYCLE sprite strip of the character in the attached pictures, as he looks WORKING IN GRANDMA'S GRILL SHOP (copy his identity exactly from the approved pictures: spiky black hair, red bandana, green hooded jacket, cream apron, brown gloves and boots, a brown leather strap across his chest, and Ttukkeong-i, the grumpy talking cast-iron pot lid (dark iron dome, round knob, two small side handles, angry eyebrows and a wobbly frown, warm brown highlight) strapped on his back; in the shop he carries NO harpoon, NO rope and NO weapon at all (the first picture is his hunt walk: copy it but leave the harpoon out; the second picture shows him in the shop without it). Same chunky cute chibi pixel-art style, same dark outline, same big head, same proportions, same size).
+
+Save as art-src/codex/raw/shop3d_walk.png - a WIDE image exactly 4 times as wide as it is tall (for example 1536x384): 4 equal square cells side by side, left to right, one full-body pose centred in each cell, all poses the same size with the feet on the same baseline. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no shadow, no floor). No text, no grid lines, no motion lines, no dust, no effects, nothing outside the character. No pose touches its cell edge.
+
+FACING for every frame: pure side profile facing camera-RIGHT (walking to the right). The lid sits on his back like a turtle shell, a rounded dome bulging behind him (to the left) with its grumpy face looking back.
+
+The four frames must be clearly DIFFERENT poses - this is the most important rule:
+frame 1 (step): the NEAR leg (the one closer to the viewer, drawn in front, lighter brown boot) reaches FORWARD to the right with the heel down; the FAR leg (behind, drawn darker) is back to the left with only its toe touching.
+frame 2 (passing): the near leg straight under the body, the far leg passing beside it, body one pixel higher.
+frame 3 (step): the opposite - the FAR leg (darker) reaches FORWARD to the right with the heel down; the NEAR leg (lighter, in front) is back to the left on its toe.
+frame 4 (passing): the far leg straight under the body, the near leg passing beside it, body one pixel higher.
+Arms swing opposite to the legs. Keep the head and the lid steady except a one-pixel bob; the lid may jiggle one pixel. The two stepping frames must be mirror opposites in which leg leads.
+
+Reply only with the saved file path.

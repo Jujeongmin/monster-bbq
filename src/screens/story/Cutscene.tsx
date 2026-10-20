@@ -36,7 +36,7 @@ export function Cutscene({ scene, onDone }: { scene: StoryId; onDone: () => void
           </button>,
           document.querySelector(".frame")!,
         )}
-      {cut.lines.length ? <Dialogue key={i} lines={lines!} onDone={next} /> : <span className="story-more">▼</span>}
+      {cut.lines.length ? <Dialogue key={`lines-${i}`} lines={lines!} onDone={next} /> : <span className="story-more">▼</span>}
     </div>
   );
 }

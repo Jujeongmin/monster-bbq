@@ -10,7 +10,6 @@ from pathlib import Path
 from PIL import Image
 
 SHEET = Path("art-src/pixellab/shop3/customers_336.png")
-OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("art/test/yokai/counter")
 YOKAI = ["dokkaebi", "gumiho", "reaper", "ghost"]
 POSES = ["walk_0", "walk_1", "sit", "eat", "happy", "angry"]
 SEATED = ["sit", "eat", "happy"]
@@ -73,19 +72,21 @@ def legs_centre(im: Image.Image) -> float:
     return (min(xs) + max(xs)) / 2
 
 
-OUT.mkdir(parents=True, exist_ok=True)
-cut_out = cut(unkey(Image.open(SHEET)))
-for y in YOKAI:
-    for p in POSES:
-        if p not in SEATED:
-            cut_out[f"{y}_{p}"].save(OUT / f"{y}_{p}.png")
-    ims = {p: cut_out[f"{y}_{p}"] for p in SEATED}
-    cs = {p: legs_centre(ims[p]) for p in SEATED}
-    half = max(max(cs[p], ims[p].width - cs[p]) for p in SEATED)
-    W = int(round(half * 2))
-    H = max(im.height for im in ims.values())
-    for p, im in ims.items():
-        canvas = Image.new("RGBA", (W, H))
-        canvas.alpha_composite(im, (int(round(W / 2 - cs[p])), H - im.height))
-        canvas.save(OUT / f"{y}_{p}.png")
-        print(y, p, im.size, "->", canvas.size)
+if __name__ == "__main__":
+    OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("art/test/yokai/counter")
+    OUT.mkdir(parents=True, exist_ok=True)
+    cut_out = cut(unkey(Image.open(SHEET)))
+    for y in YOKAI:
+        for p in POSES:
+            if p not in SEATED:
+                cut_out[f"{y}_{p}"].save(OUT / f"{y}_{p}.png")
+        ims = {p: cut_out[f"{y}_{p}"] for p in SEATED}
+        cs = {p: legs_centre(ims[p]) for p in SEATED}
+        half = max(max(cs[p], ims[p].width - cs[p]) for p in SEATED)
+        W = int(round(half * 2))
+        H = max(im.height for im in ims.values())
+        for p, im in ims.items():
+            canvas = Image.new("RGBA", (W, H))
+            canvas.alpha_composite(im, (int(round(W / 2 - cs[p])), H - im.height))
+            canvas.save(OUT / f"{y}_{p}.png")
+            print(y, p, im.size, "->", canvas.size)
