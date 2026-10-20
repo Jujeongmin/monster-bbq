@@ -9,11 +9,9 @@ describe("the 3D shop's room", () => {
   it("snaps positions to half units so no pixel straddles two screen pixels", () => {
     expect([snap(1.2), snap(1.26), snap(-0.74)]).toEqual([1, 1.5, -0.5]);
   });
-  it("follows the grandchild gently and never more than 25 units", () => {
-    expect(cameraX(0, 200, 10)).toBe(25);
-    const a = cameraX(0, 20, 0.05);
-    expect(a).toBeGreaterThan(0);
-    expect(a).toBeLessThan(20);
+  it("keeps the camera still: the 480-unit room exactly fills the view, so any pan shows past its ends", () => {
+    expect(cameraX(0, 200, 10)).toBe(0);
+    expect(cameraX(0, -200, 10)).toBe(0);
   });
   it("shows the 960x540 picture at a whole scale, shrinking only when it does not fit", () => {
     expect(displayScale(1280, 720)).toBe(1);

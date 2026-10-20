@@ -13,14 +13,16 @@ export const snap = (v: number): number => Math.round(v * 2) / 2;
 // just in front of the grandchild's lane (on one depth their pictures fought over the same pixels)
 export const Z = { backWall: -90, bandal: -38, pass: -30, station: -12, waiter: -16, counter: 0, stool: 22, seated: 25, walk: 40 } as const;
 export const FLOOR_Y = -4;
-// the low counter, waist high on the grandchild; it runs over the stools' span and stops short of the
+// the low counter, waist high on the grandchild (19: his carried plate clears it, and its front picture is
+// 19 px tall); it runs over the stools' span and stops short of the
 // drink cart behind its right end (the cart would be cut off by it)
-export const COUNTER = { h: 21, d: 14, x0: toWorldX(LAYOUT.counter[0]) - 10, x1: toWorldX(LAYOUT.counter[1]) - 10 };
+export const COUNTER = { h: 19, d: 14, x0: toWorldX(LAYOUT.counter[0]) - 10, x1: toWorldX(LAYOUT.counter[1]) - 10 };
 // the kitchen's pass, a lower box the grandchild works in front of; Bandal stands behind it
 export const PASS = { x: toWorldX(LAYOUT.pass) + 10, w: 80, h: 22, d: 12 };
 export const HUNTER_FEET = 7; // the grandchild's 105 px frames (hunt and shop) have the feet on row 98
-// fixed, tilted down a little, following the grandchild along the counter (no free turning)
-export const CAMERA = { pitch: 0.22, follow: 25, rate: 4 };
+// fixed, tilted down a little. It does not follow the grandchild (2026-10-20): the room is as wide as the
+// view, so following him showed black past the room's ends
+export const CAMERA = { pitch: 0.22, follow: 0, rate: 4 };
 
 // Upright pictures lean back with the camera from their bottom edge: `rise` above it, a picture placed at
 // z stands this far back. A box in front of a picture must stay behind this line up to the box's top, or
