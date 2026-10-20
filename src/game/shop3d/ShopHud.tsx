@@ -49,6 +49,7 @@ export interface Anchors {
   cart: { x: number; y: number };
   pass: { x: number; y: number };
   seats: { x: number; y: number }[];
+  helpers?: { x: number; y: number }[];
 }
 export interface HudProps {
   look: ShopLook;
@@ -158,6 +159,15 @@ export function ShopHud(p: HudProps) {
             <img src={artUrl(g.bubble.icon.startsWith("dish_") ? `test/shop/dishes/${g.bubble.icon.slice(5)}.png` : `test/shop/${g.bubble.icon.replace("prop_", "")}.png`)} alt="" />
           </div>
         );
+      })}
+      {/* tonight's friends: a name tag over each (their pictures stand in until approved) */}
+      {look.helpers.map((h, i) => {
+        const a = p.anchors.helpers?.[i];
+        return a ? (
+          <span key={h.id} className="ui-plate s3-name" style={{ left: a.x, top: a.y }}>
+            {t(`staff.name.${h.id}` as StringKey)}
+          </span>
+        ) : null;
       })}
       {look.prompt && <PromptBubble prompt={look.prompt} anchors={p.anchors} touch={p.touch} />}
       <Gauge x={p.anchors.coal.x} y={p.anchors.coal.y} width={64} value={look.coal / 100} />

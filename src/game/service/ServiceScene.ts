@@ -79,6 +79,8 @@ export class ServiceScene extends Phaser.Scene {
   private carried: Phaser.GameObjects.Image | null = null;
   private plaqueCounts: Phaser.GameObjects.Text[] = [];
   private waiter!: Phaser.GameObjects.Sprite;
+  // tonight's friends: the waiter's picture stands in, a name over each (staff design 5)
+  private helpers: { body: Phaser.GameObjects.Sprite; name: Phaser.GameObjects.Text }[] = [];
   private bandal!: Phaser.GameObjects.Image;
   private bandalBusyUntil = 0;
   private cart!: Phaser.GameObjects.Image;
@@ -334,6 +336,20 @@ export class ServiceScene extends Phaser.Scene {
 
   private draw(time: number, moveX: number) {
     const s = this.shift.s;
+    (s.helpers ?? []).forEach((h, i) => {
+      if (!this.helpers[i]) {
+        const body = this.add.sprite(0, WAITER_FEET, WAITER_ART ? "waiter_stand_0" : "hunter_side_1").setOrigin(0.5, 1).setScale(WAITER_SCALE).setDepth(9);
+        this.helpers.push({ body, name: this.add.text(0, 0, t(`staff.name.${h.id}` as StringKey), TEXT_SMALL).setOrigin(0.5, 1).setDepth(95) });
+      }
+      const v = this.helpers[i];
+      // the kitchen helper stands beside Bandal at the pass
+      const x = h.job === "kitchen" ? LAYOUT.pass - 70 : h.x;
+      const moving = h.job !== "kitchen" && h.busyMs === 0 && !!h.target;
+      v.body.setX(x).setFlipX(h.facing < 0);
+      if (moving && !v.body.anims.isPlaying) v.body.play(WAITER_ART ? "waiter_walk" : "hunter_walk_side");
+      if (!moving && v.body.anims.isPlaying) v.body.stop().setTexture(WAITER_ART ? "waiter_stand_0" : "hunter_side_1");
+      v.name.setPosition(x, v.body.y - v.body.displayHeight - 2);
+    });
     // the waiter
     this.waiter.x = s.x;
     this.waiter.setFlipX(s.facing < 0);

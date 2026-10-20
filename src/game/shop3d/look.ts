@@ -1,4 +1,5 @@
-import { CARRY, type Guest, type Shift } from "../service/shift";
+import type { Position, StaffId } from "../../../shared/content/staff";
+import { CARRY, type Guest, type Helper, type Shift, type TrayItem } from "../service/shift";
 import { Z } from "./layout";
 
 // What the 3D night shop shows this frame (shop 3D design 4-6), worked out from the night's state alone so
@@ -35,8 +36,18 @@ export interface SeatLook {
   plate: string | null;
   mess: boolean;
 }
+// a friend at work (staff design 5): the kitchen helper stands by Bandal, the others walk the floor
+export interface HelperLook {
+  id: StaffId;
+  job: Position;
+  x: number;
+  flip: boolean;
+  pose: Pose;
+  carried: string | null;
+}
 export interface ShopLook {
   waiter: { x: number; flip: boolean; pose: Pose; carried: string | null };
+  helpers: HelperLook[];
   guests: GuestLook[];
   seats: SeatLook[];
   pass: string[];
@@ -134,13 +145,22 @@ function glowOf(shift: Shift): Glow | null {
   return seat.guest ? { kind: "guest", id: seat.guest } : null;
 }
 
+const carriedTex = (item: TrayItem | undefined) => (item ? (item.kind === "dish" ? `dish_${item.dish}` : DRINK[item.drink]) : null);
+
+function helperPose(h: Helper): Pose {
+  if (h.busyMs > 0) return h.target === "coal" ? "grind" : h.target?.startsWith("pour:") ? "pour" : "scrub";
+  if (h.job === "kitchen") return "stand";
+  return h.target ? (h.carry.length ? "carry" : "walk") : "stand";
+}
+
 export function lookAt(shift: Shift, time: number, moveX: number, hold: { poseUntil: number; busy: Pose }): ShopLook {
   const s = shift.s;
   const item = s.tray[0];
   const pose: Pose = s.pouring ? "pour" : s.busyMs > 0 ? hold.busy : time < hold.poseUntil ? "serve" : moveX !== 0 ? (item ? "carry" : "walk") : "stand";
   const cooking = s.kitchen[0]?.started;
   return {
-    waiter: { x: s.x, flip: s.facing < 0, pose, carried: item ? (item.kind === "dish" ? `dish_${item.dish}` : DRINK[item.drink]) : null },
+    waiter: { x: s.x, flip: s.facing < 0, pose, carried: carriedTex(item) },
+    helpers: (s.helpers ?? []).map((h) => ({ id: h.id, job: h.job, x: h.x, flip: h.facing < 0, pose: helperPose(h), carried: carriedTex(h.carry[0]) })),
     guests: s.guests
       .filter((g) => g.phase !== "gone")
       .map((g) => ({ id: g.id, ...guestTex(g, time), x: g.x, z: WALKING.includes(g.phase) ? Z.walk : Z.seated, bubble: bubbleOf(shift, g) })),

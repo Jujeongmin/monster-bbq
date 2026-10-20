@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import { DISHES } from "../../../shared/content/dishes";
+import { STAFF_IDS, type StaffId } from "../../../shared/content/staff";
 import { artUrl, hasArt } from "../art";
 import { LAYOUT } from "../service/shift";
 import { CAMERA, COUNTER, cameraX, FLOOR_Y, HUNTER_FEET, PASS, toWorldX, Z } from "./layout";
-import { YOKAI, type Glow, type Pose, type ShopLook } from "./look";
+import { YOKAI, type Glow, type HelperLook, type Pose, type ShopLook } from "./look";
 import type { Anchors } from "./ShopHud";
 import { Board, loadTextures } from "./sprites";
 
@@ -23,6 +24,11 @@ const WALL_H = 201;
 const GUEST_HEAD = 50; // a bubble sits on top of a guest this high
 // the grandchild in the shop, at the guests' scale, in the hunt frames' 105 px box (feet on row 98)
 const HERO = ["walk_0", "walk_1", "walk_2", "walk_3", "carry_0", "carry_1", "carry_2", "carry_3", "serve", "scrub_0", "scrub_1", "pour", "stand"];
+// Grandma's old friends at work: their own walk frames once approved and in (art/test/staff/<id>/), until
+// then the grandchild's frames with a name tag over them (the HUD's)
+const STAFF_FRAMES = ["walk_0", "walk_1", "walk_2", "walk_3"];
+const hasStaffArt = (id: StaffId) => hasArt(`test/staff/${id}/walk_0.png`);
+const KITCHEN_X = 30; // the kitchen helper at Bandal's right, behind the pass, clear of the pass's prompt (world units from its centre)
 const PROPS = ["stool", "plate_dirty", "drink_cart", "coal_box", "cup_tea", "cup_cider", "bowl_sikhye"];
 
 function textureUrls(day: boolean): Record<string, string> {
@@ -38,6 +44,7 @@ function textureUrls(day: boolean): Record<string, string> {
   for (const y of YOKAI) for (const p of YK_POSES) urls[`yk_${y}_${p}`] = artUrl(`test/yokai/counter/${y}_${p}.png`);
   for (const b of BANDAL) urls[`bandal_${b}`] = artUrl(`test/bandal/${b}.png`);
   for (const h of HERO) urls[`hero_${h}`] = artUrl(`test/shop3d/hero/${h}.png`);
+  for (const id of STAFF_IDS) if (hasStaffArt(id)) for (const f of STAFF_FRAMES) urls[`staff_${id}_${f}`] = artUrl(`test/staff/${id}/${f}.png`);
   return urls;
 }
 
@@ -61,6 +68,16 @@ function waiterTex(pose: Pose, time: number, dish: boolean): string {
   }
 }
 
+function helperTex(h: HelperLook, time: number): string {
+  if (!hasStaffArt(h.id)) return waiterTex(h.pose, time, !!h.carried?.startsWith("dish_"));
+  const moving = h.pose === "walk" || h.pose === "carry";
+  return `staff_${h.id}_walk_${moving ? Math.floor(time / 125) % 4 : 0}`;
+}
+
+// where a friend stands in the room: the kitchen helper beside Bandal, the others in the grandchild's
+// lane just behind him (so he stays in front when they cross)
+const helperAt = (h: HelperLook): { x: number; z: number } => (h.job === "kitchen" ? { x: PASS.x + KITCHEN_X, z: Z.bandal } : { x: toWorldX(h.x), z: Z.waiter - 2 });
+
 export class ShopView {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
@@ -80,6 +97,7 @@ export class ShopView {
   private messes: Board[] = [];
   private passPlates: Board[] = [];
   private guests = new Map<string, Board>();
+  private helpers: { body: Board; carried: Board; shadow: THREE.Mesh }[] = [];
   private shadows: THREE.Mesh[] = [];
   private shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false });
   private glowing: Board | null = null;
@@ -198,7 +216,12 @@ export class ShopView {
     // where the action key's bubble goes: over the pass, and on the floor under a seat (clear of the
     // guest's own bubble over their head)
     const seats = look.seats.map((st) => this.project(st.x, FLOOR_Y, Z.stool + 6));
-    return { guests, plaques, coal: this.project(LAYOUT.coalBox, FLOOR_Y + 30, Z.station), cart: this.project(LAYOUT.drinkCart, FLOOR_Y + 44, Z.station), pass: this.project(LAYOUT.pass, FLOOR_Y + PASS.h + 34, Z.pass), seats };
+    // a friend's name tag, over the head
+    const helpers = look.helpers.map((h) => {
+      const at = helperAt(h);
+      return this.projectWorld(at.x, FLOOR_Y + 50, at.z);
+    });
+    return { guests, helpers, plaques, coal: this.project(LAYOUT.coalBox, FLOOR_Y + 30, Z.station), cart: this.project(LAYOUT.drinkCart, FLOOR_Y + 44, Z.station), pass: this.project(LAYOUT.pass, FLOOR_Y + PASS.h + 34, Z.pass), seats };
   }
 
   render(look: ShopLook, dt: number) {
@@ -212,6 +235,20 @@ export class ShopView {
     // a drink floats just over his head (he is 48 px tall in the shop)
     this.carried.setVisible(!!look.waiter.carried && !dish);
     if (look.waiter.carried && !dish) this.carried.setTexture(look.waiter.carried).place(wx, FLOOR_Y + 54, Z.waiter + 1);
+    // tonight's friends
+    look.helpers.forEach((h, i) => {
+      if (!this.helpers[i]) this.helpers.push({ body: this.board("hero_stand", HUNTER_FEET), carried: this.board("prop_cup_tea").setVisible(false), shadow: this.shadow(12) });
+      const b = this.helpers[i];
+      const at = helperAt(h);
+      const dish = !!h.carried?.startsWith("dish_");
+      b.body.setTexture(helperTex(h, t)).setFlip(h.flip).place(at.x, FLOOR_Y, at.z);
+      b.shadow.visible = h.job !== "kitchen";
+      b.shadow.position.set(at.x, FLOOR_Y + 0.2, at.z);
+      // a drink, or a dish when their own picture has no plate in its hands, floats over the head
+      const float = !!h.carried && (!dish || hasStaffArt(h.id));
+      b.carried.setVisible(float);
+      if (float) b.carried.setTexture(h.carried!).place(at.x, FLOOR_Y + 54, at.z + 1);
+    });
     // Bandal and the fire that follows the charcoal
     this.bandal.setTexture(look.bandal);
     this.fire.intensity = 0.3 + 2.2 * (look.coal / 100);

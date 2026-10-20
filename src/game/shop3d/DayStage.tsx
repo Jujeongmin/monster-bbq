@@ -65,6 +65,7 @@ export function DayStage({ scene, stools, active, onSpot, onFail }: { scene: Day
       x = walk(x, move, dt);
       const spots = daySpots(live.current.scene);
       const look: ShopLook = {
+        helpers: [],
         waiter: { x, flip, pose: move.x !== 0 ? "walk" : "stand", carried: null },
         guests: [],
         seats: seatsX.map((sx) => ({ x: sx, stool: true, plate: null, mess: false })),

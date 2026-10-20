@@ -29,6 +29,10 @@ export const LAYOUT = {
   reach: 34,
   guestSpeed: 135,
 };
+// Where a friend with nothing to do waits (staff design 5): near their work, clear of the pass where the
+// grandchild takes plates. The kitchen helper stays by Bandal.
+export const HELPER_HOME: Record<Exclude<Position, "kitchen">, number> = { serve: 690, drinks: 740, coal: 900, clean: 420 };
+
 // Where `stools` stools stand along the counter (the night's rules and the shop by day share it).
 export function seatXs(stools: number): number[] {
   const [a, b] = LAYOUT.counter;
@@ -186,7 +190,7 @@ export class Shift {
     this.s.calmUsed ??= false;
     // tonight's friends, spread along the aisle by the pass (a reloaded night keeps where they were)
     if (!this.s.helpers?.length)
-      this.s.helpers = Object.entries(cfg.staff ?? {}).map(([job, f], i): Helper => ({ id: f!.id, job: job as Position, stars: f!.stars, x: LAYOUT.pass - 40 * i, facing: -1, carry: [], busyMs: 0, target: null }));
+      this.s.helpers = Object.entries(cfg.staff ?? {}).map(([job, f], i): Helper => ({ id: f!.id, job: job as Position, stars: f!.stars, x: job === "kitchen" ? LAYOUT.pass : HELPER_HOME[job as Exclude<Position, "kitchen">] - 20 * i, facing: -1, carry: [], busyMs: 0, target: null }));
   }
 
   // the events since the last call
@@ -543,6 +547,7 @@ export class Shift {
       const goal = job === "serve" ? this.serveGoal(h) : job === "drinks" ? this.drinkGoal(h) : job === "coal" ? this.coalGoal(h) : this.cleanGoal(h);
       if (!goal) {
         h.target = null;
+        this.walkTo(h, HELPER_HOME[h.job], dt);
         continue;
       }
       if (this.walkTo(h, goal.x, dt)) goal.act();

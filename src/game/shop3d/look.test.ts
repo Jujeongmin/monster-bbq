@@ -132,3 +132,21 @@ it("offers the menu at an empty pass when nothing is cooking", () => {
   sh.s.x = LAYOUT.pass;
   expect(promptOf(sh)).toEqual({ at: { kind: "pass" }, verb: "menu", ok: true, why: null });
 });
+
+it("shows each friend on shift where they work", () => {
+  const sh = new Shift(cfg([guest("c0", 0)], { staff: { serve: { id: "kkaebi", stars: 0 }, kitchen: { id: "jang", stars: 0 }, clean: { id: "sundeok", stars: 0 } } }));
+  const idle = lookAt(sh, 0, 0, HOLD).helpers;
+  expect(idle.map((h) => [h.id, h.job])).toEqual([["kkaebi", "serve"], ["jang", "kitchen"], ["sundeok", "clean"]]);
+  expect(idle.every((h) => h.pose === "stand" && h.carried === null)).toBe(true);
+  // the serving friend carries the cooked plate to the guest
+  for (let t = 0; t < SETTLE + RECIPES.grilled_belly.cookMs + 100; t += 50) sh.tick(50, { x: 0, run: false });
+  for (let t = 0; t < 4000 && !sh.s.helpers[0].carry.length; t += 50) sh.tick(50, { x: 0, run: false });
+  const carrying = lookAt(sh, 0, 0, HOLD).helpers[0];
+  expect(carrying.carried).toBe("dish_grilled_belly");
+  expect(carrying.x).toBe(sh.s.helpers[0].x);
+  // the cleaning friend scrubbing a messy seat
+  sh.s.seats[2].dirty = true;
+  const cleaner = sh.s.helpers[2];
+  for (let t = 0; t < 10_000 && cleaner.busyMs === 0; t += 50) sh.tick(50, { x: 0, run: false });
+  expect(lookAt(sh, 0, 0, HOLD).helpers[2].pose).toBe("scrub");
+});

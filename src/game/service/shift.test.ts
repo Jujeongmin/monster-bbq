@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { BALANCE } from "../../../shared/balance";
 import { RECIPES } from "../../../shared/content/recipes";
 import type { Customer } from "../../../shared/service/plan";
-import { judgePour, LAYOUT, Shift, type ShiftConfig } from "./shift";
+import { HELPER_HOME, judgePour, LAYOUT, Shift, type ShiftConfig } from "./shift";
 
 const SV = BALANCE.service;
 const guest = (id: string, arriveMs: number, over: Partial<Customer> = {}): Customer => ({ id, kind: 0, arriveMs, dish: "grilled_belly", patienceMs: 40_000, drink: "none", messy: false, ...over });
@@ -327,9 +327,11 @@ describe("friends at work in the night (staff design 5)", () => {
   });
   it("never takes what the waiter is carrying or scrubbing", () => {
     const sh = staffed({ serve: { id: "ppareun", stars: 0 }, clean: { id: "sundeok", stars: 0 } });
-    // the serving friend starts far off, so the waiter reaches the plate first
-    for (const h of sh.s.helpers) h.x = LAYOUT.door;
-    run(sh, SETTLE + RECIPES.grilled_belly.cookMs + 100);
+    // the serving friend kept far off until the plate comes out, so the waiter reaches it first
+    for (let t = 0; t < SETTLE + RECIPES.grilled_belly.cookMs + 100; t += 50) {
+      for (const h of sh.s.helpers) h.x = LAYOUT.door;
+      sh.tick(50, { x: 0, run: false });
+    }
     goTo(sh, LAYOUT.pass);
     expect(sh.act()).toBe(true);
     run(sh, 3000);
@@ -343,6 +345,12 @@ describe("friends at work in the night (staff design 5)", () => {
     sh.act();
     sh.tick(50);
     expect(sh.s.helpers.find((h) => h.job === "clean")!.target).not.toBe("seat1");
+  });
+  it("a friend with nothing to do waits at their own spot, clear of the pass", () => {
+    const sh = staffed({ serve: { id: "kkaebi", stars: 0 }, clean: { id: "sundeok", stars: 0 } }, []);
+    run(sh, 8000);
+    expect(sh.s.helpers.map((h) => Math.round(h.x))).toEqual([HELPER_HOME.serve, HELPER_HOME.clean]);
+    expect(sh.s.helpers.every((h) => Math.abs(h.x - LAYOUT.pass) > LAYOUT.reach)).toBe(true);
   });
   it("Baekdu calms the first guest about to storm out", () => {
     const sh = staffed({ coal: { id: "baekdu", stars: 0 } }, [guest("c0", 0, { patienceMs: 5000 })]);
