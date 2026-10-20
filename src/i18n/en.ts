@@ -379,7 +379,7 @@ export const en: Record<keyof typeof ko, string> = {
   "story.p2a": "Nngh… why is Grandma's parcel so heavy…",
   "story.p2b": "The shop is yours now. Find the notebook yourself. Granny's busy.",
   "story.p4": "…You're late! Light the fire first!",
-  "story.p5": "…Grandma said to wait for you, bear.",
+  "story.p5": "…You're the grandkid? I do the grilling. But the fridge is bare.",
   "story.p6a": "Only the notebook's cover is left. No meat either. Go catch some in the forest. Strap me on your back.",
   "story.p6b": "Hunting… with a pot lid?",
   "story.p6c": "Granny caught boars with me.",
