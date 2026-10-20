@@ -90,3 +90,7 @@
 .friend-foot .friend-skill { flex: 1; min-width: 0; color: #6a3a10; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .friend-foot .friend-awaken { margin: 0; flex: none; }
 .friends-slots { align-self: center; margin: 0 0 calc(4px * var(--s)); }
+/* the stat cells (8x10 art each, two game pixels per art pixel) */
+.friend-gauge-row { grid-template-columns: calc(40px * var(--s)) auto; }
+.friend-pips { display: flex; gap: calc(2px * var(--s)); }
+.friend-pips img { width: calc(16px * var(--s)); height: calc(20px * var(--s)); image-rendering: pixelated; }

@@ -1,0 +1,11 @@
+Use your image generation tool (do not write code to draw) to create ONE image: two tiny pixel-art UI pieces for a stat gauge in a cozy, comic Korean BBQ restaurant game. The gauge is a row of ten small cells that fill ONE AT A TIME (like a charge meter), shown on the cream paper card in the attached screenshot.
+
+STYLE — the most important rule: it must look like it belongs with the attached screenshot's UI (wooden frames with brass corners, cream paper, red buttons) and the attached HUD icons: real low-resolution pixel art, every art pixel an exact crisp square block on one even grid, a dark brown 1-art-pixel outline, FLAT colours with only 2-3 shades, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise. SIMPLE: no decoration, no icons, no text.
+
+Each piece is ONE cell of the gauge, 8 art pixels wide and 10 art pixels tall, drawn BIG: every art pixel a 32x32 block (so each cell is 256x320 image pixels), with a 1-art-pixel dark brown outline and slightly rounded corners (one corner pixel cut).
+cell 1 EMPTY: a recessed dark slot — dark brown-grey inside, a 1-pixel darker shadow along the top inside edge.
+cell 2 FULL: filled with warm ember orange (the same orange as the shop's charcoal fire), a 1-pixel light yellow highlight along the top inside edge and a 1-pixel deeper orange-red along the bottom inside edge.
+
+Save as art-src/codex/raw/ui_pips.png — exactly 768x384: two equal areas (384x384) side by side, one cell centred in each. Background: one perfectly flat solid magenta #FF00FF everywhere (no shadow). No text, no grid lines.
+
+Reply only with the saved file path.

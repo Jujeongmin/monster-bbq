@@ -8,6 +8,7 @@ import { staffAwakenCost } from "../../../shared/staff/actions";
 import { artUrl, hasArt } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
 import { knowsCharcoal } from "./hud";
+import { PIP_COUNT, pipsOf } from "./pips";
 
 // Grandma's old friends in her notebook (staff design 6): the friends who came (their stats, skill and
 // line about Grandma, stars and shards, the position they work), and the postcards that call more — with
@@ -139,10 +140,16 @@ function FriendsTab({ save, busy, act, picked, onPick }: { save: SaveData; busy:
   );
 }
 
-// a stat as the shop's pixel gauge (art/test/ui2, the one over the charcoal box), out of 100
-function StatGauge({ value }: { value: number }) {
-  const v = Math.max(0, Math.min(1, value / 100));
-  return <span className="friend-gauge">{v > 0 && <span className="friend-gauge-full" style={{ width: `calc(${Math.max(0.12, v).toFixed(3)} * (100% + 6 * var(--k)))` }} />}</span>;
+// A stat as ten cells that fill one at a time (user, 2026-10-20), no number (pips.ts). Cells: art/test/ui/pip_*.png.
+function StatPips({ value }: { value: number }) {
+  const n = pipsOf(value);
+  return (
+    <span className="friend-pips">
+      {Array.from({ length: PIP_COUNT }, (_, i) => (
+        <img key={i} src={artUrl(`test/ui/pip_${i < n ? "full" : "empty"}.png`)} alt="" />
+      ))}
+    </span>
+  );
 }
 
 // The picked friend: portrait and who they are on the left, and on the right how good they are at each
@@ -169,15 +176,13 @@ function FriendDetail({ id, mine, at, save, busy, act }: { id: StaffId; mine: { 
                 <button className={`ui-sq awaken-kind friend-pos-btn${at === p ? " on" : ""}`} disabled={busy} onClick={() => void act({ type: "assignStaff", position: p, staffId: at === p ? null : id })}>
                   {t(`staff.pos.${p}` as StringKey).split(" ")[0]}
                 </button>
-                <StatGauge value={v} />
-                <b>{v}</b>
+                <StatPips value={v} />
               </span>
             );
           })}
           <span className="friend-gauge-row charm">
             <span className="friend-gauge-label">{t("staff.stat.charm")}</span>
-            <StatGauge value={statOf(id, "charm", mine.stars)} />
-            <b>{statOf(id, "charm", mine.stars)}</b>
+            <StatPips value={statOf(id, "charm", mine.stars)} />
           </span>
         </span>
       </div>
