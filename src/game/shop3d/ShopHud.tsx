@@ -1,7 +1,7 @@
 import { BALANCE } from "../../../shared/balance";
-import { t } from "../../i18n";
+import { t, type StringKey } from "../../i18n";
 import { artUrl } from "../art";
-import type { ShopLook } from "./look";
+import { patienceTier, type Prompt, type ShopLook } from "./look";
 import "./shop3d.css";
 
 // What sits over the 3D shop (shop 3D design 7), drawn in the 960x540 picture's own pixels with the UI kit
@@ -21,6 +21,8 @@ export interface Anchors {
   plaques: { x: number; y: number }[];
   coal: { x: number; y: number };
   cart: { x: number; y: number };
+  pass: { x: number; y: number };
+  seats: { x: number; y: number }[];
 }
 export interface HudProps {
   look: ShopLook;
@@ -47,6 +49,22 @@ function Gauge({ x, y, width, value }: { x: number; y: number; width: number; va
   return (
     <div className="s3-gauge" style={{ left: x - width / 2, top: y - 7, width }}>
       {v > 0 && <div className="s3-gauge-full" style={{ width: Math.round(12 + (width - 12) * v) }} />}
+    </div>
+  );
+}
+
+// what E does at the nearest thing: over a station, or under a seat; grey with the reason when it cannot
+function PromptBubble({ prompt, anchors, touch }: { prompt: Prompt; anchors: Anchors; touch: boolean }) {
+  const { at } = prompt;
+  const below = at.kind === "seat";
+  const a = at.kind === "seat" ? anchors.seats[at.seat] : at.kind === "pass" ? anchors.pass : at.kind === "coal" ? { x: anchors.coal.x, y: anchors.coal.y - 12 } : { x: anchors.cart.x, y: anchors.cart.y - 26 };
+  if (!a) return null;
+  // near the right edge (the charcoal box) it hangs to the left of its point instead of off the picture
+  const right = a.x > 860;
+  return (
+    <div className={`ui-bubble day-prompt s3-prompt${prompt.ok ? "" : " closed"}${below ? " below" : ""}${right ? " right" : ""}`} style={{ left: right ? a.x + 24 : a.x, top: a.y }}>
+      {prompt.ok && !touch && <span className="day-key">E</span>}
+      {prompt.ok ? t(`prompt.${prompt.verb}` as StringKey) : t(`prompt.why.${prompt.why}` as StringKey)}
     </div>
   );
 }
@@ -91,11 +109,12 @@ export function ShopHud(p: HudProps) {
         const angle = g.bubble.shake ? Math.sin(p.time / 60) * 6 : 0;
         return (
           <div key={g.id} className="s3-bubble" style={{ left: a.x, top: a.y, transform: `translate(-50%, -100%) rotate(${angle}deg)` }}>
-            <div className="s3-patience" style={{ height: `${Math.round(g.bubble.patience * 100)}%` }} />
+            <div className={`s3-patience ${patienceTier(g.bubble.patience)}`} style={{ height: `${Math.round(g.bubble.patience * 100)}%` }} />
             <img src={artUrl(g.bubble.icon.startsWith("dish_") ? `test/shop/dishes/${g.bubble.icon.slice(5)}.png` : `test/shop/${g.bubble.icon.replace("prop_", "")}.png`)} alt="" />
           </div>
         );
       })}
+      {look.prompt && <PromptBubble prompt={look.prompt} anchors={p.anchors} touch={p.touch} />}
       <Gauge x={p.anchors.coal.x} y={p.anchors.coal.y} width={64} value={look.coal / 100} />
       {look.pour !== null && (
         <>
@@ -116,7 +135,7 @@ export function ShopHud(p: HudProps) {
             <div className="s3-knob" style={{ transform: `translateX(${p.stickX * STICK.r}px)` }} />
           </div>
           <button className="ui-btn s3-act" onPointerDown={p.onPress} onPointerUp={p.onRelease} onPointerLeave={p.onRelease} onPointerCancel={p.onRelease}>
-            {t("service.actButton")}
+            {look.prompt?.ok ? t(`prompt.short.${look.prompt.verb}` as StringKey) : t("service.actButton")}
           </button>
         </>
       )}

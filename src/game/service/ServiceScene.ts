@@ -1,11 +1,12 @@
 import Phaser from "phaser";
 import { BALANCE } from "../../../shared/balance";
 import { DISHES } from "../../../shared/content/dishes";
-import { t } from "../../i18n";
+import { t, type StringKey } from "../../i18n";
 import { artUrl, hasArt } from "../art";
 import { createCharacterAnims, loadCharacterArt } from "../hunt/anims";
 import { joystickVector } from "../joystick";
 import { addButton, addGauge, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiButton, type UiGauge } from "../ui";
+import { promptOf } from "../shop3d/look";
 import { loadShift, saveShift } from "./night";
 import { LAYOUT, Shift, type Guest, type Target } from "./shift";
 import { clockText, SHOP_WIDTH, type ServiceData } from "./types";
@@ -86,6 +87,8 @@ export class ServiceScene extends Phaser.Scene {
   private pourGauge!: UiGauge;
   private pourMark!: Phaser.GameObjects.Text;
   private glowing: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | null = null;
+  // what the action key does at the nearest thing (shop remake step 3, same rule as the 3D shop)
+  private promptText!: Phaser.GameObjects.Text;
   private tally!: Phaser.GameObjects.Text;
   private clock!: Phaser.GameObjects.Text;
   private closeButton!: UiButton;
@@ -169,6 +172,7 @@ export class ServiceScene extends Phaser.Scene {
     kitSlice(this, 220, 18, "topbar", 420, 22, 5, 5, 3, 3).setDepth(999);
     this.add.image(22, 18, "ui_icon_gold").setDepth(1000);
     this.tally = this.add.text(38, 18, "", TEXT).setOrigin(0, 0.5).setDepth(1000);
+    this.promptText = this.add.text(0, 0, "", TEXT_SMALL).setOrigin(0.5, 1).setDepth(999).setVisible(false);
     this.clock = this.add.text(420, 18, "", TEXT).setOrigin(1, 0.5).setDepth(1000);
     this.pauseButton = addButton(this, 910, 20, t("service.pause"), () => this.togglePause(), 64);
     this.pauseButton.box.setDepth(1000);
@@ -367,6 +371,13 @@ export class ServiceScene extends Phaser.Scene {
     for (const g of s.guests) this.drawGuest(g, time);
     // the outline glow on what the action key would use
     this.glow(this.glowTarget(this.shift.canAct() ? this.shift.target() : null));
+    const prompt = promptOf(this.shift);
+    this.promptText.setVisible(!!prompt);
+    if (prompt) {
+      const at = prompt.at;
+      const x = at.kind === "seat" ? s.seats[at.seat].x : at.kind === "pass" ? LAYOUT.pass : at.kind === "coal" ? LAYOUT.coalBox : LAYOUT.drinkCart;
+      this.promptText.setText(prompt.ok ? `E ${t(`prompt.${prompt.verb}` as StringKey)}` : t(`prompt.why.${prompt.why}` as StringKey)).setColor(prompt.ok ? "#fff3d8" : "#b8a690").setPosition(x, 300);
+    }
     // tally and clock
     const sold = s.guests.filter((g) => g.servedMs !== null).length;
     this.tally.setText(`${t("service.tally", { served: sold, total: this.data0.customers.length, gold: this.shift.earned() })} · ${t("service.platesLeft", { n: this.shift.platesLeft() })}`);

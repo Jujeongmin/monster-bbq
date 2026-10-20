@@ -192,7 +192,10 @@ export class ShopView {
       const h = WALL_H - PLAQUE_ROW;
       return this.projectWorld(px - 240, FLOOR_Y + h * Math.cos(p), Z.backWall - h * Math.sin(p));
     });
-    return { guests, plaques, coal: this.project(LAYOUT.coalBox, FLOOR_Y + 30, Z.station), cart: this.project(LAYOUT.drinkCart, FLOOR_Y + 44, Z.station) };
+    // where the action key's bubble goes: over the pass, and on the floor under a seat (clear of the
+    // guest's own bubble over their head)
+    const seats = look.seats.map((st) => this.project(st.x, FLOOR_Y, Z.stool + 6));
+    return { guests, plaques, coal: this.project(LAYOUT.coalBox, FLOOR_Y + 30, Z.station), cart: this.project(LAYOUT.drinkCart, FLOOR_Y + 44, Z.station), pass: this.project(LAYOUT.pass, FLOOR_Y + PASS.h + 34, Z.pass), seats };
   }
 
   render(look: ShopLook, dt: number) {
