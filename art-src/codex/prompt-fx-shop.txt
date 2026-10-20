@@ -1,0 +1,18 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a sprite sheet of tiny effect sprites for the night service of a cozy, comic Korean BBQ restaurant game (Grandma's grill shop; yokai guests at the counter).
+
+Style: match the attached reference exactly (the game's approved small icons, scaled up 8 times). Real low-resolution pixel art, here scaled up 6 times:
+- every art pixel is an exact, crisp square block of 6x6 image pixels on a 6-pixel grid (the image must shrink 6 times with no loss);
+- a 1-art-pixel dark brown outline (#2b1408 or close) where the reference has one, FLAT colours with 2-3 shades, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise;
+- chunky, cute, readable at tiny size; warm palette like the reference.
+
+Save as art-src/codex/raw/fx_shop.png — exactly 384x576: a grid of 4 columns x 6 rows of equal square cells (96x96 each = 16x16 art pixels), one sprite centred in each cell, nothing touching its cell edge. Background: one perfectly flat solid magenta #FF00FF everywhere (no glow, no halo, no shadow). No text, no grid lines.
+
+Each row is a short animation, left to right (the same sprite changing a little each frame):
+row 1 COIN spinning (about 10 art pixels tall): cell 1 a round gold coin seen flat with a square hole and a shine; cell 2 the same coin turned three quarters (an oval); cell 3 seen edge-on (a thin vertical bar); cell 4 turned three quarters the other way.
+row 2 STEAM rising from a hot dish (white-grey wisps, about 12 art pixels tall): cells 1-3 a small curl growing and drifting up; cell 4 a small pink-red pixel HEART (about 8 art pixels), not steam.
+row 3 SPARKS from a charcoal fire (orange and yellow embers, 2-3 art pixel dots): cells 1-3 a few embers jumping up and fading; cell 4 empty.
+row 4 SOAP FOAM from scrubbing a counter (white and pale blue bubbles of different sizes): cells 1-3 bubbles popping out and growing; cell 4 empty.
+row 5 a SPARKLE of something clean (a 4-point white and yellow star glint): cells 1-3 small, big, small; cell 4 empty.
+row 6 an ANGRY PUFF over a cross guest's head (dark red steam cloud, comic): cells 1-3 puffing out bigger; cell 4 empty.
+
+Reply only with the saved file path.

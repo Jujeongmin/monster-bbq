@@ -69,3 +69,5 @@
 /* a guest storming out shakes the room a little */
 .s3-layer.shake { animation: s3-shake 0.2s steps(4); }
 @keyframes s3-shake { 25% { translate: 2px 0; } 50% { translate: -2px 1px; } 75% { translate: 1px -1px; } }
+/* an effect picture (16x16 art pixels at two screen pixels each), centred on its point */
+.s3-sprite { position: absolute; width: 32px; height: 32px; transform: translate(-50%, -50%); image-rendering: pixelated; pointer-events: none; z-index: 6; }

@@ -6,7 +6,8 @@ import { markSeen, nightTipDue, readSeen, TIP_FACE, tipStore, type TipId } from 
 import { loadShift, saveShift } from "../service/night";
 import { LAYOUT, Shift, type ShiftEvent } from "../service/shift";
 import { clockText, type ServiceData, type ShopReport } from "../service/types";
-import { displayScale, FLOOR_Y, COUNTER, Z } from "./layout";
+import { displayScale, FLOOR_Y, COUNTER, PASS, Z } from "./layout";
+import { artUrl, hasArt } from "../art";
 import { lookAt, patienceTier, serveGrade, type Pose, type ShopLook } from "./look";
 import { moveFrom } from "./input";
 import { ShopHud, type Anchors, type Band, type Fx, type Pop, type Tip } from "./ShopHud";
@@ -24,6 +25,13 @@ const BAND_MS = 1600;
 const FX_MS = 1200;
 const SHAKE_MS = 200;
 const GOLD_AT = { x: 22, y: 16 }; // the coin icon on the top strip, where flying coins land
+// the little effect pictures (art/test/fx, approved before they go in): a kind is shown only once its
+// frames are all there
+const fxFrames = (name: string, n: number): string[] | undefined => {
+  const paths = n === 1 ? [`test/fx/${name}.png`] : Array.from({ length: n }, (_, i) => `test/fx/${name}_${i}.png`);
+  return paths.every(hasArt) ? paths.map(artUrl) : undefined;
+};
+const FX = { coin: fxFrames("coin", 4), steam: fxFrames("steam", 3), spark: fxFrames("spark", 3), foam: fxFrames("foam", 3), sparkle: fxFrames("sparkle", 3), puff: fxFrames("puff_angry", 3), heart: fxFrames("heart", 1) };
 
 
 interface Hud {
@@ -105,6 +113,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
     // the effects events start (never the state): a reloaded night does not burst into coins
     let fx: Fx[] = [];
     let shakeAt = -Infinity;
+    const sprite = (frames: string[] | undefined, at: { x: number; y: number }) => frames && fx.push({ id: ++popId, kind: "sprite", x: at.x, y: at.y, frames, born: now });
     const stamp = (at: { x: number; y: number }, text: string, tone: string) => fx.push({ id: ++popId, kind: "stamp", x: at.x, y: at.y, text, tone, born: now });
 
     // each event's sound (shop remake step 3); the night calls this only while it runs, so a pause is quiet
@@ -190,22 +199,28 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
             const grade = serveGrade(e.ratio);
             stamp({ x: at.x, y: at.y - 22 }, t(`service.grade.${grade}`), grade === "fast" ? "#ffd166" : grade === "good" ? "#bfe8a0" : "#d8c4a4");
             // a few coins jump off the guest and fly to the gold
-            for (let i = 0; i < 4; i++) fx.push({ id: ++popId, kind: "coin", x: at.x + (i - 1.5) * 8, y: at.y, tx: GOLD_AT.x, ty: GOLD_AT.y, delay: i * 70, born: now });
+            for (let i = 0; i < 4; i++) fx.push({ id: ++popId, kind: "coin", x: at.x + (i - 1.5) * 8, y: at.y, tx: GOLD_AT.x, ty: GOLD_AT.y, delay: i * 70, frames: FX.coin, born: now });
+            sprite(FX.heart, { x: at.x + 14, y: at.y - 40 });
           }
           bandal = { tex: "bandal_smile", until: now + 700 };
           break;
         }
         case "cooked":
           bandal = { tex: "bandal_serve", until: now + 500 };
+          sprite(FX.steam, view.project(LAYOUT.pass, FLOOR_Y + PASS.h + 14, Z.pass));
           break;
         case "angry": {
           const at = guestAt(e.guest);
-          if (at) pop(at, t("service.angry"), "#ff8080");
+          if (at) {
+            pop(at, t("service.angry"), "#ff8080");
+            sprite(FX.puff, { x: at.x, y: at.y - 30 });
+          }
           shakeAt = now;
           break;
         }
         case "scrub":
           hold.busy = "scrub";
+          sprite(e.done ? FX.sparkle : FX.foam, view.project(shift.s.seats[e.seat].x, FLOOR_Y + COUNTER.h + 8, Z.counter));
           if (e.done) pop(view.project(shift.s.seats[e.seat].x, FLOOR_Y + COUNTER.h + 20, Z.counter), t("service.tip", { n: e.tip }), "#ffd166");
           break;
         case "pour":
@@ -213,6 +228,7 @@ export function ShopStage({ shop, hold = false, onEnd, onFail }: { shop: Service
           break;
         case "coal":
           hold.busy = "grind";
+          sprite(FX.spark, view.project(LAYOUT.coalBox, FLOOR_Y + 36, Z.station));
           pop(view.project(LAYOUT.coalBox, FLOOR_Y + 56, Z.station), `${Math.round(e.level)}%`, "#ffb070");
           break;
         case "noCoal":

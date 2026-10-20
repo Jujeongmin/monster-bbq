@@ -27,7 +27,7 @@ export interface Tip {
 // a coin flying from a served guest to the gold (tx, ty), or a word stamped big (a serve's grade, a pour)
 export interface Fx {
   id: number;
-  kind: "coin" | "stamp";
+  kind: "coin" | "stamp" | "sprite";
   x: number;
   y: number;
   tx?: number;
@@ -35,6 +35,7 @@ export interface Fx {
   delay?: number;
   text?: string;
   tone?: string;
+  frames?: string[]; // a sprite's frames (urls), one every FRAME_MS, holding the last
   born: number;
 }
 export interface Band {
@@ -107,6 +108,8 @@ function useRolling(value: number, time: number): number {
 }
 const rolled = (r: { from: number; to: number; start: number }, time: number) => Math.round(r.from + (r.to - r.from) * Math.min(1, (time - r.start) / 500));
 
+const FRAME_MS = 110;
+
 export function ShopHud(p: HudProps) {
   const { look } = p;
   const gold = useRolling(look.gold, p.time);
@@ -167,8 +170,10 @@ export function ShopHud(p: HudProps) {
         </>
       )}
       {p.fx.map((f) =>
-        f.kind === "coin" ? (
-          <img key={f.id} className="s3-coin" src={artUrl("test/ui/icon_gold.png")} alt="" style={{ left: f.x, top: f.y, animationDelay: `${f.delay ?? 0}ms`, "--dx": `${(f.tx ?? f.x) - f.x}px`, "--dy": `${(f.ty ?? f.y) - f.y}px` } as React.CSSProperties} />
+        f.kind === "sprite" ? (
+          <img key={f.id} className="s3-sprite" src={f.frames![Math.min(f.frames!.length - 1, Math.floor((p.time - f.born) / FRAME_MS))]} alt="" style={{ left: f.x, top: f.y }} />
+        ) : f.kind === "coin" ? (
+          <img key={f.id} className="s3-coin" src={f.frames ? f.frames[Math.floor((p.time - f.born) / 70) % f.frames.length] : artUrl("test/ui/icon_gold.png")} alt="" style={{ left: f.x, top: f.y, animationDelay: `${f.delay ?? 0}ms`, "--dx": `${(f.tx ?? f.x) - f.x}px`, "--dy": `${(f.ty ?? f.y) - f.y}px` } as React.CSSProperties} />
         ) : (
           <span key={f.id} className="s3-stamp" style={{ left: f.x, top: f.y, color: f.tone }}>
             {f.text}
