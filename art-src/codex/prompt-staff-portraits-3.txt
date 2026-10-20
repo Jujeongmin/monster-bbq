@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create ONE image: four RPG portraits for a cozy, comic Korean BBQ restaurant game, shown on character cards beside the approved portraits in the attached picture.
+
+STYLE — the most important rule: match the attached approved portraits EXACTLY so all portraits look like one set: the same pixel size (every art pixel a crisp 6x6 block on a 6-pixel grid), the same 1-art-pixel dark outline, flat colours with 2-3 tone cel shading, one small highlight, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise. Keep each design SIMPLE: only the features described, NO extra accessories, NO patterns, NO jewellery, NO background details.
+
+Each portrait: head and shoulders (a bust cut at the chest), facing slightly RIGHT, cute chibi proportions (big head), the whole bust about 60 art pixels tall and 70 art pixels wide (360x420 image pixels at most), a calm expression that shows the personality.
+
+Save as art-src/codex/raw/staff_portraits_3.png — exactly 1440x1152: a grid of 2 columns x 2 rows of equal cells (720x576), one bust centred in each with the chest cut on the same baseline near the bottom of the cell. Background: one perfectly flat solid magenta #FF00FF everywhere (no halo, no shadow). No text, no frames, no grid lines. Nothing touches its cell edge.
+
+cell 1 (top left) Jang, a quiet wandering cook: big and tall, short black hair, stubble, calm narrow eyes; a plain black fur vest with ONE small pale crescent on the chest (like a moon bear), a plain grey shirt, dark trousers and boots.
+cell 2 (top right) Baekhwa, a proud nine-tailed fox (gumiho) in human form: long silver-white hair, two silver fox ears, a cool half-smile; a plain white hanbok jacket and a plain pale-violet long skirt, ONE big fluffy silver tail behind her (only one tail shows).
+cell 3 (bottom left) Old Baekdu, an easygoing mountain spirit (sansin): a long white beard to the chest, white eyebrows, white hair in a small topknot, kind half-closed eyes; a plain light-grey long robe with a plain dark sash, a plain wooden walking stick.
+cell 4 (bottom right) Mumyeong, a cool, nameless knife-cook: slim, black hair tied in a short topknot, a plain dark cloth mask over the lower face so only sharp eyes show; a plain charcoal-grey jacket and trousers, a plain dark sash, ONE plain kitchen knife in a sheath at the waist.
+
+Reply only with the saved file path.

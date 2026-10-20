@@ -1,0 +1,18 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a sprite sheet of ONE new character for a cozy, comic Korean BBQ restaurant game — a friend of the shop who works beside the boy in the attached pictures.
+
+STYLE — the most important rule: the new character must look like they belong in the SAME game. The first picture is the boy's walk strip; the second shows an approved friend drawn the right way. Copy their art style exactly: the same chunky cute chibi proportions (big head, small body), the same dark 1-art-pixel outline, the same pixel size (every art pixel an exact crisp square block on one even grid), FLAT colours with only 2-3 shades per material, the same warm muted palette, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise. Keep the design SIMPLE and readable at a glance: a clear silhouette and only the features described below. NO extra accessories, NO patterns, NO jewellery, NO badges, NO effects. Plain clothes in two or three flat colours.
+
+THE CHARACTER: Hongmae, a hearty tavern hostess (jumo): black hair in a low bun held by ONE plain wooden hairpin, a broad laugh, a plain red hanbok jacket (jeogori) and a plain dark-navy long skirt. About as tall as the boy.
+
+Save as art-src/codex/raw/staff_hongmae.png — exactly 1920x384: 5 equal square cells (384x384) in one row, one full-body pose centred in each cell, the feet on the same baseline near the bottom of the cell, at the SAME scale as the boy's walk strip and the approved friend. Background: one perfectly flat solid magenta #FF00FF everywhere (no shadow, no floor). No text, no grid lines, no motion lines, no sparkles. No pose touches its cell edge.
+
+FACING for every frame: pure side profile facing camera-RIGHT, like the walk strip.
+
+cells 1-4 WALK (a 4-frame walk to the right, exactly the leg pattern of the walk strip), hands empty, a light natural arm swing:
+cell 1: near leg forward, heel down; far leg back on its toe.
+cell 2: passing, legs together under the body, body one pixel higher.
+cell 3: far leg forward, heel down; near leg back on its toe.
+cell 4: passing, body one pixel higher.
+cell 5 WORK (pour): standing, holding a small white jug tilted down to the right over a small white bowl held in the other hand at chest height (no liquid stream beyond one or two pixels).
+
+Reply only with the saved file path.

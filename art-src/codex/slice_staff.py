@@ -18,7 +18,11 @@ OUT = Path("art-src/codex/out/staff")
 HERO_H = 48
 SIZE, BASE = 105, 98
 FRAMES = ["walk_0", "walk_1", "walk_2", "walk_3", "work"]
-PORTRAITS = {"staff_portraits_1.png": ["park", "sundeok", "kkaebi", "dallae"]}
+PORTRAITS = {
+    "staff_portraits_1.png": ["park", "sundeok", "kkaebi", "dallae"],
+    "staff_portraits_2.png": ["hongmae", "soedol", "ppareun", "ggultteok"],
+    "staff_portraits_3.png": ["jang", "baekhwa", "baekdu", "mumyeong"],
+}
 
 
 def cells(im: Image.Image, cols: int, rows: int) -> list[Image.Image]:

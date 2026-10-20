@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create ONE image: four RPG portraits for a cozy, comic Korean BBQ restaurant game, shown on character cards beside the approved portraits in the attached picture.
+
+STYLE — the most important rule: match the attached approved portraits EXACTLY so all portraits look like one set: the same pixel size (every art pixel a crisp 6x6 block on a 6-pixel grid), the same 1-art-pixel dark outline, flat colours with 2-3 tone cel shading, one small highlight, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise. Keep each design SIMPLE: only the features described, NO extra accessories, NO patterns, NO jewellery, NO background details.
+
+Each portrait: head and shoulders (a bust cut at the chest), facing slightly RIGHT, cute chibi proportions (big head), the whole bust about 60 art pixels tall and 70 art pixels wide (360x420 image pixels at most), a calm expression that shows the personality.
+
+Save as art-src/codex/raw/staff_portraits_2.png — exactly 1440x1152: a grid of 2 columns x 2 rows of equal cells (720x576), one bust centred in each with the chest cut on the same baseline near the bottom of the cell. Background: one perfectly flat solid magenta #FF00FF everywhere (no halo, no shadow). No text, no frames, no grid lines. Nothing touches its cell edge.
+
+cell 1 (top left) Hongmae, a hearty tavern hostess (jumo): black hair in a low bun held by ONE plain wooden hairpin, a broad laugh, a plain red hanbok jacket (jeogori) and a plain dark-navy long skirt.
+cell 2 (top right) Soedol, a stiff, honest ironmonger: broad and sturdy, short black hair, thick eyebrows, a serious flat mouth; a plain white shirt with the sleeves rolled up, a plain brown leather apron, dark trousers and boots.
+cell 3 (bottom left) Quickfoot, a fidgety raccoon-dog yokai (neoguri) who carries the post: walks upright on two legs, brown fur, a dark mask around the eyes, a bushy tail with two dark rings, a plain canvas mail bag across the body.
+cell 4 (bottom right) Granny Ggultteok, a kind little rice-cake seller: small and a bit stooped, grey hair in a bun, a gentle smile with closed eyes; a plain pale-green hanbok jacket and a plain brown long skirt, a small round flat bamboo tray of rice cakes balanced on her head.
+
+Reply only with the saved file path.
