@@ -47,7 +47,7 @@ export function ControlsPanel({ touch, side, onClose }: { touch: boolean; side: 
             </li>
           ))}
         </ul>
-        <button className="ui-plate brass-btn" onClick={onClose} autoFocus>
+        <button className="menu-item" onClick={onClose} autoFocus>
           {t("controls.ok")}
         </button>
       </div>

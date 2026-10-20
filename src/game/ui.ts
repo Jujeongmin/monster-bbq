@@ -10,7 +10,7 @@ export const TEXT = { fontFamily: FONT, fontSize: "12px", color: "#fff3d8", stro
 export const TEXT_SMALL = { fontFamily: FONT_SMALL, fontSize: "10px", color: "#fff3d8", stroke: "#2b1408", strokeThickness: 3 } as const;
 
 // the pixel UI kit (art/test/ui2) inside Phaser scenes; each art pixel is KIT game pixels
-const PIECES = ["btn_normal", "btn_pressed", "btn_disabled", "gauge_empty", "gauge_full", "bubble_plain", "topbar", "panel", "slot", "plate"];
+const PIECES = ["btn_normal", "btn_pressed", "btn_disabled", "gauge_empty", "gauge_full", "bubble_plain", "topbar", "panel", "slot"];
 const ICONS = ["icon_gold", "icon_day", "icon_charcoal"];
 export const KIT = 2;
 
@@ -32,11 +32,8 @@ export interface UiButton {
   setText(text: string): void;
 }
 
-// A lacquered wooden button with brass corners; presses in while held, greyed when disabled. `brass`: the
-// kit's brass plate instead, dark lettering, for quiet menus (the pause menu: user, 2026-10-20, the red
-// ones were too loud there).
-export function addButton(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void, minWidth = 56, brass = false): UiButton {
-  if (brass) return addBrassButton(scene, x, y, text, onClick, minWidth);
+// A lacquered wooden button with brass corners; presses in while held, greyed when disabled.
+export function addButton(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void, minWidth = 56): UiButton {
   const label = scene.add.text(0, 0, text, { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
   // the red face sits 4 art px in from each brass cap; the label keeps 8 game px of face on each side
   const w = Math.max(minWidth, Math.ceil(label.width) + 32);
@@ -74,44 +71,26 @@ export function addButton(scene: Phaser.Scene, x: number, y: number, text: strin
   };
 }
 
-function addBrassButton(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void, minWidth: number): UiButton {
-  const ink = "#4a2a12";
-  const label = scene.add.text(0, 0, text, { ...TEXT, fontStyle: "bold", color: ink, strokeThickness: 0 }).setOrigin(0.5);
-  const w = Math.max(minWidth, Math.ceil(label.width) + 32);
-  const bg = kitSlice(scene, 0, 0, "plate", w, 26, 4, 4, 4, 4);
-  const box = scene.add.container(x, y, [bg, label]).setSize(w, 26);
-  let enabled = true;
+// A menu line (the pause menu: user, 2026-10-20, buttons there doubled the panel): plain lettering, a ▶
+// beside the one under the pointer, which turns gold.
+export function addMenuItem(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void): UiButton {
+  const label = scene.add.text(0, 0, text, { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
+  const mark = scene.add.text(0, 0, "▶", { ...TEXT, color: "#ffd166" }).setOrigin(1, 0.5).setVisible(false);
+  const place = () => mark.setX(-label.width / 2 - 6);
+  place();
+  const box = scene.add.container(x, y, [mark, label]).setSize(Math.max(120, label.width + 40), 22);
   box.setInteractive({ useHandCursor: true });
-  let held = false;
-  box.on("pointerdown", () => {
-    if (!enabled) return;
-    held = true;
-    bg.setTint(0xd8c090);
-    box.y = y + 1;
-  });
-  const release = () => {
-    held = false;
-    if (enabled) bg.clearTint();
-    box.y = y;
-  };
-  box.on("pointerup", () => {
-    const was = enabled && held;
-    release();
-    if (was) onClick();
-  });
-  box.on("pointerout", release);
+  const lit = (on: boolean) => (mark.setVisible(on), label.setColor(on ? "#ffd166" : "#fff3d8"));
+  box.on("pointerover", () => lit(true));
+  box.on("pointerout", () => lit(false));
+  box.on("pointerup", onClick);
   return {
     box,
     label,
-    setEnabled(on: boolean) {
-      if (on === enabled) return;
-      enabled = on;
-      if (on) bg.clearTint();
-      else bg.setTint(0x9a9a9a);
-      label.setColor(on ? ink : "#6a6a6a");
-    },
+    setEnabled() {},
     setText(t: string) {
       label.setText(t);
+      place();
     },
   };
 }

@@ -31,7 +31,7 @@ import { bagLevel } from "../hunt/bagGauge";
 import { angerFlock, CHAR_SCALE, createMob, drawMob, isMobVulnerable, isTargetable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { fleerHit } from "../../../shared/hunt/fleer";
 import { joystickVector } from "../joystick";
-import { addButton, addGauge, KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiButton, type UiGauge } from "../ui";
+import { addGauge, addMenuItem, KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type UiButton, type UiGauge } from "../ui";
 
 // The forest hunt (plan 03, hunt v3), quarter view, Dave-the-Diver controls.
 // PC: WASD / arrows move, aim with the mouse, left click = harpoon (and mash while capturing), right click
@@ -1298,14 +1298,14 @@ export class HuntScene extends Phaser.Scene {
     }
     this.anims.pauseAll();
     this.tweens.pauseAll();
-    const panel = kitSlice(this, 0, 0, "panel", 220, 142, 5, 5, 5, 5);
-    const title = this.add.text(0, -52, t("hunt.paused"), { ...TEXT, fontStyle: "bold" }).setOrigin(0.5);
+    const panel = kitSlice(this, 0, 0, "panel", 200, 124, 5, 5, 5, 5);
+    const title = this.add.text(0, -40, t("hunt.paused"), { ...TEXT, fontStyle: "bold", color: "#d8c4a4" }).setOrigin(0.5);
     let toggle: UiButton;
     const label = () => t(this.autoMash ? "hunt.autoMashOn" : "hunt.autoMashOff");
-    const resume = addButton(this, 0, -20, t("hunt.resume"), () => this.togglePause(), 140, true);
+    const resume = addMenuItem(this, 0, -12, t("hunt.resume"), () => this.togglePause());
     // the controls panel, drawn by the page over the paused hunt
-    const controls = addButton(this, 0, 12, t("controls.title"), () => this.game.events.emit("hunt:controls"), 140, true);
-    toggle = addButton(this, 0, 44, label(), () => {
+    const controls = addMenuItem(this, 0, 12, t("controls.title"), () => this.game.events.emit("hunt:controls"));
+    toggle = addMenuItem(this, 0, 36, label(), () => {
       this.autoMash = !this.autoMash;
       try {
         localStorage.setItem(AUTO_MASH_KEY, this.autoMash ? "1" : "0");
@@ -1313,7 +1313,7 @@ export class HuntScene extends Phaser.Scene {
         // private mode: the switch lasts this hunt only
       }
       toggle.setText(label());
-    }, 140, true);
+    });
     this.pauseMenu = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2, [panel, title, resume.box, controls.box, toggle.box]).setScrollFactor(0).setDepth(20000);
   }
 

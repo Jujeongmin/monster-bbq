@@ -180,3 +180,6 @@
 .controls-rows li { display: grid; grid-template-columns: calc(96px * var(--s)) calc(18px * var(--s)) auto; align-items: center; column-gap: calc(6px * var(--s)); }
 .controls-keys { display: flex; gap: calc(2px * var(--s)); justify-content: flex-end; }
 .controls-icon img { width: calc(16px * var(--s)); height: calc(16px * var(--s)); object-fit: contain; image-rendering: pixelated; display: block; }
+/* the panel's one line to close it: its ▶ always shown, so it reads as the thing to press */
+.controls .menu-item { color: #ffd166; }
+.controls .menu-item::before { content: "▶"; position: absolute; right: 100%; }
