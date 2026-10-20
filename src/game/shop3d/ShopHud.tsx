@@ -3,7 +3,7 @@ import { BALANCE } from "../../../shared/balance";
 import { t, type StringKey } from "../../i18n";
 import { LidLine } from "../../screens/hud/LidLine";
 import type { LidFace } from "../../screens/dialogue/Dialogue";
-import { artUrl } from "../art";
+import { artUrl, hasArt } from "../art";
 import { patienceTier, type Prompt, type ShopLook } from "./look";
 import "./shop3d.css";
 
@@ -160,10 +160,11 @@ export function ShopHud(p: HudProps) {
           </div>
         );
       })}
-      {/* tonight's friends: a name tag over each (their pictures stand in until approved) */}
+      {/* a friend still standing in with the grandchild's picture: a name tag over them (their own approved
+          picture says who they are by itself) */}
       {look.helpers.map((h, i) => {
         const a = p.anchors.helpers?.[i];
-        return a ? (
+        return a && !hasArt(`test/staff/${h.id}/walk_0.png`) ? (
           <span key={h.id} className="ui-plate s3-name" style={{ left: a.x, top: a.y }}>
             {t(`staff.name.${h.id}` as StringKey)}
           </span>

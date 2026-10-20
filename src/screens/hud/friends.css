@@ -17,10 +17,18 @@
 .friend-pos { display: flex; flex-wrap: wrap; gap: calc(2px * var(--s)); margin-top: calc(1px * var(--s)); }
 .ui-sq.awaken-kind.friend-pos-btn { padding: 0 calc(4px * var(--s)); }
 .friend-awaken { align-self: flex-start; font: var(--fs-small) "Galmuri9", monospace; padding-top: 0; padding-bottom: 0; max-width: 100%; white-space: nowrap; overflow: hidden; }
-.friends-post { flex: 1; display: flex; flex-direction: column; align-items: center; gap: calc(6px * var(--s)); }
+.friends-post { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: calc(6px * var(--s)); }
 .friends-buttons { display: flex; gap: calc(6px * var(--s)); }
 .friends-results { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; align-content: flex-start; display: flex; flex-wrap: wrap; justify-content: center; gap: calc(6px * var(--s)); }
 .friend-card.result { width: calc(104px * var(--s)); align-items: center; text-align: center; animation: friend-flip 0.4s steps(6) both; }
 @keyframes friend-flip { from { transform: rotateY(90deg); opacity: 0.3; } }
 .friend-new { font-weight: 700; color: #c83a2a; }
 @media (prefers-reduced-motion: reduce) { .friend-card.result { animation: none; } }
+/* the portrait: one art pixel to one game pixel (120x96 art at 60x48 game pixels would halve it; a corner
+   bust at half the art's size, scaled by whole pixels, on the card's right) */
+.friend-card { position: relative; }
+.friend-face { position: absolute; right: calc(2px * var(--s)); top: calc(-6px * var(--s)); width: calc(60px * var(--s)); height: calc(48px * var(--s)); image-rendering: pixelated; pointer-events: none; }
+.friend-card.result .friend-face { position: static; width: calc(120px * var(--s)); height: calc(96px * var(--s)); margin: calc(-8px * var(--s)) 0 calc(-4px * var(--s)); }
+/* the text beside the portrait stops short of it */
+.friend-card:not(.result):has(.friend-face) .friend-name, .friend-card:not(.result):has(.friend-face) .friend-stats { margin-right: calc(60px * var(--s)); }
+.friends-results.many .friend-face { width: calc(60px * var(--s)); height: calc(48px * var(--s)); margin: 0; }

@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create ONE image: four RPG dialogue portraits for a cozy, comic Korean BBQ restaurant game, shown on character cards beside the approved portraits in the attached pictures.
+
+STYLE — the most important rule: match the attached approved portraits EXACTLY so all portraits look like one set: the same pixel size (every art pixel a crisp 6x6 block on a 6-pixel grid), the same 1-art-pixel dark outline, flat colours with 2-3 tone cel shading, one small highlight, NO gradients, NO glow, NO soft shading, NO anti-aliasing, NO texture noise. Keep each design SIMPLE: only the features described, NO extra accessories, NO patterns, NO jewellery, NO background details.
+
+Each portrait: head and shoulders (a bust cut at the chest), facing slightly RIGHT, cute chibi proportions (big head), the whole bust about 60 art pixels tall and 70 art pixels wide (360x420 image pixels at most), a calm friendly expression that shows the personality.
+
+Save as art-src/codex/raw/staff_portraits_1.png — exactly 1440x1152: a grid of 2 columns x 2 rows of equal cells (720x576), one bust centred in each with the chest cut on the same baseline near the bottom of the cell. Background: one perfectly flat solid magenta #FF00FF everywhere (no halo, no shadow). No text, no frames, no grid lines. Nothing touches its cell edge.
+
+cell 1 (top left) OLD PARK, gruff old charcoal-kiln man: short grey hair, thick grey eyebrows, a grumpy flat mouth, a small soot smudge on one cheek, a plain dark-indigo work jacket.
+cell 2 (top right) AUNTIE SUNDEOK, plump cheerful market-restaurant lady: short dark curly hair under a plain red headscarf, rosy cheeks, mouth open mid-chatter, a plain pink blouse with a plain white apron strap.
+cell 3 (bottom left) LITTLE KKAEBI, a small cheeky goblin child: sky-blue skin, ONE short ivory horn on top of the head, messy black hair, a grin with one small fang, a plain yellow vest.
+cell 4 (bottom right) DALLAE, shy young mountain-village woman: long black hair in one low braid over the shoulder, a soft blush, eyes a little lowered, a plain pale-yellow hanbok jacket.
+
+Reply only with the saved file path.

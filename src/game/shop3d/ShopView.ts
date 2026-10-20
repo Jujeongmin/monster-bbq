@@ -26,7 +26,7 @@ const GUEST_HEAD = 50; // a bubble sits on top of a guest this high
 const HERO = ["walk_0", "walk_1", "walk_2", "walk_3", "carry_0", "carry_1", "carry_2", "carry_3", "serve", "scrub_0", "scrub_1", "pour", "stand"];
 // Grandma's old friends at work: their own walk frames once approved and in (art/test/staff/<id>/), until
 // then the grandchild's frames with a name tag over them (the HUD's)
-const STAFF_FRAMES = ["walk_0", "walk_1", "walk_2", "walk_3"];
+const STAFF_FRAMES = ["walk_0", "walk_1", "walk_2", "walk_3", "work"];
 const hasStaffArt = (id: StaffId) => hasArt(`test/staff/${id}/walk_0.png`);
 const KITCHEN_X = 30; // the kitchen helper at Bandal's right, behind the pass, clear of the pass's prompt (world units from its centre)
 const PROPS = ["stool", "plate_dirty", "drink_cart", "coal_box", "cup_tea", "cup_cider", "bowl_sikhye"];
@@ -70,8 +70,10 @@ function waiterTex(pose: Pose, time: number, dish: boolean): string {
 
 function helperTex(h: HelperLook, time: number): string {
   if (!hasStaffArt(h.id)) return waiterTex(h.pose, time, !!h.carried?.startsWith("dish_"));
+  // scrubbing, pouring, tipping in charcoal: their one working picture
+  if (h.pose === "scrub" || h.pose === "grind" || h.pose === "pour" || h.pose === "serve") return `staff_${h.id}_work`;
   const moving = h.pose === "walk" || h.pose === "carry";
-  return `staff_${h.id}_walk_${moving ? Math.floor(time / 125) % 4 : 0}`;
+  return `staff_${h.id}_walk_${moving ? Math.floor(time / 125) % 4 : 1}`;
 }
 
 // where a friend stands in the room: the kitchen helper beside Bandal, the others in the grandchild's

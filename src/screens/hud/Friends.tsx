@@ -5,7 +5,7 @@ import { POSITIONS, RARITIES, STAFF, STAFF_IDS, STATS, statOf, type Position, ty
 import { staffSlots } from "../../../shared/growth";
 import type { SaveData } from "../../../shared/save";
 import { staffAwakenCost } from "../../../shared/staff/actions";
-import { artUrl } from "../../game/art";
+import { artUrl, hasArt } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
 import { knowsCharcoal } from "./hud";
 
@@ -13,6 +13,8 @@ import { knowsCharcoal } from "./hud";
 // line about Grandma, stars and shards, the position they work), and the postcards that call more — with
 // the rates shown as the law asks and how far the sure legend is. Pictures stand in until approved.
 type Tab = "friends" | "postcards";
+// a friend's card portrait once approved and in (art/test/staff/<id>/portrait.png, 120x96)
+const Face = ({ id }: { id: StaffId }) => (hasArt(`test/staff/${id}/portrait.png`) ? <img className="friend-face" src={artUrl(`test/staff/${id}/portrait.png`)} alt="" /> : null);
 type Result = { id: StaffId; isNew: boolean; shards: number };
 
 export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; busy: boolean; act: (a: Action) => Promise<SaveData | null>; onShop: () => void; onClose: () => void }) {
@@ -66,6 +68,7 @@ export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; 
                 const at = posOf(id);
                 return (
                   <div key={id} className={`ui-box friend-card ${STAFF[id].rarity}`}>
+                    <Face id={id} />
                     <span className="friend-name">
                       {t(`staff.name.${id}` as StringKey)} <span className="friend-rarity">{rarity}</span> {"★".repeat(Math.min(5, mine.stars))}
                       {mine.stars > 5 ? `+${mine.stars - 5}` : ""}
@@ -127,9 +130,10 @@ export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; 
               )}
             </div>
             {results && (
-              <div className="friends-results">
+              <div className={`friends-results${results.length > 1 ? " many" : ""}`}>
                 {results.map((r, i) => (
                   <div key={r.id} className={`ui-box friend-card result ${STAFF[r.id].rarity}`} style={{ animationDelay: `${i * 0.25}s` }}>
+                    <Face id={r.id} />
                     <span className="friend-name">{t(`staff.name.${r.id}` as StringKey)}</span>
                     <span className="friend-rarity">{t(`staff.rarity.${STAFF[r.id].rarity}` as StringKey)}</span>
                     <span className="friend-new">{r.isNew ? t("friends.new") : t("friends.shards", { n: r.shards })}</span>

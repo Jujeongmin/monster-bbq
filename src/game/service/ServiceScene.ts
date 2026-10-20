@@ -141,6 +141,8 @@ export class ServiceScene extends Phaser.Scene {
     loadCharacterArt(this);
     loadUiArt(this);
     this.load.image("hall", artUrl(BIG_HALL ? "test/shop/hall480.png" : "test/shop/hall.png"));
+    // tonight's friends who have their own pictures (staff design 9)
+    for (const f of Object.values(this.data0.staff ?? {})) if (f && hasArt(`test/staff/${f.id}/walk_0.png`)) for (const n of ["walk_0", "walk_1", "walk_2", "walk_3", "work"]) this.load.image(`staff_${f.id}_${n}`, artUrl(`test/staff/${f.id}/${n}.png`));
     if (WAITER_ART) for (const [pose, n] of Object.entries(WAITER_FRAMES)) for (let i = 0; i < n; i++) this.load.image(`waiter_${pose}_${i}`, artUrl(`test/waiter/${pose}_${i}.png`));
     for (const p of PROPS) this.load.image(`prop_${p}`, artUrl(`test/shop/${p}.png`));
     for (const y of YOKAI) for (const p of POSES) this.load.image(`yk_${y}_${p}`, artUrl(`test/yokai/counter/${y}_${p}.png`));
@@ -346,6 +348,11 @@ export class ServiceScene extends Phaser.Scene {
       const x = h.job === "kitchen" ? LAYOUT.pass - 70 : h.x;
       const moving = h.job !== "kitchen" && h.busyMs === 0 && !!h.target;
       v.body.setX(x).setFlipX(h.facing < 0);
+      if (this.textures.exists(`staff_${h.id}_walk_0`)) {
+        v.body.setTexture(`staff_${h.id}_${h.busyMs > 0 ? "work" : `walk_${moving ? Math.floor(time / 125) % 4 : 1}`}`);
+        v.name.setPosition(x, v.body.y - v.body.displayHeight - 2);
+        return;
+      }
       if (moving && !v.body.anims.isPlaying) v.body.play(WAITER_ART ? "waiter_walk" : "hunter_walk_side");
       if (!moving && v.body.anims.isPlaying) v.body.stop().setTexture(WAITER_ART ? "waiter_stand_0" : "hunter_side_1");
       v.name.setPosition(x, v.body.y - v.body.displayHeight - 2);
