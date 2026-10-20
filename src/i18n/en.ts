@@ -82,6 +82,8 @@ export const en: Record<keyof typeof ko, string> = {
   "error.no_menu": "Pick tonight's menu first.",
   "error.no_ingredients": "No ingredients for the menu. Bring some back from the hunt.",
   "error.no_slot": "No menu slot left",
+  "error.no_shards": "Not enough shards",
+  "error.slot_full": "No staff slot left",
   "error.closeShop": "Stay closed tonight",
   "error.bad_hunt": "This hunt's haul was not accepted.",
   "error.emptyHanded": "Come home empty-handed",
