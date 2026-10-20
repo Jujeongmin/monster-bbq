@@ -1,4 +1,5 @@
 import { isDishId, type DishId } from "./content/dishes";
+import { isPosition, isStaffId, type Position, type StaffId } from "./content/staff";
 import { isItemId, parseItemKey, type ItemId } from "./content/items";
 import { RECIPES } from "./content/recipes";
 import { BALANCE } from "./balance";
@@ -34,6 +35,8 @@ export interface PendingService {
   // remake step 4), and the adds already applied (each addId once)
   planMenu: DishId[];
   adds: string[];
+  // tonight's friends as the shop opened (the settlement checks the night against them)
+  staff: Partial<Record<Position, { id: StaffId; stars: number }>>;
 }
 
 // The last settled service, for the settle screen (and to ignore a resent report).
@@ -92,6 +95,9 @@ export interface SaveData {
   charcoal: number;
   stars: Partial<Record<AwakenTarget, number>>;
   vip: { spent: number; day: number };
+  // Grandma's old friends (staff design 7): who came (shards from repeats, stars), who works where, the
+  // postcards sent (for the pity) and the free first one, and recent pull ids (a resent pull counts once)
+  staff: StaffSave;
   shop: { firstBuy: string[]; purchases: string[] };
 }
 
@@ -121,6 +127,7 @@ export function newSave(): SaveData {
     charcoal: 0,
     stars: {},
     vip: { spent: 0, day: 0 },
+    staff: emptyStaff(),
     shop: { firstBuy: [], purchases: [] },
   };
 }
@@ -193,7 +200,7 @@ function readService(raw: unknown): PendingService | null {
   // an older save opened with exactly its dishes
   const plan = Array.isArray(r.planMenu) ? r.planMenu.filter(isDishId) : [];
   const adds = Array.isArray(r.adds) ? r.adds.filter((x): x is string => typeof x === "string").slice(-50) : [];
-  return { id: r.id, seed: r.seed, startedAt: r.startedAt, dishes, planMenu: plan.length ? plan : dishes.map((d) => d.dish), adds };
+  return { id: r.id, seed: r.seed, startedAt: r.startedAt, dishes, planMenu: plan.length ? plan : dishes.map((d) => d.dish), adds, staff: readNightStaff(r.staff) };
 }
 
 function readUpgrades(raw: unknown): Partial<Record<UpgradeId, number>> {
@@ -353,8 +360,46 @@ export function readSave(raw: unknown): SaveData {
     charcoal: count(r.charcoal),
     stars: readStars(r.stars),
     vip: { spent: count(vip.spent), day: count(vip.day) },
+    staff: readStaff(r.staff),
     shop: { firstBuy: strings(shop.firstBuy, 50), purchases: strings(shop.purchases, 200) },
   };
+}
+
+export interface StaffSave {
+  owned: Partial<Record<StaffId, { shards: number; stars: number }>>;
+  roster: Partial<Record<Position, StaffId>>;
+  pulls: number;
+  sinceLegend: number;
+  freeUsed: boolean;
+  pullIds: string[];
+}
+export const emptyStaff = (): StaffSave => ({ owned: {}, roster: {}, pulls: 0, sinceLegend: 0, freeUsed: false, pullIds: [] });
+
+function readStaff(raw: unknown): StaffSave {
+  const r = (raw ?? {}) as Partial<Record<keyof StaffSave, unknown>>;
+  const out = emptyStaff();
+  if (r.owned && typeof r.owned === "object")
+    for (const [id, v] of Object.entries(r.owned)) {
+      const o = v as { shards?: unknown; stars?: unknown } | null;
+      if (isStaffId(id) && o && typeof o === "object") out.owned[id] = { shards: count(o.shards), stars: Math.min(MAX_STARS, count(o.stars)) };
+    }
+  if (r.roster && typeof r.roster === "object")
+    for (const [pos, id] of Object.entries(r.roster)) if (isPosition(pos) && isStaffId(id) && out.owned[id] && !Object.values(out.roster).includes(id)) out.roster[pos] = id;
+  out.pulls = count(r.pulls);
+  out.sinceLegend = count(r.sinceLegend);
+  out.freeUsed = r.freeUsed === true;
+  out.pullIds = strings(r.pullIds, 20);
+  return out;
+}
+
+function readNightStaff(raw: unknown): PendingService["staff"] {
+  const out: PendingService["staff"] = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [pos, v] of Object.entries(raw)) {
+    const o = v as { id?: unknown; stars?: unknown } | null;
+    if (isPosition(pos) && o && isStaffId(o.id)) out[pos] = { id: o.id, stars: Math.min(MAX_STARS, count(o.stars)) };
+  }
+  return out;
 }
 
 function readStars(raw: unknown): Partial<Record<AwakenTarget, number>> {

@@ -38,6 +38,7 @@ const FRESH = {
   charcoal: 0,
   stars: {},
   vip: { spent: 0, day: 0 },
+  staff: { owned: {}, roster: {}, pulls: 0, sinceLegend: 0, freeUsed: false, pullIds: [] },
   shop: { firstBuy: [], purchases: [] },
 };
 
@@ -61,7 +62,7 @@ describe("readSave (version 9)", () => {
     reputation: 12,
     upgrades: { melee: 2 },
     lunchbox: ["grilled_belly"],
-    service: { id: "s1", seed: 9, startedAt: 2000, dishes: [{ dish: "grilled_belly", plates: 8, price: 46 }], planMenu: ["grilled_belly"], adds: [] },
+    service: { id: "s1", seed: 9, startedAt: 2000, dishes: [{ dish: "grilled_belly", plates: 8, price: 46 }], planMenu: ["grilled_belly"], adds: [], staff: {} },
     lastService: { id: "s0", served: 3, left: 1, sales: 120, tips: 0, drinks: 0, cleaned: 0, happy: 3, repDelta: 1, dishes: [{ dish: "grilled_belly", plates: 3, gold: 120 }] },
     bossKey: true,
     pages: ["forest"],
@@ -70,6 +71,7 @@ describe("readSave (version 9)", () => {
     stars: { melee: 3, grilled_belly: 1 },
     vip: { spent: 600, day: 3 },
     shop: { firstBuy: ["charcoal_1"], purchases: ["p-1"] },
+    staff: { owned: { park: { shards: 1, stars: 2 } }, roster: { coal: "park" }, pulls: 3, sinceLegend: 3, freeUsed: true, pullIds: ["x"] },
   };
   it("reads a version 8 save as version 9 with no charcoal, stars, VIP or purchases", () => {
     const s = readSave({ ...valid, version: 8, charcoal: undefined, stars: undefined, vip: undefined, shop: undefined });
@@ -235,5 +237,17 @@ describe("tonight's opening menu (shop remake step 4)", () => {
   it("keeps a saved planMenu and its adds", () => {
     const s = readSave({ ...newSave(), stage: "kitchen", service: { id: "s", seed: 1, startedAt: 0, dishes: [{ dish: "grilled_belly", plates: 3, price: 40 }, { dish: "garlic_neck", plates: 3, price: 50 }], planMenu: ["grilled_belly"], adds: ["a1"] } });
     expect(s.service).toMatchObject({ planMenu: ["grilled_belly"], adds: ["a1"] });
+  });
+});
+
+describe("Grandma's old friends in the save", () => {
+  it("reads an older save with no friends", () => {
+    const s = readSave({ ...newSave(), staff: undefined, stage: "kitchen", service: { id: "s", seed: 1, startedAt: 0, dishes: [{ dish: "grilled_belly", plates: 3, price: 40 }] } });
+    expect(s.staff).toEqual({ owned: {}, roster: {}, pulls: 0, sinceLegend: 0, freeUsed: false, pullIds: [] });
+    expect(s.service!.staff).toEqual({});
+  });
+  it("keeps valid friends and drops the rest", () => {
+    const s = readSave({ ...newSave(), staff: { owned: { park: { shards: 2, stars: 1 }, ghost: { shards: 1, stars: 0 } }, roster: { coal: "park", sing: "park", serve: "jang" }, pulls: 5, sinceLegend: 5, freeUsed: true, pullIds: ["a", 3] } });
+    expect(s.staff).toEqual({ owned: { park: { shards: 2, stars: 1 } }, roster: { coal: "park" }, pulls: 5, sinceLegend: 5, freeUsed: true, pullIds: ["a"] });
   });
 });

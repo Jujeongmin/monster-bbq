@@ -43,6 +43,7 @@ export const menuSlots = (save: Pick<SaveData, "upgrades">) => at(E.menu, level(
 export const stools = (save: Pick<SaveData, "upgrades">) => at(E.seats, level(save, "seats"));
 export const walkMul = (save: Pick<SaveData, "upgrades">) => at(E.shoes, level(save, "shoes"));
 export const coalPerDish = (save: Pick<SaveData, "upgrades">) => at(BALANCE.service.charcoal.perDish, level(save, "coalBin"));
+export const staffSlots = (save: Pick<SaveData, "upgrades">) => at(E.staffSlots, level(save, "staffSlots"));
 export const lunchSlots = (save: Pick<SaveData, "upgrades">) => at(E.lunch, level(save, "lunchbox"));
 
 // Side weapons (hunt v3 design 4.4): owned from level 1; shots per hunt by level.

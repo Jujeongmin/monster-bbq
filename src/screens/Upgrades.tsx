@@ -18,7 +18,7 @@ type Group = "hunt" | "gear" | "shop";
 const GROUPS: Record<Group, UpgradeId[]> = {
   hunt: ["melee", "ranged", "bag", "lunchbox", "sling", "sleepGun", "netGun", "firecracker"],
   gear: ["boots", "lantern", "tank", "armor"],
-  shop: ["menu", "seats", "shoes", "coalBin"],
+  shop: ["menu", "seats", "shoes", "coalBin", "staffSlots"],
 };
 // one tab per group and the awakening, every card the same size, so nothing scrolls (user, 2026-10-16)
 type Tab = Group | "awaken";
@@ -33,6 +33,7 @@ const ICON: Record<UpgradeId, string> = {
   seats: "test/shop/stool.png",
   shoes: "test/ui/upg_boots.png",
   coalBin: "test/shop/coal_box.png",
+  staffSlots: "test/ui/hud/app_menu.png",
   sling: "test/ui/side/sling.png",
   sleepGun: "test/ui/side/sleepGun.png",
   netGun: "test/ui/side/netGun.png",
@@ -68,6 +69,8 @@ function effect(id: UpgradeId, lv: number): string {
       return pair(G.menu, "upgrade.fx.menu");
     case "seats":
       return pair(G.seats, "upgrade.fx.stools");
+    case "staffSlots":
+      return pair(G.staffSlots, "upgrade.fx.staffSlots");
     case "shoes":
       return pair(G.shoes, "upgrade.fx.walk", percent);
     case "coalBin":

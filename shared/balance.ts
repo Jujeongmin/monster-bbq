@@ -115,8 +115,12 @@ export const BALANCE: {
   // lunchbox effects on the hunt: health back per gold of the dish's price, and a few dishes that
   // also put a spring in the step
   lunch: { healPerGold: number; speedDishes: DishId[]; speedMul: number; speedMs: number };
+  // postcards to Grandma's old friends (staff design 6): rates published in the game, a legend by the
+  // hundredth, a hero in every ten
+  staff: { rates: Record<"legend" | "hero" | "rare" | "common", number>; pity: number; cost: { one: number; ten: number }; shards: { dupe: number; dupeLegend: number } };
   // what each upgrade level does (index = level - 1)
   growth: {
+    staffSlots: number[];
     meleeDamage: number[];
     rangedDamage: number[];
     rangedRange: number[];
@@ -344,8 +348,11 @@ export const BALANCE: {
     // the night shop (plan 07b, user-approved draft numbers 2026-10-16)
     shoes: { base: 1, costs: [500, 1500] },
     coalBin: { base: 1, costs: [600, 1800] },
+    // Grandma's old friends at work (staff design): one to start, three at most
+    staffSlots: { base: 1, costs: [1500, 4000] },
     tank: { base: 1, costs: [600, 1500, 3000], mats: [[{ item: "frog_skin", n: 2 }], [{ item: "snake_scale", n: 3 }], [{ item: "crab_shell", n: 3 }]] },
   },
+  staff: { rates: { legend: 0.01, hero: 0.05, rare: 0.25, common: 0.69 }, pity: 100, cost: { one: 30, ten: 270 }, shards: { dupe: 1, dupeLegend: 3 } },
   lunch: { healPerGold: 0.8, speedDishes: ["honey_rabbit", "baeksuk"], speedMul: 1.2, speedMs: 10000 },
   growth: {
     meleeDamage: [10, 14, 19, 26],
@@ -356,6 +363,7 @@ export const BALANCE: {
     light: [90, 130, 170],
     bag: [12, 15, 18, 21, 24],
     menu: [2, 3, 4, 5],
+    staffSlots: [1, 2, 3],
     // stools at the counter (the seats upgrade)
     // three to start, five at most, spaced wide like Dave's bar (user, 2026-10-16)
     seats: [3, 4, 5],

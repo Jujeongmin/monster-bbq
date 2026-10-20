@@ -237,7 +237,7 @@ function openShop(save: SaveData, a: Record<string, unknown>, ctx: ActionContext
   if (!plan) return { save, error: "no_ingredients" };
   const seed = Math.floor(ctx.random() * 2 ** 31);
   const id = `s${ctx.now.toString(36)}${Math.floor(ctx.random() * 1e9).toString(36)}`;
-  return { save: { ...save, items: plan.items, menu: lines, service: { id, seed, startedAt: ctx.now, dishes: plan.dishes, planMenu: lines.map((l) => l.dish), adds: [] } } };
+  return { save: { ...save, items: plan.items, menu: lines, service: { id, seed, startedAt: ctx.now, dishes: plan.dishes, planMenu: lines.map((l) => l.dish), adds: [], staff: {} } } };
 }
 
 // The server's rules for every change to a save (the in-page LocalTransport runs the same code).
