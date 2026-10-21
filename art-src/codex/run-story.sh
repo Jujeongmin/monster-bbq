@@ -25,8 +25,8 @@ for n in sys.argv[1:]:
     if not src.exists():
         print("missing", src); continue
     # three sheet pixels to one by each block's most common colour, the colours kept as drawn (2026-10-21:
-    # 320x180 after cutting to 48 colours broke the faces and lost the green and red); lid0 alone is drawn
-    # on an 8-pixel grid and is read at 192x108 instead
+    # 320x180 after cutting to 48 colours broke the faces and lost the green and red); lid0 redrawn the
+    # same day at the other cuts' density (the 8-pixel-grid one looked broken)
     im = Image.open(src).convert("RGB")
     W, H = 512, 288
     bw, bh = im.width / W, im.height / H
