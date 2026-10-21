@@ -81,8 +81,9 @@
 .post-send { gap: calc(6px * var(--s)); }
 .post-ten { align-self: flex-start; font-size: var(--fs-small); }
 .post-results { display: grid; grid-template-columns: 1fr 1fr; gap: calc(2px * var(--s)) calc(6px * var(--s)); }
-.post-card { display: grid; grid-template-columns: calc(20px * var(--s)) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: calc(4px * var(--s)); align-items: center; animation: post-in 0.3s steps(4) both; }
-.post-card .row-face { grid-row: 1 / 3; }
+.post-card { display: grid; grid-template-columns: calc(40px * var(--s)) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: calc(4px * var(--s)); align-items: center; animation: post-in 0.3s steps(4) both; }
+/* who came, after the door (Visit.tsx): their faces big enough to know at a glance */
+.post-card .row-face { grid-row: 1 / 3; width: calc(40px * var(--s)); height: calc(32px * var(--s)); }
 .post-card .name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .post-card .new { color: #c0301c; font-weight: 700; }
 .post-card .sub { color: var(--paper-ink-soft); }

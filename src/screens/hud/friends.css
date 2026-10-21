@@ -95,3 +95,26 @@
 .friend-pips { display: flex; gap: calc(2px * var(--s)); }
 .friend-pips img { width: calc(16px * var(--s)); height: calc(20px * var(--s)); image-rendering: pixelated; }
 .friend-charm { display: flex; align-items: center; justify-content: center; box-sizing: border-box; cursor: default; }
+
+/* who came for the postcards (Visit.tsx, reveal B): the door fills the screen at whole art pixels, the
+   friend in the doorway lit in their rarity's colour */
+.visit { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(6px * var(--s)); background: #140a04; cursor: pointer; --glow: #fff3d8; }
+.visit.rare { --glow: #7ab0ff; }
+.visit.hero { --glow: #d08aff; }
+.visit.legend { --glow: #ffd166; }
+.visit-stage { position: relative; width: min(100%, calc(512px * var(--s))); aspect-ratio: 512 / 288; }
+.visit-door { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+/* the knock: two quick shakes of the closed door */
+.visit-stage.knock .visit-door { animation: visit-knock 0.7s steps(1) infinite; }
+@keyframes visit-knock { 0%, 40%, 100% { transform: none; } 10%, 30% { transform: translateX(calc(1px * var(--s))); } 20% { transform: translateX(calc(-1px * var(--s))); } }
+/* the doorway is x 172-340, y 68-220 of the 512x288 picture: the portrait (120x96) stands on its floor */
+.visit-friend { position: absolute; left: calc(196 / 512 * 100%); top: calc(124 / 288 * 100%); width: calc(120 / 512 * 100%); height: calc(96 / 288 * 100%); image-rendering: pixelated; filter: drop-shadow(0 0 calc(3px * var(--s)) var(--glow)) drop-shadow(0 0 calc(6px * var(--s)) var(--glow)); animation: visit-in 0.5s steps(5) both; }
+@keyframes visit-in { from { opacity: 0; transform: translateY(calc(8px * var(--s))); } }
+.visit-card { display: flex; align-items: baseline; gap: calc(8px * var(--s)); padding: calc(2px * var(--s)) calc(12px * var(--s)); animation: visit-in 0.3s steps(3) both; }
+.visit-name { font-size: calc(14px * var(--s)); }
+.visit-rarity { color: var(--paper-ink-soft); }
+.visit.rare .visit-rarity { color: #3a6ab0; } .visit.hero .visit-rarity { color: #8a3ab0; } .visit.legend .visit-rarity { color: #c88a10; }
+.visit-new { color: #c0301c; }
+.visit-shards { color: var(--paper-ink-soft); }
+.visit-lines { display: flex; gap: calc(16px * var(--s)); }
+@media (prefers-reduced-motion: reduce) { .visit-stage.knock .visit-door, .visit-friend, .visit-card { animation: none; } }

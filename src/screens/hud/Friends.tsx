@@ -11,6 +11,7 @@ import { sfx } from "../../audio/sfx";
 import { BookWindow, BuyCard, Price } from "./Book";
 import { knowsCharcoal } from "./hud";
 import { PIP_COUNT, pipsOf } from "./pips";
+import { Visit } from "./Visit";
 
 // Grandma's old friends in her notebook (staff design 6), on the notebook's two pages (user, 2026-10-20):
 // the friends down the left page and the one picked on the right; the postcards with their rates (shown as
@@ -25,6 +26,7 @@ export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; 
   const [tab, setTab] = useState<Tab>(Object.keys(save.staff.owned).length ? "friends" : "postcards");
   const [results, setResults] = useState<Result[] | null>(null);
   const [picked, setPicked] = useState<StaffId | null>(null);
+  const [visiting, setVisiting] = useState<Result[] | null>(null);
   const st = save.staff;
 
   async function send(count: 1 | 10, free = false) {
@@ -38,9 +40,9 @@ export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; 
       if (b && !a) out.push({ id, isNew: true, shards: b.shards });
       else if (a && b && b.shards > a.shards) out.push({ id, isNew: false, shards: b.shards - a.shards });
     }
-    // a new friend's own sound, else the postcards' reveal
-    sfx.play(out.some((r) => r.isNew) ? "newFriend" : "postcard");
+    // they come to the door one by one (Visit), then the summary on the page
     setResults(out);
+    setVisiting(out);
   }
 
   const tabs = (["friends", "postcards"] as Tab[]).map((k) => (
@@ -54,13 +56,16 @@ export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; 
 
   if (tab === "postcards")
     return (
-      <BookWindow
-        label={t("friends.tab.postcards")}
-        tabs={tabs}
-        onClose={onClose}
-        left={<PostcardRates save={save} />}
-        right={results ? <PostcardResults results={results} onAgain={() => setResults(null)} /> : <PostcardSend save={save} busy={busy} onSend={send} onShop={onShop} />}
-      />
+      <>
+        <BookWindow
+          label={t("friends.tab.postcards")}
+          tabs={tabs}
+          onClose={onClose}
+          left={<PostcardRates save={save} />}
+          right={results ? <PostcardResults results={results} onAgain={() => setResults(null)} /> : <PostcardSend save={save} busy={busy} onSend={send} onShop={onShop} />}
+        />
+        {visiting && visiting.length > 0 && <Visit visitors={visiting} onDone={() => setVisiting(null)} />}
+      </>
     );
 
   return (

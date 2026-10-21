@@ -1,0 +1,7 @@
+Use your image generation tool (do not write code to draw) to create ONE image: exactly the attached picture (the same entrance, same framing, same lanterns, same red noren curtain, same walls and floor, every pixel in the same place), except the two sliding door panels are now slid fully open to the sides, and the open doorway shows the dusk outside as a soft warm light: a plain warm cream-yellow glow filling the doorway, a few light rays falling onto the wooden floor in front of it. The doorway itself is empty (no person, no silhouette): a visitor will be placed there by the game.
+
+Style: identical to the attached picture: the same pixel density (as if drawn at 512x288 and scaled up 3 times), crisp edges, flat colours with 2-3 shades per material, no blur, no soft painting, no anti-aliasing.
+
+Save as art-src/codex/raw/visit_door_open.png — a 16:9 image exactly 1536x864, one full-frame picture (no panel border, no text, no letters, no UI, no people).
+
+Reply only with the saved file path.

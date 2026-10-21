@@ -1,0 +1,7 @@
+Use your image generation tool (do not write code to draw) to create ONE image: the front entrance of Grandma's grill shop seen from inside, straight on, at dusk. A wooden Korean sliding door with paper lattice panels, closed, a short red noren curtain hanging over its top, a warm paper lantern on each side, a little of the wooden wall and floor around it (the same shop as the first attached picture). The paper panels glow faintly from the evening outside. Nobody there yet: the door is closed and the doorway is the centre of the picture with calm empty space around it. Cozy, a moment of waiting for a visitor.
+
+Style: match the attached references exactly (the first is the game's approved shop interior, the second an approved cut of the same game's story). The same pixel density (as if drawn at 512x288 and scaled up 3 times), crisp edges, flat colours with 2-3 shades per material, clear separate colours, no blur, no glow haze, no soft painting, no anti-aliasing. Comic and cute, warm.
+
+Save as art-src/codex/raw/visit_door_closed.png — a 16:9 image exactly 1536x864, one full-frame picture (no panel border, no text, no letters, no UI, no people).
+
+Reply only with the saved file path.
