@@ -23,6 +23,8 @@ export function appAlerts(save: SaveData, opened: ReadonlySet<App>, phase: Phase
     cookbook: () => caught && fresh("cookbook"),
     menu: () => fresh("menu"),
     shop: () => knows && fresh("shop"),
+    // the ranking from the second day (the first day is the tutorial's)
+    ranking: () => save.day >= 2 && fresh("ranking"),
     upgrade: () => UPGRADE_IDS.some((id) => can(save, { type: "buyUpgrade", id })),
     awaken: () => knows && (fresh("awaken") || [...AWAKEN_GEAR, ...Object.keys(DISHES)].some((target) => can(save, { type: "awaken", target, from: starLevel(save, target as never) }))),
     friends: () => !save.staff.freeUsed || STAFF_IDS.some((id) => save.staff.owned[id] && can(save, { type: "awakenStaff", staffId: id, from: save.staff.owned[id]!.stars })),

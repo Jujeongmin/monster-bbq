@@ -1,3 +1,4 @@
+import { BALANCE } from "../balance";
 import { describe, expect, it } from "vitest";
 import { applyAction, type ActionContext } from "../actions";
 import { STAFF } from "../content/staff";
@@ -7,7 +8,8 @@ import { rollRarity } from "./actions";
 // a fixed stream of numbers in [0, 1)
 const lcg = (seed: number) => () => ((seed = (seed * 1664525 + 1013904223) % 2 ** 32) / 2 ** 32);
 const ctx = (random: () => number = lcg(7)): ActionContext => ({ now: 1, random });
-const rich = (over: Partial<SaveData> = {}): SaveData => ({ ...newSave(), charcoal: 1000, gold: 100_000, ...over });
+// every power milestone already paid, so the charcoal counts only the postcards
+const rich = (over: Partial<SaveData> = {}): SaveData => ({ ...newSave(), charcoal: 1000, gold: 100_000, powerRewards: BALANCE.power.milestones.map((m) => m.at), ...over });
 const pull = (save: SaveData, count: 1 | 10, extra: object = {}, c = ctx()) => applyAction(save, { type: "summon", count, pullId: `p${Math.random()}`, ...extra }, c);
 const owned = (s: SaveData) => Object.keys(s.staff.owned);
 

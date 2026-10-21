@@ -5,6 +5,18 @@ describe("Server", () => {
     expect(s.day).toBe(1);
   });
 
+  test("puts a named shop on the power ranking, its own line marked", async (server) => {
+    server.connect({ account: "ranked" });
+    await server.load();
+    const s = await server.act({ type: "nameShop", name: "곰네 고깃집" });
+    expect(s.shopName).toBe("곰네 고깃집");
+    const r = await server.ranking();
+    const mine = r.top.find((l: { me: boolean }) => l.me);
+    expect(mine.name).toBe("곰네 고깃집");
+    expect(mine.power).toBeGreaterThan(0);
+    expect(r.mine.rank).toBeGreaterThanOrEqual(1);
+  });
+
   test("opens a hunt with its own seed", async (server) => {
     const s = await server.act({ type: "startHunt", zone: "forest", side: "sling" });
     expect(s.hunt.zone).toBe("forest");

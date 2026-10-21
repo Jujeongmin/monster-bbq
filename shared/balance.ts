@@ -182,6 +182,8 @@ export const BALANCE: {
   // spent, each adding a share to charcoal bundles and vipDaily charcoal a day per level; the first boss
   // of a chapter gives bossCharcoal the first time; after that each boss taken gives bossRepeat (user,
   // 2026-10-21: free players had no way to earn charcoal again)
+  // the shop's power for the ranking (shared/power.ts, user 2026-10-21) and the charcoal each milestone pays once
+  power: { upgradeLevel: number; star: number; dishKnown: number; dishLevel: number; rarity: Record<"common" | "rare" | "hero" | "legend", number>; staffStar: number; milestones: { at: number; charcoal: number }[] };
   shop: { charcoalPerVx: number; vipAt: number[]; vipBonus: number[]; vipDaily: number; bossCharcoal: number; bossRepeat: { tusk: number; king: number }; keepPurchases: number };
 } = {
   hunt: {
@@ -402,5 +404,20 @@ export const BALANCE: {
     walk: { speed: 165, runMul: 1.6, carryMul: 0.9 },
   },
   awaken: { mul: 1.1, goldPerStarSq: 200, goldUntil: 10, charcoal: [5, 8, 10, 14, 18, 22, 26, 30, 35, 40, 120, 160, 200, 260, 320, 380, 460, 540, 560, 600] },
+  power: {
+    upgradeLevel: 100,
+    star: 150,
+    dishKnown: 200,
+    dishLevel: 100,
+    rarity: { common: 300, rare: 800, hero: 2000, legend: 5000 },
+    staffStar: 0.1,
+    milestones: [
+      { at: 3_000, charcoal: 5 },
+      { at: 10_000, charcoal: 10 },
+      { at: 30_000, charcoal: 20 },
+      { at: 100_000, charcoal: 50 },
+      { at: 300_000, charcoal: 100 },
+    ],
+  },
   shop: { charcoalPerVx: 0.3, vipAt: [100, 500, 1500, 3000, 6000, 12000, 25000, 45000, 70000, 100000], vipBonus: [0.02, 0.04, 0.06, 0.08, 0.1, 0.13, 0.16, 0.19, 0.22, 0.25], vipDaily: 2, bossCharcoal: 50, bossRepeat: { tusk: 3, king: 10 }, keepPurchases: 200 },
 };

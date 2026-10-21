@@ -5,7 +5,7 @@ import type { LidFace } from "./dialogue/Dialogue";
 // due, and which were seen. Seen tips are a convenience of this browser, not progress (a new device just
 // shows them once more), so they live in local storage and a blocked storage only means no memory.
 
-export type TipId = "open" | "cooked" | "carry" | "coalLow" | "drink" | "mess" | "angry" | "soldOut" | "charcoal" | "friends" | "awakenApp" | "tutDoor" | "tutHunt" | "tutCart" | "tutRecipe" | "tutLunch" | "tutKitchen" | "huntControls" | "appBag" | "appUpgrade" | "appAwaken" | "appCookbook" | "appMenu" | "appShop" | "capture";
+export type TipId = "open" | "cooked" | "carry" | "coalLow" | "drink" | "mess" | "angry" | "soldOut" | "charcoal" | "friends" | "awakenApp" | "tutDoor" | "tutHunt" | "tutCart" | "tutRecipe" | "tutLunch" | "tutKitchen" | "huntControls" | "appBag" | "appUpgrade" | "appAwaken" | "appCookbook" | "appMenu" | "appShop" | "appRanking" | "capture";
 
 export const COAL_LOW = 30;
 const KEY = "monster-bbq:tips";
@@ -43,6 +43,7 @@ export const TIP_FACE: Record<Exclude<TipId, "awakenApp">, LidFace> = {
   appCookbook: "normal",
   appMenu: "normal",
   appShop: "smug",
+  appRanking: "smug",
   capture: "smug",
 };
 

@@ -1,4 +1,5 @@
 import { applyAction, type Action, type ActionContext } from "../../shared/actions";
+import { RANKING_TOP, rankEntry, type RankingView } from "../../shared/ranking";
 import { readSave, type SaveData } from "../../shared/save";
 import { grantPurchase } from "../../shared/shop";
 
@@ -6,6 +7,8 @@ import { grantPurchase } from "../../shared/shop";
 export interface Transport {
   load(): Promise<SaveData>;
   act(action: Action): Promise<SaveData>;
+  // the power ranking's top lines and the player's rank (reads only)
+  ranking(): Promise<RankingView>;
 }
 
 // The server's rules run in the page against browser storage: local development and tests.
@@ -34,6 +37,12 @@ export class LocalTransport implements Transport {
     if (result.error) throw new Error(result.error);
     this.storage.setItem(this.key, JSON.stringify(result.save));
     return result.save;
+  }
+
+  // ?local development: a ranking of one, the player's own shop
+  async ranking(): Promise<RankingView> {
+    const entry = rankEntry(await this.load());
+    return { top: [{ ...entry, me: true }], mine: { rank: 1, entry } };
   }
 
   // ?local development: a purchase granted at once by the server's own rules (no Verse8 shop here)
@@ -86,4 +95,23 @@ export class Verse8Transport implements Transport {
   async act(action: Action): Promise<SaveData> {
     return asSave(await withTimeout(this.server.remoteFunction("act", [action]), this.timeoutMs));
   }
+
+  async ranking(): Promise<RankingView> {
+    return asRanking(await withTimeout(this.server.remoteFunction("ranking"), this.timeoutMs));
+  }
+}
+
+// The server's ranking reply, checked (a bad reply reads as an error, not a broken window).
+export function asRanking(reply: unknown): RankingView {
+  const r = reply as RankingView | null;
+  const line = (l: unknown) => {
+    const x = l as Record<string, unknown> | null;
+    if (!x || typeof x !== "object" || typeof x.name !== "string" || typeof x.power !== "number" || typeof x.vip !== "number") throw new Error("bad_reply");
+    return { name: x.name, power: x.power, vip: x.vip };
+  };
+  if (!r || typeof r !== "object" || !Array.isArray(r.top)) throw new Error("bad_reply");
+  return {
+    top: r.top.slice(0, RANKING_TOP).map((l) => ({ ...line(l), me: (l as { me?: unknown }).me === true })),
+    mine: r.mine && typeof r.mine.rank === "number" ? { rank: r.mine.rank, entry: line(r.mine.entry) } : null,
+  };
 }

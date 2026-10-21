@@ -3,7 +3,7 @@ import { newSave, type SaveData } from "../../../shared/save";
 import { appAlerts } from "./alerts";
 import type { App } from "./hud";
 
-const ALL: App[] = ["bag", "upgrade", "awaken", "friends", "cookbook", "menu", "shop"];
+const ALL: App[] = ["bag", "upgrade", "awaken", "friends", "cookbook", "menu", "shop", "ranking"];
 const opened = new Set<App>(ALL);
 const none = new Set<App>();
 const used = (s: SaveData): SaveData => ({ ...s, staff: { ...s.staff, freeUsed: true } });
@@ -32,5 +32,9 @@ describe("the notebook's ! marks (user, 2026-10-21: explanations A+C)", () => {
     const knows = { ...used(newSave()), charcoal: 5 };
     expect(appAlerts(knows, none, "hunt")).toEqual(expect.arrayContaining(["awaken", "shop"]));
     expect(appAlerts({ ...knows, gold: 200 }, new Set(ALL), "hunt")).toEqual(expect.arrayContaining(["awaken"]));
+  });
+  it("marks the ranking from the second day until first opened", () => {
+    expect(appAlerts({ ...used(newSave()), day: 2 }, none, "hunt")).toContain("ranking");
+    expect(appAlerts({ ...used(newSave()), day: 2 }, opened, "hunt")).not.toContain("ranking");
   });
 });

@@ -196,3 +196,6 @@
 /* the panel's one line to close it: its ▶ always shown, so it reads as the thing to press */
 .controls .menu-item { color: #ffd166; }
 .controls .menu-item::before { content: "▶"; position: absolute; right: 100%; }
+/* the shop's power beside the day (the ranking's number) */
+.dh-power { display: inline-flex; align-items: center; gap: calc(4px * var(--s)); padding: 0 calc(6px * var(--s)); line-height: calc(10px * var(--s)); white-space: nowrap; font-size: var(--fs-small); }
+.dh-power b { font-size: var(--fs); }

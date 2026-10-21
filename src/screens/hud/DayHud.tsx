@@ -1,4 +1,5 @@
 import type { SaveData } from "../../../shared/save";
+import { powerOf } from "../../../shared/power";
 import { vipLevel } from "../../../shared/shop";
 import { artUrl } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
@@ -18,6 +19,10 @@ export function DayHud({ save, time, quiet = false, alerts = [], onBag, onNotebo
         <div className="ui-plate dh-time">
           <img className="ui-icon" src={artUrl(HUD_ART.time[time])} alt="" />
           {t("hud.dayTime", { day: save.day, time: t(`time.${time}` as StringKey) })}
+        </div>
+        {/* the shop's power (the ranking's number, shared/power.ts) beside the day */}
+        <div className="ui-plate dh-power">
+          {t("rank.power")} <b>{powerOf(save).total.toLocaleString()}</b>
         </div>
       </div>
       <div className="ui-bar dh-res">

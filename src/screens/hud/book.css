@@ -145,3 +145,27 @@
 .book-close [data-picked].menu-item { color: #ffd166; }
 .book-close [data-picked]:not(.menu-item) { outline: calc(2px * var(--s)) solid #ffd166; outline-offset: calc(2px * var(--s)); }
 .book-close .menu-item[data-picked]::before { content: "▶"; position: absolute; right: 100%; }
+
+/* the power ranking (Ranking.tsx): the top shops on the left, the player's own on the right */
+.book .rank-title { margin: 0 0 calc(2px * var(--s)); }
+.book .rank-list { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(1px * var(--s)); }
+.book .rank-row { display: grid; grid-template-columns: calc(14px * var(--s)) minmax(0, 1fr) auto auto; align-items: center; gap: calc(4px * var(--s)); font-size: var(--fs-small); color: var(--ink); }
+.book .rank-row.me { color: #a03a10; font-weight: 700; }
+.book .rank-no { text-align: right; color: var(--paper-ink-soft); }
+.book .rank-row:nth-child(-n + 3) .rank-no { color: #c88a10; font-weight: 700; }
+.book .rank-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.book .rank-vip { color: #8a3ab0; font-weight: 700; }
+.book .rank-power { text-align: right; }
+.book .rank-mine { gap: calc(4px * var(--s)); }
+.book .rank-shop { margin: 0; }
+.book .rank-total { margin: 0; display: flex; align-items: baseline; gap: calc(6px * var(--s)); }
+.book .rank-total b { font-size: calc(var(--fs) * 2); color: #a03a10; }
+.book .rank-place { margin-left: auto; font-weight: 700; color: #c88a10; }
+.book .rank-parts { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(1px * var(--s)); font-size: var(--fs-small); color: var(--paper-ink-soft); }
+.book .rank-parts b { color: var(--ink); }
+.book .rank-next { margin: 0; color: #3f6a2a; font-size: var(--fs-small); }
+.book .rank-naming { display: grid; gap: calc(3px * var(--s)); }
+.book .rank-naming label { font-size: var(--fs-small); color: var(--paper-ink-soft); }
+.book .rank-left { justify-content: flex-start; }
+.book .rank-input { font: var(--fs) "Galmuri11", monospace; color: var(--cream); caret-color: var(--brass); padding: 0 calc(4px * var(--s)); height: calc(18px * var(--s)); outline: none; user-select: text; -webkit-user-select: text; }
+.book .rank-naming .ui-btn { justify-self: start; }

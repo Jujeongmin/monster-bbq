@@ -38,10 +38,10 @@ describe("the bag", () => {
 describe("Grandma's notebook", () => {
   it("opens the menu board only in the evening kitchen, everything else always", () => {
     const at = (p: "kitchen" | "lunch") => Object.fromEntries(notebookApps(p).map((a) => [a.app, a.open]));
-    expect(at("kitchen")).toEqual({ bag: true, upgrade: true, awaken: true, friends: true, cookbook: true, menu: true, shop: true });
+    expect(at("kitchen")).toEqual({ bag: true, upgrade: true, awaken: true, friends: true, cookbook: true, menu: true, shop: true, ranking: true });
     expect(at("lunch").menu).toBe(false);
-    // seven apps with Grandma's old friends: four on the left page, three on the right
-    expect(notebookApps("settle").map((a) => a.app)).toEqual(["bag", "upgrade", "awaken", "friends", "cookbook", "menu", "shop"]);
+    // eight apps with the power ranking: four on each page
+    expect(notebookApps("settle").map((a) => a.app)).toEqual(["bag", "upgrade", "awaken", "friends", "cookbook", "menu", "shop", "ranking"]);
   });
 });
 

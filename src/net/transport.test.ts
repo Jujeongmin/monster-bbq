@@ -58,3 +58,17 @@ describe("wantsOnline", () => {
     expect(wantsOnline("verse-1", "?local", false)).toBe(true);
   });
 });
+
+describe("the ranking reply", () => {
+  it("keeps the lines and the player's rank", async () => {
+    const { asRanking } = await import("./transport");
+    const view = asRanking({ top: [{ name: "곰네", power: 1200, vip: 1, me: true }, { name: "", power: 900, vip: 0 }], mine: { rank: 1, entry: { name: "곰네", power: 1200, vip: 1 } } });
+    expect(view.top.map((l) => l.me)).toEqual([true, false]);
+    expect(view.mine?.rank).toBe(1);
+  });
+  it("turns a malformed reply into an error, not a broken window", async () => {
+    const { asRanking } = await import("./transport");
+    expect(() => asRanking({ top: [{ name: 3 }] })).toThrow("bad_reply");
+    expect(() => asRanking(null)).toThrow("bad_reply");
+  });
+});

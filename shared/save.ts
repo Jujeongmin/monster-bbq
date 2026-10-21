@@ -99,11 +99,16 @@ export interface SaveData {
   // postcards sent (for the pity) and the free first one, and recent pull ids (a resent pull counts once)
   staff: StaffSave;
   shop: { firstBuy: string[]; purchases: string[] };
+  // the shop's name on the ranking ("" until named) and the power milestones already paid (shared/power.ts)
+  shopName: string;
+  powerRewards: number[];
 }
 
 // Everyone starts knowing chicken breast with perilla, made from the first floor alone (user, 2026-10-16):
 // the night's takings are the only gold and every dish costs gold to learn.
 const FIRST_DISH: Partial<Record<DishId, number>> = { chicken_perilla: 1 };
+
+export const SHOP_NAME_MAX = 15;
 
 export function newSave(): SaveData {
   return {
@@ -129,6 +134,8 @@ export function newSave(): SaveData {
     vip: { spent: 0, day: 0 },
     staff: emptyStaff(),
     shop: { firstBuy: [], purchases: [] },
+    shopName: "",
+    powerRewards: [],
   };
 }
 
@@ -362,6 +369,8 @@ export function readSave(raw: unknown): SaveData {
     vip: { spent: count(vip.spent), day: count(vip.day) },
     staff: readStaff(r.staff),
     shop: { firstBuy: strings(shop.firstBuy, 50), purchases: strings(shop.purchases, 200) },
+    shopName: typeof r.shopName === "string" ? r.shopName.trim().slice(0, SHOP_NAME_MAX) : "",
+    powerRewards: Array.isArray(r.powerRewards) ? [...new Set(r.powerRewards.filter((n): n is number => typeof n === "number" && Number.isFinite(n)))].slice(0, 50) : [],
   };
 }
 

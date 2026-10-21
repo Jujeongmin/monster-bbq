@@ -39,6 +39,7 @@ import { knowsCharcoal, sceneOf, showDayHud, timeOfDay, transitionCard, type App
 import { LidLine } from "./hud/LidLine";
 import { GoalLine } from "./hud/GoalLine";
 import { appAlerts } from "./hud/alerts";
+import { Ranking } from "./hud/Ranking";
 import { usePortrait } from "./portrait";
 import { ControlsPanel } from "./hud/ControlsPanel";
 import { dayGoal, huntGoal, TUT_NEED, type HuntTut } from "./tutorial";
@@ -60,7 +61,7 @@ const huntRefused = (f: { action: Action; code: string }) => f.action.type === "
 
 // `localShop`: in ?local development the shop buys through the page's own server rules (src/net/shop.ts).
 // each notebook app's first-open line (tips.ts); old friends keep their postcard line
-const APP_TIP: Record<App, Exclude<TipId, "awakenApp">> = { bag: "appBag", upgrade: "appUpgrade", awaken: "appAwaken", friends: "friends", cookbook: "appCookbook", menu: "appMenu", shop: "appShop" };
+const APP_TIP: Record<App, Exclude<TipId, "awakenApp">> = { bag: "appBag", upgrade: "appUpgrade", awaken: "appAwaken", friends: "friends", cookbook: "appCookbook", menu: "appMenu", shop: "appShop", ranking: "appRanking" };
 
 export function DayFlow({ transport, localShop }: { transport: Transport; localShop: LocalTransport | null }) {
   const [save, setSave] = useState<SaveData | null>(null);
@@ -73,7 +74,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the side weapon window at lunch (in the morning it shows by itself before the hunt)
   const [picking, setPicking] = useState(false);
   // the bag or Grandma's notebook, opened from the day's HUD
-  const [win, setWin] = useState<"bag" | "notebook" | "cookbook" | "friends" | "credits" | null>(null);
+  const [win, setWin] = useState<"bag" | "notebook" | "cookbook" | "friends" | "credits" | "ranking" | null>(null);
   // story scenes played to the end here (saved by the server just after; see storyDue)
   const [watched, setWatched] = useState<StoryId[]>([]);
   // a key asked the open window to close (it plays its closing, then calls back)
@@ -146,7 +147,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     setAppTip(app);
     see(APP_TIP[app]);
   };
-  const nowOpen: App | null = win === "bag" || win === "friends" || win === "cookbook" ? win : (shopping ?? (store ? "shop" : null));
+  const nowOpen: App | null = win === "bag" || win === "friends" || win === "cookbook" || win === "ranking" ? win : (shopping ?? (store ? "shop" : null));
   useEffect(() => {
     if (nowOpen) opening(nowOpen);
     else setAppTip(null);
@@ -310,6 +311,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     else if (app === "upgrade" || app === "awaken") setShopping(app);
     else if (app === "friends") setWin("friends");
     else if (app === "shop") setStore(true);
+    else if (app === "ranking") setWin("ranking");
     else if (phase === "kitchen") {
       // the kitchen's own tab; by day it is a window opened at Bandal, so open it too
       setKitchenTab(app);
@@ -430,6 +432,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {appTip && <LidLine key={appTip} face={TIP_FACE[APP_TIP[appTip]]} text={t(`tip.${APP_TIP[appTip]}` as StringKey)} low />}
       {win === "cookbook" && <CookbookBook save={save} onClose={() => setWin(null)} />}
       {win === "credits" && <Credits onClose={() => setWin(null)} />}
+      {win === "ranking" && <Ranking save={save} busy={busy} load={() => transport.ranking()} act={actSave} onClose={() => setWin(null)} />}
       {store && <Shop save={save} items={storeItems} checking={checking} onBuy={buy} onClose={() => setStore(false)} />}
 
       {story && <Cutscene key={story} scene={story} onDone={() => setWatched((w) => [...w, story])} />}

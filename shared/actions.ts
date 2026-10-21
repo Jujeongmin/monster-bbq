@@ -17,7 +17,8 @@ import { assignStaff, awakenStaff, summon } from "./staff/actions";
 import { settleService } from "./service/settle";
 import { vipLevel } from "./shop";
 import { isStoryId } from "./content/story";
-import type { PendingService, SaveData, Zone } from "./save";
+import { SHOP_NAME_MAX, type PendingService, type SaveData, type Zone } from "./save";
+import { claimPowerRewards } from "./power";
 
 // What a hunt report lists, in the order things happened (hunt v3 design 5.3): each monster taken and how
 // (the server turns that into parts by stars), each gathering spot, each way down to that floor. The
@@ -41,7 +42,8 @@ export type Action =
   | { type: "endDay" }
   | { type: "awaken"; target: string; from: number }
   | { type: "claimVipDaily" }
-  | { type: "seeStory"; id: string };
+  | { type: "seeStory"; id: string }
+  | { type: "nameShop"; name: string };
 
 // What only the server may decide: its clock and its dice.
 export interface ActionContext {
@@ -256,7 +258,13 @@ function openShop(save: SaveData, a: Record<string, unknown>, ctx: ActionContext
 
 // The server's rules for every change to a save (the in-page LocalTransport runs the same code).
 // `action` comes from the client, so it is checked here; a rejected action leaves the save as it was.
+// After any change the power milestones reached are paid (shared/power.ts).
 export function applyAction(save: SaveData, action: unknown, ctx: ActionContext): { save: SaveData; error?: string } {
+  const r = applyOne(save, action, ctx);
+  return r.error ? r : { save: claimPowerRewards(r.save) };
+}
+
+function applyOne(save: SaveData, action: unknown, ctx: ActionContext): { save: SaveData; error?: string } {
   const a = action as Record<string, unknown> | null;
   if (!a || typeof a !== "object") return { save, error: "bad_action" };
   switch (a.type) {
@@ -305,6 +313,12 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       return awaken(save, a);
     case "claimVipDaily":
       return claimVipDaily(save);
+    case "nameShop": {
+      // the shop's name on the ranking: 1 to 15 letters
+      const name = typeof a.name === "string" ? a.name.trim() : "";
+      if (name.length < 1 || [...name].length > SHOP_NAME_MAX) return { save, error: "bad_name" };
+      return { save: { ...save, shopName: name } };
+    }
     case "seeStory":
       // a scene watched (or skipped): remembered once, nothing else changes
       if (!isStoryId(a.id)) return { save, error: "bad_action" };
