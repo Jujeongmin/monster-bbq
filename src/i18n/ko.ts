@@ -516,7 +516,7 @@ export const ko = {
   "story.cap.shop": "열쇠로 연 곳은 할매 돌판집.",
   "story.cap.lid1": "부뚜막의 솥뚜껑이 덜컹 움직였다.",
   "story.cap.bandal": "주방 창구에는 곰 한 마리.",
-  "story.cap.lidback": "고기가 없으면 장사도 없다.",
+  "story.cap.lidback": "고기가 없으면 장사를 못 한다.",
   "story.cap.dusk": "해가 지자, 손님이 왔다. 사람은 아니었다.",
   "story.phone": "아쉽게도…",
   "who.hero": "손자",

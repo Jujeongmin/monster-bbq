@@ -14,9 +14,8 @@ import "./story.css";
 export function Cutscene({ scene, onDone }: { scene: StoryId; onDone: () => void }) {
   const cuts = SCENES[scene];
   const [i, setI] = useState(0);
-  const [line, setLine] = useState(0);
   const cut = cuts[i];
-  const next = () => (i + 1 < cuts.length ? (setI(i + 1), setLine(0)) : onDone());
+  const next = () => (i + 1 < cuts.length ? setI(i + 1) : onDone());
   const lines = useMemo(() => cut?.lines.map((l) => ({ who: l.who, face: l.face, text: t(l.key) }) as DialogueLine), [cut]);
   // a cut with no lines: a tap, Space or Enter moves on
   useEffect(() => {
@@ -34,12 +33,6 @@ export function Cutscene({ scene, onDone }: { scene: StoryId; onDone: () => void
           {t(cut.caption)}
         </p>
       )}
-      {/* who is talking: a mark over them in the picture */}
-      {(() => {
-        const who = cut.lines[line]?.who;
-        const at = who ? cut.at?.[who] : undefined;
-        return at ? <span key={`who-${i}-${line}`} className="story-who" style={{ left: `${at[0]}%`, top: `${at[1]}%` }}>▼</span> : null;
-      })()}
       {/* over the dialogue bar's cover (it takes every tap on the frame), so on the frame itself */}
       {document.querySelector(".frame") &&
         createPortal(
@@ -48,7 +41,7 @@ export function Cutscene({ scene, onDone }: { scene: StoryId; onDone: () => void
           </button>,
           document.querySelector(".frame")!,
         )}
-      {cut.lines.length ? <Dialogue key={`lines-${i}`} lines={lines!} onDone={next} onLine={setLine} /> : <span className="story-more">▼</span>}
+      {cut.lines.length ? <Dialogue key={`lines-${i}`} lines={lines!} onDone={next} /> : <span className="story-more">▼</span>}
     </div>
   );
 }

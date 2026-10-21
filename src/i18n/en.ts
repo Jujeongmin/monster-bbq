@@ -517,7 +517,7 @@ export const en: Record<keyof typeof ko, string> = {
   "story.cap.shop": "The key opened Grandma's grill house.",
   "story.cap.lid1": "The pot lid on the stove gave a jolt.",
   "story.cap.bandal": "A bear stood at the kitchen window.",
-  "story.cap.lidback": "No meat, no shop.",
+  "story.cap.lidback": "Without meat, the shop can't open.",
   "story.cap.dusk": "At dusk the guests came. They were not people.",
   "story.phone": "Unfortunately…",
   "who.hero": "Grandson",
