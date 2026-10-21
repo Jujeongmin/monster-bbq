@@ -1,4 +1,4 @@
-/* The 3D night shop: a 960x540 layer scaled as a whole (by a whole number when it fits), the Three canvas
+/* The 3D night shop: a 960x540 layer scaled as a whole (as big as fits), the Three canvas
    under the HUD. Inside it one art pixel of the UI kit is two layer pixels, like the 2D shop. */
 .s3-stage { position: absolute; inset: 0; background: #1a0f0a; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .s3-layer { position: relative; width: 960px; height: 540px; flex: none; transform-origin: center; --s: 1; --k: 2px; --fs: 12px; --fs-small: 10px; font: 700 12px "Galmuri11", monospace; color: #fff3d8; }

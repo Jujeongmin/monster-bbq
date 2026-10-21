@@ -13,10 +13,10 @@ describe("the 3D shop's room", () => {
     expect(cameraX(0, 200, 10)).toBe(0);
     expect(cameraX(0, -200, 10)).toBe(0);
   });
-  it("shows the 960x540 picture at a whole scale, shrinking only when it does not fit", () => {
-    expect(displayScale(1280, 720)).toBe(1);
+  it("fills the window with the 960x540 picture, as big as fits (user, 2026-10-21: no wide black border)", () => {
+    expect(displayScale(1280, 720)).toBeCloseTo(1280 / 960);
     expect(displayScale(1920, 1080)).toBe(2);
-    expect(displayScale(1366, 768)).toBe(1);
+    expect(displayScale(1587, 901)).toBeCloseTo(1587 / 960);
     expect(displayScale(900, 600)).toBeCloseTo(900 / 960);
   });
   it("keeps the grandchild whole in front of the pass and Bandal's waist behind it", () => {

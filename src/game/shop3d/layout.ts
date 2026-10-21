@@ -35,9 +35,8 @@ export function cameraX(prev: number, waiterWorldX: number, dt: number): number 
   return prev + (goal - prev) * Math.min(1, dt * CAMERA.rate);
 }
 
-// The 960x540 picture on screen: the biggest whole scale that fits, or a fraction only when even 1x does
-// not fit.
+// The 960x540 picture on screen: as big as fits (user, 2026-10-21: a whole-number scale left a wide black
+// border in the editor's preview). The canvas scales with nearest-neighbour, so pixels stay hard-edged.
 export function displayScale(viewW: number, viewH: number): number {
-  const fit = Math.min(viewW / 960, viewH / 540);
-  return fit >= 1 ? Math.floor(fit) : fit;
+  return Math.min(viewW / 960, viewH / 540);
 }

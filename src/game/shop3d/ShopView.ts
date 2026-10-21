@@ -146,10 +146,11 @@ export class ShopView {
     // the floor: plain planks, so lying down does not break them up
     const floorTex = tex.room_floor;
     floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
-    floorTex.repeat.set(1.4, 3);
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(520, 400), new THREE.MeshLambertMaterial({ map: floorTex }));
+    // deep enough to reach the bottom of the view (it stopped short: a dark band under the room)
+    floorTex.repeat.set(1.4, 5.25);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(520, 700), new THREE.MeshLambertMaterial({ map: floorTex }));
     floor.rotation.x = -Math.PI / 2;
-    floor.position.set(0, FLOOR_Y, 90);
+    floor.position.set(0, FLOOR_Y, 240);
     scene.add(floor);
     // the counter and the kitchen's pass: low wooden boxes
     const wood = new THREE.MeshLambertMaterial({ color: 0x4a1c08 });
