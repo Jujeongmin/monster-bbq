@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image: the four dialogue portraits of Ttukkeong-i, the grumpy talking cast-iron pot lid of a cozy, comic Korean BBQ restaurant game, redrawn in CHUNKIER pixel art.
+
+The first attached picture shows the current four portraits (scaled up 4 times, on magenta): copy each one's design and expression exactly — the dark iron dome, the round knob on top, the two little side handles (one pointing like a hand in some), the warm brown highlight along the dome, and the faces: 1 NORMAL (grumpy flat brows, wobbly frown), 2 ANGRY (furrowed brows, open red mouth, a steam puff above and a red anger mark), 3 SMUG (eyes closed in a smug curve, rosy blush lines, a small sparkle), 4 SURPRISED (round open eyes, small red open mouth, little shock lines under it).
+
+THE CHANGE: draw them with BIG pixels like the game's character sprites (the second picture, the boy, scaled up 6 times): each portrait only about 60 art pixels wide and 40 tall, a 1-art-pixel dark outline, flat colours with 2-3 shades, NO gradients, NO anti-aliasing, NO texture noise. The faces must stay clear and readable at this size: eyes 2-3 pixels, simple mouth shapes.
+
+Save as art-src/codex/raw/lid_faces_px.png — exactly 1920x480: four equal cells (480x480) in a row in the order above, one portrait centred in each with the bottom rim on the same baseline, every art pixel an exact 8x8 block on one even grid. Background: one perfectly flat solid magenta #FF00FF everywhere. No text.
+
+Reply only with the saved file path.
