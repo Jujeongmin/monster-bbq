@@ -204,6 +204,9 @@ export class HuntScene extends Phaser.Scene {
   private exitArrow!: Phaser.GameObjects.Text;
   // the first hunt: a ▼ bobbing over the nearest greens to pick (they read as scenery otherwise)
   private forageMark!: Phaser.GameObjects.Text;
+  // a hurt monster's health over it, and once it is weak enough to capture the gauge goes gold with the
+  // harpoon over it (user, 2026-10-21: how weak was invisible)
+  private mobBars = new Map<Mob, { gauge: UiGauge; cue: Phaser.GameObjects.Image }>();
   private lowGlow!: Phaser.GameObjects.Image;
   private gatherButton: Phaser.GameObjects.Arc | null = null;
   private gatherButtonLabel: Phaser.GameObjects.Text | null = null;
@@ -274,6 +277,7 @@ export class HuntScene extends Phaser.Scene {
     this.refills = this.plan.spawns.filter((s) => s.wave > 0);
     this.nextRefill = 0;
     this.nodes = [];
+    this.mobBars.clear();
     this.trees = [];
     this.obstacles = [];
     this.shots = [];
@@ -325,6 +329,7 @@ export class HuntScene extends Phaser.Scene {
     const shot = `test/hunt/shots/${this.huntData.side}.png`;
     if (hasArt(shot)) this.load.image(`shot_${this.huntData.side}`, artUrl(shot));
     this.load.image("exit", artUrl("test/hunt/exit.png"));
+    this.load.image("cue_harpoon", artUrl("test/ui/upg_ranged.png"));
     this.load.image("stairs", artUrl("test/hunt/stairs.png"));
     loadCharacterArt(this);
     loadUiArt(this);
@@ -1646,6 +1651,7 @@ export class HuntScene extends Phaser.Scene {
     }
     this.tutCheck();
     this.drawForageMark();
+    this.drawMobBars();
     this.drawExitArrow();
     this.ammoText.setText(`${this.run.ammo}/${this.huntData.ammo}`).setColor(this.run.ammo === 0 ? "#9a8f84" : this.run.ammo <= AMMO_LOW ? "#ff7070" : "#fff3d8");
     this.ammoIcon.setAlpha(this.run.ammo > 0 ? 1 : 0.4);
@@ -1673,6 +1679,41 @@ export class HuntScene extends Phaser.Scene {
     if (key === this.tutStep) return;
     this.tutStep = key;
     this.game.events.emit("hunt:tutorial", { step, have });
+  }
+
+  // Each hurt monster's health, gold with the harpoon over it once it can be captured; the first time
+  // that happens the page hears it (the lid explains capturing once).
+  private capturableSeen = false;
+  private drawMobBars() {
+    for (const m of this.mobs) {
+      const max = MONSTERS[m.spawn.monster].maxHp;
+      const hurt = !m.dead && m.hp < max && m !== this.capturing?.mob;
+      let bar = this.mobBars.get(m);
+      if (!hurt) {
+        if (bar) bar.gauge.box.setVisible(false), bar.cue.setVisible(false);
+        continue;
+      }
+      if (!bar) {
+        // the kit gauge at half size: one game pixel per art pixel
+        const gauge = addGauge(this, 0, 0, 44);
+        gauge.box.setDepth(9400).setScale(0.5);
+        bar = { gauge, cue: this.add.image(0, 0, "cue_harpoon").setDepth(9401).setScale(0.3) };
+        this.mobBars.set(m, bar);
+      }
+      const frac = Math.max(0, m.hp) / max;
+      const weak = canCapture(m.spawn.monster, frac);
+      const s = m.sprite;
+      // just over its head (its picture's canvas is taller than the body, so its radius measures it)
+      const top = s.y - mobRadius(m) * 3 - 6;
+      bar.gauge.set(frac);
+      bar.gauge.box.setVisible(true).setPosition(s.x - 11, top);
+      for (const part of bar.gauge.box.list as Phaser.GameObjects.NineSlice[]) part.setTint(weak ? 0xffd166 : 0xffffff);
+      bar.cue.setVisible(weak).setPosition(s.x, top - 10 - (Math.floor(this.time.now / 300) % 2) * 2);
+      if (weak && !this.capturableSeen) {
+        this.capturableSeen = true;
+        this.game.events.emit("hunt:tip", "capture");
+      }
+    }
   }
 
   // The first hunt's greens (user, 2026-10-21: a first-timer takes them for scenery): while the goal is to

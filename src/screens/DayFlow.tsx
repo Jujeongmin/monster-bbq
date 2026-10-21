@@ -125,6 +125,14 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   const opened = new Set((Object.keys(APP_TIP) as App[]).filter((a) => seenTips.has(APP_TIP[a]) || (a === "awaken" && seenTips.has("awakenApp"))));
   const alerts = save ? appAlerts(save, opened, phase) : [];
   const [appTip, setAppTip] = useState<App | null>(null);
+  // the hunt's own once-only lines (a monster weak enough to capture)
+  const [huntTip, setHuntTip] = useState<TipId | null>(null);
+  useEffect(() => {
+    if (!huntTip) return;
+    see(huntTip);
+    const id = setTimeout(() => setHuntTip(null), 6000);
+    return () => clearTimeout(id);
+  }, [huntTip]);
   // the friends who came for the postcards walking into the day shop (postcard reveal A), then the
   // friends window again on what came
   const [visitors, setVisitors] = useState<FriendResult[] | null>(null);
@@ -335,6 +343,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           key={save.hunt.id}
           hold={!!card || controlsOpen}
           onTutorial={setHuntTut}
+          onTip={(id) => id === "capture" && !seenTips.has("capture") && setHuntTip("capture")}
           onControls={() => setControlsAsked(true)}
           hunt={{ tutorial: tutorialHunt, huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, side: save.hunt.side, ammo: ammoOf(save, save.hunt.side), harpoonLevel: level(save, "ranged"), sleepFallMs: sleepFallMs(save), sidePower: sidePower(save, save.hunt.side), stats: huntStats(save), gear: { boots: level(save, "boots") >= 1, light: lightRadius(save), key: save.bossKey }, bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
           onHuntEnd={(r: HuntResult) => {
@@ -414,6 +423,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           onClose={() => (setWin(null), setCame(null))}
         />
       )}
+      {huntTip && save.hunt && <LidLine key={huntTip} face={TIP_FACE[huntTip as Exclude<TipId, "awakenApp">]} text={t(`tip.${huntTip}` as StringKey)} low />}
       {appTip && <LidLine key={appTip} face={TIP_FACE[APP_TIP[appTip]]} text={t(`tip.${APP_TIP[appTip]}` as StringKey)} low />}
       {win === "cookbook" && <CookbookBook save={save} onClose={() => setWin(null)} />}
       {win === "credits" && <Credits onClose={() => setWin(null)} />}

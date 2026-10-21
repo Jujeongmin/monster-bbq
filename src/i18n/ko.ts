@@ -278,6 +278,7 @@ export const ko = {
   "goal.afternoon": "문으로 오후 사냥 나가기",
   "goal.kitchen": "반달이 주방에서 오늘 메뉴 정하기",
   "goal.serve": "말풍선 요리를 손님에게 갖다주기",
+  "tip.capture": "약해졌껑! 지금 작살로 끌어오면 산 채로 잡혀서 고기가 두 배껑.",
   "tip.appBag": "잡은 건 다 가방에 있껑. 꽉 차면 더 못 줍껑.",
   "tip.appUpgrade": "골드로 작살이랑 가방, 가게를 키우껑.",
   "tip.appAwaken": "황금 숯으로 장비랑 요리를 한 단계 더 세게 하껑.",

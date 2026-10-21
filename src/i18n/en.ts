@@ -279,6 +279,7 @@ export const en: Record<keyof typeof ko, string> = {
   "goal.afternoon": "Out the door for the afternoon hunt",
   "goal.kitchen": "Set tonight's menu in Bandal's kitchen",
   "goal.serve": "Bring the dish in the bubble to the guest",
+  "tip.capture": "It's weak! Harpoon it in now and it comes alive: twice the meat.",
   "tip.appBag": "Everything you catch is in the bag. Full means no more picking up.",
   "tip.appUpgrade": "Gold makes the harpoon, the bag and the shop bigger.",
   "tip.appAwaken": "Golden charcoal takes gear and dishes a step further.",
