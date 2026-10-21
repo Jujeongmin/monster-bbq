@@ -121,3 +121,14 @@
 .book-page.right { overflow: auto; scrollbar-width: none; }
 .book-page.right::-webkit-scrollbar { display: none; }
 .book .cookbook-detail .fx { margin: 0; }
+
+/* the first evening's arrow on what to press next (tutorial), the shop's own bobbing ▼ */
+.guide-arrow { position: relative; overflow: visible; }
+.guide-arrow::after { content: "▼"; position: absolute; left: 50%; bottom: 100%; translate: -50% 0; color: #ffd166; font: 700 calc(14px * var(--s)) "Galmuri11", monospace; text-shadow: var(--s) var(--s) 0 #2b1408; pointer-events: none; animation: guide-bob 0.8s steps(2) infinite; z-index: 3; }
+.book-row.guide-arrow::after { left: auto; right: calc(-14px * var(--s)); bottom: auto; top: 50%; translate: 0 -50%; content: "◀"; }
+/* room on the list's right for that arrow */
+.book-list:has(.guide-arrow) { padding-right: calc(14px * var(--s)); }
+@keyframes guide-bob { 50% { transform: translateY(calc(-3px * var(--s))); } }
+.book-row.guide-arrow::after { animation-name: guide-bob-side; }
+@keyframes guide-bob-side { 50% { transform: translateX(calc(3px * var(--s))); } }
+@media (prefers-reduced-motion: reduce) { .guide-arrow::after { animation: none; } }

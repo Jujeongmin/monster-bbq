@@ -47,3 +47,13 @@ export function huntGoal(step: HuntStep, touch: boolean): { goal: StringKey; tip
   const goal = step === "cart" ? "goal.cart" : `goal.${step}${touch ? "Touch" : ""}`;
   return { goal: goal as StringKey, tip };
 }
+
+// The first evening inside Bandal's kitchen (balance check 2026-10-21: the goal stopped at the door of
+// the kitchen): an arrow on the menu board's bookmark, then on a dish to put on the board, then on the red
+// button that opens the shop. `canPut`: some dish can still go on (else no arrow: nothing to do there).
+export type KitchenGuide = "menuTab" | "dish" | "open";
+export function kitchenGuide(tab: string, onBoard: number, canOpen: boolean, canPut = true): KitchenGuide | null {
+  if (onBoard > 0 && canOpen) return "open";
+  if (!canPut) return null;
+  return tab === "menu" ? "dish" : "menuTab";
+}

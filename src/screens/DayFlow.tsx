@@ -355,7 +355,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           onClose={hub ? () => setPanel(null) : undefined}
         />
       )}
-      {phase === "kitchen" && (!hub || panel === "kitchen") && <Kitchen tab={kitchenTab} onTab={setKitchenTab} save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} onClose={hub ? () => setPanel(null) : undefined} />}
+      {phase === "kitchen" && (!hub || panel === "kitchen") && <Kitchen guide={save.day === 1} tab={kitchenTab} onTab={setKitchenTab} save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} onClose={hub ? () => setPanel(null) : undefined} />}
       {phase === "service" && save.service && <Night save={save} hold={!!card} addMenu={{ options: addOptions(save), slots: { used: save.service.dishes.length, max: menuSlots(save) }, send: addToMenu }} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
       {phase === "settle" && <Receipt save={save} busy={busy} onNext={() => act({ type: "endDay" }, "hunt")} />}
 

@@ -5,7 +5,10 @@ import { canOpen, fitMenu, type MenuLine } from "../../../shared/kitchen/dish";
 import type { SaveData } from "../../../shared/save";
 import { t, type StringKey } from "../../i18n";
 import { BookWindow } from "../hud/Book";
-import { cookbookPages, lunchPages, menuPages, upgradePages } from "./KitchenPages";
+import { cookbookPages, knownDishes, lunchPages, menuPages, upgradePages } from "./KitchenPages";
+import { kitchenGuide } from "../tutorial";
+import { menuSlots } from "../../../shared/growth";
+import { setsAvailable } from "../../../shared/kitchen/dish";
 import { ResearchCutIn } from "./ResearchCutIn";
 import "./kitchen.css";
 
@@ -30,6 +33,7 @@ export function Kitchen({
   tab: wanted,
   onTab,
   onClose,
+  guide = false,
 }: {
   mode?: "evening" | "lunch";
   save: SaveData;
@@ -45,6 +49,8 @@ export function Kitchen({
   onTab?: (t: Tab) => void;
   // opened from Bandal in the shop by day: back out to the shop
   onClose?: () => void;
+  // the first evening: arrows from the menu board's bookmark to a dish to the open button
+  guide?: boolean;
 }) {
   const tabs: Tab[] = mode === "lunch" ? ["lunch"] : TABS;
   const [own, setOwn] = useState<Tab>(mode === "lunch" ? "lunch" : "cookbook");
@@ -61,12 +67,15 @@ export function Kitchen({
   const [asked, setAsked] = useState<DishId | null>(null);
   const landed = asked && save.dishes[asked] ? asked : null;
   const research = (d: DishId) => (setAsked(d), act({ type: "research", dish: d }));
+  const opens = canOpen(save.items, save.dishes, menu);
+  const canPut = menu.length < menuSlots(save) && knownDishes(save).some((d) => !menu.some((l) => l.dish === d) && setsAvailable(save.items, d) > 0);
+  const point = guide && mode === "evening" ? kitchenGuide(tab, menu.length, opens, canPut) : null;
 
   const pages =
     tab === "cookbook"
       ? cookbookPages(save, book, setBook, { busy, onResearch: research })
       : tab === "menu"
-        ? menuPages(save, menu, setMenu)
+        ? menuPages(save, menu, setMenu, point === "dish")
         : tab === "upgrade"
           ? upgradePages(save, upgrading, setUpgrading, busy, act)
           : lunchPages(save, lunch, setLunch, busy, act);
@@ -79,7 +88,7 @@ export function Kitchen({
     ) : (
       <>
         <button className="menu-item" disabled={busy} onClick={onRest}>{t("kitchen.rest")}</button>
-        <button className="ui-btn kitchen-open" disabled={busy || !canOpen(save.items, save.dishes, menu)} onClick={() => onReady?.(menu)}>
+        <button className={`ui-btn kitchen-open${point === "open" ? " guide-arrow" : ""}`} disabled={busy || !opens} onClick={() => onReady?.(menu)}>
           {t("kitchen.ready")}
         </button>
       </>
@@ -89,7 +98,7 @@ export function Kitchen({
       <BookWindow
         label={t(`kitchen.tab.${tab}` as StringKey)}
         tabs={tabs.map((k) => (
-          <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
+          <button key={k} className={`ui-tab${k === tab ? " on" : ""}${point === "menuTab" && k === "menu" ? " guide-arrow" : ""}`} onClick={() => setTab(k)}>
             {t(`kitchen.tab.${k}` as StringKey)}
           </button>
         ))}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { newSave } from "../../shared/save";
-import { dayGoal, huntGoal, huntStep } from "./tutorial";
+import { dayGoal, huntGoal, huntStep, kitchenGuide } from "./tutorial";
 
 const day1 = { ...newSave(), story: ["prologue" as const] };
 
@@ -42,5 +42,18 @@ describe("the first hunt's controls, one at a time", () => {
     expect(huntGoal("harpoon", true)).toEqual({ goal: "goal.harpoonTouch", tip: "tutHunt" });
     expect(huntGoal("gather", false)).toEqual({ goal: "goal.gather", tip: null });
     expect(huntGoal("cart", false)).toEqual({ goal: "goal.cart", tip: "tutCart" });
+  });
+});
+
+describe("the first evening's kitchen, one arrow at a time", () => {
+  it("points at the menu board's bookmark, then a dish to put on, then the red open button", () => {
+    expect(kitchenGuide("cookbook", 0, false)).toBe("menuTab");
+    expect(kitchenGuide("menu", 0, false)).toBe("dish");
+    expect(kitchenGuide("menu", 1, true)).toBe("open");
+    // a dish on the board shows the open button from any tab
+    expect(kitchenGuide("upgrade", 1, true)).toBe("open");
+  });
+  it("points nowhere when nothing can be put on (no dish made yet)", () => {
+    expect(kitchenGuide("menu", 0, false, false)).toBeNull();
   });
 });

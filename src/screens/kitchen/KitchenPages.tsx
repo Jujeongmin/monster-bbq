@@ -24,9 +24,9 @@ const ALL = Object.keys(DISHES) as DishId[];
 export const knownDishes = (save: SaveData) => ALL.filter((id) => save.dishes[id]);
 const name = (id: DishId) => t(`dish.${id}` as StringKey);
 
-function DishRow({ id, on, off, sub, onClick, silhouette = false, label }: { id: DishId; on: boolean; off?: boolean; sub: string; onClick: () => void; silhouette?: boolean; label?: string }) {
+function DishRow({ id, on, off, sub, onClick, silhouette = false, label, guide = false }: { id: DishId; on: boolean; off?: boolean; sub: string; onClick: () => void; silhouette?: boolean; label?: string; guide?: boolean }) {
   return (
-    <button className={`book-row${on ? " on" : ""}${off ? " off" : ""}`} onClick={onClick}>
+    <button className={`book-row${on ? " on" : ""}${off ? " off" : ""}${guide ? " guide-arrow" : ""}`} onClick={onClick}>
       <span className="row-dish">
         <DishIcon dish={id} silhouette={silhouette} />
       </span>
@@ -91,7 +91,8 @@ export function cookbookPages(save: SaveData, picked: DishId, onPick: (d: DishId
 }
 
 // ---- tonight's menu board: the dishes on the left (pressing one puts it on), the board on the right
-export function menuPages(save: SaveData, menu: MenuLine[], setMenu: (m: MenuLine[]) => void): Pages {
+// `guide`: the first evening's arrow on the first dish that can go on the board
+export function menuPages(save: SaveData, menu: MenuLine[], setMenu: (m: MenuLine[]) => void, guide = false): Pages {
   const known = knownDishes(save);
   const slots = menuSlots(save);
   const plan = planShop(save.items, save.dishes, menu, save.stars);
@@ -108,8 +109,9 @@ export function menuPages(save: SaveData, menu: MenuLine[], setMenu: (m: MenuLin
         <div className="book-list">
           {known.map((id) => {
             const can = !on(id) && menu.length < slots && setsAvailable(left, id) > 0;
+            const pointed = guide && can && id === known.find((k) => !on(k) && setsAvailable(left, k) > 0);
             return (
-              <DishRow key={id} id={id} on={on(id)} off={!on(id) && !can} sub={t("kitchen.rowShort", { price: dishPrice(id, save.dishes[id]!), sets: setsAvailable(save.items, id) })} onClick={() => can && setMenu([...menu, { dish: id, sets: 1 }])} />
+              <DishRow key={id} id={id} on={on(id)} off={!on(id) && !can} guide={pointed} sub={t("kitchen.rowShort", { price: dishPrice(id, save.dishes[id]!), sets: setsAvailable(save.items, id) })} onClick={() => can && setMenu([...menu, { dish: id, sets: 1 }])} />
             );
           })}
         </div>
