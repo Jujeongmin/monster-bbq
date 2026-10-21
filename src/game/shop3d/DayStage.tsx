@@ -64,6 +64,7 @@ export function DayStage({ scene, stools, active, point = null, onSpot, onFail }
     ctl.current = { act, stick: (v) => (stick = v) };
     const frame = (time: number) => {
       if (!alive) return;
+      view.setEvening(live.current.scene === "kitchen");
       const dt = Math.min(time - last, 50);
       last = time;
       const move = live.current.active ? moveFrom(keys, stick) : { x: 0, run: false };

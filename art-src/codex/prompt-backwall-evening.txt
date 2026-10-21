@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image: the same shop back wall as the attached pictures, at SUNSET, for a cozy, comic Korean BBQ restaurant pixel-art game.
+
+The first picture is the back wall by day, the second the same wall at night (both scaled up 4 times). Make the evening version of the FIRST picture: keep EVERYTHING exactly where it is and the same — the wooden frame, the menu plaques, the lanterns, the pots, the railing, the walls, the kitchen on the right, the doorway on the left, the town and the mountains through the big window. Change only the light: the sky through the window a warm sunset (orange low on the mountains, pink and soft violet higher up, a low sun or its glow behind the far mountains), the town and mountains in warm dusky tones with a few windows starting to glow, the hanging lanterns just lit (warm yellow), the room a little warmer and dimmer than by day but much brighter than the night picture.
+
+Same real pixel art as the attached: every art pixel an exact crisp 4x4 block on one even grid, flat colours with 2-3 shades, NO gradients, NO glow halos, NO anti-aliasing, NO texture noise. Do not add or remove any object.
+
+Save as art-src/codex/raw/backwall_evening.png — exactly 1920x804 (the same size as the first picture). No text, no border.
+
+Reply only with the saved file path.

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { sfx } from "../../audio/sfx";
-import { artUrl } from "../../game/art";
+import { artUrl, hasArt } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
 import { MenuLine } from "./Book";
 import { HUD_ART, notebookApps, type App, type Phase } from "./hud";
@@ -39,7 +39,8 @@ export function Notebook({ phase, shut = 0, fresh = [], onApp, onClose, onCredit
                 .slice(from, from ? undefined : 4)
                 .map(({ app, open }) => (
                   <button key={app} className="notebook-app" disabled={!open} onClick={() => close(app)}>
-                    <img src={artUrl(HUD_ART.apps[app])} alt="" />
+                    {/* an app whose own icon is not in yet stands in with Bandal */}
+                    <img src={artUrl(hasArt(HUD_ART.apps[app]) ? HUD_ART.apps[app] : "test/bandal/smile.png")} alt="" />
                     <span className="notebook-name">
                       {t(`notebook.app.${app}` as StringKey)}
                       {fresh.includes(app) && <span className="notebook-new">{t("notebook.new")}</span>}

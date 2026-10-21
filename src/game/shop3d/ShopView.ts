@@ -36,6 +36,8 @@ function textureUrls(day: boolean): Record<string, string> {
   for (const n of ["backwall", "countertop", "counterfront", "floor"]) urls[`room_${n}`] = artUrl(`test/shop3d/${n}.png`);
   // by day the daylight back wall once it is approved and in (the night one until then)
   if (day && hasArt("test/shop3d/backwall_day.png")) urls.room_backwall = artUrl("test/shop3d/backwall_day.png");
+  // and the evening's, with the sunset through the window, once approved and in (the kitchen scene)
+  if (day && hasArt("test/shop3d/backwall_evening.png")) urls.room_backwall_evening = artUrl("test/shop3d/backwall_evening.png");
   for (const p of PROPS) urls[`prop_${p}`] = artUrl(`test/shop/${p}.png`);
   // a dish set in the room (the pass, the counter): its small 20 px picture once approved and in, beside a
   // 48 px grandchild (the HUD's bubbles and plaques keep the 32 px one)
@@ -104,6 +106,8 @@ export class ShopView {
   private shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false });
   private glowing: Board | null = null;
   private waiterShadow!: THREE.Mesh;
+  private wall!: THREE.MeshLambertMaterial;
+  private evening = false;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -140,6 +144,7 @@ export class ShopView {
     const p = CAMERA.pitch;
     // the back wall, leaning with the camera like every upright picture
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(480, 201), new THREE.MeshLambertMaterial({ map: tex.room_backwall }));
+    this.wall = wall.material;
     wall.rotation.set(-p, 0, 0);
     wall.position.set(0, FLOOR_Y + 100.5 * Math.cos(p), Z.backWall - 100.5 * Math.sin(p));
     scene.add(wall);
@@ -194,6 +199,14 @@ export class ShopView {
     this.fire = new THREE.PointLight(0xff6a20, 2, 120, 1.5);
     this.fire.position.set(PASS.x, FLOOR_Y + 40, Z.bandal - 10);
     scene.add(this.fire);
+  }
+
+  // By day: the evening's back wall (sunset through the window) in the kitchen scene, the day's otherwise.
+  setEvening(on: boolean) {
+    if (on === this.evening || !this.wall) return;
+    this.evening = on;
+    this.wall.map = (on && this.tex.room_backwall_evening) || this.tex.room_backwall;
+    this.wall.needsUpdate = true;
   }
 
   // Screen position (in the 960x540 picture) of a world point, for the HUD.

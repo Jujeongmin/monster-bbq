@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image: one more app icon for Grandma's notebook in a cozy, comic Korean BBQ restaurant pixel-art game — the "Old friends" app, where postcards call Grandma's old friends to work in the shop.
+
+STYLE — the most important rule: it must sit in the same row as the attached approved app icons (scaled up 8 times on magenta): the same pixel size, the same dark brown 1-art-pixel outline, the same warm palette and 2-3 flat shades, the same chunky simple look. NO gradients, NO glow, NO anti-aliasing, NO text. SIMPLE: one clear object.
+
+THE ICON: a small old postcard, slightly tilted, cream paper with a red-brown border line, a tiny stamp in its top-right corner (a red stamp with a simple white heart), and two short brown lines of writing (just lines, no letters). About 28 art pixels wide and 26 tall, like the other icons.
+
+Save as art-src/codex/raw/app_friends.png — exactly 384x384, the icon centred, drawn big: every art pixel an exact 8x8 block on one even grid. Background: one perfectly flat solid magenta #FF00FF everywhere. No text, no shadow, no frame.
+
+Reply only with the saved file path.
