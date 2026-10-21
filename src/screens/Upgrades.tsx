@@ -177,7 +177,7 @@ export function Upgrades({ tab: first = "upgrade", save, busy, act, onShop, onCl
           {why ? (
             <p className="soft">{why}</p>
           ) : (
-            <BuyCard disabled={busy || save.gold < cost!} onClick={() => act({ type: "buyUpgrade", id })}>
+            <BuyCard gold disabled={busy || save.gold < cost!} onClick={() => act({ type: "buyUpgrade", id })}>
               <Price gold={cost!} haveGold={save.gold} haveCharcoal={save.charcoal} />
               {t("upgrade.up")}
             </BuyCard>

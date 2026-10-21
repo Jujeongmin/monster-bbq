@@ -3,7 +3,9 @@
 // for a sound whose file is not in yet; the same sound does not stack within 80 ms. Muting is remembered
 // on this browser (a blocked storage only forgets it).
 
-export type Sfx = "order" | "tick" | "cooked" | "take" | "coin" | "angry" | "pourPerfect" | "pourGood" | "pourBad" | "coal" | "coalOut" | "scrub" | "scrubDone" | "bell";
+export type Sfx = "order" | "tick" | "cooked" | "take" | "coin" | "angry" | "pourPerfect" | "pourGood" | "pourBad" | "coal" | "coalOut" | "scrub" | "scrubDone" | "bell"
+  // the hunt and the windows (approved 2026-10-21)
+  | "harpoonThrow" | "harpoonHit" | "slash" | "monsterHit" | "gather" | "cart" | "heartbeat" | "step" | "uiClick" | "bookOpen" | "goldSpent";
 
 interface Player {
   play: () => unknown;
@@ -18,6 +20,8 @@ interface Deps {
 
 const KEY = "monster-bbq:mute";
 const GAP_MS = 80;
+// most sounds at 0.6; the ones that repeat under everything else softer
+const VOLUME: Partial<Record<Sfx, number>> = { step: 0.2, heartbeat: 0.35, uiClick: 0.4 };
 
 export function makeSfx(d: Deps) {
   let unlocked = false;
@@ -46,7 +50,7 @@ export function makeSfx(d: Deps) {
       if (t - (last.get(name) ?? -Infinity) < GAP_MS) return;
       last.set(name, t);
       const p = d.make(url);
-      p.volume = 0.6;
+      p.volume = VOLUME[name] ?? 0.6;
       Promise.resolve(p.play()).catch(() => {});
     },
   };
@@ -64,3 +68,10 @@ const storage = (): Storage | null => {
 };
 
 export const sfx = makeSfx({ urls: URLS, make: (url) => new Audio(url), store: storage(), now: () => performance.now() });
+
+// the browser lets sound play after the player's first key or tap anywhere (not only in the night shop)
+if (typeof window !== "undefined") {
+  const first = () => (sfx.unlock(), removeEventListener("pointerdown", first, true), removeEventListener("keydown", first, true));
+  addEventListener("pointerdown", first, true);
+  addEventListener("keydown", first, true);
+}

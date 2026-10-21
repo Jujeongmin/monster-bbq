@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { sfx } from "../../audio/sfx";
 import { artUrl } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
 import { MenuLine } from "./Book";
@@ -9,6 +10,8 @@ import { HUD_ART, notebookApps, type App, type Phase } from "./hud";
 // (user, 2026-10-16); closing folds it back down. The menu board opens only in the evening kitchen; a closed
 // app says where it opens.
 export function Notebook({ phase, shut = 0, fresh = [], onApp, onClose }: { phase: Phase; shut?: number; fresh?: App[]; onApp: (app: App) => void; onClose: () => void }) {
+  // the cover swinging open
+  useEffect(() => sfx.play("bookOpen"), []);
   const [closing, setClosing] = useState<App | "close" | null>(null);
   const close = (then: App | "close") => setClosing((c) => c ?? then);
   // its key pressed again: fold back like the close button

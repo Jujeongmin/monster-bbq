@@ -18,6 +18,7 @@ import { artUrl } from "../game/art";
 import { t, type StringKey } from "../i18n";
 import { knowsCharcoal } from "./hud/hud";
 import { Price } from "./hud/Book";
+import { sfx } from "../audio/sfx";
 
 // The awakening tab of the upgrade book (06b-1 design 1): every target with its stars on the left page; on the
 // right, the picked one's next star, its cost in gold and golden charcoal (red when short), and the way to
@@ -141,7 +142,7 @@ export function AwakenDetail({ target, save, busy, act, onShop }: { target: Awak
       ) : (
         <>
           <p className="fx">{nextStar(save, target, n)}</p>
-          <button className="ui-box buy-card" disabled={busy || noGold || noCharcoal} onClick={() => act({ type: "awaken", target, from: n })}>
+          <button className="ui-box buy-card" disabled={busy || noGold || noCharcoal} onClick={() => (cost!.gold > 0 && sfx.play("goldSpent"), act({ type: "awaken", target, from: n }))}>
             <Price gold={cost!.gold} charcoal={cost!.charcoal} haveGold={save.gold} haveCharcoal={save.charcoal} />
             {t("awaken.go")}
           </button>

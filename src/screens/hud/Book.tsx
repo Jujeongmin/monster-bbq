@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { sfx } from "../../audio/sfx";
 import { artUrl } from "../../game/art";
 import { t } from "../../i18n";
 import "./book.css";
@@ -22,7 +23,7 @@ export function useLineKeys(onPress: (() => void) | null) {
       if (!press.current || lines[lines.length - 1] !== me || (e.key !== " " && e.key !== "Enter" && e.key !== "Escape")) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      if (e.type === "keydown" && !e.repeat) press.current();
+      if (e.type === "keydown" && !e.repeat) sfx.play("uiClick"), press.current();
     };
     addEventListener("keydown", on, true);
     addEventListener("keyup", on, true);
@@ -38,7 +39,7 @@ export function useLineKeys(onPress: (() => void) | null) {
 export function MenuLine({ label, onPress, keys = true, className = "" }: { label: string; onPress: () => void; keys?: boolean; className?: string }) {
   useLineKeys(keys ? onPress : null);
   return (
-    <button className={`menu-item marked ${className}`} onClick={onPress}>
+    <button className={`menu-item marked ${className}`} onClick={() => (sfx.play("uiClick"), onPress())}>
       {label}
     </button>
   );
@@ -64,17 +65,20 @@ export function Price({ gold = 0, charcoal = 0, haveGold, haveCharcoal }: { gold
   );
 }
 
-export function BuyCard({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick: () => void }) {
+// `gold`: it spends gold (the coins' sound as it buys)
+export function BuyCard({ children, disabled, onClick, gold = false }: { children: ReactNode; disabled?: boolean; onClick: () => void; gold?: boolean }) {
   return (
-    <button className="ui-box buy-card" disabled={disabled} onClick={onClick}>
+    <button className="ui-box buy-card" disabled={disabled} onClick={() => (gold && sfx.play("goldSpent"), onClick())}>
       {children}
     </button>
   );
 }
 
 export function BookWindow({ tabs, left, right, onClose, label }: { tabs?: ReactNode; left: ReactNode; right: ReactNode; onClose: () => void; label: string }) {
+  // the notebook's pages turning open
+  useEffect(() => sfx.play("bookOpen"), []);
   return (
-    <div className="dayflow-screen book-screen">
+    <div className="dayflow-screen book-screen" onClickCapture={(e) => (e.target as HTMLElement).closest(".book-row, .ui-tab, .awaken-kind") && sfx.play("uiClick")}>
       <div className="book" style={{ backgroundImage: `url(${artUrl("test/ui/book.png")})` }} role="dialog" aria-label={label}>
         {tabs && <div className="book-tabs">{tabs}</div>}
         <div className="book-page left">{left}</div>

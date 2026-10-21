@@ -6,6 +6,7 @@ import { ITEMS, itemKey, parseItemKey, type ItemId } from "../../../shared/conte
 import { OBJECT_KINDS } from "../../../shared/content/objects";
 import { addToBag, bagCount } from "../../../shared/hunt/bag";
 import { huntStep, type HuntStep } from "../../screens/tutorial";
+import { sfx } from "../../audio/sfx";
 import { computeHit, coneTargets, nextComboStep, recordHit, type WeaponKind } from "../../../shared/hunt/combat";
 import { MONSTERS } from "../../../shared/content/monsters";
 import type { SideWeaponId } from "../../../shared/content/sideWeapons";
@@ -650,7 +651,7 @@ export class HuntScene extends Phaser.Scene {
     }
     if (this.gatherQueued) {
       this.gatherQueued = false;
-      if (use?.kind === "exit") return this.endHunt(false, use.id);
+      if (use?.kind === "exit") return sfx.play("cart"), this.endHunt(false, use.id);
       if (use?.kind === "down") return this.goDown();
       if (use?.kind === "sleeper") return this.take(use.mob, "sleep");
       if (use?.kind === "node" && !this.gathering) this.gathering = { node: use.node, ms: 0 };
@@ -659,6 +660,8 @@ export class HuntScene extends Phaser.Scene {
     const move = this.readMove();
     const moving = move.x !== 0 || move.y !== 0;
     if (moving) this.tutDone("move");
+    // footsteps on the grass, soft, a step every 320 ms while walking
+    if (moving && this.time.now - this.lastStep > 320) (this.lastStep = this.time.now), sfx.play("step");
     if (moving) {
       this.gathering = null;
       const speed = H.player.speed * (this.time.now < this.speedUntil ? BALANCE.lunch.speedMul : 1);
@@ -889,6 +892,7 @@ export class HuntScene extends Phaser.Scene {
     g.node.taken = true;
     this.run.report.push({ gather: g.node.node.id });
     this.tutDone("gather");
+    sfx.play("gather");
     this.tweens.add({ targets: g.node.sprite, alpha: 0, y: g.node.sprite.y - 6, duration: 300, onComplete: () => g.node.sprite.destroy() });
     this.popItem(g.node.node.x, g.node.node.y - 30, key);
   }
@@ -897,6 +901,7 @@ export class HuntScene extends Phaser.Scene {
 
   private throwHarpoon(at: Vec) {
     this.tutDone("harpoon");
+    sfx.play("harpoonThrow");
     const p = this.player;
     p.aim = unit({ x: at.x - p.pos.x, y: at.y - this.hand().y }, p.aim);
     p.harpoonCooldownMs = this.ranged.cooldownMs;
@@ -912,6 +917,7 @@ export class HuntScene extends Phaser.Scene {
       const struck = harpoonHit(h.tip, live, H.harpoon.bodyOffsetY, H.harpoon.hitRadius)?.mob;
       if (struck) {
         this.harpoon = null;
+        sfx.play("harpoonHit");
         this.harpoonStrike(struck);
       } else if (harpoonDone(h, this.ranged.range)) {
         // a miss: the rope reels back before the harpoon can fly again
@@ -956,6 +962,7 @@ export class HuntScene extends Phaser.Scene {
 
   private slash() {
     this.tutDone("slash");
+    sfx.play("slash");
     const p = this.player;
     const weapon = this.melee;
     p.comboStep = nextComboStep(p.comboStep, p.msSinceSwing, true, "melee", H.hit);
@@ -1001,6 +1008,8 @@ export class HuntScene extends Phaser.Scene {
   }
 
   private applyHit(m: Mob, kind: WeaponKind, damage: number, tagList: (string | false)[]) {
+    // slashes thump (the harpoon's own hit sound plays as it strikes, a pebble's where it lands)
+    if (kind === "melee") sfx.play("monsterHit");
     // the crab's shell takes most of a hit from the front
     if (m.ai.kind === "shell") {
       const mul = shellDamageMul(m.ai.s, this.player.pos);
@@ -1191,6 +1200,7 @@ export class HuntScene extends Phaser.Scene {
   private dartHit(kind: SideWeaponId, m: Mob) {
     const at = mobPos(m);
     if (kind === "sling") {
+      sfx.play("monsterHit");
       this.applyHit(m, "ranged", Math.round(H.sling.damage * this.huntData.sidePower), []);
       if (!m.dead) m.status = stun(m.status, H.sling.stunMs);
     } else if (kind === "sleepGun") {
@@ -1620,6 +1630,9 @@ export class HuntScene extends Phaser.Scene {
       const period = 700 + 500 * left;
       const ph = (this.time.now % period) / period;
       const beat = Math.max(Math.exp(-((ph / 0.07) ** 2)), 0.7 * Math.exp(-(((ph - 0.22) / 0.07) ** 2)));
+      // the heartbeat heard with the red, once a cycle
+      const cycle = Math.floor(this.time.now / period);
+      if (cycle !== this.lastBeat) (this.lastBeat = cycle), sfx.play("heartbeat");
       this.lowGlow.setAlpha((0.6 + 0.4 * (1 - left)) * (0.6 + 0.4 * beat));
     }
     this.tutCheck();
@@ -1636,6 +1649,8 @@ export class HuntScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------- the first hunt (tutorial A)
   private tutStep: HuntStep | null = null;
+  private lastStep = 0;
+  private lastBeat = -1;
   private tutDone(step: string) {
     if (this.huntData.tutorial && !this.run.tut.includes(step)) this.run.tut.push(step);
   }

@@ -130,7 +130,7 @@ function FriendDetail({ id, mine, at, save, busy, act }: { id: StaffId; mine: { 
         </span>
       </span>
       <span className="friend-skill">{t(`staff.skill.${id}` as StringKey)}</span>
-      <BuyCard disabled={busy || mine.shards < cost.shards || save.gold < cost.gold} onClick={() => void act({ type: "awakenStaff", staffId: id, from: mine.stars })}>
+      <BuyCard gold disabled={busy || mine.shards < cost.shards || save.gold < cost.gold} onClick={() => void act({ type: "awakenStaff", staffId: id, from: mine.stars })}>
         <Price gold={cost.gold} haveGold={save.gold} haveCharcoal={save.charcoal} />
         <span className={mine.shards < cost.shards ? "short" : ""}>{t("friends.shardsNeed", { have: mine.shards, need: cost.shards })}</span>
         {t("awaken.go")}

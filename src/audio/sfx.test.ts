@@ -21,6 +21,16 @@ describe("the night's sounds", () => {
     sfx.play("coin");
     expect(played).toEqual(["coin.mp3"]);
   });
+  it("plays footsteps and the heartbeat softer than the rest", () => {
+    const vols: number[] = [];
+    const sfx = makeSfx({ urls: { coin: "c.mp3", step: "s.mp3", heartbeat: "h.mp3" }, make: () => { const p = { play: () => void vols.push(p.volume), volume: 1 }; return p; }, store: memory(), now: () => 0 });
+    sfx.unlock();
+    sfx.play("coin");
+    sfx.play("step");
+    sfx.play("heartbeat");
+    expect(vols[1]).toBeLessThan(vols[0]);
+    expect(vols[2]).toBeLessThan(vols[0]);
+  });
   it("does not play a sound that has no file yet", () => {
     const { sfx, played } = setup();
     sfx.unlock();
