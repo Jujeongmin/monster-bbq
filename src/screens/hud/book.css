@@ -9,7 +9,7 @@
 .book-page.right { left: calc(249px * var(--s)); width: calc(182px * var(--s)); }
 /* bookmarks: the kit's tabs sticking up over the cover's top edge */
 .book-tabs { position: absolute; left: 0; right: 0; top: calc(-22px * var(--s)); display: flex; justify-content: center; gap: calc(2px * var(--s)); }
-.book-close { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(-22px * var(--s)); }
+.book-close { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(-24px * var(--s)); display: flex; align-items: center; gap: calc(16px * var(--s)); white-space: nowrap; }
 .book-page .menu-item { color: var(--ink); text-shadow: none; font-size: var(--fs-small); }
 .book-page .menu-item:hover, .book-page .menu-item:focus-visible { color: #a03a10; }
 /* under the book, on the dark: the close line in the game's light lettering */
@@ -93,3 +93,31 @@
 .shop-go { align-self: flex-start; margin-top: calc(4px * var(--s)); }
 .book .credits p { margin: 0; }
 .book .credits h3 { margin-top: calc(4px * var(--s)); }
+
+/* Bandal's kitchen on the book */
+.book-close .menu-item:not(.marked) { color: var(--cream); font-size: var(--fs-small); }
+.cook-need { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(2px * var(--s)); text-align: left; align-self: stretch; }
+.cook-need li { display: flex; align-items: center; gap: calc(4px * var(--s)); }
+.cook-need .dish-slot { width: calc(18px * var(--s)); height: calc(18px * var(--s)); display: inline-flex; align-items: center; justify-content: center; }
+.cook-lid { display: flex; align-items: center; gap: calc(4px * var(--s)); margin: 0; text-align: left; color: var(--paper-ink-soft); }
+.cook-lid img { width: calc(30px * var(--s)); height: calc(24px * var(--s)); object-fit: cover; image-rendering: pixelated; flex: none; }
+.menu-board-page { gap: calc(3px * var(--s)); }
+.board-line { display: grid; grid-template-columns: calc(18px * var(--s)) minmax(0, 1fr) auto; align-items: center; gap: calc(4px * var(--s)); }
+.board-info { display: flex; flex-direction: column; min-width: 0; }
+.board-info b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.board-line .menu-sets { display: flex; align-items: center; gap: calc(1px * var(--s)); }
+.board-line .ui-sq { width: calc(12px * var(--s)); height: calc(12px * var(--s)); border-width: calc(2px * var(--s)); border-image-width: calc(3px * var(--s)); font-size: var(--fs-small); line-height: 1; padding: 0; }
+.board-line .menu-count { min-width: calc(10px * var(--s)); text-align: center; }
+.board-empty { margin: 0; }
+.board-sum { margin: auto 0 0; display: flex; justify-content: space-between; }
+.book .pips { display: flex; gap: calc(2px * var(--s)); }
+.book .pips i { width: calc(6px * var(--s)); height: calc(6px * var(--s)); background: url("../../../art/test/ui/pip_empty.png") center / 100% 100%; image-rendering: pixelated; }
+.book .pips i.on { background-image: url("../../../art/test/ui/pip_full.png"); }
+.cost-sets { display: inline-flex; align-items: center; gap: calc(1px * var(--s)); font: var(--fs-small) "Galmuri9", monospace; }
+.cost-sets .cost-slot { width: calc(14px * var(--s)); height: calc(14px * var(--s)); display: inline-flex; align-items: center; justify-content: center; }
+.lunch-page .lunch-box { display: flex; gap: calc(3px * var(--s)); }
+.lunch-page .lunch-slot { width: calc(28px * var(--s)); height: calc(28px * var(--s)); display: inline-flex; align-items: center; justify-content: center; }
+.lunch-page .lunch-slot .dish-icon { width: calc(24px * var(--s)) !important; }
+.book-page.right { overflow: auto; scrollbar-width: none; }
+.book-page.right::-webkit-scrollbar { display: none; }
+.book .cookbook-detail .fx { margin: 0; }

@@ -74,7 +74,9 @@ export function BuyCard({ children, disabled, onClick, gold = false }: { childre
   );
 }
 
-export function BookWindow({ tabs, left, right, onClose, label }: { tabs?: ReactNode; left: ReactNode; right: ReactNode; onClose: () => void; label: string }) {
+// `foot`: more under the book beside the close line (the kitchen's rest and open buttons); without
+// `onClose` there is no close line (the evening kitchen with no shop to walk back to).
+export function BookWindow({ tabs, left, right, onClose, label, foot }: { tabs?: ReactNode; left: ReactNode; right: ReactNode; onClose?: () => void; label: string; foot?: ReactNode }) {
   // the notebook's pages turning open
   useEffect(() => sfx.play("bookOpen"), []);
   return (
@@ -84,7 +86,8 @@ export function BookWindow({ tabs, left, right, onClose, label }: { tabs?: React
         <div className="book-page left">{left}</div>
         <div className="book-page right">{right}</div>
         <div className="book-close">
-          <MenuLine label={t("upgrade.close")} onPress={onClose} />
+          {onClose && <MenuLine label={t("upgrade.close")} onPress={onClose} />}
+          {foot}
         </div>
       </div>
     </div>
