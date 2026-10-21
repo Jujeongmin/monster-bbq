@@ -171,6 +171,8 @@ export function ShopHud(p: HudProps) {
         ) : null;
       })}
       {look.prompt && <PromptBubble prompt={look.prompt} anchors={p.anchors} touch={p.touch} />}
+      {/* how to walk and run, quiet at the bottom while nothing is to be pressed (user, 2026-10-21) */}
+      {!look.prompt && <div className="day-hint">{t(p.touch ? "night.hintTouch" : "night.hint")}</div>}
       <Gauge x={p.anchors.coal.x} y={p.anchors.coal.y} width={64} value={look.coal / 100} />
       {look.pour !== null && (
         <>
