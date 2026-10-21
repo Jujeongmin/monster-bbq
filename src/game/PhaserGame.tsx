@@ -36,6 +36,8 @@ export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial, onContro
     game.events.on("hunt:tutorial", (tut: HuntTut) => onTut.current?.(tut));
     game.events.on("hunt:controls", () => onCtl.current?.());
     gameRef.current = game;
+    // the dev server only: the running game for headless checks (never in a build)
+    if (import.meta.env.DEV) (window as unknown as { __game?: Phaser.Game }).__game = game;
     return () => game.destroy(true);
   }, []);
   useEffect(() => holdLoop(gameRef.current, hold, holdRef), [hold]);

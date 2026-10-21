@@ -13,6 +13,7 @@ import type { AddMenuHook } from "../game/shop3d/ShopStage";
 import { planService } from "../../shared/service/plan";
 import type { ServedEntry } from "../../shared/service/settle";
 import type { SaveData } from "../../shared/save";
+import { artUrl } from "../game/art";
 import { PhaserGame } from "../game/PhaserGame";
 import { ServiceGame } from "../game/service/ServiceGame";
 import type { HuntResult } from "../game/scenes/HuntScene";
@@ -39,7 +40,7 @@ import { LidLine } from "./hud/LidLine";
 import { GoalLine } from "./hud/GoalLine";
 import { appAlerts } from "./hud/alerts";
 import { ControlsPanel } from "./hud/ControlsPanel";
-import { dayGoal, huntGoal, type HuntTut } from "./tutorial";
+import { dayGoal, huntGoal, TUT_NEED, type HuntTut } from "./tutorial";
 import { markSeen, readSeen, TIP_FACE, tipStore, type TipId } from "./tips";
 import { TitleCard } from "./hud/TitleCard";
 import { Cutscene } from "./story/Cutscene";
@@ -398,7 +399,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {win === "notebook" && <Notebook phase={phase} shut={shut} fresh={alerts} onApp={openApp} onClose={() => setWin(null)} onCredits={() => setWin("credits")} />}
       {charcoalLine && <LidLine face={TIP_FACE.charcoal} text={t("tip.charcoal")} />}
       {/* the goal line only for the first hunt's controls; by day the arrow alone says where to go (user, 2026-10-20) */}
-      {goal && save.hunt && !covered && <GoalLine text={t(goal.goal, "vars" in goal ? (goal.vars as Record<string, number>) : undefined)} place="middle" />}
+      {goal && save.hunt && !covered && <GoalLine text={t(goal.goal)} place="middle" items={goal.goal === "goal.recipe" ? TUT_NEED.map(([id, n], i) => ({ icon: artUrl(`test/items/icon_${id}.png`), text: `${t(`item.${id}` as StringKey)} ${huntTut?.have[i] ?? 0}/${n}`, done: (huntTut?.have[i] ?? 0) >= n })) : []} />}
       {controlsOpen && save.hunt && <ControlsPanel touch={touch} side={save.hunt.side} onClose={() => (setControlsAsked(false), see("huntControls"))} />}
       {goalTip && <LidLine key={goalTip} face={TIP_FACE[goalTip as Exclude<TipId, "awakenApp">]} text={t(`tip.${goalTip}` as StringKey)} low />}
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}

@@ -5,7 +5,7 @@ import type { DishId } from "../../../shared/content/dishes";
 import { ITEMS, itemKey, parseItemKey, type ItemId } from "../../../shared/content/items";
 import { OBJECT_KINDS } from "../../../shared/content/objects";
 import { addToBag, bagCount } from "../../../shared/hunt/bag";
-import { huntStep, tutHave } from "../../screens/tutorial";
+import { huntStep, TUT_NEED, tutHave } from "../../screens/tutorial";
 import { sfx } from "../../audio/sfx";
 import { computeHit, coneTargets, nextComboStep, recordHit, type WeaponKind } from "../../../shared/hunt/combat";
 import { MONSTERS } from "../../../shared/content/monsters";
@@ -202,6 +202,8 @@ export class HuntScene extends Phaser.Scene {
   private gatherHint!: Phaser.GameObjects.Text;
   private staminaText!: Phaser.GameObjects.Text;
   private exitArrow!: Phaser.GameObjects.Text;
+  // the first hunt: a ▼ bobbing over the nearest greens to pick (they read as scenery otherwise)
+  private forageMark!: Phaser.GameObjects.Text;
   private lowGlow!: Phaser.GameObjects.Image;
   private gatherButton: Phaser.GameObjects.Arc | null = null;
   private gatherButtonLabel: Phaser.GameObjects.Text | null = null;
@@ -393,6 +395,7 @@ export class HuntScene extends Phaser.Scene {
     // which way the nearest cart is, at the screen's edge when it is out of sight (or always, when the bag
     // is full or stamina runs low)
     this.exitArrow = this.add.text(0, 0, "▶", { ...TEXT, color: "#ffd166" }).setOrigin(0.5).setScrollFactor(0).setDepth(10001).setVisible(false);
+    this.forageMark = this.add.text(0, 0, "▼", { ...TEXT, color: "#ffd166", stroke: "#2b1408", strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(9500).setVisible(false);
     // low stamina: the screen's edge pulses red (Dave the Diver's oxygen warning)
     // low stamina: the screen's edges go red and beat like a heart (Dave's low oxygen)
     if (!this.textures.exists("low_vignette")) {
@@ -408,12 +411,13 @@ export class HuntScene extends Phaser.Scene {
       this.events.once(Phaser.Scenes.Events.POST_UPDATE, () => tex.refresh());
     }
     this.lowGlow = this.add.image(0, 0, "low_vignette").setOrigin(0).setScrollFactor(0).setDepth(9999).setVisible(false);
-    // the lunchbox: one button per packed dish under the way home (the dish at one game pixel per art pixel)
+    // the lunchbox: one button per packed dish under the way home (the dish at one game pixel per art pixel,
+    // centred inside the bubble's border; its key number on the corner, user 2026-10-21)
     this.huntData.lunchbox.forEach(({ dish, heal }, i) => {
-      const bubble = kitSlice(this, 0, 0, "bubble_plain", 50, 48, 3, 3, 3, 3);
-      const pic = this.add.image(1, -3, `dish_${dish}`);
-      const key = this.add.text(18, 12, `${i + 1}`, TEXT_SMALL).setOrigin(0.5);
-      const button = this.add.container(GAME_WIDTH - 28, 56 + i * 52, [bubble, pic, key]).setSize(50, 48).setScrollFactor(0).setDepth(10000);
+      const bubble = kitSlice(this, 0, 0, "bubble_plain", 56, 54, 3, 3, 3, 3);
+      const pic = this.add.image(0, 0, `dish_${dish}`);
+      const key = this.add.text(24, 22, `${i + 1}`, TEXT_SMALL).setOrigin(0.5);
+      const button = this.add.container(GAME_WIDTH - 32, 60 + i * 58, [bubble, pic, key]).setSize(56, 54).setScrollFactor(0).setDepth(10000);
       button.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.eat(i));
       this.lunch.push({ dish, heal, button, eaten: false });
     });
@@ -1641,6 +1645,7 @@ export class HuntScene extends Phaser.Scene {
       this.lowGlow.setAlpha((0.6 + 0.4 * (1 - left)) * (0.6 + 0.4 * beat));
     }
     this.tutCheck();
+    this.drawForageMark();
     this.drawExitArrow();
     this.ammoText.setText(`${this.run.ammo}/${this.huntData.ammo}`).setColor(this.run.ammo === 0 ? "#9a8f84" : this.run.ammo <= AMMO_LOW ? "#ff7070" : "#fff3d8");
     this.ammoIcon.setAlpha(this.run.ammo > 0 ? 1 : 0.4);
@@ -1670,9 +1675,36 @@ export class HuntScene extends Phaser.Scene {
     this.game.events.emit("hunt:tutorial", { step, have });
   }
 
+  // The first hunt's greens (user, 2026-10-21: a first-timer takes them for scenery): while the goal is to
+  // pick greens a ▼ bobs over the nearest ones, while the lunch's makings still want perilla over the nearest
+  // perilla; out of sight, a ▶ at the screen's edge points the way.
+  private drawForageMark() {
+    const step = this.tutStep?.split(":")[0];
+    const have = tutHave(this.run.bag);
+    const item = step === "gather" ? null : step === "recipe" && have[1] < TUT_NEED[1][1] ? TUT_NEED[1][0] : undefined;
+    let best: Node | null = null;
+    if (this.huntData.tutorial && item !== undefined)
+      for (const n of this.nodes)
+        if (!n.taken && (item === null || n.node.item === item) && (!best || distance(this.player.pos, n.node) < distance(this.player.pos, best.node))) best = n;
+    this.forageMark.setVisible(!!best);
+    if (!best) return;
+    const cam = this.cameras.main;
+    const bob = (Math.floor(this.time.now / 400) % 2) * 3;
+    if (cam.worldView.contains(best.node.x, best.node.y)) {
+      this.forageMark.setText("▼").setScrollFactor(1).setRotation(0).setOrigin(0.5, 1).setPosition(best.node.x, best.node.y - 34 - bob);
+      return;
+    }
+    const p = this.player.pos;
+    const a = Math.atan2(best.node.y - p.y, best.node.x - p.x);
+    const x = Phaser.Math.Clamp(p.x - cam.worldView.x + Math.cos(a) * 60, 16, GAME_WIDTH - 16);
+    const y = Phaser.Math.Clamp(p.y - 14 - cam.worldView.y + Math.sin(a) * 60, 16, GAME_HEIGHT - 16);
+    this.forageMark.setText("▶").setScrollFactor(0).setRotation(a).setOrigin(0.5).setPosition(x, y);
+  }
+
   // The nearest cart: an arrow beside the hunter pointing at it, pushed in to the screen's edge when the
   // cart is out of sight. Shown when the cart is out of sight, and always when the bag is full or stamina
-  // runs low.
+  // runs low. On the first hunt only when it is time to go home (user, 2026-10-21: an arrow to the cart
+  // while the goal said "collect chicken breast" read as the thing to do).
   private drawExitArrow() {
     const p = this.player.pos;
     const e = nearestExit(p, this.run.floor);
@@ -1680,7 +1712,8 @@ export class HuntScene extends Phaser.Scene {
     const urgent = bagCount(this.run.bag) >= this.bagSlots || this.run.stamina / this.maxStamina < LOW_STAMINA;
     const off = !cam.worldView.contains(e.x, e.y);
     const near = distance(p, e) <= USE_RANGE * 2;
-    this.exitArrow.setVisible(!this.player.down && !near && (off || urgent || this.tutStep?.startsWith("cart:") === true));
+    const homeTime = this.tutStep?.startsWith("cart:") === true;
+    this.exitArrow.setVisible(!this.player.down && !near && (urgent || homeTime || (off && !this.huntData.tutorial)));
     if (!this.exitArrow.visible) return;
     const a = Math.atan2(e.y - p.y, e.x - p.x);
     // from the hunter's place on screen (his middle, not his feet), 40 px toward the cart, kept 16 px inside

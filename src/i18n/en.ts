@@ -273,7 +273,7 @@ export const en: Record<keyof typeof ko, string> = {
   "goal.slashTouch": "The slash button",
   "goal.gather": "Pick greens with E",
   "goal.gatherTouch": "Pick greens with the use button",
-  "goal.recipe": "Chicken breast {a}/2 · perilla {b}/2",
+  "goal.recipe": "to bring",
   "goal.cart": "Back to Bandal's cart",
   "goal.lunch": "Get a lunchbox from Bandal",
   "goal.afternoon": "Out the door for the afternoon hunt",

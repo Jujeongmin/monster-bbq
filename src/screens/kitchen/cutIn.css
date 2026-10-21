@@ -1,11 +1,11 @@
-.cutin { position: absolute; inset: 0; z-index: 50; background: rgb(10 6 4 / 0.82); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; }
+.cutin { position: absolute; inset: 0; z-index: 50; background: #140a04; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; }
 .cutin-bar { position: absolute; left: 0; right: 0; height: 16%; background: #000; animation: cutin-bar 0.3s ease-out both; }
 .cutin-bar.top { top: 0; transform-origin: top; }
 .cutin-bar.bottom { bottom: 0; transform-origin: bottom; }
 @keyframes cutin-bar { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-.cutin-bandal { width: calc(150px * var(--s)); image-rendering: pixelated; animation: cutin-in 0.25s ease-out; }
+.cutin-bandal { width: calc(184px * var(--s)); image-rendering: pixelated; animation: cutin-in 0.25s ease-out; }
 @keyframes cutin-in { from { transform: translateX(-30%); opacity: 0; } to { transform: none; opacity: 1; } }
-.cutin-stamp { position: absolute; right: 12%; top: 26%; display: flex; flex-direction: column; align-items: center; gap: calc(2px * var(--s)); animation: cutin-stamp 0.22s steps(3) both; }
+.cutin-stamp { position: absolute; right: 0; width: calc(119px * var(--s)); top: calc(-34px * var(--s)); display: flex; flex-direction: column; align-items: center; gap: calc(2px * var(--s)); animation: cutin-stamp 0.22s steps(3) both; }
 @keyframes cutin-stamp { from { transform: scale(2.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .cutin-stamp .dish-icon { image-rendering: pixelated; }
 .cutin-new { font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); }
@@ -15,3 +15,30 @@
 .cutin-line { margin: 0; padding: calc(2px * var(--s)) calc(6px * var(--s)); white-space: nowrap; line-height: 1.6; }
 .cutin-next { position: absolute; right: calc(16px * var(--s)); bottom: calc(6px * var(--s)); font: 700 var(--fs) "Galmuri11", monospace; color: var(--brass); animation: cutin-blink 1s steps(2) infinite; }
 @keyframes cutin-blink { 50% { opacity: 0.35; } }
+
+/* the cooking cut (cutIn.ts, user 2026-10-21): Bandal on the left, the grill and what cooks on it beside him */
+.cutin-stage { position: relative; display: flex; align-items: center; gap: calc(16px * var(--s)); }
+.cutin-stage.shake { animation: cutin-shake 0.18s steps(2) infinite; }
+@keyframes cutin-shake { 0% { translate: calc(1px * var(--s)) 0; } 50% { translate: calc(-1px * var(--s)) calc(1px * var(--s)); } }
+.cutin-pan { position: relative; width: calc(119px * var(--s)); height: calc(108px * var(--s)); }
+.cutin-grill { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; animation: cutin-in 0.25s ease-out; }
+.cutin-making { position: absolute; width: calc(21px * var(--s)); height: calc(20px * var(--s)); translate: -50% -50%; animation: cutin-drop 0.25s cubic-bezier(0.3, 0, 0.7, 1.4) both; }
+.cutin-making > img:first-child { width: 100%; height: 100%; image-rendering: pixelated; }
+.cutin-making.m0 { left: 38%; top: 40%; } .cutin-making.m1 { left: 62%; top: 38%; } .cutin-making.m2 { left: 50%; top: 56%; } .cutin-making.m3 { left: 34%; top: 60%; }
+.cutin-making.sizzle { animation: cutin-sizzle 0.16s steps(2) infinite; }
+@keyframes cutin-drop { from { translate: -50% calc(-120px * var(--s)); opacity: 0; } 60% { opacity: 1; } }
+@keyframes cutin-sizzle { 50% { translate: -50% calc(-50% - 2px * var(--s)); } }
+.cutin-fx { position: absolute; width: calc(24px * var(--s)); height: calc(24px * var(--s)); image-rendering: pixelated; pointer-events: none; }
+.cutin-fx.land { left: 50%; top: 0; translate: -50% -60%; }
+.cutin-fx.spark.s0 { left: 20%; top: 30%; } .cutin-fx.spark.s1 { left: 70%; top: 24%; } .cutin-fx.spark.s2 { left: 44%; top: 62%; } .cutin-fx.spark.s3 { left: 78%; top: 54%; } .cutin-fx.spark.s4 { left: 30%; top: 50%; }
+.cutin-fx.steam { width: calc(24px * var(--s)); height: calc(24px * var(--s)); animation: cutin-steam 0.7s linear infinite; }
+.cutin-fx.steam.t0 { left: 30%; top: 4%; } .cutin-fx.steam.t1 { left: 52%; top: -4%; animation-delay: 0.23s; } .cutin-fx.steam.t2 { left: 66%; top: 6%; animation-delay: 0.46s; }
+@keyframes cutin-steam { from { translate: 0 0; opacity: 1; } to { translate: 0 calc(-24px * var(--s)); opacity: 0; } }
+.cutin-dish { position: absolute; left: 50%; top: 50%; translate: -50% -50%; animation: cutin-dish 0.35s cubic-bezier(0.3, 0, 0.6, 1.5) both; }
+.cutin-dish .dish-icon { display: block; image-rendering: pixelated; }
+@keyframes cutin-dish { from { translate: -50% calc(-50% - 140px * var(--s)); scale: 1.3; } }
+.cutin-fx.sparkle.k0 { left: -6%; top: 6%; } .cutin-fx.sparkle.k1 { left: 92%; top: 0; } .cutin-fx.sparkle.k2 { left: 96%; top: 76%; } .cutin-fx.sparkle.k3 { left: -2%; top: 80%; }
+/* the white flash as the fire ends and the dish lands */
+.cutin-flash { position: absolute; inset: 0; background: #fff8e8; animation: cutin-flash 0.35s ease-out both; pointer-events: none; }
+@keyframes cutin-flash { from { opacity: 0.95; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cutin-stage.shake, .cutin-making, .cutin-fx.steam, .cutin-dish, .cutin-flash { animation: none; } }
