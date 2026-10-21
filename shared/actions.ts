@@ -288,8 +288,9 @@ export function applyAction(save: SaveData, action: unknown, ctx: ActionContext)
       const firstKing = settled.king && !save.pages.includes("forest");
       const pages = firstKing ? [...save.pages, "forest"] : save.pages;
       const dishes = firstKing ? { ...save.dishes, king_galbi: Math.max(1, save.dishes.king_galbi ?? 0) } : save.dishes;
-      // and the chapter boss's charcoal, the first time (06b-1)
-      const charcoal = save.charcoal + (firstKing ? BALANCE.shop.bossCharcoal : 0);
+      // and the chapter boss's charcoal the first time (06b-1); a little for every boss after that
+      const R = BALANCE.shop.bossRepeat;
+      const charcoal = save.charcoal + (firstKing ? BALANCE.shop.bossCharcoal : settled.king ? R.king : 0) + (settled.tusk ? R.tusk : 0);
       return { save: { ...save, items, hunt: null, seenItems, stage, lunchbox: [], bossKey: save.bossKey || settled.tusk, pages, dishes, charcoal } };
     }
     case "skipHunt":

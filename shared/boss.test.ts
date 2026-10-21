@@ -46,6 +46,8 @@ describe("the key", () => {
     const r = finish(s, [{ down: 2 }, { take: "2-boss", how: "down" }], "2-e0");
     expect(r.error).toBeUndefined();
     expect(r.save.bossKey).toBe(true);
+    // and a little charcoal each time it is taken
+    expect(r.save.charcoal).toBe(BALANCE.shop.bossRepeat.tusk);
     const again = finish(startHunt(r.save), [], "1-e0");
     expect(again.save.bossKey).toBe(true);
   });
@@ -64,12 +66,13 @@ describe("the Charge King", () => {
     // his rib, twice the stars like the tusk boss
     expect(r.save.items["king_rib:normal"]).toBe(H.stars.down.count * H.stars.bossMul);
   });
-  it("gives only his rib after that, and never lowers the dish's level", () => {
+  it("gives his rib and a little charcoal after that, and never lowers the dish's level", () => {
     const s = { ...ready(), pages: ["forest"], dishes: { king_galbi: 3 } };
     const r = finish(s, [...toDen, king("capture")], "5-e0");
     expect(r.save.pages).toEqual(["forest"]);
     expect(r.save.dishes.king_galbi).toBe(3);
-    expect(r.save.charcoal).toBe(0);
+    // every King after the first still gives a little charcoal (user, 2026-10-21: bosses gave none again)
+    expect(r.save.charcoal).toBe(BALANCE.shop.bossRepeat.king);
     expect(r.save.items["king_rib:normal"]).toBe(H.stars.capture.count * H.stars.bossMul);
   });
   it("refuses a King taken faster than the fight could last", () => {
