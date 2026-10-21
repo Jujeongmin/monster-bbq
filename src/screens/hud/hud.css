@@ -51,7 +51,8 @@
 .notebook-new { margin-left: calc(4px * var(--s)); font: 700 var(--fs-small) "Galmuri9", monospace; color: #d83a2a; }
 .notebook-why { font: var(--fs-small) / 1 "Galmuri9", monospace; color: var(--paper-ink-soft); white-space: nowrap; }
 .notebook-app:disabled { cursor: default; filter: grayscale(1) opacity(0.7); }
-.notebook-close { position: absolute; top: calc(100% + 6px * var(--s)); left: 0; right: 0; width: max-content; margin: 0 auto; }
+.notebook-close { position: absolute; top: calc(100% + 6px * var(--s)); left: 0; right: 0; width: max-content; margin: 0 auto; display: flex; gap: calc(16px * var(--s)); align-items: center; }
+.notebook-credits { font-size: var(--fs-small); color: var(--paper-ink-soft); text-shadow: none; opacity: 0.8; }
 /* opening like Dave's phone (user, 2026-10-16): the closed notebook flies from its button to the middle of
    the screen, rests a moment, then its cover swings open slowly; closing shuts the cover first, then it
    flies back down to its button */

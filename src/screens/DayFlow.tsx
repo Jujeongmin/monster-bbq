@@ -29,6 +29,7 @@ import { Bag } from "./hud/Bag";
 import { DayHud } from "./hud/DayHud";
 import { Notebook } from "./hud/Notebook";
 import { CookbookBook } from "./kitchen/CookbookBook";
+import { Credits } from "./hud/Credits";
 import { Friends } from "./hud/Friends";
 import "./hud/friends.css";
 import { Receipt } from "./hud/Receipt";
@@ -65,7 +66,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the side weapon window at lunch (in the morning it shows by itself before the hunt)
   const [picking, setPicking] = useState(false);
   // the bag or Grandma's notebook, opened from the day's HUD
-  const [win, setWin] = useState<"bag" | "notebook" | "cookbook" | "friends" | null>(null);
+  const [win, setWin] = useState<"bag" | "notebook" | "cookbook" | "friends" | "credits" | null>(null);
   // story scenes played to the end here (saved by the server just after; see storyDue)
   const [watched, setWatched] = useState<StoryId[]>([]);
   // a key asked the open window to close (it plays its closing, then calls back)
@@ -365,7 +366,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       )}
       {/* the notebook's windows; the upgrades act at whatever stage of the day they were opened in */}
       {shopping && phase !== "service" && <Upgrades tab={shopping} save={save} busy={busy} act={(a) => void act(a, phase)} onShop={() => setStore(true)} onClose={() => setShopping(null)} />}
-      {win === "notebook" && <Notebook phase={phase} shut={shut} fresh={fresh} onApp={openApp} onClose={() => setWin(null)} />}
+      {win === "notebook" && <Notebook phase={phase} shut={shut} fresh={fresh} onApp={openApp} onClose={() => setWin(null)} onCredits={() => setWin("credits")} />}
       {charcoalLine && <LidLine face={TIP_FACE.charcoal} text={t("tip.charcoal")} />}
       {/* the goal line only for the first hunt's controls; by day the arrow alone says where to go (user, 2026-10-20) */}
       {goal && save.hunt && !covered && <GoalLine text={t(goal.goal)} place="middle" />}
@@ -375,6 +376,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {win === "friends" && <Friends save={save} busy={busy} act={actSave} onShop={() => setStore(true)} onClose={() => setWin(null)} />}
       {win === "friends" && !seenTips.has("friends") && <LidLine face={TIP_FACE.friends} text={t("tip.friends")} low />}
       {win === "cookbook" && <CookbookBook save={save} onClose={() => setWin(null)} />}
+      {win === "credits" && <Credits onClose={() => setWin(null)} />}
       {store && <Shop save={save} items={storeItems} checking={checking} onBuy={buy} onClose={() => setStore(false)} />}
 
       {story && <Cutscene key={story} scene={story} onDone={() => setWatched((w) => [...w, story])} />}

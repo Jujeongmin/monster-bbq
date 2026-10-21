@@ -9,7 +9,8 @@ import { HUD_ART, notebookApps, type App, type Phase } from "./hud";
 // at the HUD's bottom right, the notebook flies up from its button and its cover swings open onto the apps
 // (user, 2026-10-16); closing folds it back down. The menu board opens only in the evening kitchen; a closed
 // app says where it opens.
-export function Notebook({ phase, shut = 0, fresh = [], onApp, onClose }: { phase: Phase; shut?: number; fresh?: App[]; onApp: (app: App) => void; onClose: () => void }) {
+// onCredits: the credits page, from a quiet line beside the close one
+export function Notebook({ phase, shut = 0, fresh = [], onApp, onClose, onCredits }: { phase: Phase; shut?: number; fresh?: App[]; onApp: (app: App) => void; onClose: () => void; onCredits?: () => void }) {
   // the cover swinging open
   useEffect(() => sfx.play("bookOpen"), []);
   const [closing, setClosing] = useState<App | "close" | null>(null);
@@ -48,7 +49,14 @@ export function Notebook({ phase, shut = 0, fresh = [], onApp, onClose }: { phas
                 ))}
             </div>
           ))}
-          <MenuLine className="notebook-close" label={t("upgrade.close")} onPress={() => close("close")} />
+          <div className="notebook-close">
+            <MenuLine label={t("upgrade.close")} onPress={() => close("close")} />
+            {onCredits && (
+              <button className="menu-item notebook-credits" onClick={onCredits}>
+                {t("credits.title")}
+              </button>
+            )}
+          </div>
         </div>
         {/* the notebook itself, closed, flying in over the right page; its cover swings open on the spine
             (user, 2026-10-16: the notebook, not a brown panel) */}

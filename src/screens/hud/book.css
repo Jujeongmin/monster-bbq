@@ -91,3 +91,5 @@
 .book .shop-vip { display: flex; align-items: center; gap: calc(4px * var(--s)); }
 .shop-detail .shop-band { align-self: flex-start; position: static; }
 .shop-go { align-self: flex-start; margin-top: calc(4px * var(--s)); }
+.book .credits p { margin: 0; }
+.book .credits h3 { margin-top: calc(4px * var(--s)); }
