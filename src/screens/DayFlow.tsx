@@ -155,7 +155,18 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   useEffect(() => {
     if (!appTip) return;
     const id = setTimeout(() => setAppTip(null), 6000);
-    return () => clearTimeout(id);
+    // a click or tap anywhere closes the line at once (user, 2026-10-21); that click does nothing else
+    const close = (e: PointerEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      setAppTip(null);
+      addEventListener("click", (c) => (c.stopPropagation(), c.preventDefault()), { capture: true, once: true });
+    };
+    addEventListener("pointerdown", close, { capture: true, once: true });
+    return () => {
+      clearTimeout(id);
+      removeEventListener("pointerdown", close, { capture: true });
+    };
   }, [appTip]);
   useEffect(() => {
     if (!charcoalLine) return;

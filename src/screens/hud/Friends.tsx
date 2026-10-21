@@ -159,7 +159,7 @@ function FriendDetail({ id, mine, at, save, busy, act }: { id: StaffId; mine: { 
 // The postcards' left page: each rarity's chance in its own colour, and how many more to a sure legend.
 function PostcardRates({ save }: { save: SaveData }) {
   return (
-    <div className="book-detail">
+    <div className="book-detail post-page">
       <h3>{t("friends.ratesTitle")}</h3>
       <ul className="post-rates">
         {RARITIES.slice()
@@ -183,7 +183,7 @@ function PostcardSend({ save, busy, onSend, onShop }: { save: SaveData; busy: bo
   const knows = knowsCharcoal(save);
   const C = BALANCE.staff.cost;
   return (
-    <div className="book-detail post-send">
+    <div className="book-detail post-page post-send">
       <h3>{t("friends.sendTitle")}</h3>
       {!st.freeUsed && (
         <BuyCard disabled={busy} onClick={() => onSend(1, true)}>
@@ -196,7 +196,7 @@ function PostcardSend({ save, busy, onSend, onShop }: { save: SaveData; busy: bo
             <Price charcoal={C.one} haveGold={save.gold} haveCharcoal={save.charcoal} />
             {t("friends.oneShort")}
           </BuyCard>
-          <button className="ui-btn post-ten" disabled={busy || save.charcoal < C.ten} onClick={() => onSend(10)}>
+          <button className="ui-btn" disabled={busy || save.charcoal < C.ten} onClick={() => onSend(10)}>
             {t("friends.tenShort", { n: C.ten })}
           </button>
           {save.charcoal < C.one && (
@@ -217,7 +217,7 @@ function PostcardResults({ results, onAgain }: { results: Result[]; onAgain: () 
   const sorted = [...results].sort((a, b) => Number(b.isNew) - Number(a.isNew));
   return (
     <div className="book-detail">
-      <div className="post-results">
+      <div className="post-results post-page">
         {sorted.map((r, i) => (
           <div key={r.id} className={`post-card ${STAFF[r.id].rarity}`} style={{ animationDelay: `${i * 0.12}s` }}>
             <Face id={r.id} className="row-face" />

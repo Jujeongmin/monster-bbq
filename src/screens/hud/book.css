@@ -76,10 +76,13 @@
 .book .buy-card > span:not(.price) { font: var(--fs-small) "Galmuri9", monospace; }
 
 /* postcards */
-.post-rates { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(3px * var(--s)); font: var(--fs) "Galmuri11", monospace; }
+.post-rates { list-style: none; margin: 0; padding: 0; display: grid; gap: calc(3px * var(--s)); }
+/* the postcard pages in the game's one body type (user, 2026-10-21): Galmuri11 at the body size, bold only
+   for headings, buttons, names and the "new" mark; the rarity colours carry the rest */
+.book .post-page, .book .post-page p, .book .post-page li, .book .post-page span, .book .post-page b { font-family: "Galmuri11", monospace; font-size: var(--fs); font-weight: 400; }
+.book .post-page h3, .book .post-page .ui-btn, .book .post-page .buy-card, .book .post-page .buy-card *, .book .post-page .name, .book .post-page .new { font-weight: 700; }
 .post-rates li { display: flex; justify-content: space-between; max-width: calc(120px * var(--s)); }
 .post-send { gap: calc(6px * var(--s)); }
-.post-ten { align-self: flex-start; font-size: var(--fs-small); }
 .post-results { display: grid; grid-template-columns: 1fr 1fr; gap: calc(2px * var(--s)) calc(6px * var(--s)); }
 .post-card { display: grid; grid-template-columns: calc(40px * var(--s)) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: calc(4px * var(--s)); align-items: center; animation: post-in 0.3s steps(4) both; }
 /* who came, after the door (Visit.tsx): their faces big enough to know at a glance */
