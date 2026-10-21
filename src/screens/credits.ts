@@ -7,7 +7,12 @@ export interface MusicCredit {
   site: string;
 }
 
-export const MUSIC: MusicCredit[] = [];
+export const MUSIC: MusicCredit[] = [
+  // the day shop and the prologue (approved 2026-10-21): https://maou.audio/category/game/game-town/
+  { title: "村07", by: "魔王魂 (MaouDamashii)", site: "maou.audio" },
+  // the night shop (approved 2026-10-21): https://soundimage.org/funnyquirky/
+  { title: "Monkey Island Band", by: "Music by Eric Matyas", site: "www.soundimage.org" },
+];
 
 export const CREDITS = {
   musicLicence: "CC BY 4.0 · creativecommons.org/licenses/by/4.0",

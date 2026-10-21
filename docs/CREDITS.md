@@ -18,4 +18,11 @@ games with no attribution; the game credits Mixkit anyway. The raw candidates li
 
 Candidates from Soundimage (Eric Matyas, https://soundimage.org) and 魔王魂 (MaouDamashii, https://maou.audio),
 both CC BY 4.0. Each approved track is listed on the in-game credits page (`src/screens/credits.ts`, MUSIC) with
-its title, author and the licence, and here with the page it came from and the date. None approved yet.
+its title, author and the licence, and here with the page it came from and the date.
+
+- **村07** (village 07) — 魔王魂 MaouDamashii — https://maou.audio/sound/game/maou_game_village07.mp3 (from
+  https://maou.audio/category/game/game-town/), downloaded 2026-10-21 — `bgm/day_maou_game_village07.mp3`: the day
+  shop and the prologue. Credit: 音楽：魔王魂, CC BY 4.0.
+- **Monkey Island Band** — Eric Matyas — https://soundimage.org/wp-content/uploads/2021/08/Monkey-Island-Band.mp3
+  (from https://soundimage.org/funnyquirky/), downloaded 2026-10-21 — `bgm/night_soundimage_Monkey-Island-Band.mp3`:
+  the night shop. Credit: Music by Eric Matyas, www.soundimage.org.

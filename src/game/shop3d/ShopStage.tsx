@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BALANCE } from "../../../shared/balance";
+import { bgm } from "../../audio/bgm";
 import { sfx } from "../../audio/sfx";
 import { t, type StringKey } from "../../i18n";
 import { markSeen, nightTipDue, readSeen, TIP_FACE, tipStore, type TipId } from "../../screens/tips";
@@ -416,6 +417,7 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
             onMute={() => {
               sfx.unlock();
               sfx.setMuted(!muted);
+              bgm.refresh();
               setMuted(!muted);
             }}
             onPress={() => (sfx.unlock(), ctl.current.press())}

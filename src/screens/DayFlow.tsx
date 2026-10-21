@@ -30,6 +30,7 @@ import { DayHud } from "./hud/DayHud";
 import { Notebook } from "./hud/Notebook";
 import { CookbookBook } from "./kitchen/CookbookBook";
 import { Credits } from "./hud/Credits";
+import { bgm } from "../audio/bgm";
 import { Friends } from "./hud/Friends";
 import "./hud/friends.css";
 import { Receipt } from "./hud/Receipt";
@@ -158,6 +159,9 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   const [panel, setPanel] = useState<"kitchen" | "side" | null>(null);
   const controlsOpen = !!save?.hunt && !card && (controlsAsked || (tutorialHunt && !seenTips.has("huntControls")));
   // windows over the day hide it; in the hunt only the title card, the controls or an error can (the day's windows are shut)
+  // the scene's music: the day shop's (the prologue too), the hunt's, the night's (the receipt too)
+  const track = !save ? null : story ? "day" : save.hunt ? "hunt" : phase === "service" || phase === "settle" ? "night" : "day";
+  useEffect(() => bgm.set(track), [track]);
   const covered = save?.hunt ? !!(card || failed || controlsOpen) : !!(story || card || summary || shopping || store || win || panel || picking || failed);
   const goalTip = goal?.tip && !seenTips.has(goal.tip) && !covered && !charcoalLine ? goal.tip : null;
   useEffect(() => {
