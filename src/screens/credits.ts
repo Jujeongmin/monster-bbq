@@ -12,6 +12,8 @@ export const MUSIC: MusicCredit[] = [
   { title: "村07", by: "魔王魂 (MaouDamashii)", site: "maou.audio" },
   // the night shop (approved 2026-10-21): https://soundimage.org/funnyquirky/
   { title: "Monkey Island Band", by: "Music by Eric Matyas", site: "www.soundimage.org" },
+  // the hunt (approved 2026-10-21): https://soundimage.org/puzzle-music/
+  { title: "Game Menu (Looping, LoFi)", by: "Music by Eric Matyas", site: "www.soundimage.org" },
 ];
 
 export const CREDITS = {

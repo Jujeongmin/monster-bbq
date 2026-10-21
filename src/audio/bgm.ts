@@ -2,8 +2,8 @@ import { sfx } from "./sfx";
 
 // The background music (user-picked, CC BY 4.0, credited in src/screens/credits.ts): one track per scene,
 // looping, quieter than the sounds. Files are bgm/<scene>_<source>_<title>.mp3. Like the sounds it waits for
-// the player's first key or tap, and the night shop's mute button silences it too. A scene with no track yet
-// is quiet.
+// the player's first key or tap, and the night shop's mute button silences it too. A scene with no track is
+// quiet.
 export type Track = "day" | "night" | "hunt";
 
 interface Player {

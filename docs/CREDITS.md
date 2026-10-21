@@ -26,3 +26,6 @@ its title, author and the licence, and here with the page it came from and the d
 - **Monkey Island Band** — Eric Matyas — https://soundimage.org/wp-content/uploads/2021/08/Monkey-Island-Band.mp3
   (from https://soundimage.org/funnyquirky/), downloaded 2026-10-21 — `bgm/night_soundimage_Monkey-Island-Band.mp3`:
   the night shop. Credit: Music by Eric Matyas, www.soundimage.org.
+- **Game Menu (Looping, LoFi)** — Eric Matyas — https://soundimage.org/wp-content/uploads/2025/02/Game-Menu_Looping_LoFi.mp3 (from https://soundimage.org/puzzle-music/), downloaded
+  2026-10-21 — `bgm/hunt_soundimage_Game-Menu_Looping_LoFi.mp3`: the hunt. Credit: Music by Eric Matyas,
+  www.soundimage.org.
