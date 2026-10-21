@@ -1,0 +1,11 @@
+Use your image generation tool (do not write code to draw) to create ONE image: the store thumbnail of a cozy, comic pixel-art web game called "Monster BBQ" — by day a boy hunts cute monsters in a forest with a grumpy talking pot lid on his back, by night he runs his grandmother's little Korean BBQ grill shop for yokai guests (goblins, a nine-tailed fox, a ghost).
+
+Square, exactly 1024x1024.
+
+THE LOGO, the most important part: the words "MONSTER BBQ" in English, big and bold across the top third, easy to read even when the thumbnail is small (about 64x64 on a phone). Chunky pixel-art lettering with a thick dark brown outline, warm golden-orange letters with a hint of sizzling heat, maybe a tiny pair of crossed chopsticks or a small grill under the word BBQ — keep it simple and readable. Spell it exactly: MONSTER BBQ. No other text anywhere.
+
+THE PICTURE under the logo: the night shop from the front, warm lantern light: the boy (copy his look exactly from the first attached picture: spiky dark hair, red bandana, green jacket, cream apron, the dark iron pot lid with its grumpy face on his back) proudly holding up a sizzling plate of grilled pork belly, Bandal the moon bear cook in his white apron behind the counter, and two or three cute yokai guests at the counter (a little red goblin, a fox girl) cheering, steam and a few sparkles over the grill. The second attached picture is the night shop's back wall (lanterns, the menu plaques, the night town through the window) — use it for the background mood.
+
+STYLE: real pixel art like the attached sprites — crisp square pixels on one even grid, dark outlines, flat colours with 2-3 shades, warm red/amber palette with blue night accents. Cute and comic, clear silhouettes, not cluttered: the logo and the boy with his plate are what the eye sees first.
+
+Save as art-src/codex/raw/thumbnail.png — exactly 1024x1024. Reply only with the saved file path.
