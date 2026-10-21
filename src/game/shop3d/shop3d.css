@@ -18,14 +18,16 @@
 .s3-plaque { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; font-size: 10px; }
 .s3-plaque img { image-rendering: pixelated; }
 
+/* one picture at its own size (art/test/ui2/bubble_order.png, the plain bubble cut to 20x19): a stretched
+   9-slice border showed seams through the dish when the shop is scaled (user, 2026-10-21) */
 .s3-bubble {
   position: absolute; width: 40px; height: 38px; box-sizing: border-box; overflow: hidden;
-  border: 6px solid transparent; border-image: url("../../../art/test/ui2/bubble_plain.png") 3 fill / 6px stretch;
+  background: url("../../../art/test/ui2/bubble_order.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated;
   display: flex; align-items: center; justify-content: center;
 }
 .s3-bubble img { position: relative; image-rendering: pixelated; max-width: 32px; }
 /* patience rising red from the bottom of the bubble */
-.s3-patience { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(216, 58, 42, 0.45); }
+.s3-patience { position: absolute; left: 2px; right: 2px; bottom: 2px; max-height: calc(100% - 4px); background: rgba(216, 58, 42, 0.45); }
 /* green, then yellow from half, red from three quarters */
 .s3-patience.ok { background: rgba(96, 176, 72, 0.45); }
 .s3-patience.warn { background: rgba(232, 184, 48, 0.5); }

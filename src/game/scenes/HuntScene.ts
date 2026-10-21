@@ -10,7 +10,7 @@ import { sfx } from "../../audio/sfx";
 import { computeHit, coneTargets, nextComboStep, recordHit, type WeaponKind } from "../../../shared/hunt/combat";
 import { MONSTERS } from "../../../shared/content/monsters";
 import type { SideWeaponId } from "../../../shared/content/sideWeapons";
-import { startCapture, stepCapture, tapCapture, type Capture } from "../../../shared/hunt/capture";
+import { canCapture, startCapture, stepCapture, tapCapture, type Capture } from "../../../shared/hunt/capture";
 import { bind, dart, stun } from "../../../shared/hunt/status";
 import { starsOf, takeYield, type TakeHow } from "../../../shared/hunt/stars";
 import { mashTusk } from "../../../shared/hunt/tusk";
@@ -952,7 +952,11 @@ export class HuntScene extends Phaser.Scene {
     const hit = computeHit({ weapon: this.ranged, comboStep: 1, targetVulnerable: isMobVulnerable(m), attackerPos: p.pos, targetPos: mobPos(m), targetFacing: mobFacing(m) }, H.hit);
     this.applyHit(m, "ranged", hit.damage, [hit.counter && "카운터!", hit.backAttack && "백어택!"]);
     this.hitStop(H.hitStopMs);
-    if (!m.dead) {
+    // only a weakened one is reeled in to be captured (user, 2026-10-21); a strong one just takes the hit
+    if (!m.dead && !canCapture(m.spawn.monster, Math.max(0, m.hp) / MONSTERS[m.spawn.monster].maxHp)) {
+      const at = mobPos(m);
+      this.popText(at.x, at.y - 40, t("hunt.tooStrong"), "#ffd166", 800);
+    } else if (!m.dead) {
       this.reeling = m;
       this.tweens.killTweensOf(m.sprite);
       m.sprite.setAlpha(1).clearTint();
@@ -1107,7 +1111,7 @@ export class HuntScene extends Phaser.Scene {
     // it struggles in place, held by the taut rope
     const at = mobPos(m);
     m.sprite.setPosition(at.x + (Math.random() < 0.5 ? -1 : 1), at.y);
-    const r = stepCapture(cap.c, dt, Math.max(0, m.hp) / MONSTERS[m.spawn.monster].maxHp);
+    const r = stepCapture(cap.c, dt, Math.max(0, m.hp) / MONSTERS[m.spawn.monster].maxHp, m.spawn.monster);
     cap.c = r.c;
     cap.gauge.set(cap.c.fill);
     cap.gauge.box.setPosition(at.x - 20, at.y - 44);

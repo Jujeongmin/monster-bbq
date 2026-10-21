@@ -96,6 +96,7 @@ export const en: Record<keyof typeof ko, string> = {
   "hunt.ropeBroke": "The rope broke!",
   "hunt.take": "E Bag it",
   "hunt.mash": "Mash!",
+  "hunt.tooStrong": "Weaken it!",
   "hunt.tuskCard": "Boss of these woods!",
   "hunt.tuskName": "Chief Tusk",
   "hunt.tuskCaught": "Don't tell the Charging King…",

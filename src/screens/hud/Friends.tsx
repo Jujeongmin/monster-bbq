@@ -103,8 +103,10 @@ function StatPips({ value }: { value: number }) {
   );
 }
 
-// The picked friend: portrait, name, rarity and stars; how good they are at each position (pressing the
-// position puts them there), charm (the whole night) under them; the skill; awakening.
+// The picked friend: portrait, name, rarity and stars; how good they are at each position, charm (the whole
+// night) under them; the skill; awakening. Each position's row ends in its seat (user, 2026-10-21, Dave's
+// way: the stat is read, the seat is pressed): the face of whoever sits there, pressing it seats this
+// friend there (or stands them up from their own seat).
 function FriendDetail({ id, mine, at, save, busy, act }: { id: StaffId; mine: { stars: number; shards: number }; at: Position | null; save: SaveData; busy: boolean; act: (a: Action) => Promise<SaveData | null> }) {
   const cost = staffAwakenCost(mine.stars + 1);
   const best = POSITIONS.reduce((a, b) => (statOf(id, POSITION_STAT[b], mine.stars) > statOf(id, POSITION_STAT[a], mine.stars) ? b : a));
@@ -118,17 +120,21 @@ function FriendDetail({ id, mine, at, save, busy, act }: { id: StaffId; mine: { 
         </span>
       </div>
       <span className="friend-gauges">
-        {POSITIONS.map((p) => (
-          <span key={p} className={`friend-gauge-row${p === best ? " best" : ""}`}>
-            <button className={`ui-sq awaken-kind friend-pos-btn${at === p ? " on" : ""}`} disabled={busy} onClick={() => void act({ type: "assignStaff", position: p, staffId: at === p ? null : id })}>
-              {t(`staff.pos.${p}` as StringKey).split(" ")[0]}
-            </button>
-            <StatPips value={statOf(id, POSITION_STAT[p], mine.stars)} />
-          </span>
-        ))}
+        {POSITIONS.map((p) => {
+          const who = save.staff.roster[p] ?? null;
+          return (
+            <span key={p} className={`friend-gauge-row${p === best ? " best" : ""}${at === p ? " here" : ""}`}>
+              <span className="friend-stat-name">{t(`staff.pos.${p}` as StringKey).split(" ")[0]}</span>
+              <StatPips value={statOf(id, POSITION_STAT[p], mine.stars)} />
+              <button className={`ui-slot friend-seat${at === p ? " on" : ""}`} disabled={busy} title={t(`staff.pos.${p}` as StringKey)} onClick={() => void act({ type: "assignStaff", position: p, staffId: at === p ? null : id })}>
+                {who && <Face id={who} />}
+              </button>
+            </span>
+          );
+        })}
         <span className="friend-gauge-row charm">
-          {/* charm is not a position: the same plate, nothing to press */}
-          <span className="ui-sq awaken-kind friend-pos-btn friend-charm">{t("staff.stat.charm")}</span>
+          {/* charm is not a position: no seat */}
+          <span className="friend-stat-name">{t("staff.stat.charm")}</span>
           <StatPips value={statOf(id, "charm", mine.stars)} />
         </span>
       </span>

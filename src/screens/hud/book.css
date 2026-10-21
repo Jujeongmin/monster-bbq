@@ -60,7 +60,14 @@
 .book .detail-face { width: calc(60px * var(--s)); height: calc(48px * var(--s)); image-rendering: pixelated; }
 .book .friend-detail { gap: calc(3px * var(--s)); }
 .book .friend-gauges { display: flex; flex-direction: column; gap: calc(1px * var(--s)); }
-.book .friend-gauge-row { display: grid; grid-template-columns: calc(34px * var(--s)) auto; align-items: center; gap: calc(6px * var(--s)); }
+.book .friend-gauge-row { display: grid; grid-template-columns: calc(34px * var(--s)) auto auto; justify-content: start; align-items: center; gap: calc(6px * var(--s)); }
+/* the stat's name is read, not pressed: plain ink (the best one darker); the seat at the row's end is pressed */
+.book .friend-stat-name { font: 700 var(--fs-small) / 1 "Galmuri9", monospace; color: var(--paper-ink-soft); text-align: right; }
+.book .friend-gauge-row.best .friend-stat-name, .book .friend-gauge-row.here .friend-stat-name { color: var(--ink); }
+.book .friend-seat { width: calc(24px * var(--s)); height: calc(18px * var(--s)); padding: 0; border-width: calc(2px * var(--s)); border-image-width: calc(3px * var(--s)); cursor: pointer; overflow: hidden; }
+.book .friend-seat img { width: calc(20px * var(--s)); height: calc(16px * var(--s)); image-rendering: pixelated; }
+.book .friend-seat.on { filter: brightness(1.15) drop-shadow(0 0 0 #ffd166); outline: calc(1px * var(--s)) solid #ffd166; }
+.book .friend-seat:disabled { cursor: default; }
 .book .friend-gauge-row .friend-pos-btn { width: 100%; height: calc(16px * var(--s)); padding: 0; border-width: calc(2px * var(--s)); border-image-width: calc(3px * var(--s)); font: 700 var(--fs-small) / 1 "Galmuri9", monospace; display: flex; align-items: center; justify-content: center; }
 .book .friend-pips { display: flex; gap: calc(1px * var(--s)); }
 .book .friend-pips img { width: calc(8px * var(--s)); height: calc(10px * var(--s)); image-rendering: pixelated; }

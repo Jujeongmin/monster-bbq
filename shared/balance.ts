@@ -38,8 +38,9 @@ export const BALANCE: {
     minMsPerFloor: number;
     // stars (hunt v3 design 4.2): what each way of taking a monster gives; the tusk boss gives bossMul times
     stars: Record<"down" | "capture" | "sleep" | "net", { count: number; grade: "normal" | "premium" }> & { bossMul: number };
-    // the capture gauge: where it starts, each tap by harpoon level, its drain, the fastest a capture can be
-    capture: { start: number; tap: number[]; decayPerSec: number; minMs: number };
+    // the capture gauge: where it starts, each tap by harpoon level, its drain, the fastest a capture can be;
+    // the health it must be down to first (a boss far lower) and how much harder each monster holds on
+    capture: { start: number; tap: number[]; decayPerSec: number; minMs: number; maxHp: number; bossMaxHp: number; resist: Partial<Record<MonsterId, number>> };
     // sleep-dart hits that put each monster to sleep, and how long it then sleeps
     sleepHits: Record<MonsterId, number>;
     sleepMs: number;
@@ -230,7 +231,8 @@ export const BALANCE: {
     minMsPerFloor: 8000,
     // user-approved drafts (plan 08b), tuned in play
     stars: { down: { count: 1, grade: "normal" }, capture: { count: 2, grade: "normal" }, sleep: { count: 2, grade: "premium" }, net: { count: 2, grade: "premium" }, bossMul: 2 },
-    capture: { start: 0.35, tap: [0.09, 0.1, 0.11], decayPerSec: 0.25, minMs: 1200 },
+    // user, 2026-10-21: weaken it first (half health, a boss a tenth), and the big ones hold on harder
+    capture: { start: 0.35, tap: [0.09, 0.1, 0.11], decayPerSec: 0.25, minMs: 1200, maxHp: 0.5, bossMaxHp: 0.1, resist: { boar: 1.5, frog: 1.5, snake: 1.5, crab: 2, tusk: 3, king: 3 } },
     sleepHits: { rabbit: 1, chicken: 1, bee: 1, boar: 2, tusk: 5, king: 10, piglet: 1, frog: 2, snake: 1, bat: 1, crab: 2 },
     sleepMs: 15000,
     netSmallMaxRadius: 8,

@@ -95,6 +95,7 @@ export const ko = {
   "hunt.ropeBroke": "줄이 끊겼다!",
   "hunt.take": "E 담기",
   "hunt.mash": "연타!",
+  "hunt.tooStrong": "더 약하게!",
   "hunt.tuskCard": "이 구역 대장이다!",
   "hunt.tuskName": "엄니대장",
   "hunt.tuskCaught": "돌진대왕 형님한테 이르지 마…",
