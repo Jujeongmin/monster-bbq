@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { newSave } from "../../shared/save";
-import { dayGoal, huntGoal, huntStep, kitchenGuide } from "./tutorial";
+import { dayGoal, huntGoal, huntStep, kitchenGuide, tutHave } from "./tutorial";
 
 const day1 = { ...newSave(), story: ["prologue" as const] };
 
@@ -25,22 +25,31 @@ describe("the first day's goal line (tutorial A, user 2026-10-20)", () => {
 });
 
 describe("the first hunt's controls, one at a time", () => {
-  it("goes move, harpoon, slash, gather, then back to the cart", () => {
-    expect(huntStep(new Set(), 0)).toBe("move");
-    expect(huntStep(new Set(["move"]), 0)).toBe("harpoon");
-    expect(huntStep(new Set(["move", "harpoon"]), 0)).toBe("slash");
-    expect(huntStep(new Set(["move", "harpoon", "slash"]), 0)).toBe("gather");
-    expect(huntStep(new Set(["move", "harpoon", "slash", "gather"]), 0)).toBe("cart");
+  const none = {};
+  it("goes move, harpoon, slash, gather, then the lunch's makings, then back to the cart", () => {
+    expect(huntStep(new Set(), none, false)).toBe("move");
+    expect(huntStep(new Set(["move"]), none, false)).toBe("harpoon");
+    expect(huntStep(new Set(["move", "harpoon"]), none, false)).toBe("slash");
+    expect(huntStep(new Set(["move", "harpoon", "slash"]), none, false)).toBe("gather");
+    expect(huntStep(new Set(["move", "harpoon", "slash", "gather"]), none, false)).toBe("recipe");
   });
-  it("counts a step done out of order, and sends them home once the bag holds six", () => {
-    expect(huntStep(new Set(["slash", "move"]), 0)).toBe("harpoon");
-    expect(huntStep(new Set(["move"]), 5)).toBe("harpoon");
-    expect(huntStep(new Set(["move"]), 6)).toBe("cart");
+  it("sends them home only once the bag holds two chicken breasts and two perilla (any grade)", () => {
+    const all = new Set(["move", "harpoon", "slash", "gather"]);
+    expect(huntStep(all, { "chicken_breast:normal": 1, "perilla:normal": 2, "rabbit_leg:normal": 4 }, false)).toBe("recipe");
+    expect(huntStep(all, { "chicken_breast:normal": 1, "chicken_breast:premium": 1, perilla: 2 }, false)).toBe("cart");
   });
-  it("words each step for the keyboard or the touch screen, with the lid's line at the start and at the cart", () => {
+  it("counts a step done out of order, and sends them home when the bag is full whatever is left", () => {
+    expect(huntStep(new Set(["slash", "move"]), none, false)).toBe("harpoon");
+    expect(huntStep(new Set(["move"]), none, true)).toBe("cart");
+  });
+  it("counts what the bag holds of the lunch's makings", () => {
+    expect(tutHave({ "chicken_breast:normal": 1, "chicken_breast:premium": 2, "perilla:normal": 1, "chicken_thigh:normal": 3 })).toEqual([3, 1]);
+  });
+  it("words each step for the keyboard or the touch screen, with the lid's line at the start, at the makings and at the cart", () => {
     expect(huntGoal("move", false)).toEqual({ goal: "goal.move", tip: "tutHunt" });
     expect(huntGoal("harpoon", true)).toEqual({ goal: "goal.harpoonTouch", tip: "tutHunt" });
     expect(huntGoal("gather", false)).toEqual({ goal: "goal.gather", tip: null });
+    expect(huntGoal("recipe", false, [1, 0])).toEqual({ goal: "goal.recipe", tip: "tutRecipe", vars: { a: 1, b: 0 } });
     expect(huntGoal("cart", false)).toEqual({ goal: "goal.cart", tip: "tutCart" });
   });
 });

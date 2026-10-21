@@ -1,3 +1,4 @@
+import type { ItemId } from "../../shared/content/items";
 import type { SaveData } from "../../shared/save";
 import type { SpotId } from "../game/shop3d/day";
 import type { StringKey } from "../i18n";
@@ -31,18 +32,37 @@ export function dayGoal(save: Pick<SaveData, "day" | "story" | "hunt">, phase: P
 }
 
 export const HUNT_STEPS = ["move", "harpoon", "slash", "gather"] as const;
-export type HuntStep = (typeof HUNT_STEPS)[number] | "cart";
-// the bag this full sends them home whatever is left to learn (nothing to gather nearby, say); six makes
-// the first night more than three plates (balance check 2026-10-21)
-const ENOUGH = 6;
+export type HuntStep = (typeof HUNT_STEPS)[number] | "recipe" | "cart";
+// the first lunch came with nothing to pack (user, 2026-10-21): after the controls the first hunt asks for
+// the makings of the one dish known, chicken breast and perilla, two each (the lunchbox and the first night)
+export const TUT_NEED: readonly (readonly [ItemId, number])[] = [
+  ["chicken_breast", 2],
+  ["perilla", 2],
+];
 
-// The first not yet done (a later one done early counts), then the cart.
-export function huntStep(done: ReadonlySet<string>, bag: number): HuntStep {
-  if (bag >= ENOUGH) return "cart";
-  return HUNT_STEPS.find((s) => !done.has(s)) ?? "cart";
+// what the hunt tells the page: the step due now and the makings in the bag
+export interface HuntTut {
+  step: HuntStep;
+  have: number[];
 }
 
-export function huntGoal(step: HuntStep, touch: boolean): { goal: StringKey; tip: TipId | null } {
+// How many of each of TUT_NEED the bag holds, any grade.
+export function tutHave(bag: Record<string, number>): number[] {
+  return TUT_NEED.map(([id]) => Object.entries(bag).reduce((a, [k, n]) => a + (k.split(":")[0] === id ? n : 0), 0));
+}
+
+// The first not yet done (a later one done early counts), then the makings, then the cart; a full bag
+// sends them home whatever is left.
+export function huntStep(done: ReadonlySet<string>, bag: Record<string, number>, full: boolean): HuntStep {
+  if (full) return "cart";
+  const left = HUNT_STEPS.find((s) => !done.has(s));
+  if (left) return left;
+  const have = tutHave(bag);
+  return TUT_NEED.every(([, n], i) => have[i] >= n) ? "cart" : "recipe";
+}
+
+export function huntGoal(step: HuntStep, touch: boolean, have: number[] = []): { goal: StringKey; tip: TipId | null; vars?: Record<string, number> } {
+  if (step === "recipe") return { goal: "goal.recipe", tip: "tutRecipe", vars: { a: have[0] ?? 0, b: have[1] ?? 0 } };
   const tip: TipId | null = step === "move" || step === "harpoon" ? "tutHunt" : step === "cart" ? "tutCart" : null;
   const goal = step === "cart" ? "goal.cart" : `goal.${step}${touch ? "Touch" : ""}`;
   return { goal: goal as StringKey, tip };

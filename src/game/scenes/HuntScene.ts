@@ -5,7 +5,7 @@ import type { DishId } from "../../../shared/content/dishes";
 import { ITEMS, itemKey, parseItemKey, type ItemId } from "../../../shared/content/items";
 import { OBJECT_KINDS } from "../../../shared/content/objects";
 import { addToBag, bagCount } from "../../../shared/hunt/bag";
-import { huntStep, type HuntStep } from "../../screens/tutorial";
+import { huntStep, tutHave } from "../../screens/tutorial";
 import { sfx } from "../../audio/sfx";
 import { computeHit, coneTargets, nextComboStep, recordHit, type WeaponKind } from "../../../shared/hunt/combat";
 import { MONSTERS } from "../../../shared/content/monsters";
@@ -1649,7 +1649,7 @@ export class HuntScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------- the first hunt (tutorial A)
-  private tutStep: HuntStep | null = null;
+  private tutStep: string | null = null;
   private lastStep = 0;
   private lastBeat = -1;
   private tutDone(step: string) {
@@ -1658,10 +1658,12 @@ export class HuntScene extends Phaser.Scene {
   // the step due now, told to the page when it changes (each floor tells it again)
   private tutCheck() {
     if (!this.huntData.tutorial) return;
-    const step = huntStep(new Set(this.run.tut), bagCount(this.run.bag));
-    if (step === this.tutStep) return;
-    this.tutStep = step;
-    this.game.events.emit("hunt:tutorial", step);
+    const step = huntStep(new Set(this.run.tut), this.run.bag, bagCount(this.run.bag) >= this.bagSlots);
+    const have = tutHave(this.run.bag);
+    const key = `${step}:${have.join(",")}`;
+    if (key === this.tutStep) return;
+    this.tutStep = key;
+    this.game.events.emit("hunt:tutorial", { step, have });
   }
 
   // The nearest cart: an arrow beside the hunter pointing at it, pushed in to the screen's edge when the
@@ -1674,7 +1676,7 @@ export class HuntScene extends Phaser.Scene {
     const urgent = bagCount(this.run.bag) >= this.bagSlots || this.run.stamina / this.maxStamina < LOW_STAMINA;
     const off = !cam.worldView.contains(e.x, e.y);
     const near = distance(p, e) <= USE_RANGE * 2;
-    this.exitArrow.setVisible(!this.player.down && !near && (off || urgent || this.tutStep === "cart"));
+    this.exitArrow.setVisible(!this.player.down && !near && (off || urgent || this.tutStep?.startsWith("cart:") === true));
     if (!this.exitArrow.visible) return;
     const a = Math.atan2(e.y - p.y, e.x - p.x);
     // from the hunter's place on screen (his middle, not his feet), 40 px toward the cart, kept 16 px inside

@@ -38,7 +38,7 @@ import { knowsCharcoal, sceneOf, showDayHud, timeOfDay, transitionCard, type App
 import { LidLine } from "./hud/LidLine";
 import { GoalLine } from "./hud/GoalLine";
 import { ControlsPanel } from "./hud/ControlsPanel";
-import { dayGoal, huntGoal, type HuntStep } from "./tutorial";
+import { dayGoal, huntGoal, type HuntTut } from "./tutorial";
 import { markSeen, readSeen, TIP_FACE, tipStore, type TipId } from "./tips";
 import { TitleCard } from "./hud/TitleCard";
 import { Cutscene } from "./story/Cutscene";
@@ -141,7 +141,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   const story = save && !card ? storyDue(save, phase, watched) : null;
   // the first day's tutorial (A): the goal now, where to go, the lid's line the first time
   const [lunchVisited, setLunchVisited] = useState(false);
-  const [huntTut, setHuntTut] = useState<HuntStep | null>(null);
+  const [huntTut, setHuntTut] = useState<HuntTut | null>(null);
   // the hunt's controls: before the first hunt starts (once), and from the hunt's pause menu
   const [controlsAsked, setControlsAsked] = useState(false);
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
@@ -150,7 +150,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     ? null
     : save.hunt
       ? tutorialHunt && phase === "hunt"
-        ? { ...huntGoal(huntTut ?? "move", touch), point: null }
+        ? { ...huntGoal(huntTut?.step ?? "move", touch, huntTut?.have), point: null }
         : null
       : dayGoal(save, phase, { lunchVisited: lunchVisited || save.lunchbox.length > 0 });
 
@@ -373,7 +373,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {win === "notebook" && <Notebook phase={phase} shut={shut} fresh={fresh} onApp={openApp} onClose={() => setWin(null)} onCredits={() => setWin("credits")} />}
       {charcoalLine && <LidLine face={TIP_FACE.charcoal} text={t("tip.charcoal")} />}
       {/* the goal line only for the first hunt's controls; by day the arrow alone says where to go (user, 2026-10-20) */}
-      {goal && save.hunt && !covered && <GoalLine text={t(goal.goal)} place="middle" />}
+      {goal && save.hunt && !covered && <GoalLine text={t(goal.goal, "vars" in goal ? (goal.vars as Record<string, number>) : undefined)} place="middle" />}
       {controlsOpen && save.hunt && <ControlsPanel touch={touch} side={save.hunt.side} onClose={() => (setControlsAsked(false), see("huntControls"))} />}
       {goalTip && <LidLine key={goalTip} face={TIP_FACE[goalTip as Exclude<TipId, "awakenApp">]} text={t(`tip.${goalTip}` as StringKey)} low />}
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
