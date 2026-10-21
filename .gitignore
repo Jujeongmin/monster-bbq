@@ -18,3 +18,4 @@ art-src/sprite-gen/**/sprite-sheet-alpha.png
 
 # sound candidates to listen to: Mixkit files stay on this computer, not in the public repo (license: no redistribution)
 art-src/sfx/listen/
+art-src/sfx/candidates/
