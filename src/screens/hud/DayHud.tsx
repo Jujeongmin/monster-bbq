@@ -2,13 +2,14 @@ import type { SaveData } from "../../../shared/save";
 import { vipLevel } from "../../../shared/shop";
 import { artUrl } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
-import { HUD_ART, knowsCharcoal, type TimeOfDay } from "./hud";
+import { HUD_ART, knowsCharcoal, type App, type TimeOfDay } from "./hud";
 import "./hud.css";
 
 // The day's HUD like Dave's (Dave-style UI design 4): the time of day and the day at the top left, gold and golden charcoal at the top right, Grandma's notebook big at
 // the bottom left (Tab) and the bag at the bottom right (I); while a window is open (`quiet`) those two
 // step aside, like Dave's HUD while the phone is out. The hunt and the night's service hide it (they carry their own).
-export function DayHud({ save, time, quiet = false, onBag, onNotebook }: { save: SaveData; time: TimeOfDay; quiet?: boolean; onBag: () => void; onNotebook: () => void }) {
+// `alerts`: the notebook's apps with a ! (alerts.ts): a ! on the notebook, and on the bag when it is one
+export function DayHud({ save, time, quiet = false, alerts = [], onBag, onNotebook }: { save: SaveData; time: TimeOfDay; quiet?: boolean; alerts?: App[]; onBag: () => void; onNotebook: () => void }) {
   const vip = vipLevel(save.vip.spent);
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
   return (
@@ -42,6 +43,7 @@ export function DayHud({ save, time, quiet = false, onBag, onNotebook }: { save:
           (user, 2026-10-16); on touch no keys, and the notebook sits above the walking stick */}
       <button className={`dh-big dh-note${touch ? " touch" : ""}${quiet ? " quiet" : ""}`} onClick={onNotebook} aria-label={t("hud.notebookButton")}>
         <img src={artUrl(HUD_ART.notebook)} alt="" />
+        {alerts.length > 0 && <span className="dh-alert">!</span>}
         <span className="dh-label">
           {!touch && <kbd className="dh-key">Tab</kbd>}
           {t("hud.notebookButton")}
@@ -49,6 +51,7 @@ export function DayHud({ save, time, quiet = false, onBag, onNotebook }: { save:
       </button>
       <button className={`dh-big dh-bag${touch ? " touch" : ""}${quiet ? " quiet" : ""}`} onClick={onBag} aria-label={t("hud.bagButton")}>
         <img src={artUrl(HUD_ART.bag)} alt="" />
+        {alerts.includes("bag") && <span className="dh-alert">!</span>}
         <span className="dh-label">
           {!touch && <kbd className="dh-key">I</kbd>}
           {t("hud.bagButton")}

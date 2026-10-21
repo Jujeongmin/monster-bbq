@@ -5,7 +5,7 @@ import type { LidFace } from "./dialogue/Dialogue";
 // due, and which were seen. Seen tips are a convenience of this browser, not progress (a new device just
 // shows them once more), so they live in local storage and a blocked storage only means no memory.
 
-export type TipId = "open" | "cooked" | "carry" | "coalLow" | "drink" | "mess" | "angry" | "soldOut" | "charcoal" | "friends" | "awakenApp" | "tutDoor" | "tutHunt" | "tutCart" | "tutRecipe" | "tutLunch" | "tutKitchen" | "huntControls";
+export type TipId = "open" | "cooked" | "carry" | "coalLow" | "drink" | "mess" | "angry" | "soldOut" | "charcoal" | "friends" | "awakenApp" | "tutDoor" | "tutHunt" | "tutCart" | "tutRecipe" | "tutLunch" | "tutKitchen" | "huntControls" | "appBag" | "appUpgrade" | "appAwaken" | "appCookbook" | "appMenu" | "appShop";
 
 export const COAL_LOW = 30;
 const KEY = "monster-bbq:tips";
@@ -37,6 +37,12 @@ export const TIP_FACE: Record<Exclude<TipId, "awakenApp">, LidFace> = {
   tutLunch: "normal",
   tutKitchen: "normal",
   huntControls: "normal",
+  appBag: "normal",
+  appUpgrade: "smug",
+  appAwaken: "smug",
+  appCookbook: "normal",
+  appMenu: "normal",
+  appShop: "smug",
 };
 
 export function readSeen(store: Pick<Storage, "getItem"> | null): Set<TipId> {

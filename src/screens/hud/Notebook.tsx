@@ -8,7 +8,7 @@ import { HUD_ART, notebookApps, type App, type Phase } from "./hud";
 // Grandma's notebook (Dave-style UI design 6, Dave's phone): every window of the day as an app. Pressed
 // at the HUD's bottom right, the notebook flies up from its button and its cover swings open onto the apps
 // (user, 2026-10-16); closing folds it back down. The menu board opens only in the evening kitchen; a closed
-// app says where it opens.
+// app says where it opens. `fresh`: the apps with a ! (alerts.ts).
 // onCredits: the credits page, from a quiet line beside the close one
 export function Notebook({ phase, shut = 0, fresh = [], onApp, onClose, onCredits }: { phase: Phase; shut?: number; fresh?: App[]; onApp: (app: App) => void; onClose: () => void; onCredits?: () => void }) {
   // the cover swinging open
@@ -43,7 +43,7 @@ export function Notebook({ phase, shut = 0, fresh = [], onApp, onClose, onCredit
                     <img src={artUrl(hasArt(HUD_ART.apps[app]) ? HUD_ART.apps[app] : "test/bandal/smile.png")} alt="" />
                     <span className="notebook-name">
                       {t(`notebook.app.${app}` as StringKey)}
-                      {fresh.includes(app) && <span className="notebook-new">{t("notebook.new")}</span>}
+                      {fresh.includes(app) && <span className="notebook-new">!</span>}
                     </span>
                     {!open && <span className="notebook-why">{t("notebook.eveningOnly")}</span>}
                   </button>

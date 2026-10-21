@@ -37,6 +37,7 @@ import { Receipt } from "./hud/Receipt";
 import { knowsCharcoal, sceneOf, showDayHud, timeOfDay, transitionCard, type App, type Phase, type Scene } from "./hud/hud";
 import { LidLine } from "./hud/LidLine";
 import { GoalLine } from "./hud/GoalLine";
+import { appAlerts } from "./hud/alerts";
 import { ControlsPanel } from "./hud/ControlsPanel";
 import { dayGoal, huntGoal, type HuntTut } from "./tutorial";
 import { markSeen, readSeen, TIP_FACE, tipStore, type TipId } from "./tips";
@@ -56,6 +57,9 @@ const shopShut = (code: string) => code === "no_menu" || code === "no_ingredient
 const huntRefused = (f: { action: Action; code: string }) => f.action.type === "finishHunt" && f.code === "bad_hunt";
 
 // `localShop`: in ?local development the shop buys through the page's own server rules (src/net/shop.ts).
+// each notebook app's first-open line (tips.ts); old friends keep their postcard line
+const APP_TIP: Record<App, Exclude<TipId, "awakenApp">> = { bag: "appBag", upgrade: "appUpgrade", awaken: "appAwaken", friends: "friends", cookbook: "appCookbook", menu: "appMenu", shop: "appShop" };
+
 export function DayFlow({ transport, localShop }: { transport: Transport; localShop: LocalTransport | null }) {
   const [save, setSave] = useState<SaveData | null>(null);
   const [phase, setPhase] = useState<Phase>("hunt");
@@ -112,15 +116,29 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the upgrade shop belongs to the screen it was opened from: a new stage closes it
   useEffect(() => (setShopping(null), setWin(null)), [phase]);
   // golden charcoal is introduced the first time this save has it: the lid's line once (not over the hunt or
-  // the night, which have their own screens), and a "new" mark on the awakening app until it is opened
+  // the night, which have their own screens)
   const knows = !!save && knowsCharcoal(save);
   const charcoalLine = knows && !seenTips.has("charcoal") && phase !== "service" && !save?.hunt;
-  const fresh: App[] = knows && !seenTips.has("awakenApp") ? ["awaken"] : [];
+  // the notebook's apps explained (user, 2026-10-21, A+C): the lid's line the first time each opens, and a !
+  // on an app worth opening (alerts.ts); an app counts as opened once its line was seen
+  const opened = new Set((Object.keys(APP_TIP) as App[]).filter((a) => seenTips.has(APP_TIP[a]) || (a === "awaken" && seenTips.has("awakenApp"))));
+  const alerts = save ? appAlerts(save, opened, phase) : [];
+  const [appTip, setAppTip] = useState<App | null>(null);
+  const opening = (app: App) => {
+    if (opened.has(app)) return;
+    setAppTip(app);
+    see(APP_TIP[app]);
+  };
+  const nowOpen: App | null = win === "bag" || win === "friends" || win === "cookbook" ? win : (shopping ?? (store ? "shop" : null));
   useEffect(() => {
-    if (win !== "friends" || seenTips.has("friends")) return;
-    const id = setTimeout(() => see("friends"), 5000);
+    if (nowOpen) opening(nowOpen);
+    else setAppTip(null);
+  }, [nowOpen]);
+  useEffect(() => {
+    if (!appTip) return;
+    const id = setTimeout(() => setAppTip(null), 6000);
     return () => clearTimeout(id);
-  }, [win]);
+  }, [appTip]);
   useEffect(() => {
     if (!charcoalLine) return;
     const id = setTimeout(() => see("charcoal"), 4000);
@@ -271,7 +289,6 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // An app of Grandma's notebook: its window, or in the evening kitchen the kitchen's own tab.
   function openApp(app: App) {
     setWin(null);
-    if (app === "awaken" && fresh.includes("awaken")) see("awakenApp");
     if (app === "bag") setWin("bag");
     else if (app === "upgrade" || app === "awaken") setShopping(app);
     else if (app === "friends") setWin("friends");
@@ -279,6 +296,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     else if (phase === "kitchen") {
       // the kitchen's own tab; by day it is a window opened at Bandal, so open it too
       setKitchenTab(app);
+      opening(app);
       if (hub) setPanel("kitchen");
     }
     else if (app === "cookbook") setWin("cookbook");
@@ -327,6 +345,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           save={save}
           time={timeOfDay(phase, save.hunt?.period ?? null)}
           quiet={!!(shopping || store || win || panel || picking || summary || story)}
+          alerts={alerts}
           onBag={() => setWin("bag")}
           onNotebook={() => setWin("notebook")}
         />
@@ -370,7 +389,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       )}
       {/* the notebook's windows; the upgrades act at whatever stage of the day they were opened in */}
       {shopping && phase !== "service" && <Upgrades tab={shopping} save={save} busy={busy} act={(a) => void act(a, phase)} onShop={() => setStore(true)} onClose={() => setShopping(null)} />}
-      {win === "notebook" && <Notebook phase={phase} shut={shut} fresh={fresh} onApp={openApp} onClose={() => setWin(null)} onCredits={() => setWin("credits")} />}
+      {win === "notebook" && <Notebook phase={phase} shut={shut} fresh={alerts} onApp={openApp} onClose={() => setWin(null)} onCredits={() => setWin("credits")} />}
       {charcoalLine && <LidLine face={TIP_FACE.charcoal} text={t("tip.charcoal")} />}
       {/* the goal line only for the first hunt's controls; by day the arrow alone says where to go (user, 2026-10-20) */}
       {goal && save.hunt && !covered && <GoalLine text={t(goal.goal, "vars" in goal ? (goal.vars as Record<string, number>) : undefined)} place="middle" />}
@@ -378,7 +397,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {goalTip && <LidLine key={goalTip} face={TIP_FACE[goalTip as Exclude<TipId, "awakenApp">]} text={t(`tip.${goalTip}` as StringKey)} low />}
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
       {win === "friends" && <Friends save={save} busy={busy} act={actSave} onShop={() => setStore(true)} onClose={() => setWin(null)} />}
-      {win === "friends" && !seenTips.has("friends") && <LidLine face={TIP_FACE.friends} text={t("tip.friends")} low />}
+      {appTip && <LidLine key={appTip} face={TIP_FACE[APP_TIP[appTip]]} text={t(`tip.${APP_TIP[appTip]}` as StringKey)} low />}
       {win === "cookbook" && <CookbookBook save={save} onClose={() => setWin(null)} />}
       {win === "credits" && <Credits onClose={() => setWin(null)} />}
       {store && <Shop save={save} items={storeItems} checking={checking} onBuy={buy} onClose={() => setStore(false)} />}

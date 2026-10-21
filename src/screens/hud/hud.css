@@ -48,7 +48,11 @@
 .notebook-app:hover:not(:disabled) { background: rgba(120, 70, 30, 0.12); }
 .notebook-app img { grid-row: 1 / 3; height: calc(28px * var(--s)); width: calc(32px * var(--s)); object-fit: contain; image-rendering: pixelated; }
 .notebook-name { font-weight: 700; line-height: 1.1; white-space: nowrap; }
-.notebook-new { margin-left: calc(4px * var(--s)); font: 700 var(--fs-small) "Galmuri9", monospace; color: #d83a2a; }
+.notebook-new { margin-left: calc(4px * var(--s)); font: 700 var(--fs) / 1 "Galmuri11", monospace; color: #d83a2a; }
+/* a ! on the HUD's notebook or bag when an app is worth opening (alerts.ts), bobbing like Dave's phone */
+.dh-alert { position: absolute; top: calc(-6px * var(--s)); right: calc(-8px * var(--s)); font: 700 calc(16px * var(--s)) / 1 "Galmuri11", monospace; color: #ff5a3a; text-shadow: var(--s) 0 0 #2b1408, calc(-1px * var(--s)) 0 0 #2b1408, 0 var(--s) 0 #2b1408, 0 calc(-1px * var(--s)) 0 #2b1408; pointer-events: none; animation: dh-alert 0.9s steps(2) infinite; }
+@keyframes dh-alert { 50% { transform: translateY(calc(-2px * var(--s))); } }
+@media (prefers-reduced-motion: reduce) { .dh-alert { animation: none; } }
 .notebook-why { font: var(--fs-small) / 1 "Galmuri9", monospace; color: var(--paper-ink-soft); white-space: nowrap; }
 .notebook-app:disabled { cursor: default; filter: grayscale(1) opacity(0.7); }
 .notebook-close { position: absolute; top: calc(100% + 6px * var(--s)); left: 0; right: 0; width: max-content; margin: 0 auto; display: flex; gap: calc(16px * var(--s)); align-items: center; }
