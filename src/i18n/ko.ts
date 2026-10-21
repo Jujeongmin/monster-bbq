@@ -251,6 +251,7 @@ export const ko = {
   "credits.music": "음악",
   "credits.sounds": "효과음",
   "credits.font": "글꼴",
+  "credits.contact": "개발진에게 문의",
   "goal.label": "할 일",
   "goal.door": "문으로 나가 사냥하기",
   "goal.move": "WASD로 움직이기",

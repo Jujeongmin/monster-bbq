@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { sfx } from "../../audio/sfx";
 import { artUrl } from "../../game/art";
 import { t } from "../../i18n";
@@ -21,6 +21,8 @@ export function useLineKeys(onPress: (() => void) | null) {
     lines.push(me);
     const on = (e: KeyboardEvent) => {
       if (!press.current || lines[lines.length - 1] !== me || (e.key !== " " && e.key !== "Enter" && e.key !== "Escape")) return;
+      // a button picked with the arrows takes Space and Enter instead (useRowKeys); Esc still closes
+      if (e.key !== "Escape" && document.querySelector("[data-picked]")) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       if (e.type === "keydown" && !e.repeat) sfx.play("uiClick"), press.current();
@@ -33,6 +35,48 @@ export function useLineKeys(onPress: (() => void) | null) {
       removeEventListener("keyup", on, true);
     };
   }, []);
+}
+
+// The buttons under the book (close, rest, open) by keyboard (user, 2026-10-21): ← → move the ▶ along
+// the row, skipping the greyed ones, and Space or Enter presses the one picked. A click anywhere drops the
+// pick, so Space goes back to the close line. Only the newest book answers.
+const rows: object[] = [];
+export function useRowKeys(row: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const me = {};
+    rows.push(me);
+    const picked = () => row.current?.querySelector<HTMLButtonElement>("[data-picked]") ?? null;
+    const drop = () => row.current?.querySelectorAll<HTMLElement>("[data-picked]").forEach((b) => delete b.dataset.picked);
+    const on = (e: KeyboardEvent) => {
+      if (rows[rows.length - 1] !== me || !row.current) return;
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (e.type !== "keydown") return;
+        const all = [...row.current.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
+        if (all.length === 0) return;
+        const from = all.indexOf(picked() ?? row.current.querySelector<HTMLButtonElement>(".marked") ?? all[0]);
+        const to = all[Math.max(0, Math.min(all.length - 1, from + (e.key === "ArrowLeft" ? -1 : 1)))];
+        drop();
+        to.dataset.picked = "";
+        to.focus();
+        sfx.play("uiClick");
+      } else if ((e.key === " " || e.key === "Enter") && picked()) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (e.type === "keydown" && !e.repeat) picked()!.click();
+      }
+    };
+    addEventListener("keydown", on, true);
+    addEventListener("keyup", on, true);
+    addEventListener("pointerdown", drop, true);
+    return () => {
+      rows.splice(rows.indexOf(me), 1);
+      removeEventListener("keydown", on, true);
+      removeEventListener("keyup", on, true);
+      removeEventListener("pointerdown", drop, true);
+    };
+  }, [row]);
 }
 
 // The ▶ line: close, carry on, next day. `keys`: this one answers Space/Enter/Esc (one per screen).
@@ -79,13 +123,15 @@ export function BuyCard({ children, disabled, onClick, gold = false }: { childre
 export function BookWindow({ tabs, left, right, onClose, label, foot }: { tabs?: ReactNode; left: ReactNode; right: ReactNode; onClose?: () => void; label: string; foot?: ReactNode }) {
   // the notebook's pages turning open
   useEffect(() => sfx.play("bookOpen"), []);
+  const row = useRef<HTMLDivElement>(null);
+  useRowKeys(row);
   return (
     <div className="dayflow-screen book-screen" onClickCapture={(e) => (e.target as HTMLElement).closest(".book-row, .ui-tab, .awaken-kind") && sfx.play("uiClick")}>
       <div className="book" style={{ backgroundImage: `url(${artUrl("test/ui/book.png")})` }} role="dialog" aria-label={label}>
         {tabs && <div className="book-tabs">{tabs}</div>}
         <div className="book-page left">{left}</div>
         <div className="book-page right">{right}</div>
-        <div className="book-close">
+        <div className="book-close" ref={row}>
           {onClose && <MenuLine label={t("upgrade.close")} onPress={onClose} />}
           {foot}
         </div>

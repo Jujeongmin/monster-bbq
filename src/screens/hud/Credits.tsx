@@ -13,6 +13,8 @@ export function Credits({ onClose }: { onClose: () => void }) {
         <div className="book-detail credits">
           <h3>{t("credits.game")}</h3>
           <p className="soft">{t("credits.thanks")}</p>
+          <h3>{t("credits.contact")}</h3>
+          <p>{CREDITS.contact}</p>
           <h3>{t("credits.sounds")}</h3>
           <p>
             {CREDITS.sounds.by} · {CREDITS.sounds.site}

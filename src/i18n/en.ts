@@ -252,6 +252,7 @@ export const en: Record<keyof typeof ko, string> = {
   "credits.music": "Music",
   "credits.sounds": "Sound effects",
   "credits.font": "Font",
+  "credits.contact": "Contact the developer",
   "goal.label": "To do",
   "goal.door": "Go out the door to hunt",
   "goal.move": "Move with WASD",

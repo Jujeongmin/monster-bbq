@@ -91,7 +91,7 @@
 .book .shop-vip { display: flex; align-items: center; gap: calc(4px * var(--s)); }
 .shop-detail .shop-band { align-self: flex-start; position: static; }
 .shop-go { align-self: flex-start; margin-top: calc(4px * var(--s)); }
-.book .credits p { margin: 0; }
+.book .credits p { margin: 0; overflow-wrap: anywhere; }
 .book .credits h3 { margin-top: calc(4px * var(--s)); }
 
 /* Bandal's kitchen on the book */
@@ -132,3 +132,8 @@
 .book-row.guide-arrow::after { animation-name: guide-bob-side; }
 @keyframes guide-bob-side { 50% { transform: translateX(calc(3px * var(--s))); } }
 @media (prefers-reduced-motion: reduce) { .guide-arrow::after { animation: none; } }
+/* a button picked with the arrows carries the ▶ (the close line gives its own up) */
+.book-close:has([data-picked]) .menu-item.marked:not([data-picked])::before { content: none; }
+.book-close [data-picked].menu-item { color: #ffd166; }
+.book-close [data-picked]:not(.menu-item) { outline: calc(2px * var(--s)) solid #ffd166; outline-offset: calc(2px * var(--s)); }
+.book-close .menu-item[data-picked]::before { content: "▶"; position: absolute; right: 100%; }

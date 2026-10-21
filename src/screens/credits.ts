@@ -19,5 +19,7 @@ export const MUSIC: MusicCredit[] = [
 export const CREDITS = {
   musicLicence: "CC BY 4.0 · creativecommons.org/licenses/by/4.0",
   sounds: { by: "Mixkit", site: "mixkit.co" },
+  // the developer's contact (user, 2026-10-21)
+  contact: "anjshdkdl99@gmail.com",
   font: { name: "Galmuri", by: "© 2019–2025 Lee Minseo", licence: "SIL Open Font License 1.1" },
 };

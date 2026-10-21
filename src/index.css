@@ -124,6 +124,9 @@ canvas { image-rendering: pixelated; display: block; }
 /* on paper: the ▶ line in ink */
 .menu-item.ink { color: var(--ink); text-shadow: none; }
 .menu-item.ink:hover, .menu-item.ink:focus-visible { color: #a03a10; }
+/* a line on the cream card (hunt summary, add menu) reads in ink like .ink, not cream on cream */
+.ui-panel .menu-item { color: var(--ink); text-shadow: none; }
+.ui-panel .menu-item:hover, .ui-panel .menu-item:focus-visible { color: #a03a10; }
 .ui-ribbon {
   border-style: solid;
   border-color: transparent;
