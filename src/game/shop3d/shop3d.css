@@ -82,3 +82,26 @@
 .day-arrow { position: absolute; transform: translate(-50%, -100%); color: #ffd166; font: 700 28px "Galmuri11", monospace; text-shadow: 2px 2px 0 #2b1408; pointer-events: none; animation: day-arrow 0.8s steps(2) infinite; }
 @keyframes day-arrow { 50% { transform: translate(-50%, calc(-100% - 6px)); } }
 @media (prefers-reduced-motion: reduce) { .day-arrow { animation: none; } }
+
+/* an old friend just come in (postcard reveal A): their face in a bubble over their head, their name on a
+   ribbon under it; the rarer, the more it shines; a hero or a legend shakes the room once */
+.visit-pop { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none; z-index: 8; animation: visit-pop 0.35s steps(5) both; --glow: #fff3d8; }
+.visit-pop.rare { --glow: #7ab0ff; }
+.visit-pop.hero { --glow: #d08aff; }
+.visit-pop.legend { --glow: #ffd166; }
+.visit-face { padding: 2px 4px; filter: drop-shadow(0 0 2px var(--glow)) drop-shadow(0 0 4px var(--glow)); }
+.visit-face img { display: block; width: 120px; height: 96px; image-rendering: pixelated; }
+.visit-ribbon { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; color: #fff3d8; font-size: 14px; }
+.s3-hud .visit-ribbon b, .s3-hud .visit-ribbon span { text-shadow: 1px 1px 0 #2a1408; }
+.visit-ribbon b { font-size: 18px; }
+.visit-pop .visit-rarity { color: #f0e0c0; }
+.visit-pop.rare .visit-rarity { color: #a8c8ff; } .visit-pop.hero .visit-rarity { color: #e0b0ff; } .visit-pop.legend .visit-rarity { color: #ffd166; }
+.visit-pop .visit-new { color: #ff8a6a; }
+.visit-pop .visit-shards { color: #f0e0c0; }
+@keyframes visit-pop { from { opacity: 0; transform: translate(-50%, calc(-100% + 10px)) scale(0.6); } 70% { transform: translate(-50%, -100%) scale(1.08); } }
+.s3-hud .lid-line.low { top: auto; bottom: 52px; }
+.visit-next { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); pointer-events: auto; z-index: 9; }
+.visit-next .menu-item { font-size: 16px; }
+.visit-shake { animation: visit-shake 0.4s steps(1) 1; }
+@keyframes visit-shake { 0%, 100% { translate: 0 0; } 20% { translate: 3px 0; } 40% { translate: -3px 1px; } 60% { translate: 2px -1px; } 80% { translate: -1px 0; } }
+@media (prefers-reduced-motion: reduce) { .visit-pop, .visit-shake { animation: none; } }

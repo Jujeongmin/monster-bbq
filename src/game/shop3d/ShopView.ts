@@ -88,6 +88,8 @@ export class ShopView {
   private readonly camera = new THREE.OrthographicCamera(-W / 4, W / 4, H / 4, -H / 4, 1, 4000);
   private tex: Record<string, THREE.Texture> = {};
   private camX = 0;
+  // a closer look at one spot (an old friend arriving, postcard reveal A): world x and zoom, or none
+  private focus: { x: number; zoom: number } | null = null;
   private lanterns: THREE.PointLight[] = [];
   private fire!: THREE.PointLight;
   private time = 0;
@@ -209,6 +211,11 @@ export class ShopView {
     this.wall.needsUpdate = true;
   }
 
+  // Look closer at a spot along the aisle (game x), or back at the whole room (null).
+  setFocus(gameX: number | null, zoom = 1) {
+    this.focus = gameX === null ? null : { x: toWorldX(gameX), zoom };
+  }
+
   // Screen position (in the 960x540 picture) of a world point, for the HUD.
   private projectWorld(x: number, y: number, z: number): { x: number; y: number } {
     const v = new THREE.Vector3(x, y, z).project(this.camera);
@@ -300,8 +307,15 @@ export class ShopView {
         this.guests.delete(id);
       }
     this.setGlow(look.glow);
-    // the camera follows the grandchild a little
-    this.camX = cameraX(this.camX, wx, dt);
+    // the camera follows the grandchild a little, or eases in on the focus, never past the room's walls
+    const zoom = this.focus?.zoom ?? 1;
+    const ease = Math.min(1, dt * CAMERA.rate);
+    if (Math.abs(this.camera.zoom - zoom) > 0.001) {
+      this.camera.zoom += (zoom - this.camera.zoom) * ease;
+      this.camera.updateProjectionMatrix();
+    }
+    const edge = W / 4 - W / 4 / this.camera.zoom;
+    this.camX = this.focus ? Math.max(-edge, Math.min(edge, this.camX + (this.focus.x - this.camX) * ease)) : cameraX(this.camX, wx, dt);
     const target = new THREE.Vector3(this.camX, 45, 0);
     this.camera.position.set(target.x, target.y + Math.sin(CAMERA.pitch) * 1000, target.z + Math.cos(CAMERA.pitch) * 1000);
     this.camera.lookAt(target);

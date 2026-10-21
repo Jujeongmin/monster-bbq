@@ -17,14 +17,16 @@ import { Visit } from "./Visit";
 // the friends down the left page and the one picked on the right; the postcards with their rates (shown as
 // the law asks) and how far the sure legend is on the left, sending them and what came on the right.
 type Tab = "friends" | "postcards";
-type Result = { id: StaffId; isNew: boolean; shards: number };
+export type Result = { id: StaffId; isNew: boolean; shards: number };
 const portrait = (id: StaffId) => `test/staff/${id}/portrait.png`;
 const Face = ({ id, className = "" }: { id: StaffId; className?: string }) => (hasArt(portrait(id)) ? <img className={className} src={artUrl(portrait(id))} alt="" /> : <span className={className} />);
 const stars = (n: number) => ("★".repeat(Math.min(5, n)) || "☆") + (n > 5 ? `+${n - 5}` : "");
 
-export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; busy: boolean; act: (a: Action) => Promise<SaveData | null>; onShop: () => void; onClose: () => void }) {
-  const [tab, setTab] = useState<Tab>(Object.keys(save.staff.owned).length ? "friends" : "postcards");
-  const [results, setResults] = useState<Result[] | null>(null);
+// `onVisit`: the friends who came walk into the day shop (postcard reveal A, DayStage) instead of the door
+// here; the window then opens again on `came`, the summary.
+export function Friends({ save, busy, act, onShop, onClose, onVisit, came = null }: { save: SaveData; busy: boolean; act: (a: Action) => Promise<SaveData | null>; onShop: () => void; onClose: () => void; onVisit?: (came: Result[]) => void; came?: Result[] | null }) {
+  const [tab, setTab] = useState<Tab>(came || !Object.keys(save.staff.owned).length ? "postcards" : "friends");
+  const [results, setResults] = useState<Result[] | null>(came);
   const [picked, setPicked] = useState<StaffId | null>(null);
   const [visiting, setVisiting] = useState<Result[] | null>(null);
   const st = save.staff;
@@ -40,9 +42,10 @@ export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; 
       if (b && !a) out.push({ id, isNew: true, shards: b.shards });
       else if (a && b && b.shards > a.shards) out.push({ id, isNew: false, shards: b.shards - a.shards });
     }
-    // they come to the door one by one (Visit), then the summary on the page
+    // they come in one by one (into the day shop, or to the door here without it), then the summary
     setResults(out);
-    setVisiting(out);
+    if (onVisit && out.length) onVisit(out);
+    else setVisiting(out);
   }
 
   const tabs = (["friends", "postcards"] as Tab[]).map((k) => (

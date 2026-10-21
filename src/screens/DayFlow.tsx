@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
 import { ammoOf, bagSlots, coalPerDish, huntStats, level, lightRadius, menuSlots, sleepFallMs, stools, walkMul } from "../../shared/growth";
 import type { HuntEvent } from "../../shared/actions";
@@ -31,7 +31,7 @@ import { Notebook } from "./hud/Notebook";
 import { CookbookBook } from "./kitchen/CookbookBook";
 import { Credits } from "./hud/Credits";
 import { bgm } from "../audio/bgm";
-import { Friends } from "./hud/Friends";
+import { Friends, type Result as FriendResult } from "./hud/Friends";
 import "./hud/friends.css";
 import { Receipt } from "./hud/Receipt";
 import { knowsCharcoal, sceneOf, showDayHud, timeOfDay, transitionCard, type App, type Phase, type Scene } from "./hud/hud";
@@ -124,6 +124,11 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   const opened = new Set((Object.keys(APP_TIP) as App[]).filter((a) => seenTips.has(APP_TIP[a]) || (a === "awaken" && seenTips.has("awakenApp"))));
   const alerts = save ? appAlerts(save, opened, phase) : [];
   const [appTip, setAppTip] = useState<App | null>(null);
+  // the friends who came for the postcards walking into the day shop (postcard reveal A), then the
+  // friends window again on what came
+  const [visitors, setVisitors] = useState<FriendResult[] | null>(null);
+  const [came, setCame] = useState<FriendResult[] | null>(null);
+  const dayVisit = useMemo(() => (visitors ? { visitors, onDone: () => (setVisitors(null), setCame(visitors), setWin("friends")) } : null), [visitors]);
   const opening = (app: App) => {
     if (opened.has(app)) return;
     setAppTip(app);
@@ -344,7 +349,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         <DayHud
           save={save}
           time={timeOfDay(phase, save.hunt?.period ?? null)}
-          quiet={!!(shopping || store || win || panel || picking || summary || story)}
+          quiet={!!(shopping || store || win || panel || picking || summary || story || visitors)}
           alerts={alerts}
           onBag={() => setWin("bag")}
           onNotebook={() => setWin("notebook")}
@@ -357,8 +362,9 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         <DayStage
           scene={dayScene}
           stools={stools(save)}
-          active={!panel && !picking && !win && !shopping && !store && !summary && !card && !busy && !story}
+          active={!panel && !picking && !win && !shopping && !store && !summary && !card && !busy && !story && !visitors}
           point={goal?.point ?? null}
+          visit={dayVisit}
           onSpot={(id) => (id === "bandal" && dayScene === "lunch" && setLunchVisited(true), id === "door" ? (dayScene === "lunch" ? setPicking(true) : setPanel("side")) : setPanel("kitchen"))}
           onFail={() => setHub(false)}
         />
@@ -396,7 +402,17 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {controlsOpen && save.hunt && <ControlsPanel touch={touch} side={save.hunt.side} onClose={() => (setControlsAsked(false), see("huntControls"))} />}
       {goalTip && <LidLine key={goalTip} face={TIP_FACE[goalTip as Exclude<TipId, "awakenApp">]} text={t(`tip.${goalTip}` as StringKey)} low />}
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
-      {win === "friends" && <Friends save={save} busy={busy} act={actSave} onShop={() => setStore(true)} onClose={() => setWin(null)} />}
+      {win === "friends" && (
+        <Friends
+          save={save}
+          busy={busy}
+          act={actSave}
+          came={came}
+          onVisit={dayScene && hub && !panel ? (v) => (setWin(null), setCame(null), setVisitors(v)) : undefined}
+          onShop={() => setStore(true)}
+          onClose={() => (setWin(null), setCame(null))}
+        />
+      )}
       {appTip && <LidLine key={appTip} face={TIP_FACE[APP_TIP[appTip]]} text={t(`tip.${APP_TIP[appTip]}` as StringKey)} low />}
       {win === "cookbook" && <CookbookBook save={save} onClose={() => setWin(null)} />}
       {win === "credits" && <Credits onClose={() => setWin(null)} />}

@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { t } from "../../i18n";
+import { STAFF } from "../../../shared/content/staff";
+import { artUrl } from "../art";
+import { t, type StringKey } from "../../i18n";
+import { MenuLine } from "../../screens/hud/Book";
+import { LidLine } from "../../screens/hud/LidLine";
 import { seatXs } from "../service/shift";
 import { daySpots, DAY_START, nearSpot, walk, type DayScene, type Spot, type SpotId } from "./day";
 import { moveFrom } from "./input";
 import { displayScale, FLOOR_Y, Z } from "./layout";
 import type { ShopLook } from "./look";
 import { ShopView } from "./ShopView";
+import { visitOrder, visitSlots, walkIn, type Visitor } from "./visit";
 import "./shop3d.css";
 
 // the door's arrow over the doorway in the picture (the door's spot is where the aisle ends, right of it)
@@ -16,7 +21,18 @@ const DOOR_ARROW_X = 72;
 // Space, the action button on touch) does there. `active` is false while a window is open over it: it stops
 // listening and walking. A failed start (WebGL, textures) calls onFail so the page can use buttons instead.
 // `point`: the first day's arrow over where to go now (tutorial A), hidden once the grandchild is there.
-export function DayStage({ scene, stools, active, point = null, onSpot, onFail }: { scene: DayScene; stools: number; active: boolean; point?: SpotId | null; onSpot: (id: SpotId) => void; onFail: () => void }) {
+// `visit`: old friends coming in for the postcards (postcard reveal A, visit.ts): one by one they walk in
+// through the door to a place along the aisle; on arriving their face pops up in a bubble with their name on
+// a ribbon, the camera leans in (closer for the rarer) and ▶ (Space) lets the next one in. The last ▶ ends it.
+export interface DayVisit {
+  visitors: Visitor[];
+  onDone: () => void;
+}
+const VISIT_ZOOM = { common: 1.15, rare: 1.25, hero: 1.4, legend: 1.6 } as const;
+// the lid's face at a new friend of each rarity (one already met: plain)
+const VISIT_FACE = { common: "normal", rare: "smug", hero: "surprised", legend: "surprised" } as const;
+
+export function DayStage({ scene, stools, active, point = null, visit = null, onSpot, onFail }: { scene: DayScene; stools: number; active: boolean; point?: SpotId | null; visit?: DayVisit | null; onSpot: (id: SpotId) => void; onFail: () => void }) {
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [scale, setScale] = useState(1);
@@ -27,6 +43,23 @@ export function DayStage({ scene, stools, active, point = null, onSpot, onFail }
   const ctl = useRef({ act: () => {}, stick: (_x: number) => {} });
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
   const [stickX, setStickX] = useState(0);
+  // the friends coming in: their order and places (fixed when the visit starts), who is walking now and
+  // since when; `shown` is the one standing there now with their bubble's place on screen
+  const visitRun = useRef<{ order: Visitor[]; slots: number[]; i: number; since: number } | null>(null);
+  const [shown, setShown] = useState<{ i: number; x: number; y: number } | null>(null);
+  const boyX = useRef(DAY_START);
+  useEffect(() => {
+    visitRun.current = visit ? { order: visitOrder(visit.visitors), slots: visitSlots(visit.visitors.length, boyX.current), i: 0, since: performance.now() } : null;
+    setShown(null);
+  }, [visit]);
+  const nextVisitor = () => {
+    const run = visitRun.current;
+    if (!run || !shown) return;
+    if (run.i + 1 >= run.order.length) return visit?.onDone();
+    run.i += 1;
+    run.since = performance.now();
+    setShown(null);
+  };
 
   useEffect(() => {
     const el = stage.current!;
@@ -70,9 +103,25 @@ export function DayStage({ scene, stools, active, point = null, onSpot, onFail }
       const move = live.current.active ? moveFrom(keys, stick) : { x: 0, run: false };
       if (move.x !== 0) flip = move.x < 0;
       x = walk(x, move, dt);
+      boyX.current = x;
       const spots = daySpots(live.current.scene);
+      // the friends coming in: those before the current one stand at their places facing the grandchild,
+      // the current one walks in from the door
+      const run = visitRun.current;
+      const helpers: ShopLook["helpers"] = [];
+      let arrived: { i: number; x: number } | null = null;
+      if (run) {
+        for (let k = 0; k <= run.i; k++) {
+          const to = run.slots[k];
+          const w = k < run.i ? { x: to, arrived: true } : walkIn(to, time - run.since);
+          helpers.push({ id: run.order[k].id, job: "serve", x: w.x, flip: w.arrived ? to > x : false, pose: w.arrived ? "stand" : "walk", carried: null });
+          if (k === run.i && w.arrived) arrived = { i: k, x: to };
+        }
+        const rarity = STAFF[run.order[run.i].id].rarity;
+        view.setFocus(arrived ? arrived.x : null, VISIT_ZOOM[rarity]);
+      } else view.setFocus(null);
       const look: ShopLook = {
-        helpers: [],
+        helpers,
         waiter: { x, flip, pose: move.x !== 0 ? "walk" : "stand", carried: null },
         guests: [],
         seats: seatsX.map((sx) => ({ x: sx, stool: true, plate: null, mess: false })),
@@ -88,6 +137,10 @@ export function DayStage({ scene, stools, active, point = null, onSpot, onFail }
         platesLeft: 0,
       };
       view.render(look, dt / 1000);
+      // the arrived friend's bubble over their head (re-rendered only when it moves on screen)
+      const here = arrived;
+      const head = here ? view.anchors(look).helpers?.[here.i] : undefined;
+      setShown((prev) => (!head || !here ? null : prev && prev.i === here.i && prev.x === head.x && prev.y === head.y ? prev : { i: here.i, x: head.x, y: head.y }));
       const s = live.current.active ? nearSpot(x, spots) : null;
       // the bubble only re-renders when its spot, its words or its place on screen change
       const at = s ? view.project(s.x, FLOOR_Y + 82, Z.waiter) : null;
@@ -133,6 +186,10 @@ export function DayStage({ scene, stools, active, point = null, onSpot, onFail }
     };
   }, [stools]);
 
+  const who = shown && visitRun.current ? visitRun.current.order[shown.i] : null;
+  const lastShown = !!shown && !!visitRun.current && shown.i + 1 >= visitRun.current.order.length;
+  // a hero or a legend arriving shakes the room once
+  const visitShake = !!who && (STAFF[who.id].rarity === "hero" || STAFF[who.id].rarity === "legend");
   const STICK = { x: 110, y: 440, r: 40 };
   const stickAt = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
@@ -144,7 +201,7 @@ export function DayStage({ scene, stools, active, point = null, onSpot, onFail }
   const release = () => (ctl.current.stick(0), setStickX(0));
   return (
     <div ref={stage} className="s3-stage day-stage">
-      <div className="s3-layer" style={{ transform: `scale(${scale})` }}>
+      <div className={`s3-layer${visitShake ? " visit-shake" : ""}`} style={{ transform: `scale(${scale})` }}>
         <canvas ref={canvas} width={960} height={540} />
         <div className="s3-hud">
           {near && (
@@ -159,6 +216,26 @@ export function DayStage({ scene, stools, active, point = null, onSpot, onFail }
             </div>
           )}
           {active && !near && <div className="day-hint">{t(touch ? "day.hintTouch" : "day.hint")}</div>}
+          {who && shown && (
+            <div className={`visit-pop ${STAFF[who.id].rarity}`} key={shown.i} style={{ left: shown.x, top: shown.y }}>
+              <div className="ui-bubble visit-face">
+                <img src={artUrl(`test/staff/${who.id}/portrait.png`)} alt="" />
+              </div>
+              <div className="ui-ribbon visit-ribbon">
+                <b>{t(`staff.name.${who.id}` as StringKey)}</b>
+                <span className="visit-rarity">{t(`staff.rarity.${STAFF[who.id].rarity}` as StringKey)}</span>
+                <span className={who.isNew ? "visit-new" : "visit-shards"}>{who.isNew ? t("friends.new") : t("friends.shards", { n: who.shards })}</span>
+              </div>
+            </div>
+          )}
+          {who && shown && (
+            <LidLine key={`lid${shown.i}`} face={who.isNew ? VISIT_FACE[STAFF[who.id].rarity] : "normal"} text={t(who.isNew ? (`visit.${STAFF[who.id].rarity}` as StringKey) : "visit.again")} low />
+          )}
+          {visit && shown && (
+            <div className="visit-next">
+              <MenuLine label={t(lastShown ? "friends.visitDone" : "friends.visitNext")} onPress={nextVisitor} />
+            </div>
+          )}
           {touch && active && (
             <>
               <div className="s3-stick" style={{ left: STICK.x - STICK.r, top: STICK.y - STICK.r }} onPointerDown={(e) => (e.currentTarget.setPointerCapture(e.pointerId), stickAt(e))} onPointerMove={(e) => e.buttons && stickAt(e)} onPointerUp={release} onPointerCancel={release}>
