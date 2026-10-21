@@ -531,7 +531,7 @@ export const en: Record<keyof typeof ko, string> = {
   "story.p6c": "Granny caught boars with me.",
   "story.p7": "Guests come after dark. Not people. They pay well.",
   // captions between the prologue's cuts (2026-10-20)
-  "story.cap.phone": "A bitter night. Rejected again.",
+  "story.cap.phone": "A bitter night. Another rejection text.",
   "story.cap.parcel": "The next day, a parcel came from Grandma.",
   "story.cap.shop": "The key opened Grandma's grill house.",
   "story.cap.lid1": "The pot lid on the stove gave a jolt.",

@@ -530,7 +530,7 @@ export const ko = {
   "story.p6c": "할미는 나로 멧돼지도 잡았껑.",
   "story.p7": "해 지면 손님 오껑. 사람은 아니껑. 값은 잘 내껑.",
   // captions between the prologue's cuts (2026-10-20)
-  "story.cap.phone": "쓰린 밤, 또 떨어졌다.",
+  "story.cap.phone": "쓰린 밤, 또 불합격 문자가 왔다.",
   "story.cap.parcel": "다음 날, 할머니에게서 소포가 왔다.",
   "story.cap.shop": "열쇠로 연 곳은 할매 돌판집.",
   "story.cap.lid1": "부뚜막의 솥뚜껑이 덜컹 움직였다.",
