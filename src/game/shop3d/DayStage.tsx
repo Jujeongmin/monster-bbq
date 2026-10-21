@@ -190,7 +190,8 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
   const lastShown = !!shown && !!visitRun.current && shown.i + 1 >= visitRun.current.order.length;
   // a hero or a legend arriving shakes the room once
   const visitShake = !!who && (STAFF[who.id].rarity === "hero" || STAFF[who.id].rarity === "legend");
-  const STICK = { x: 110, y: 440, r: 40 };
+  // big enough for a thumb on a small phone (mobile pass, user 2026-10-21)
+  const STICK = { x: 110, y: 430, r: 56 };
   const stickAt = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const dx = (e.clientX - (box.left + box.width / 2)) / (box.width / 2);
@@ -203,7 +204,7 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
     <div ref={stage} className="s3-stage day-stage">
       <div className={`s3-layer${visitShake ? " visit-shake" : ""}`} style={{ transform: `scale(${scale})` }}>
         <canvas ref={canvas} width={960} height={540} />
-        <div className="s3-hud">
+        <div className={`s3-hud${touch ? " touch" : ""}`}>
           {near && (
             <div className={`ui-bubble day-prompt${near.spot.open ? "" : " closed"}`} style={{ left: near.x, top: near.y }}>
               {near.spot.open && !touch && <span className="day-key">E</span>}

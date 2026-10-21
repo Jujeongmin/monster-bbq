@@ -114,7 +114,8 @@ const FRAME_MS = 110;
 export function ShopHud(p: HudProps) {
   const { look } = p;
   const gold = useRolling(look.gold, p.time);
-  const STICK = { x: 110, y: 440, r: 40 };
+  // big enough for a thumb on a small phone (mobile pass, user 2026-10-21)
+  const STICK = { x: 110, y: 430, r: 56 };
   const stick = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const scale = box.width / (STICK.r * 2);
@@ -122,7 +123,7 @@ export function ShopHud(p: HudProps) {
     p.onStick(Math.abs(dx) < 0.25 ? 0 : Math.max(-1, Math.min(1, dx)));
   };
   return (
-    <div className="s3-hud">
+    <div className={`s3-hud${p.touch ? " touch" : ""}`}>
       <div className="s3-topbar">
         <img className="s3-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />
         <span>

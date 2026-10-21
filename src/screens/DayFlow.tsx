@@ -39,6 +39,7 @@ import { knowsCharcoal, sceneOf, showDayHud, timeOfDay, transitionCard, type App
 import { LidLine } from "./hud/LidLine";
 import { GoalLine } from "./hud/GoalLine";
 import { appAlerts } from "./hud/alerts";
+import { usePortrait } from "./portrait";
 import { ControlsPanel } from "./hud/ControlsPanel";
 import { dayGoal, huntGoal, TUT_NEED, type HuntTut } from "./tutorial";
 import { markSeen, readSeen, TIP_FACE, tipStore, type TipId } from "./tips";
@@ -125,6 +126,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   const opened = new Set((Object.keys(APP_TIP) as App[]).filter((a) => seenTips.has(APP_TIP[a]) || (a === "awaken" && seenTips.has("awakenApp"))));
   const alerts = save ? appAlerts(save, opened, phase) : [];
   const [appTip, setAppTip] = useState<App | null>(null);
+  // a phone held upright: the hunt and the night wait while the rotate prompt is up
+  const portrait = usePortrait();
   // the hunt's own once-only lines (a monster weak enough to capture)
   const [huntTip, setHuntTip] = useState<TipId | null>(null);
   useEffect(() => {
@@ -341,7 +344,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {phase === "hunt" && save.hunt && (
         <PhaserGame
           key={save.hunt.id}
-          hold={!!card || controlsOpen}
+          hold={!!card || controlsOpen || portrait}
           onTutorial={setHuntTut}
           onTip={(id) => id === "capture" && !seenTips.has("capture") && setHuntTip("capture")}
           onControls={() => setControlsAsked(true)}
@@ -391,7 +394,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         />
       )}
       {phase === "kitchen" && (!hub || panel === "kitchen") && <Kitchen guide={save.day === 1} tab={kitchenTab} onTab={setKitchenTab} save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} onClose={hub ? () => setPanel(null) : undefined} />}
-      {phase === "service" && save.service && <Night save={save} hold={!!card} addMenu={{ options: addOptions(save), slots: { used: save.service.dishes.length, max: menuSlots(save) }, send: addToMenu }} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
+      {phase === "service" && save.service && <Night save={save} hold={!!card || portrait} addMenu={{ options: addOptions(save), slots: { used: save.service.dishes.length, max: menuSlots(save) }, send: addToMenu }} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
       {phase === "settle" && <Receipt save={save} busy={busy} onNext={() => act({ type: "endDay" }, "hunt")} />}
 
       {/* the morning: pick the side weapon, then set out; at lunch the same window opens from its button */}
