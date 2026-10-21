@@ -5,7 +5,8 @@
 
 export type Sfx = "order" | "tick" | "cooked" | "take" | "coin" | "angry" | "pourPerfect" | "pourGood" | "pourBad" | "coal" | "coalOut" | "scrub" | "scrubDone" | "bell"
   // the hunt and the windows (approved 2026-10-21)
-  | "harpoonThrow" | "harpoonHit" | "slash" | "monsterHit" | "gather" | "cart" | "heartbeat" | "step" | "uiClick" | "bookOpen" | "goldSpent";
+  | "harpoonThrow" | "harpoonHit" | "slash" | "monsterHit" | "gather" | "cart" | "heartbeat" | "step" | "uiClick" | "bookOpen" | "goldSpent"
+  | "bag" | "postcard" | "newFriend" | "awaken";
 
 interface Player {
   play: () => unknown;

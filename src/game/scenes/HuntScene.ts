@@ -1285,7 +1285,8 @@ export class HuntScene extends Phaser.Scene {
     const target = { x: cam.worldView.x + RING.x + RING.r + 30, y: cam.worldView.y + RING.y - 6 };
     for (let i = 0; i < count; i++) {
       const icon = this.add.image(at.x, at.y - 30, `icon_${item.id as ItemId}`).setDepth(9800);
-      this.tweens.add({ targets: icon, x: target.x, y: target.y, scale: 0.6, delay: 120 * i, duration: 600, ease: "Cubic.easeIn", onComplete: () => icon.destroy() });
+      // a pop as each part lands in the bag
+      this.tweens.add({ targets: icon, x: target.x, y: target.y, scale: 0.6, delay: 120 * i, duration: 600, ease: "Cubic.easeIn", onComplete: () => (icon.destroy(), sfx.play("bag")) });
     }
     // the parts' name under the monster, clear of the stamp and the stars above it
     this.popText(at.x, at.y + 10, `${itemName(key)} ×${count}`, item.grade === "premium" ? "#ffd166" : "#ffffff", 900);

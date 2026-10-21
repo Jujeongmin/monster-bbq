@@ -142,7 +142,7 @@ export function AwakenDetail({ target, save, busy, act, onShop }: { target: Awak
       ) : (
         <>
           <p className="fx">{nextStar(save, target, n)}</p>
-          <button className="ui-box buy-card" disabled={busy || noGold || noCharcoal} onClick={() => (cost!.gold > 0 && sfx.play("goldSpent"), act({ type: "awaken", target, from: n }))}>
+          <button className="ui-box buy-card" disabled={busy || noGold || noCharcoal} onClick={() => (sfx.play("awaken"), act({ type: "awaken", target, from: n }))}>
             <Price gold={cost!.gold} charcoal={cost!.charcoal} haveGold={save.gold} haveCharcoal={save.charcoal} />
             {t("awaken.go")}
           </button>

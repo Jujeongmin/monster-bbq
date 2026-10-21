@@ -7,6 +7,7 @@ import type { SaveData } from "../../../shared/save";
 import { staffAwakenCost } from "../../../shared/staff/actions";
 import { artUrl, hasArt } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
+import { sfx } from "../../audio/sfx";
 import { BookWindow, BuyCard, Price } from "./Book";
 import { knowsCharcoal } from "./hud";
 import { PIP_COUNT, pipsOf } from "./pips";
@@ -37,6 +38,8 @@ export function Friends({ save, busy, act, onShop, onClose }: { save: SaveData; 
       if (b && !a) out.push({ id, isNew: true, shards: b.shards });
       else if (a && b && b.shards > a.shards) out.push({ id, isNew: false, shards: b.shards - a.shards });
     }
+    // a new friend's own sound, else the postcards' reveal
+    sfx.play(out.some((r) => r.isNew) ? "newFriend" : "postcard");
     setResults(out);
   }
 
@@ -130,7 +133,7 @@ function FriendDetail({ id, mine, at, save, busy, act }: { id: StaffId; mine: { 
         </span>
       </span>
       <span className="friend-skill">{t(`staff.skill.${id}` as StringKey)}</span>
-      <BuyCard gold disabled={busy || mine.shards < cost.shards || save.gold < cost.gold} onClick={() => void act({ type: "awakenStaff", staffId: id, from: mine.stars })}>
+      <BuyCard disabled={busy || mine.shards < cost.shards || save.gold < cost.gold} onClick={() => (sfx.play("awaken"), void act({ type: "awakenStaff", staffId: id, from: mine.stars }))}>
         <Price gold={cost.gold} haveGold={save.gold} haveCharcoal={save.charcoal} />
         <span className={mine.shards < cost.shards ? "short" : ""}>{t("friends.shardsNeed", { have: mine.shards, need: cost.shards })}</span>
         {t("awaken.go")}
