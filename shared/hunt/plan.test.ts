@@ -47,7 +47,7 @@ describe("planFloor", () => {
     expect([count(m2, "boar"), count(m2, "bee"), count(m2, "rabbit"), count(m2, "chicken")]).toEqual([3, 2, 1, 0]);
     const wave0 = m1.spawns.filter((s) => s.wave === 0).length;
     expect(m1.spawns.filter((s) => s.wave === 2).length).toBe(wave0);
-    expect(m1.nodes.length).toBe(8);
+    expect(m1.nodes.length).toBe(10); // shiitake 2, wild garlic 3, perilla 5
   });
   it("keeps monsters, gathering spots and trees clear of the start, the exits and the way down", () => {
     for (const floor of [1, 2] as const) {

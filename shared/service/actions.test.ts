@@ -13,7 +13,7 @@ const kitchen: SaveData = {
   ...newSave(),
   stage: "kitchen",
   day: 3,
-  reputation: 20,
+  reputation: 60, // high enough that a night of unserved guests never floors it at 0
   dishes: { grilled_belly: 1, garlic_neck: 1 },
   items: { "boar_belly:normal": 1, "boar_neck:normal": 1, wild_garlic: 1 },
 };
@@ -48,10 +48,11 @@ describe("finishService (restaurant v2 stage 2: the waiter carries, tips, drinks
     expect(r.save.gold).toBe(90 + 4 + 5);
     expect(r.save.stage).toBe("settle");
     expect(r.save.service).toBeNull();
-    // 6 plates, so every customer up to 6 who went without counts as gone
-    const gone = Math.min(c.length, 6) - 2;
+    // every guest of the night who went without counts as gone, however few plates were made (balance
+    // check 2026-10-21: making few plates no longer spares the reputation)
+    const gone = c.length - 2;
     expect(r.save.lastService).toEqual({ id: svc.id, served: 2, left: gone, sales: 90, tips: 9, drinks: 0, cleaned: 0, happy: 2, repDelta: 2 * SV.rep.happy + gone * SV.rep.left, dishes: [{ dish: "grilled_belly", plates: 1, gold: 40 }, { dish: "garlic_neck", plates: 1, gold: 50 }] });
-    expect(r.save.reputation).toBe(Math.max(0, 20 + 2 * SV.rep.happy + gone * SV.rep.left));
+    expect(r.save.reputation).toBe(Math.max(0, 60 + 2 * SV.rep.happy + gone * SV.rep.left));
   });
   it("tips a tenth of the price however quick the plate was", () => {
     expect(tipFor(40, false)).toBe(4);
@@ -96,11 +97,11 @@ describe("finishService (restaurant v2 stage 2: the waiter carries, tips, drinks
     expect(applyAction(s0, report([{ customer: x.id, dish: "grilled_belly", waitMs: 5000 }]), after(x.arriveMs + 4999)).error).toBe("bad_service");
     expect(applyAction(s0, report([{ customer: x.id, dish: "grilled_belly" }]), after(late)).error).toBe("bad_service");
   });
-  it("does not count customers who came after every plate was sold as gone", () => {
+  it("counts the guests who came after every plate was sold as gone too (balance check 2026-10-21)", () => {
     const served = c.slice(0, 6).map((x, i) => ({ customer: x.id, dish: i < 3 ? "grilled_belly" : "garlic_neck", waitMs: slow(x) }));
     const r = applyAction(s0, report(served), after(late));
     expect(r.error).toBeUndefined();
-    expect(r.save.lastService!.left).toBe(0);
+    expect(r.save.lastService!.left).toBe(c.length - 6);
   });
   it("refuses more plates of a dish than were made, a dish not cooked tonight, unknown or repeated customers", () => {
     const four = c.slice(0, 4).map((x) => ({ customer: x.id, dish: "grilled_belly", waitMs: slow(x) }));

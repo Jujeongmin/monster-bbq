@@ -32,3 +32,9 @@ describe("FLOORS", () => {
     expect(nearestExit({ x: e.x + 3, y: e.y - 2 }, 1).id).toBe(e.id);
   });
 });
+
+describe("the forest's first floor feeds the starting dish (balance check 2026-10-21)", () => {
+  it("offers five perilla spots morning and afternoon (the chicken perilla salad needs one a set)", () => {
+    for (const period of ["morning", "afternoon"] as const) expect(FLOORS[1].roster[period].forage).toContainEqual(["perilla", 5]);
+  });
+});

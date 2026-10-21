@@ -32,9 +32,10 @@ describe("the first hunt's controls, one at a time", () => {
     expect(huntStep(new Set(["move", "harpoon", "slash"]), 0)).toBe("gather");
     expect(huntStep(new Set(["move", "harpoon", "slash", "gather"]), 0)).toBe("cart");
   });
-  it("counts a step done out of order, and sends them home once the bag holds three", () => {
+  it("counts a step done out of order, and sends them home once the bag holds six", () => {
     expect(huntStep(new Set(["slash", "move"]), 0)).toBe("harpoon");
-    expect(huntStep(new Set(["move"]), 3)).toBe("cart");
+    expect(huntStep(new Set(["move"]), 5)).toBe("harpoon");
+    expect(huntStep(new Set(["move"]), 6)).toBe("cart");
   });
   it("words each step for the keyboard or the touch screen, with the lid's line at the start and at the cart", () => {
     expect(huntGoal("move", false)).toEqual({ goal: "goal.move", tip: "tutHunt" });

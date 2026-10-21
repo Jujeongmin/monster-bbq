@@ -32,8 +32,9 @@ export function dayGoal(save: Pick<SaveData, "day" | "story" | "hunt">, phase: P
 
 export const HUNT_STEPS = ["move", "harpoon", "slash", "gather"] as const;
 export type HuntStep = (typeof HUNT_STEPS)[number] | "cart";
-// the bag this full sends them home whatever is left to learn (nothing to gather nearby, say)
-const ENOUGH = 3;
+// the bag this full sends them home whatever is left to learn (nothing to gather nearby, say); six makes
+// the first night more than three plates (balance check 2026-10-21)
+const ENOUGH = 6;
 
 // The first not yet done (a later one done early counts), then the cart.
 export function huntStep(done: ReadonlySet<string>, bag: number): HuntStep {

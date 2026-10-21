@@ -70,8 +70,8 @@ export const FLOORS: Record<FloorId, FloorDef> = {
     drainPerSec: 0.25,
     layoutSeed: 0x51f15e,
     roster: {
-      morning: { solo: [["rabbit", 3]], flock: { monster: "chicken", count: 2, size: 3 }, waves: 3, forage: [["shiitake", 2], ["wild_garlic", 3], ["perilla", 3]] },
-      afternoon: { solo: [["rabbit", 4]], flock: { monster: "chicken", count: 1, size: 3 }, waves: 3, forage: [["shiitake", 2], ["wild_garlic", 3], ["perilla", 3]] },
+      morning: { solo: [["rabbit", 3]], flock: { monster: "chicken", count: 2, size: 3 }, waves: 3, forage: [["shiitake", 2], ["wild_garlic", 3], ["perilla", 5]] },
+      afternoon: { solo: [["rabbit", 4]], flock: { monster: "chicken", count: 1, size: 3 }, waves: 3, forage: [["shiitake", 2], ["wild_garlic", 3], ["perilla", 5]] },
     },
   },
   2: {

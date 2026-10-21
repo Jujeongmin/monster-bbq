@@ -82,8 +82,9 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
   for (const id of cleaned as unknown[]) if (typeof id !== "string" || !seen.has(id) || !customers.get(id)!.messy) return bad;
   tips += cleaned.length * SV.cleanTip;
   if (elapsed < seen.size * SV.minMsPerServe) return bad;
-  const made = svc.dishes.reduce((n, d) => n + d.plates, 0);
-  const gone = Math.max(0, Math.min(customers.size, made) - seen.size);
+  // every guest of the night who went without counts as gone, however few plates were made (balance check
+  // 2026-10-21: counting only up to the plates made let a short menu spare the reputation)
+  const gone = Math.max(0, customers.size - seen.size);
   const happy = seen.size;
   const reputation = Math.max(0, save.reputation + happy * SV.rep.happy + gone * SV.rep.left + badPours * SV.rep.badDrink);
   return {
