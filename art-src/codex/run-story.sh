@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The prologue's seven cut pictures (design 6, prologue A approved 2026-10-19): Codex draws each, then each
-# is shrunk to 320x180 by each block's most common colour (no drawing) into art-src/codex/out/story/ for the
+# is shrunk to 512x288 by each block's most common colour (no drawing) into art-src/codex/out/story/ for the
 # user to approve. An approved one is copied to art/test/story/<name>.png and the cutscene uses it by itself
 # (src/screens/story/Cutscene.tsx stands approved art in until then).
 #   bash art-src/codex/run-story.sh          # draw and shrink
@@ -24,8 +24,11 @@ for n in sys.argv[1:]:
     src = Path(f"art-src/codex/raw/story_{n}.png")
     if not src.exists():
         print("missing", src); continue
-    im = Image.open(src).convert("RGB").quantize(48).convert("RGB")
-    W, H = 320, 180
+    # three sheet pixels to one by each block's most common colour, the colours kept as drawn (2026-10-21:
+    # 320x180 after cutting to 48 colours broke the faces and lost the green and red); lid0 alone is drawn
+    # on an 8-pixel grid and is read at 192x108 instead
+    im = Image.open(src).convert("RGB")
+    W, H = 512, 288
     bw, bh = im.width / W, im.height / H
     px = im.load()
     out = Image.new("RGB", (W, H))
