@@ -20,9 +20,10 @@ export function DayHud({ save, time, quiet = false, alerts = [], onBag, onNotebo
           <img className="ui-icon" src={artUrl(HUD_ART.time[time])} alt="" />
           {t("hud.dayTime", { day: save.day, time: t(`time.${time}` as StringKey) })}
         </div>
-        {/* the shop's power (the ranking's number, shared/power.ts) beside the day */}
-        <div className="ui-plate dh-power">
-          {t("rank.power")} <b>{powerOf(save).total.toLocaleString()}</b>
+        {/* the shop's power (the ranking's number, shared/power.ts) beside the day, on its own badge (an
+            emblem and a ribbon, not the day's plate: user 2026-10-21) */}
+        <div className="dh-power" style={{ borderImageSource: `url(${artUrl(HUD_ART.powerBadge)})` }} title={t("rank.power")}>
+          <b>{powerOf(save).total.toLocaleString()}</b>
         </div>
       </div>
       <div className="ui-bar dh-res">
