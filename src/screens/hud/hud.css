@@ -45,9 +45,10 @@
 .notebook-name { font-weight: 700; line-height: 1.1; white-space: nowrap; }
 .notebook-new { margin-left: calc(4px * var(--s)); font: 700 var(--fs) / 1 "Galmuri11", monospace; color: #d83a2a; }
 /* a ! on the HUD's notebook or bag when an app is worth opening (alerts.ts), bobbing like Dave's phone */
-/* the "!" sits on the picture's top-right corner, not the button's (its label line is wider; user 2026-10-22) */
+/* the "!" stands just above the picture's top-right corner, clear of the picture and not out past the
+   button's wider label line (user 2026-10-22) */
 .dh-pic { position: relative; display: block; line-height: 0; }
-.dh-alert { position: absolute; top: calc(-4px * var(--s)); right: calc(-2px * var(--s)); font: 700 calc(16px * var(--s)) / 1 "Galmuri11", monospace; color: #ff5a3a; text-shadow: var(--s) 0 0 #2b1408, calc(-1px * var(--s)) 0 0 #2b1408, 0 var(--s) 0 #2b1408, 0 calc(-1px * var(--s)) 0 #2b1408; pointer-events: none; animation: dh-alert 0.9s steps(2) infinite; }
+.dh-alert { position: absolute; bottom: calc(100% - 2px * var(--s)); right: 0; font: 700 calc(16px * var(--s)) / 1 "Galmuri11", monospace; color: #ff5a3a; text-shadow: var(--s) 0 0 #2b1408, calc(-1px * var(--s)) 0 0 #2b1408, 0 var(--s) 0 #2b1408, 0 calc(-1px * var(--s)) 0 #2b1408; pointer-events: none; animation: dh-alert 0.9s steps(2) infinite; }
 @keyframes dh-alert { 50% { transform: translateY(calc(-2px * var(--s))); } }
 @media (prefers-reduced-motion: reduce) { .dh-alert { animation: none; } }
 .notebook-why { font: var(--fs-small) / 1 "Galmuri9", monospace; color: var(--paper-ink-soft); white-space: nowrap; }
