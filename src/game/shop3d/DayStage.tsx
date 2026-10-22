@@ -9,7 +9,7 @@ import { daySpots, DAY_START, nearSpot, walk, type DayScene, type Spot, type Spo
 import { moveFrom } from "./input";
 import { pageStore, readPadPrefs } from "../padPrefs";
 import { padButton, TouchStick } from "./TouchStick";
-import { displayScale, FLOOR_Y, Z } from "./layout";
+import { layerFit, FLOOR_Y, Z } from "./layout";
 import type { ShopLook } from "./look";
 import { ShopView } from "./ShopView";
 import { visitOrder, visitSlots, walkIn, type Visitor } from "./visit";
@@ -37,7 +37,10 @@ const VISIT_FACE = { common: "normal", rare: "smug", hero: "surprised", legend: 
 export function DayStage({ scene, stools, active, point = null, visit = null, onSpot, onFail }: { scene: DayScene; stools: number; active: boolean; point?: SpotId | null; visit?: DayVisit | null; onSpot: (id: SpotId) => void; onFail: () => void }) {
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [scale, setScale] = useState(1);
+  // the picture's width and on-screen scale (layerFit); the view reads the width each frame
+  const [layer, setLayer] = useState({ w: 960, scale: 1 });
+  const layerW = useRef(960);
+  layerW.current = layer.w;
   const [near, setNear] = useState<{ spot: Spot; x: number; y: number } | null>(null);
   const live = useRef({ scene, active, point, onSpot, onFail });
   live.current = { scene, active, point, onSpot, onFail };
@@ -64,7 +67,7 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
 
   useEffect(() => {
     const el = stage.current!;
-    const fit = () => setScale(displayScale(el.clientWidth, el.clientHeight));
+    const fit = () => setLayer(layerFit(el.clientWidth, el.clientHeight));
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
@@ -97,6 +100,7 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
     };
     ctl.current = { act, stick: (v) => (stick = v) };
     const frame = (time: number) => {
+      view.setWidth(layerW.current);
       if (!alive) return;
       view.setEvening(live.current.scene === "kitchen");
       const dt = Math.min(time - last, 50);
@@ -195,8 +199,8 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
   const [pad] = useState(() => readPadPrefs(pageStore()));
   return (
     <div ref={stage} className="s3-stage day-stage">
-      <div className={`s3-layer${visitShake ? " visit-shake" : ""}`} style={{ transform: `scale(${scale})` }}>
-        <canvas ref={canvas} width={960} height={540} />
+      <div className={`s3-layer${visitShake ? " visit-shake" : ""}`} style={{ width: layer.w, transform: `scale(${layer.scale})` }}>
+        <canvas ref={canvas} width={layer.w} height={540} />
         <div className={`s3-hud${touch ? " touch" : ""}`}>
           {near && (
             <div className={`ui-bubble day-prompt${near.spot.open ? "" : " closed"}`} style={{ left: near.x, top: near.y }}>

@@ -3,7 +3,7 @@ import { DISHES } from "../../../shared/content/dishes";
 import { STAFF_IDS, type StaffId } from "../../../shared/content/staff";
 import { artUrl, hasArt } from "../art";
 import { LAYOUT } from "../service/shift";
-import { CAMERA, COUNTER, cameraX, FLOOR_Y, HUNTER_FEET, PASS, toWorldX, Z } from "./layout";
+import { CAMERA, COUNTER, cameraX, FLOOR_Y, HUNTER_FEET, LAYER_MAX_W, PASS, toWorldX, Z } from "./layout";
 import { YOKAI, type Glow, type HelperLook, type Pose, type ShopLook } from "./look";
 import type { Anchors } from "./ShopHud";
 import { Board, loadTextures } from "./sprites";
@@ -12,8 +12,12 @@ import { Board, loadTextures } from "./sprites";
 // art on boxes and upright boards, drawn at 960x540 through an orthographic camera so one art pixel is
 // always two screen pixels. It only draws: the night's rules are Shift, what to show is lookAt.
 
-const W = 960;
+// the picture's height; its width follows the screen (layerFit), 960 to 1170
 const H = 540;
+// past the back wall's ends (480 world units) the wall runs on as its own end strips, this many art
+// pixels wide, tiled and a little darker (a longer phone sees more room: user, 2026-10-22)
+const WALL_STRIP = 6;
+const SIDE_W = (LAYER_MAX_W / 2 - 480) / 2 + 30;
 const BANDAL_SINK = 4; // Bandal's picture stops at the waist: that much of it stays behind the pass
 const YK_POSES = ["walk_0", "walk_1", "sit", "eat", "happy", "angry"];
 const BANDAL = ["idle", "breathe", "grill", "turn", "serve", "smile"];
@@ -85,7 +89,8 @@ const helperAt = (h: HelperLook): { x: number; z: number } => (h.job === "kitche
 export class ShopView {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
-  private readonly camera = new THREE.OrthographicCamera(-W / 4, W / 4, H / 4, -H / 4, 1, 4000);
+  private w = 960;
+  private readonly camera = new THREE.OrthographicCamera(-this.w / 4, this.w / 4, H / 4, -H / 4, 1, 4000);
   private tex: Record<string, THREE.Texture> = {};
   private camX = 0;
   // a closer look at one spot (an old friend arriving, postcard reveal A): world x and zoom, or none
@@ -109,6 +114,7 @@ export class ShopView {
   private glowing: Board | null = null;
   private waiterShadow!: THREE.Mesh;
   private wall!: THREE.MeshLambertMaterial;
+  private wallEnds: THREE.MeshLambertMaterial[] = [];
   private evening = false;
 
   constructor(
@@ -119,7 +125,7 @@ export class ShopView {
   ) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
     this.renderer.setPixelRatio(1);
-    this.renderer.setSize(W, H, false);
+    this.renderer.setSize(this.w, H, false);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.setClearColor(0x1a0f0a);
   }
@@ -150,12 +156,21 @@ export class ShopView {
     wall.rotation.set(-p, 0, 0);
     wall.position.set(0, FLOOR_Y + 100.5 * Math.cos(p), Z.backWall - 100.5 * Math.sin(p));
     scene.add(wall);
+    // the wall's ends running on past it, both sides
+    for (const side of [-1, 1]) {
+      const end = new THREE.Mesh(new THREE.PlaneGeometry(SIDE_W, 201), new THREE.MeshLambertMaterial({ color: 0xc8c8c8 }));
+      this.wallEnds.push(end.material);
+      end.rotation.set(-p, 0, 0);
+      end.position.set(side * (240 + SIDE_W / 2), FLOOR_Y + 100.5 * Math.cos(p), Z.backWall - 100.5 * Math.sin(p));
+      scene.add(end);
+    }
+    this.paintWallEnds();
     // the floor: plain planks, so lying down does not break them up
     const floorTex = tex.room_floor;
     floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
     // deep enough to reach the bottom of the view (it stopped short: a dark band under the room)
-    floorTex.repeat.set(1.4, 5.25);
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(520, 700), new THREE.MeshLambertMaterial({ map: floorTex }));
+    floorTex.repeat.set((LAYER_MAX_W / 2 + 40) / 340, 5.25);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(LAYER_MAX_W / 2 + 40, 700), new THREE.MeshLambertMaterial({ map: floorTex }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(0, FLOOR_Y, 240);
     scene.add(floor);
@@ -209,6 +224,40 @@ export class ShopView {
     this.evening = on;
     this.wall.map = (on && this.tex.room_backwall_evening) || this.tex.room_backwall;
     this.wall.needsUpdate = true;
+    this.paintWallEnds();
+  }
+
+  // The wall's end strips, cut from the back wall shown now (no new art: its own edge columns, tiled).
+  private paintWallEnds() {
+    const img = this.wall.map?.image as HTMLImageElement | undefined;
+    if (!img) return;
+    this.wallEnds.forEach((m, i) => {
+      const c = document.createElement("canvas");
+      c.width = WALL_STRIP;
+      c.height = img.height;
+      c.getContext("2d")!.drawImage(img, i === 0 ? 0 : img.width - WALL_STRIP, 0, WALL_STRIP, img.height, 0, 0, WALL_STRIP, img.height);
+      const t = new THREE.CanvasTexture(c);
+      t.magFilter = t.minFilter = THREE.NearestFilter;
+      t.generateMipmaps = false;
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.wrapS = THREE.RepeatWrapping;
+      t.repeat.set(SIDE_W / WALL_STRIP, 1);
+      // tiled outward from the wall's edge: the left strip ends flush at the wall, the right one starts there
+      t.offset.set(i === 0 ? -((SIDE_W / WALL_STRIP) % 1) : 0, 0);
+      m.map?.dispose();
+      m.map = t;
+      m.needsUpdate = true;
+    });
+  }
+
+  // The picture's width now (layerFit): the camera sees that much of the room, at the same scale.
+  setWidth(w: number) {
+    if (w === this.w) return;
+    this.w = w;
+    this.renderer.setSize(w, H, false);
+    this.camera.left = -w / 4;
+    this.camera.right = w / 4;
+    this.camera.updateProjectionMatrix();
   }
 
   // Look closer at a spot along the aisle (game x), or back at the whole room (null).
@@ -216,10 +265,10 @@ export class ShopView {
     this.focus = gameX === null ? null : { x: toWorldX(gameX), zoom };
   }
 
-  // Screen position (in the 960x540 picture) of a world point, for the HUD.
+  // Screen position (in the picture, 540 tall) of a world point, for the HUD.
   private projectWorld(x: number, y: number, z: number): { x: number; y: number } {
     const v = new THREE.Vector3(x, y, z).project(this.camera);
-    return { x: Math.round(((v.x + 1) / 2) * W), y: Math.round(((1 - v.y) / 2) * H) };
+    return { x: Math.round(((v.x + 1) / 2) * this.w), y: Math.round(((1 - v.y) / 2) * H) };
   }
 
   // the same for a point given in the rules' 960-wide x
@@ -314,7 +363,7 @@ export class ShopView {
       this.camera.zoom += (zoom - this.camera.zoom) * ease;
       this.camera.updateProjectionMatrix();
     }
-    const edge = W / 4 - W / 4 / this.camera.zoom;
+    const edge = this.w / 4 - this.w / 4 / this.camera.zoom;
     this.camX = this.focus ? Math.max(-edge, Math.min(edge, this.camX + (this.focus.x - this.camX) * ease)) : cameraX(this.camX, wx, dt);
     const target = new THREE.Vector3(this.camX, 45, 0);
     this.camera.position.set(target.x, target.y + Math.sin(CAMERA.pitch) * 1000, target.z + Math.cos(CAMERA.pitch) * 1000);

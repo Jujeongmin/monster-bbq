@@ -1,8 +1,8 @@
-/* The 3D night shop: a 960x540 layer scaled as a whole (as big as fits), the Three canvas
+/* The 3D night shop: a layer 540 tall (960 wide, more on a longer phone: layerFit) scaled as a whole, the Three canvas
    under the HUD. Inside it one art pixel of the UI kit is two layer pixels, like the 2D shop. */
 .s3-stage { position: absolute; inset: 0; background: #1a0f0a; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .s3-layer { position: relative; width: 960px; height: 540px; flex: none; transform-origin: center; --s: 1; --k: 2px; --fs: 12px; --fs-small: 10px; font: 700 12px "Galmuri11", monospace; color: #fff3d8; }
-.s3-layer canvas { position: absolute; inset: 0; width: 960px; height: 540px; image-rendering: pixelated; }
+.s3-layer canvas { position: absolute; inset: 0; width: 100%; height: 540px; image-rendering: pixelated; }
 .s3-hud { position: absolute; inset: 0; pointer-events: none; }
 .s3-hud button { pointer-events: auto; }
 .s3-hud span, .s3-hud div { text-shadow: 1px 1px 0 #2a1408; }

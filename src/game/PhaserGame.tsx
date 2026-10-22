@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
-import { GAME_HEIGHT, GAME_WIDTH } from "./config";
+import { fitGameWidth, GAME_HEIGHT } from "./config";
 import { holdLoop } from "./holdLoop";
 import { HuntScene, type HuntData, type HuntResult } from "./scenes/HuntScene";
 import type { HuntTut } from "../screens/tutorial";
@@ -25,10 +25,13 @@ export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial, onContro
   const holdRef = useRef(hold);
   holdRef.current = hold;
   useEffect(() => {
+    // as wide as the frame's shape asks (a long phone sees more forest at the sides)
+    const box = host.current!;
+    const width = fitGameWidth(box.clientHeight > 0 ? box.clientWidth / box.clientHeight : 16 / 9);
     const game = new Phaser.Game({
       type: Phaser.AUTO,
-      parent: host.current!,
-      width: GAME_WIDTH,
+      parent: box,
+      width,
       height: GAME_HEIGHT,
       pixelArt: true,
       backgroundColor: "#000000",

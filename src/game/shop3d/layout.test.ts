@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LAYOUT } from "../service/shift";
-import { cameraX, COUNTER, displayScale, HUNTER_FEET, leanZ, PASS, snap, toWorldX, Z } from "./layout";
+import { cameraX, COUNTER, layerFit, HUNTER_FEET, leanZ, PASS, snap, toWorldX, Z } from "./layout";
 
 describe("the 3D shop's room", () => {
   it("maps the 960-wide shop rules onto the 480-unit room", () => {
@@ -13,11 +13,15 @@ describe("the 3D shop's room", () => {
     expect(cameraX(0, 200, 10)).toBe(0);
     expect(cameraX(0, -200, 10)).toBe(0);
   });
-  it("fills the window with the 960x540 picture, as big as fits (user, 2026-10-21: no wide black border)", () => {
-    expect(displayScale(1280, 720)).toBeCloseTo(1280 / 960);
-    expect(displayScale(1920, 1080)).toBe(2);
-    expect(displayScale(1587, 901)).toBeCloseTo(1587 / 960);
-    expect(displayScale(900, 600)).toBeCloseTo(900 / 960);
+  it("fills a 16:9 window with the 960x540 picture, as big as fits (user, 2026-10-21: no wide black border)", () => {
+    expect(layerFit(1280, 720)).toEqual({ w: 960, scale: 1280 / 960 });
+    expect(layerFit(1920, 1080)).toEqual({ w: 960, scale: 2 });
+    expect(layerFit(900, 600).w).toBe(960);
+    expect(layerFit(900, 600).scale).toBeCloseTo(900 / 960);
+  });
+  it("widens the picture for a longer phone, up to 19.5:9 (user, 2026-10-22: no black bars)", () => {
+    expect(layerFit(844, 390)).toEqual({ w: 1168, scale: 390 / 540 });
+    expect(layerFit(2000, 390).w).toBe(1170);
   });
   it("keeps the grandchild whole in front of the pass and Bandal's waist behind it", () => {
     // his picture, leaning back from his feet, is still in front of the pass's front at the pass's top

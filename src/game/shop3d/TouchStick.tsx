@@ -32,7 +32,8 @@ export function TouchStick({ prefs, onMove }: { prefs: PadPrefs; onMove: (v: num
   };
   const down = (e: React.PointerEvent<HTMLDivElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
-    const centre = floatStick(at(e), half, 960, 540, ZONE.top - half);
+    // the picture is 960 wide or more (layerFit): its HUD box is that wide, unscaled
+    const centre = floatStick(at(e), half, zone.current!.parentElement!.offsetWidth, 540, ZONE.top - half);
     setHeld(centre);
     move(e, centre);
   };

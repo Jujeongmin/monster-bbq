@@ -35,8 +35,13 @@ export function cameraX(prev: number, waiterWorldX: number, dt: number): number 
   return prev + (goal - prev) * Math.min(1, dt * CAMERA.rate);
 }
 
-// The 960x540 picture on screen: as big as fits (user, 2026-10-21: a whole-number scale left a wide black
-// border in the editor's preview). The canvas scales with nearest-neighbour, so pixels stay hard-edged.
-export function displayScale(viewW: number, viewH: number): number {
-  return Math.min(viewW / 960, viewH / 540);
+// The picture on screen: 540 tall, 960 wide at 16:9 and wider on a longer phone (up to 19.5:9, 1170) so the
+// room fills it edge to edge (user, 2026-10-22: no black bars), scaled as big as fits (user, 2026-10-21: a
+// whole-number scale left a wide black border in the editor's preview). The canvas scales with
+// nearest-neighbour, so pixels stay hard-edged.
+export const LAYER_H = 540;
+export const LAYER_MAX_W = 1170;
+export function layerFit(viewW: number, viewH: number): { w: number; scale: number } {
+  const w = viewH > 0 ? Math.min(LAYER_MAX_W, Math.max(960, Math.round((LAYER_H * viewW) / viewH / 2) * 2)) : 960;
+  return { w, scale: Math.min(viewW / w, viewH / LAYER_H) };
 }

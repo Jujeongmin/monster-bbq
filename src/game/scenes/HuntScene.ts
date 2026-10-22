@@ -419,8 +419,10 @@ export class HuntScene extends Phaser.Scene {
     this.forageMark = this.add.text(0, 0, "▼", { ...TEXT, color: "#ffd166", stroke: "#2b1408", strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(9500).setVisible(false);
     // low stamina: the screen's edge pulses red (Dave the Diver's oxygen warning)
     // low stamina: the screen's edges go red and beat like a heart (Dave's low oxygen)
-    if (!this.textures.exists("low_vignette")) {
-      const tex = this.textures.createCanvas("low_vignette", GAME_WIDTH, GAME_HEIGHT)!;
+    // one per screen width (a game's textures outlive its scenes, not the game)
+    const vignette = `low_vignette_${GAME_WIDTH}`;
+    if (!this.textures.exists(vignette)) {
+      const tex = this.textures.createCanvas(vignette, GAME_WIDTH, GAME_HEIGHT)!;
       const ctx = tex.getContext();
       const g = ctx.createRadialGradient(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_HEIGHT * 0.32, GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.62);
       g.addColorStop(0, "rgba(160,0,0,0)");
@@ -431,7 +433,7 @@ export class HuntScene extends Phaser.Scene {
       // uploaded once the renderer has drawn a frame (an upload during create is lost)
       this.events.once(Phaser.Scenes.Events.POST_UPDATE, () => tex.refresh());
     }
-    this.lowGlow = this.add.image(0, 0, "low_vignette").setOrigin(0).setScrollFactor(0).setDepth(9999).setVisible(false);
+    this.lowGlow = this.add.image(0, 0, vignette).setOrigin(0).setScrollFactor(0).setDepth(9999).setVisible(false);
     // the lunchbox: one button per packed dish under the way home (the dish at one game pixel per art pixel,
     // centred inside the bubble's border; its key number on the corner, user 2026-10-21)
     this.huntData.lunchbox.forEach(({ dish, heal }, i) => {

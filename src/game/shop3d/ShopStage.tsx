@@ -7,7 +7,7 @@ import { markSeen, nightTipDue, readSeen, TIP_FACE, tipStore, type TipId } from 
 import { loadShift, saveShift } from "../service/night";
 import { LAYOUT, Shift, type ShiftEvent } from "../service/shift";
 import { clockText, type ServiceData, type ShopReport } from "../service/types";
-import { displayScale, FLOOR_Y, COUNTER, PASS, Z } from "./layout";
+import { layerFit, FLOOR_Y, COUNTER, PASS, Z } from "./layout";
 import { artUrl, hasArt } from "../art";
 import { lookAt, patienceTier, promptOf, serveGrade, type Pose, type ShopLook } from "./look";
 import type { DishId } from "../../../shared/content/dishes";
@@ -81,7 +81,10 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
   // the night as it opened: the page re-renders with a new (equal) object, which must not restart the room
   // (ServiceGame is keyed by the service id, so a new night gets a new stage)
   const start = useRef(shop);
-  const [scale, setScale] = useState(1);
+  // the picture's width and on-screen scale (layerFit); the view reads the width each frame
+  const [layer, setLayer] = useState({ w: 960, scale: 1 });
+  const layerW = useRef(960);
+  layerW.current = layer.w;
   const [hud, setHud] = useState<Hud | null>(null);
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(() => sfx.isMuted());
@@ -89,10 +92,9 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
   const ctl = useRef({ press: () => {}, release: () => {}, stick: (_x: number | null) => {}, pause: () => {}, close: () => {} });
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
 
-  // whole-number scale for the 960x540 layer
   useEffect(() => {
     const el = stage.current!;
-    const fit = () => setScale(displayScale(el.clientWidth, el.clientHeight));
+    const fit = () => setLayer(layerFit(el.clientWidth, el.clientHeight));
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
@@ -302,6 +304,7 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
     };
 
     const frame = (time: number) => {
+      view.setWidth(layerW.current);
       if (!alive) return;
       now = time;
       const dt = Math.min(time - last, MAX_DT_MS);
@@ -390,8 +393,8 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
 
   return (
     <div ref={stage} className="s3-stage">
-      <div className={`s3-layer${hud?.shake ? " shake" : ""}`} style={{ transform: `scale(${scale})` }}>
-        <canvas ref={canvas} width={960} height={540} />
+      <div className={`s3-layer${hud?.shake ? " shake" : ""}`} style={{ width: layer.w, transform: `scale(${layer.scale})` }}>
+        <canvas ref={canvas} width={layer.w} height={540} />
         {hud && (
           <ShopHud
             look={hud.look}
