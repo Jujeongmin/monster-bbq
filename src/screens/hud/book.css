@@ -42,7 +42,8 @@
 .price > span { display: inline-flex; align-items: center; gap: calc(2px * var(--s)); }
 .price img { height: calc(12px * var(--s)); image-rendering: pixelated; }
 .price .short { color: #c0301c; }
-.buy-card { align-self: flex-start; display: inline-flex; align-items: center; gap: calc(8px * var(--s)); padding: calc(1px * var(--s)) calc(6px * var(--s)); color: var(--ink); font: 700 var(--fs) "Galmuri11", monospace; cursor: pointer; }
+/* one line, always: price, what it takes, what it does (user, 2026-10-22: "재료 1세트 · 연구하기" broke in two) */
+.buy-card { align-self: flex-start; display: inline-flex; align-items: center; gap: calc(8px * var(--s)); padding: calc(1px * var(--s)) calc(6px * var(--s)); color: var(--ink); font: 700 var(--fs) "Galmuri11", monospace; cursor: pointer; white-space: nowrap; }
 .buy-card:hover:not(:disabled) { filter: brightness(1.06); }
 .buy-card:active:not(:disabled) { transform: translateY(var(--s)); }
 .buy-card:disabled { cursor: default; filter: grayscale(0.6); opacity: 0.8; }
@@ -98,6 +99,8 @@
 .book .row-dish { display: inline-flex; width: calc(18px * var(--s)); height: calc(16px * var(--s)); overflow: hidden; align-items: center; justify-content: center; }
 .book .row-dish .dish-icon { width: calc(18px * var(--s)) !important; image-rendering: pixelated; }
 .cookbook-detail { align-items: center; text-align: center; }
+/* a phone (12 px lettering): the dish at one game pixel per art pixel, so the research card fits the page */
+:root.touch-small .cookbook-detail .dish-icon { width: 42px !important; }
 .cookbook-detail .dish-slots { display: flex; gap: calc(3px * var(--s)); justify-content: center; }
 .book .shop-vip { display: flex; align-items: center; gap: calc(4px * var(--s)); }
 .shop-detail .shop-band { align-self: flex-start; position: static; }
