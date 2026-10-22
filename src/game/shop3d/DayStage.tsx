@@ -192,7 +192,8 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
   const visitShake = !!who && (STAFF[who.id].rarity === "hero" || STAFF[who.id].rarity === "legend");
   // big enough for a thumb on a small phone (mobile pass, user 2026-10-21), inward of the notebook in the
   // bottom-left corner (it stays where it is on PC, 2026-10-22)
-  const STICK = { x: 180, y: 448, r: 56 };
+  // r: half the dish; travel: how far the knob slides from the centre
+  const STICK = { x: 180, y: 448, r: 48, travel: 30 };
   const stickAt = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const dx = (e.clientX - (box.left + box.width / 2)) / (box.width / 2);
@@ -241,7 +242,7 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
           {touch && active && (
             <>
               <div className="s3-stick" style={{ left: STICK.x - STICK.r, top: STICK.y - STICK.r }} onPointerDown={(e) => (e.currentTarget.setPointerCapture(e.pointerId), stickAt(e))} onPointerMove={(e) => e.buttons && stickAt(e)} onPointerUp={release} onPointerCancel={release}>
-                <div className="s3-knob" style={{ transform: `translateX(${stickX * STICK.r}px)` }} />
+                <div className="s3-knob" style={{ transform: `translateX(${stickX * STICK.travel}px)` }} />
               </div>
               <button className="ui-btn s3-act" disabled={!near?.spot.open} onPointerDown={() => ctl.current.act()}>
                 {t("day.act")}

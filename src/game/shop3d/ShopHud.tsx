@@ -116,7 +116,8 @@ export function ShopHud(p: HudProps) {
   const gold = useRolling(look.gold, p.time);
   // big enough for a thumb on a small phone (mobile pass, user 2026-10-21), inward of the notebook in the
   // bottom-left corner (it stays where it is on PC, 2026-10-22)
-  const STICK = { x: 180, y: 448, r: 56 };
+  // r: half the dish; travel: how far the knob slides from the centre
+  const STICK = { x: 180, y: 448, r: 48, travel: 30 };
   const stick = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const scale = box.width / (STICK.r * 2);
@@ -209,7 +210,7 @@ export function ShopHud(p: HudProps) {
       {p.touch && (
         <>
           <div className="s3-stick" style={{ left: STICK.x - STICK.r, top: STICK.y - STICK.r }} onPointerDown={(e) => (e.currentTarget.setPointerCapture(e.pointerId), stick(e))} onPointerMove={(e) => e.buttons && stick(e)} onPointerUp={() => p.onStick(null)} onPointerCancel={() => p.onStick(null)}>
-            <div className="s3-knob" style={{ transform: `translateX(${p.stickX * STICK.r}px)` }} />
+            <div className="s3-knob" style={{ transform: `translateX(${p.stickX * STICK.travel}px)` }} />
           </div>
           <button className="ui-btn s3-act" onPointerDown={p.onPress} onPointerUp={p.onRelease} onPointerLeave={p.onRelease} onPointerCancel={p.onRelease}>
             {look.prompt?.ok ? t(`prompt.short.${look.prompt.verb}` as StringKey) : t("service.actButton")}

@@ -53,14 +53,18 @@ const USE_RANGE = 28;
 const RING = { x: 50, y: 48, r: 40 };
 const GATHER_MS = 1000;
 const REFILL_DELAY_MS = 2500;
-// Touch controls, in screen pixels of the game, placed relative to its size.
-const STICK = { x: GAME_WIDTH * 0.12, y: GAME_HEIGHT * 0.78, radius: 36, deadZone: 0.2 };
-const SLASH_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.8, radius: 28 };
-// under the third lunchbox button (which ends at y 203), above slash
-const GATHER_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.645, radius: 22 };
+// Touch controls (art/test/ui/pad, drawn KIT times bigger), in screen pixels of the game: the stick bottom
+// left; slash in the bottom-right corner, the side weapon left of it and use above that, clear of the
+// lunchbox column on the right (it ends at y 203). radius: the button's own half width, which is also where
+// a press counts (plus a little); the stick's knob travels `radius` from the centre.
+const STICK = { x: 77, y: 281, radius: 36, deadZone: 0.2 };
+const SLASH_BTN = { x: 578, y: 298, radius: 40 };
+const GATHER_BTN = { x: 494, y: 236, radius: 34 };
 // shots left at or below this show red
 const AMMO_LOW = 2;
-const SIDE_BTN = { x: GAME_WIDTH * 0.76, y: GAME_HEIGHT * 0.86, radius: 22 };
+const SIDE_BTN = { x: 492, y: 312, radius: 40 };
+// the side weapon's icon fits this many game pixels across inside its button's face
+const SIDE_ICON = 50;
 // a mash every this often while auto-mash is on (pause menu)
 // the deep floors' ground tiles (art/test/bg/<ground>.png), loaded only on their own floor
 const DEEP_GROUNDS = ["swamp", "cave"] as const;
@@ -209,8 +213,7 @@ export class HuntScene extends Phaser.Scene {
   // harpoon over it (user, 2026-10-21: how weak was invisible)
   private mobBars = new Map<Mob, { gauge: UiGauge; cue: Phaser.GameObjects.Image }>();
   private lowGlow!: Phaser.GameObjects.Image;
-  private gatherButton: Phaser.GameObjects.Arc | null = null;
-  private gatherButtonLabel: Phaser.GameObjects.Text | null = null;
+  private gatherButton: Phaser.GameObjects.Image | null = null;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Keys;
   private touch = false;
@@ -219,7 +222,7 @@ export class HuntScene extends Phaser.Scene {
   private shotQueued: Vec | null = null;
   private stickPointer: number | null = null;
   private stickVec: Vec = { x: 0, y: 0 };
-  private stickKnob!: Phaser.GameObjects.Arc;
+  private stickKnob!: Phaser.GameObjects.Image;
   private aimPointer: number | null = null;
   private aimScreen: Vec | null = null;
   private sideQueued: Vec | null = null;
@@ -325,6 +328,7 @@ export class HuntScene extends Phaser.Scene {
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
     for (const k of ["ring_empty", "ring_full", "face_fine", "face_tired"]) this.load.image(`stamina_${k}`, artUrl(`test/ui/stamina/${k}.png`));
     this.load.image("hud_bag", artUrl("test/ui/hud/bag.png"));
+    for (const k of ["stick_base", "stick_knob", "btn_slash", "btn_side", "btn_use"]) this.load.image(`pad_${k}`, artUrl(`test/ui/pad/${k}.png`));
     this.load.image(`side_${this.huntData.side}`, artUrl(`test/ui/side/${this.huntData.side}.png`));
     // what the side weapon fires (pebble, dart, net, firecracker); until drawn, its own icon flies
     const shot = `test/hunt/shots/${this.huntData.side}.png`;
@@ -439,8 +443,10 @@ export class HuntScene extends Phaser.Scene {
     // right (on touch: on its button) — red when nearly out, the slot dimmed when empty
     const sideAt = this.touch ? SIDE_BTN : { x: GAME_WIDTH - 44, y: GAME_HEIGHT - 60 };
     if (!this.touch) this.ammoSlot = kitSlice(this, sideAt.x, sideAt.y, "slot", 56, 56, 4, 4, 4, 4).setScrollFactor(0).setDepth(9999);
-    this.ammoIcon = hud(this.add.image(sideAt.x, sideAt.y, `side_${this.huntData.side}`).setScale(this.touch ? 1 : KIT * 0.85));
-    this.ammoText = hud(this.add.text(sideAt.x, sideAt.y + (this.touch ? 20 : 38), "", { ...TEXT, fontStyle: "bold" }).setOrigin(0.5));
+    this.ammoIcon = hud(this.add.image(sideAt.x, sideAt.y, `side_${this.huntData.side}`));
+    // on touch the icon sits in the middle of its button's face, as big as fits
+    this.ammoIcon.setScale(this.touch ? SIDE_ICON / Math.max(this.ammoIcon.width, this.ammoIcon.height) : KIT * 0.85);
+    this.ammoText = hud(this.add.text(sideAt.x, sideAt.y + (this.touch ? 32 : 38), "", { ...TEXT, fontStyle: "bold", stroke: "#2b1408", strokeThickness: 3 }).setOrigin(0.5));
     this.ammoShown = this.run.ammo;
     this.cameras.main.fadeIn(300, 0, 0, 0);
     this.floorCard();
@@ -489,27 +495,21 @@ export class HuntScene extends Phaser.Scene {
     });
   }
 
-  // Placeholder touch controls (UI art later). Left half: a stick. Right half: press on a spot to aim,
-  // release to fire the harpoon there. Slash and gather buttons on the right.
+  // Touch controls (user-approved pad art, 2026-10-22). Left part: a stick. Right part: press on a spot to
+  // aim, release to fire the harpoon there. Slash, side weapon and use buttons on the right.
   private createTouchControls() {
     this.input.addPointer(2);
-    const ui = (o: Phaser.GameObjects.Arc) => o.setScrollFactor(0).setDepth(10000);
-    const label = (b: { x: number; y: number }, text: string) =>
-      this.add.text(b.x, b.y, text, TEXT_SMALL).setOrigin(0.5).setScrollFactor(0).setDepth(10001);
-    ui(this.add.circle(STICK.x, STICK.y, STICK.radius, 0x000000, 0.35).setStrokeStyle(1, 0xffffff, 0.6));
-    this.stickKnob = ui(this.add.circle(STICK.x, STICK.y, 14, 0xffffff, 0.6));
-    const slash = ui(this.add.circle(SLASH_BTN.x, SLASH_BTN.y, SLASH_BTN.radius, 0xc03030, 0.6).setStrokeStyle(1, 0xffffff, 0.8));
-    label(SLASH_BTN, "베기");
-    slash.setInteractive(new Phaser.Geom.Circle(SLASH_BTN.radius, SLASH_BTN.radius, SLASH_BTN.radius + 6), Phaser.Geom.Circle.Contains);
-    slash.on("pointerdown", () => (this.slashQueued = true));
-    this.gatherButton = ui(this.add.circle(GATHER_BTN.x, GATHER_BTN.y, GATHER_BTN.radius, 0x30a050, 0.6).setStrokeStyle(1, 0xffffff, 0.8)).setVisible(false);
-    this.gatherButtonLabel = label(GATHER_BTN, t("hunt.useButton")).setVisible(false);
-    this.gatherButton.setInteractive(new Phaser.Geom.Circle(GATHER_BTN.radius, GATHER_BTN.radius, GATHER_BTN.radius + 6), Phaser.Geom.Circle.Contains);
+    const ui = (b: { x: number; y: number }, key: string) => this.add.image(b.x, b.y, `pad_${key}`).setScale(KIT).setScrollFactor(0).setDepth(10000);
+    // a press counts within the button's round face (plus a little), in the image's own pixels
+    const round = (o: Phaser.GameObjects.Image) => o.setInteractive(new Phaser.Geom.Circle(o.width / 2, o.height / 2, o.width / 2 + 3), Phaser.Geom.Circle.Contains);
+    ui(STICK, "stick_base");
+    // the knob only, its yellow dome (user, 2026-10-22)
+    this.stickKnob = ui(STICK, "stick_knob").setDepth(10001);
+    round(ui(SLASH_BTN, "btn_slash")).on("pointerdown", () => (this.slashQueued = true));
+    this.gatherButton = round(ui(GATHER_BTN, "btn_use")).setVisible(false);
     this.gatherButton.on("pointerdown", () => (this.gatherQueued = true));
-    // the side weapon fires the way the hunter aims
-    const side = ui(this.add.circle(SIDE_BTN.x, SIDE_BTN.y, SIDE_BTN.radius, 0x806020, 0.6).setStrokeStyle(1, 0xffffff, 0.8));
-    side.setInteractive(new Phaser.Geom.Circle(SIDE_BTN.radius, SIDE_BTN.radius, SIDE_BTN.radius + 6), Phaser.Geom.Circle.Contains);
-    side.on("pointerdown", () => {
+    // the side weapon fires the way the hunter aims; its icon goes on the empty face (create)
+    round(ui(SIDE_BTN, "btn_side")).on("pointerdown", () => {
       const p = this.player;
       this.sideQueued = { x: p.pos.x + p.aim.x * 100, y: p.pos.y + p.aim.y * 100 - H.harpoon.handHeight };
     });
@@ -633,7 +633,6 @@ export class HuntScene extends Phaser.Scene {
     const need = use?.kind === "down" ? this.downNeed() : null;
     if (at) this.gatherHint.setText(t(use!.kind === "exit" ? "hunt.useExit" : use!.kind === "down" ? (need === "boots" ? "hunt.needBoots" : need === "lantern" ? "hunt.needLantern" : "hunt.useDown") : use!.kind === "sleeper" ? "hunt.take" : "hunt.gather")).setPosition(at.x, at.y - 34);
     this.gatherButton?.setVisible(!!use);
-    this.gatherButtonLabel?.setVisible(!!use);
 
     // a swing finishes before the hunter moves or swings again
     if (p.swingMs > 0) return;

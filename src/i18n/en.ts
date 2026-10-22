@@ -11,7 +11,6 @@ export const en: Record<keyof typeof ko, string> = {
   "hunt.needLantern": "A lantern needed to go down",
   "hunt.shell": "Shell!",
   "hunt.flipped": "Flipped!",
-  "hunt.useButton": "Use",
   "hunt.floorCard": "Floor {n} · {name}",
   "hunt.floorShort": "Floor {n}",
   "floor.1": "Forest edge",

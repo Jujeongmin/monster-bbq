@@ -10,7 +10,6 @@ export const ko = {
   "hunt.needLantern": "등불이 있어야 내려간다",
   "hunt.shell": "껍데기!",
   "hunt.flipped": "뒤집혔다!",
-  "hunt.useButton": "쓰기",
   "hunt.floorCard": "{n}층 · {name}",
   "hunt.floorShort": "{n}층",
   "floor.1": "숲 입구",

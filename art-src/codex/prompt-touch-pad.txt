@@ -1,0 +1,14 @@
+Use your image generation tool (do not write code to draw) to create ONE image: the on-screen touch controls of a cozy, comic Korean BBQ restaurant game played on phones (the hunter fights monsters in a forest by day, then cooks the meat at night).
+
+The attached picture shows the game's existing UI art, scaled up 8 times on magenta: the round stamina ring (dark walnut wood rim with brass trim and studs), the boy's face, the red button with brass end caps, and the kitchen knife icon. Match that look exactly: dark walnut wood, warm brass gold, the same deep red, a 1-art-pixel near-black outline, flat colours with 2-3 shades, NO gradients, NO anti-aliasing, NO texture noise.
+
+Draw five pieces, each centred in its own cell, in this order:
+1 STICK BASE: a round recessed wooden dish about 48 art pixels across, a thick walnut rim with a thin brass band and four small brass studs at top, bottom, left and right, the middle a darker sunken wooden well (plain, empty). Small brass arrow notches on the rim pointing up, down, left and right.
+2 STICK KNOB: a round brass-capped wooden knob about 22 art pixels across, seen from above, a bright brass top with a small highlight, a dark rim so it reads on top of the base.
+3 SLASH BUTTON: a round button about 40 art pixels across, deep red face, brass rim, with the kitchen cleaver from the attached picture drawn big in the middle, tilted, with a little white swoosh arc behind it.
+4 SIDE BUTTON: a round button about 40 art pixels across, warm brown wooden face, brass rim, the face EMPTY (an icon is placed on it in the game).
+5 USE BUTTON: a round button about 34 art pixels across, green face (like a leaf green, not neon), brass rim, a simple open white hand reaching down to grab, in the middle.
+
+Save as art-src/codex/raw/touch_pad.png — exactly 2400x480: five equal cells (480x480) in a row in the order above, every art pixel an exact 8x8 block on one even grid (so the base is about 384 px wide). Background: one perfectly flat solid magenta #FF00FF everywhere, no shadow on it. No text, no letters.
+
+Reply only with the saved file path.

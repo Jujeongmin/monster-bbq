@@ -43,8 +43,10 @@
 .s3-pop { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; animation: s3-pop 1.5s ease-out forwards; }
 @keyframes s3-pop { 0%, 45% { opacity: 1; margin-top: 0; } 100% { opacity: 0; margin-top: -18px; } }
 
-.s3-stick { position: absolute; width: 112px; height: 112px; box-sizing: border-box; border: 8px solid transparent; border-image: url("../../../art/test/ui2/slot.png") 4 fill / 8px stretch; touch-action: none; }
-.s3-knob { position: absolute; left: 40px; top: 40px; width: 32px; height: 32px; box-sizing: border-box; border: 8px solid transparent; border-image: url("../../../art/test/ui2/btn_small.png") 4 fill / 8px stretch; }
+/* the touch pad's stick (art/test/ui/pad, the hunt's too: user 2026-10-22), one art pixel two layer pixels:
+   the wooden dish 48 art px across, the knob its yellow dome only (18x17), centred until pushed */
+.s3-stick { position: absolute; width: 96px; height: 96px; background: url("../../../art/test/ui/pad/stick_base.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated; touch-action: none; }
+.s3-knob { position: absolute; left: 30px; top: 31px; width: 36px; height: 34px; background: url("../../../art/test/ui/pad/stick_knob.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
 /* the action button sits inward of the bag in the bottom-right corner (2026-10-22) */
 .s3-act { position: absolute; right: 136px; bottom: 36px; touch-action: none; }
 /* thumb-sized; specific enough to beat the phone rule for every button (:root.touch-small .ui-btn) */
