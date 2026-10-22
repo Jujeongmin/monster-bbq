@@ -43,3 +43,6 @@ export function artUrl(wanted: string): string {
 
 // Whether art/<path> is in the game yet (new art goes in only once approved), or stands in for now.
 export const hasArt = (path: string): boolean => own(resolve(path));
+
+// Every picture's URL (the loading screen fetches them all up front).
+export const allArtUrls = (): string[] => Object.keys(URLS).map((k) => artUrl(k.slice("../../art/".length)));

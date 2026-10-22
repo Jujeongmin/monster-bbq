@@ -56,7 +56,8 @@ const REFILL_DELAY_MS = 2500;
 // Touch controls, in screen pixels of the game, placed relative to its size.
 const STICK = { x: GAME_WIDTH * 0.12, y: GAME_HEIGHT * 0.78, radius: 36, deadZone: 0.2 };
 const SLASH_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.8, radius: 28 };
-const GATHER_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.58, radius: 22 };
+// under the third lunchbox button (which ends at y 203), above slash
+const GATHER_BTN = { x: GAME_WIDTH * 0.89, y: GAME_HEIGHT * 0.645, radius: 22 };
 // shots left at or below this show red
 const AMMO_LOW = 2;
 const SIDE_BTN = { x: GAME_WIDTH * 0.76, y: GAME_HEIGHT * 0.86, radius: 22 };

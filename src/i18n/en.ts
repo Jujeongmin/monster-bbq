@@ -416,6 +416,7 @@ export const en: Record<keyof typeof ko, string> = {
   "where.wild_garlic": "Wild garlic hides in the grass. Follow your nose.",
   "where.perilla": "Perilla grows at the forest's edge. Look for the shining leaves.",
   "cutin.new": "New dish!",
+  "loading.text": "Heating up the grill…",
   "rotate.ask": "Turn your phone sideways!",
   "cutin.next": "Tap to go on ▶",
   "hunt.needKey": "You need the den's key to go down",

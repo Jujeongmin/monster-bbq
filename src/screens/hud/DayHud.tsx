@@ -46,18 +46,23 @@ export function DayHud({ save, time, quiet = false, alerts = [], onBag, onNotebo
         )}
       </div>
       {/* the notebook big at the bottom left and the bag at the bottom right, each its picture with its key
-          (user, 2026-10-16); on touch no keys, and the notebook sits above the walking stick */}
-      <button className={`dh-big dh-note${touch ? " touch" : ""}${quiet ? " quiet" : ""}`} onClick={onNotebook} aria-label={t("hud.notebookButton")}>
-        <img src={artUrl(HUD_ART.notebook)} alt="" />
-        {alerts.length > 0 && <span className="dh-alert">!</span>}
+          (user, 2026-10-16); on touch no keys, in the same corners as on PC (the stick and the action
+          button sit inward of them, mobile pass 2026-10-22) */}
+      <button className={`dh-big dh-note${quiet ? " quiet" : ""}`} onClick={onNotebook} aria-label={t("hud.notebookButton")}>
+        <span className="dh-pic">
+          <img src={artUrl(HUD_ART.notebook)} alt="" />
+          {alerts.length > 0 && <span className="dh-alert">!</span>}
+        </span>
         <span className="dh-label">
           {!touch && <kbd className="dh-key">Tab</kbd>}
           {t("hud.notebookButton")}
         </span>
       </button>
-      <button className={`dh-big dh-bag${touch ? " touch" : ""}${quiet ? " quiet" : ""}`} onClick={onBag} aria-label={t("hud.bagButton")}>
-        <img src={artUrl(HUD_ART.bag)} alt="" />
-        {alerts.includes("bag") && <span className="dh-alert">!</span>}
+      <button className={`dh-big dh-bag${quiet ? " quiet" : ""}`} onClick={onBag} aria-label={t("hud.bagButton")}>
+        <span className="dh-pic">
+          <img src={artUrl(HUD_ART.bag)} alt="" />
+          {alerts.includes("bag") && <span className="dh-alert">!</span>}
+        </span>
         <span className="dh-label">
           {!touch && <kbd className="dh-key">I</kbd>}
           {t("hud.bagButton")}

@@ -45,7 +45,10 @@
 
 .s3-stick { position: absolute; width: 112px; height: 112px; box-sizing: border-box; border: 8px solid transparent; border-image: url("../../../art/test/ui2/slot.png") 4 fill / 8px stretch; touch-action: none; }
 .s3-knob { position: absolute; left: 40px; top: 40px; width: 32px; height: 32px; box-sizing: border-box; border: 8px solid transparent; border-image: url("../../../art/test/ui2/btn_small.png") 4 fill / 8px stretch; }
-.s3-act { position: absolute; right: 50px; bottom: 44px; min-width: 112px; min-height: 68px; font-size: 16px; touch-action: none; }
+/* the action button sits inward of the bag in the bottom-right corner (2026-10-22) */
+.s3-act { position: absolute; right: 136px; bottom: 36px; touch-action: none; }
+/* thumb-sized; specific enough to beat the phone rule for every button (:root.touch-small .ui-btn) */
+.s3-layer .s3-hud.touch .s3-act { min-width: 112px; min-height: 68px; font-size: 16px; }
 /* on touch the night's top buttons are big enough for a finger (mobile pass, user 2026-10-21) */
 .s3-hud.touch .s3-buttons .ui-btn { min-height: 52px; padding: 0 14px; font-size: 14px; }
 

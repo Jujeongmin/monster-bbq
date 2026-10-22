@@ -2,10 +2,11 @@
 // module is being evaluated. See storageFallback.ts.
 import "./storageFallback";
 
-import { StrictMode } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { RotatePrompt } from "./screens/hud/RotatePrompt";
+import { Loading } from "./screens/Loading";
 import { detectLocale, setLocale } from "./i18n";
 import "./index.css";
 
@@ -35,11 +36,17 @@ if (document.documentElement.classList.contains("touch-small")) {
   document.head.appendChild(face);
 }
 
+// Everything is fetched behind the loading screen first, so nothing waits on the network mid-game.
+function Boot() {
+  const [ready, setReady] = useState(false);
+  return ready ? <App /> : <Loading onDone={() => setReady(true)} />;
+}
+
 Promise.all(fonts).finally(() =>
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <div className="frame">
-        <App />
+        <Boot />
       </div>
       <RotatePrompt />
     </StrictMode>,

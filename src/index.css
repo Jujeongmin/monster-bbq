@@ -24,6 +24,10 @@ html, body, #root { width: 100%; height: 100%; }
 /* letterbox around the landscape frame */
 #root { display: flex; align-items: center; justify-content: center; background: #0b0b12; }
 .frame { position: relative; width: min(100vw, calc(100vh * 16 / 9)); aspect-ratio: 16 / 9; overflow: hidden; }
+/* Verse8 runs the game in an iframe that fills the screen; the iframe gets no safe-area insets, and the
+   letterbox bars (a phone is wider than 16:9) already keep the frame off a notch. Opened directly in a mobile
+   browser, the visible height (dvh) is what counts, not the height under a hidden address bar. */
+@supports (height: 100dvh) { .frame { width: min(100dvw, calc(100dvh * 16 / 9)); } }
 
 /* a phone (touch, --s 1): the small lettering at 12 px in Galmuri11 (main.tsx) */
 :root.touch-small { --fs-small: 12px; }
@@ -170,3 +174,14 @@ button:focus-visible { outline: calc(2px * var(--s)) solid var(--brass); outline
 }
 .ui-tab.on { border-image-source: url("../art/test/ui2/tab_on.png"); color: var(--ink); }
 .ui-icon { width: auto; height: calc(16px * var(--s)); image-rendering: pixelated; vertical-align: middle; }
+
+/* the loading screen (Loading.tsx): the lid over the kit's gauge, filling as the game's files come in */
+.loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(8px * var(--s)); background: var(--wood-dark); color: var(--cream); }
+.loading-lid { height: calc(96px * var(--s)); image-rendering: pixelated; animation: loading-bob 0.8s steps(2) infinite; }
+@keyframes loading-bob { 50% { transform: translateY(calc(-2px * var(--s))); } }
+.loading-gauge, .loading-gauge-full { box-sizing: border-box; height: calc(7 * var(--k)); border: solid transparent; border-width: calc(2 * var(--k)) calc(3 * var(--k)); image-rendering: pixelated; }
+.loading-gauge { position: relative; width: calc(100 * var(--k)); border-image: url("../art/test/ui2/gauge_empty.png") 2 3 fill / calc(2 * var(--k)) calc(3 * var(--k)) stretch; }
+/* the full bar drawn over the empty one, as wide as the share loaded, never narrower than its two caps */
+.loading-gauge-full { position: absolute; left: calc(-3 * var(--k)); top: calc(-2 * var(--k)); min-width: calc(6 * var(--k)); max-width: calc(100% + 6 * var(--k)); border-image: url("../art/test/ui2/gauge_full.png") 2 3 fill / calc(2 * var(--k)) calc(3 * var(--k)) stretch; }
+.loading-text { margin: 0; font: 700 var(--fs) "Galmuri11", monospace; text-shadow: var(--s) var(--s) 0 #140a04; }
+@media (prefers-reduced-motion: reduce) { .loading-lid { animation: none; } }

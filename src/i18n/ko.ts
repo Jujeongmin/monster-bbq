@@ -415,6 +415,7 @@ export const ko = {
   "where.wild_garlic": "산마늘은 풀숲에 숨어 있껑. 냄새로 찾껑.",
   "where.perilla": "깻잎은 숲 가장자리에서 줍껑. 반짝이는 풀을 잘 보껑.",
   "cutin.new": "새 요리!",
+  "loading.text": "불판 달구는 중…",
   "rotate.ask": "휴대폰을 가로로 돌려 주껑!",
   "cutin.next": "눌러서 계속 ▶",
   "hunt.needKey": "굴 열쇠가 있어야 내려간다",

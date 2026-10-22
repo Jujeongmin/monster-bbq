@@ -14,11 +14,6 @@
 .dh-big:active img { transform: translateY(calc(1px * var(--s))) scale(0.96); }
 .dh-note { left: calc(10px * var(--s)); }
 .dh-big.quiet { visibility: hidden; }
-/* on touch the walking stick and the action button take the bottom corners: the two sit under the top
-   plates instead, a little smaller */
-.dh-big.touch { top: calc(34px * var(--s)); bottom: auto; }
-.dh-note.touch img { height: calc(52px * var(--s)); }
-.dh-bag.touch img { height: calc(44px * var(--s)); }
 .dh-bag { right: calc(12px * var(--s)); }
 .dh-label { display: inline-flex; align-items: center; gap: calc(3px * var(--s)); }
 .dh-key { display: inline-flex; align-items: center; justify-content: center; min-width: calc(12px * var(--s)); height: calc(12px * var(--s)); padding: 0 calc(2px * var(--s)); border: calc(2px * var(--s)) solid transparent; border-image: url("../../../art/test/ui2/btn_small.png") 3 fill / calc(3px * var(--s)) stretch; image-rendering: pixelated; color: #4a2a12; text-shadow: none; font: 700 var(--fs-small) / 1 "Galmuri9", monospace; }
@@ -50,7 +45,9 @@
 .notebook-name { font-weight: 700; line-height: 1.1; white-space: nowrap; }
 .notebook-new { margin-left: calc(4px * var(--s)); font: 700 var(--fs) / 1 "Galmuri11", monospace; color: #d83a2a; }
 /* a ! on the HUD's notebook or bag when an app is worth opening (alerts.ts), bobbing like Dave's phone */
-.dh-alert { position: absolute; top: calc(-6px * var(--s)); right: calc(-8px * var(--s)); font: 700 calc(16px * var(--s)) / 1 "Galmuri11", monospace; color: #ff5a3a; text-shadow: var(--s) 0 0 #2b1408, calc(-1px * var(--s)) 0 0 #2b1408, 0 var(--s) 0 #2b1408, 0 calc(-1px * var(--s)) 0 #2b1408; pointer-events: none; animation: dh-alert 0.9s steps(2) infinite; }
+/* the "!" sits on the picture's top-right corner, not the button's (its label line is wider; user 2026-10-22) */
+.dh-pic { position: relative; display: block; line-height: 0; }
+.dh-alert { position: absolute; top: calc(-4px * var(--s)); right: calc(-2px * var(--s)); font: 700 calc(16px * var(--s)) / 1 "Galmuri11", monospace; color: #ff5a3a; text-shadow: var(--s) 0 0 #2b1408, calc(-1px * var(--s)) 0 0 #2b1408, 0 var(--s) 0 #2b1408, 0 calc(-1px * var(--s)) 0 #2b1408; pointer-events: none; animation: dh-alert 0.9s steps(2) infinite; }
 @keyframes dh-alert { 50% { transform: translateY(calc(-2px * var(--s))); } }
 @media (prefers-reduced-motion: reduce) { .dh-alert { animation: none; } }
 .notebook-why { font: var(--fs-small) / 1 "Galmuri9", monospace; color: var(--paper-ink-soft); white-space: nowrap; }

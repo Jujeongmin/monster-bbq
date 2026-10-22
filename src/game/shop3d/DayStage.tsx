@@ -190,8 +190,9 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
   const lastShown = !!shown && !!visitRun.current && shown.i + 1 >= visitRun.current.order.length;
   // a hero or a legend arriving shakes the room once
   const visitShake = !!who && (STAFF[who.id].rarity === "hero" || STAFF[who.id].rarity === "legend");
-  // big enough for a thumb on a small phone (mobile pass, user 2026-10-21)
-  const STICK = { x: 110, y: 430, r: 56 };
+  // big enough for a thumb on a small phone (mobile pass, user 2026-10-21), inward of the notebook in the
+  // bottom-left corner (it stays where it is on PC, 2026-10-22)
+  const STICK = { x: 180, y: 448, r: 56 };
   const stickAt = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const dx = (e.clientX - (box.left + box.width / 2)) / (box.width / 2);
