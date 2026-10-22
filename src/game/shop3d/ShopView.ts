@@ -21,9 +21,11 @@ const SIDE_W = (LAYER_MAX_W / 2 - 480) / 2 + 30;
 const BANDAL_SINK = 4; // Bandal's picture stops at the waist: that much of it stays behind the pass
 const YK_POSES = ["walk_0", "walk_1", "sit", "eat", "happy", "angry"];
 const BANDAL = ["idle", "breathe", "grill", "turn", "serve", "smile"];
-// the six menu plaques on the back wall picture: centre columns, and the row (counted from its top) the
-// plaque's icon and count are centred on, the boards' middle (user, 2026-10-22: they sat high on the boards)
-const PLAQUES = [186, 212.5, 237, 263, 289, 315.5];
+// the six menu plaques on the back wall picture: the middle of each board's wood (art pixel edges, so
+// a board from column 178 through 196 has its middle at 187.5), and the row (counted from its top) the
+// plaque's icon and count are centred on, the boards' middle (user, 2026-10-22: they sat high and to the
+// left on the boards)
+const PLAQUES = [187.5, 212.5, 238, 264, 289.5, 316];
 const PLAQUE_ROW = 70;
 const WALL_H = 201;
 const GUEST_HEAD = 50; // a bubble sits on top of a guest this high
