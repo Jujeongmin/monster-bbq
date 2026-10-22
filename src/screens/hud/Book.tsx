@@ -80,6 +80,9 @@ export function useRowKeys(row: RefObject<HTMLElement | null>) {
 }
 
 // The ▶ line: close, carry on, next day. `keys`: this one answers Space/Enter/Esc (one per screen).
+// The notebook's red ! (alerts.ts), beside the thing inside an app it is about (user, 2026-10-22).
+export const NewMark = () => <span className="notebook-new">!</span>;
+
 export function MenuLine({ label, onPress, keys = true, className = "" }: { label: string; onPress: () => void; keys?: boolean; className?: string }) {
   useLineKeys(keys ? onPress : null);
   return (

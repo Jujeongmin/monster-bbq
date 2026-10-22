@@ -2,7 +2,8 @@ import { useState } from "react";
 import type { Action } from "../../shared/actions";
 import { AwakenDetail, AwakenList, awakenTargets } from "./Awaken";
 import type { AwakenTarget } from "../../shared/awaken";
-import { BookWindow, BuyCard, Price } from "./hud/Book";
+import { BookWindow, BuyCard, NewMark, Price } from "./hud/Book";
+import { awakenDue, upgradeDue } from "./hud/alerts";
 import { BALANCE } from "../../shared/balance";
 import { ITEMS, type ItemId } from "../../shared/content/items";
 import type { UpgradeId } from "../../shared/content/upgrades";
@@ -113,6 +114,7 @@ export function Upgrades({ tab: first = "upgrade", save, busy, act, onShop, onCl
   const tabs = TABS.map((k) => (
     <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => setTab(k)}>
       {t(k === "awaken" ? "upgrade.tab.awaken" : (`upgrade.group.${k}` as StringKey))}
+      {(k === "awaken" ? [...awakenTargets("gear"), ...awakenTargets("dish")].some((x) => awakenDue(save, x)) : GROUPS[k].some((u) => upgradeDue(save, u))) && <NewMark />}
     </button>
   ));
   if (!group || !id)
@@ -149,7 +151,10 @@ export function Upgrades({ tab: first = "upgrade", save, busy, act, onShop, onCl
               return (
                 <button key={u} className={`book-row${u === id ? " on" : ""}${isLocked(save, u) ? " off" : ""}`} onClick={() => setPicked(u)}>
                   {s ? <img src={s} alt="" /> : <span />}
-                  <span className="name">{t(`upgrade.${u}` as StringKey)}</span>
+                  <span className="name">
+                    {t(`upgrade.${u}` as StringKey)}
+                    {upgradeDue(save, u) && <NewMark />}
+                  </span>
                   <span className="sub">{t("upgrade.level", { lv: level(save, u), max: maxLevel(u) })}</span>
                 </button>
               );

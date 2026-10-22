@@ -44,8 +44,11 @@ import { addButton, addGauge, addMenuItem, KIT, kitSlice, loadUiArt, TEXT, TEXT_
 // Each floor comes from the server's seed (planFloor); the scene reports what was taken, in
 // order, and the server decides the drops the same way (spec 7).
 const H = BALANCE.hunt;
-// A frame gap after the tab was hidden must not teleport anything (rules are also clamped).
-const MAX_DT_MS = 50;
+// The world moves in fixed steps of real time, as many as the frame took, so a phone drawing fewer frames
+// moves the hunter as fast as a PC does (user, 2026-10-22: one 50 ms cap made slow phones walk slowly).
+// A gap longer than MAX_GAP_MS (the tab was hidden) counts as that much, so nothing teleports.
+const STEP_MS = 1000 / 60;
+const MAX_GAP_MS = 250;
 const HUNTER_FEET = 0.92;
 const GATHER_RANGE = 26;
 // how close the hunter must stand to a cart or the way down to use it with E
@@ -244,6 +247,8 @@ export class HuntScene extends Phaser.Scene {
   private autoMash = false;
   private autoMashMs = 0;
   private paused = false;
+  // real time not yet stepped through (update)
+  private stepMs = 0;
   private pauseMenu: Phaser.GameObjects.Container | null = null;
   // the pause menu's lines and the one picked (W/S or the arrows move it, Space, Enter or E press it)
   private pauseItems: MenuItem[] = [];
@@ -314,6 +319,7 @@ export class HuntScene extends Phaser.Scene {
     this.missReel = null;
     this.autoMashMs = 0;
     this.paused = false;
+    this.stepMs = 0;
     this.pauseMenu = null;
     this.bossBar = null;
     this.bossSeen = false;
@@ -469,11 +475,27 @@ export class HuntScene extends Phaser.Scene {
   }
 
   update(_time: number, rawDt: number) {
-    const dt = Math.min(rawDt, MAX_DT_MS);
+    const dt = Math.min(rawDt, MAX_GAP_MS);
     if (this.ended) return;
     if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) this.togglePause();
     // paused: nothing moves and stamina holds
     if (this.paused) return this.pauseKeys();
+    this.stepMs += dt;
+    while (this.stepMs >= STEP_MS && !this.ended && !this.paused) {
+      this.stepMs -= STEP_MS;
+      this.step(STEP_MS);
+    }
+    // a hit-stop freezes the picture too
+    if (this.ended || this.hitStopMs > 0) return;
+    this.drawStatusLabels();
+    this.fadeCanopies();
+    this.drawFx(dt);
+    this.drawDark();
+    this.drawHud();
+  }
+
+  // One fixed step of the world (update runs as many as the frame took).
+  private step(dt: number) {
     if (this.hitStopMs > 0) {
       this.hitStopMs -= dt;
       if (this.hitStopMs <= 0) this.anims.resumeAll();
@@ -490,11 +512,6 @@ export class HuntScene extends Phaser.Scene {
     this.updateBombs(dt);
     this.updateMobs(dt);
     this.updateShots(dt);
-    this.drawStatusLabels();
-    this.fadeCanopies();
-    this.drawFx(dt);
-    this.drawDark();
-    this.drawHud();
   }
 
   // ---------------------------------------------------------------- input

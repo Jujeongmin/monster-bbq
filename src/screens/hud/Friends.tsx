@@ -8,7 +8,8 @@ import { staffAwakenCost } from "../../../shared/staff/actions";
 import { artUrl, hasArt } from "../../game/art";
 import { t, type StringKey } from "../../i18n";
 import { sfx } from "../../audio/sfx";
-import { BookWindow, BuyCard, Price } from "./Book";
+import { BookWindow, BuyCard, NewMark, Price } from "./Book";
+import { staffDue } from "./alerts";
 import { knowsCharcoal } from "./hud";
 import { PIP_COUNT, pipsOf } from "./pips";
 import { Visit } from "./Visit";
@@ -51,6 +52,7 @@ export function Friends({ save, busy, act, onShop, onClose, onVisit, came = null
   const tabs = (["friends", "postcards"] as Tab[]).map((k) => (
     <button key={k} className={`ui-tab${k === tab ? " on" : ""}`} onClick={() => (setTab(k), setResults(null))}>
       {t(`friends.tab.${k}` as StringKey)}
+      {(k === "postcards" ? !st.freeUsed : STAFF_IDS.some((f) => staffDue(save, f))) && <NewMark />}
     </button>
   ));
   const owned = STAFF_IDS.filter((id) => st.owned[id]);
@@ -85,7 +87,10 @@ export function Friends({ save, busy, act, onShop, onClose, onVisit, came = null
               return (
                 <button key={f} className={`book-row friend-row ${STAFF[f].rarity}${f === id ? " on" : ""}`} onClick={() => setPicked(f)}>
                   <Face id={f} className="row-face" />
-                  <span className="name">{t(`staff.name.${f}` as StringKey)}</span>
+                  <span className="name">
+                    {t(`staff.name.${f}` as StringKey)}
+                    {staffDue(save, f) && <NewMark />}
+                  </span>
                   <span className="sub">{at ? t(`staff.pos.${at}` as StringKey).split(" ")[0] : ""}</span>
                 </button>
               );
@@ -188,6 +193,7 @@ function PostcardSend({ save, busy, onSend, onShop }: { save: SaveData; busy: bo
       {!st.freeUsed && (
         <BuyCard disabled={busy} onClick={() => onSend(1, true)}>
           {t("friends.free")}
+          <NewMark />
         </BuyCard>
       )}
       {knows ? (

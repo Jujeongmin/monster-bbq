@@ -17,7 +17,8 @@ import type { SaveData } from "../../shared/save";
 import { artUrl } from "../game/art";
 import { t, type StringKey } from "../i18n";
 import { knowsCharcoal } from "./hud/hud";
-import { Price } from "./hud/Book";
+import { NewMark, Price } from "./hud/Book";
+import { awakenDue } from "./hud/alerts";
 import { sfx } from "../audio/sfx";
 
 // The awakening tab of the upgrade book (06b-1 design 1): every target with its stars on the left page; on the
@@ -100,6 +101,7 @@ export function AwakenList({ kind, onKind, picked, onPick, save }: { kind: "gear
         {(["gear", "dish"] as const).map((k) => (
           <button key={k} className={`ui-sq awaken-kind${k === kind ? " on" : ""}`} onClick={() => onKind(k)}>
             {t(`awaken.kind.${k}` as StringKey)}
+            {awakenTargets(k).some((x) => awakenDue(save, x)) && <NewMark />}
           </button>
         ))}
       </div>
@@ -108,7 +110,10 @@ export function AwakenList({ kind, onKind, picked, onPick, save }: { kind: "gear
         {awakenTargets(kind).map((target) => (
           <button key={target} className={`book-row${target === picked ? " on" : ""}${canAwaken(save, target) ? "" : " off"}`} onClick={() => onPick(target)}>
             <img src={iconOf(target)} alt="" />
-            <span className="name">{nameOf(target)}</span>
+            <span className="name">
+              {nameOf(target)}
+              {awakenDue(save, target) && <NewMark />}
+            </span>
             <span className="sub">★{starLevel(save, target)}</span>
           </button>
         ))}
