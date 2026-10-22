@@ -49,20 +49,16 @@ export function DayHud({ save, time, quiet = false, alerts = [], onBag, onNotebo
           (user, 2026-10-16); on touch no keys, in the same corners as on PC (the stick and the action
           button sit inward of them, mobile pass 2026-10-22) */}
       <button className={`dh-big dh-note${quiet ? " quiet" : ""}`} onClick={onNotebook} aria-label={t("hud.notebookButton")}>
-        <span className="dh-pic">
-          <img src={artUrl(HUD_ART.notebook)} alt="" />
-          {alerts.length > 0 && <span className="dh-alert">!</span>}
-        </span>
+        <img src={artUrl(HUD_ART.notebook)} alt="" />
+        {alerts.length > 0 && <span className="dh-alert">!</span>}
         <span className="dh-label">
           {!touch && <kbd className="dh-key">Tab</kbd>}
           {t("hud.notebookButton")}
         </span>
       </button>
       <button className={`dh-big dh-bag${quiet ? " quiet" : ""}`} onClick={onBag} aria-label={t("hud.bagButton")}>
-        <span className="dh-pic">
-          <img src={artUrl(HUD_ART.bag)} alt="" />
-          {alerts.includes("bag") && <span className="dh-alert">!</span>}
-        </span>
+        <img src={artUrl(HUD_ART.bag)} alt="" />
+        {alerts.includes("bag") && <span className="dh-alert">!</span>}
         <span className="dh-label">
           {!touch && <kbd className="dh-key">I</kbd>}
           {t("hud.bagButton")}
