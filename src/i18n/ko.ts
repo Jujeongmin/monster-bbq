@@ -353,7 +353,7 @@ export const ko = {
   "kitchen.noSets": "재료 부족",
   "kitchen.noDishes": "아직 연구한 요리가 없다. 도감에서 연구해 보자.",
   "service.platesLeft": "남은 그릇 {n}",
-  "service.soldOut": "다 팔렸다! 주문 마감",
+  "service.soldOut": "다 팔렸다! 이제 공깃밥만",
   "service.pour.perfect": "PERFECT",
   "service.pour.good": "GOOD",
   "service.pour.bad": "BAD",
@@ -371,7 +371,7 @@ export const ko = {
   "tip.mess": "잔반 치우껑. 안 치우면 다음 손님 못 앉껑.",
   "tip.angry": "늦으면 화내고 가껑. 평판 깎이껑.",
   "tip.charcoal": "할미 비법 황금 숯이껑. 장비랑 요리를 각성시키껑.",
-  "service.band.soldOut": "다 팔렸다!",
+  "service.band.soldOut": "다 팔렸다! 이제 공깃밥만",
   "service.band.closing": "영업 끝!",
   // adding to the menu during the night (shop remake step 4)
   "prompt.menu": "메뉴 추가",

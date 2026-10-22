@@ -32,3 +32,10 @@ export type DishId = keyof typeof DISHES;
 export function isDishId(v: unknown): v is DishId {
   return typeof v === "string" && Object.prototype.hasOwnProperty.call(DISHES, v);
 }
+
+// The bowl of rice every Korean BBQ restaurant sells for a coin (Dave the Diver's nori maki, user
+// 2026-10-22): what a guest orders once tonight's dishes are sold out. Never researched, never on the menu
+// board; Bandal always has it. Not a DishId: it is in no list of dishes.
+export const HOUSE_DISH = "rice" as const;
+export type ServedDish = DishId | typeof HOUSE_DISH;
+export const isServedDish = (v: unknown): v is ServedDish => v === HOUSE_DISH || isDishId(v);

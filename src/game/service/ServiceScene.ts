@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { BALANCE } from "../../../shared/balance";
-import { DISHES, type DishId } from "../../../shared/content/dishes";
+import { DISHES, HOUSE_DISH, type DishId } from "../../../shared/content/dishes";
 import { t, type StringKey } from "../../i18n";
 import { artUrl, hasArt } from "../art";
 import { createCharacterAnims, loadCharacterArt } from "../hunt/anims";
@@ -38,7 +38,10 @@ const WAITER_ART = Object.entries(WAITER_FRAMES).every(([pose, n]) => Array.from
 const WAITER_SCALE = WAITER_ART ? S : 1.6; // the hunter standing in is finer art: as tall as the guests
 // the shop's own small dishes when drawn, else the kitchen's icons shrunk
 const SHOP_DISHES = Object.keys(DISHES).every((id) => hasArt(`test/shop/dishes/${id}.png`));
-const MAX_DT_MS = 50;
+// the night moves in slices of at most STEP_MS, as many as the frame took (a slow phone runs it as fast as a
+// PC: user 2026-10-22); a longer gap (the tab hidden) counts as MAX_GAP_MS
+const STEP_MS = 50;
+const MAX_GAP_MS = 250;
 const COUNTER_TOP = 330; // the grills stand here
 const SEAT_FLOOR = 404; // the stools stand at the counter's foot
 const WALK_FLOOR = 448;
@@ -93,7 +96,6 @@ export class ServiceScene extends Phaser.Scene {
   private promptText!: Phaser.GameObjects.Text;
   private tally!: Phaser.GameObjects.Text;
   private clock!: Phaser.GameObjects.Text;
-  private closeButton!: UiButton;
   private pauseButton!: UiButton;
   private keys!: Record<"A" | "D" | "LEFT" | "RIGHT" | "SHIFT" | "SPACE" | "E", Phaser.Input.Keyboard.Key>;
   private stickPointer: number | null = null;
@@ -116,12 +118,10 @@ export class ServiceScene extends Phaser.Scene {
     this.savedAt = this.shift.s.clock;
     // plates added to the menu from the page (shop remake step 4), and whether more could still be
     this.game.events.off("service:addPlates");
-    this.game.events.off("service:waitForMenu");
     this.game.events.on("service:addPlates", (dish: DishId, plates: number, price: number) => {
       this.shift.addPlates(dish, plates, price);
       saveShift(sessionStorage, data.serviceId, this.shift.s);
     });
-    this.game.events.on("service:waitForMenu", (wait: boolean) => void (this.shift.waitForMenu = wait));
     this.paused = false;
     this.ended = false;
     this.views = new Map();
@@ -147,7 +147,8 @@ export class ServiceScene extends Phaser.Scene {
     for (const p of PROPS) this.load.image(`prop_${p}`, artUrl(`test/shop/${p}.png`));
     for (const y of YOKAI) for (const p of POSES) this.load.image(`yk_${y}_${p}`, artUrl(`test/yokai/counter/${y}_${p}.png`));
     for (const b of BANDAL) this.load.image(`bandal_${b}`, artUrl(`test/bandal/${b}.png`));
-    for (const id of Object.keys(DISHES)) this.load.image(`dish_${id}`, artUrl(SHOP_DISHES ? `test/shop/dishes/${id}.png` : `test/dishes/${id}.png`));
+    // and the bowl of rice once the dishes are gone (HOUSE_DISH)
+    for (const id of [...Object.keys(DISHES), HOUSE_DISH]) this.load.image(`dish_${id}`, artUrl(SHOP_DISHES ? `test/shop/dishes/${id}.png` : `test/dishes/${id}.png`));
   }
 
   create() {
@@ -188,8 +189,6 @@ export class ServiceScene extends Phaser.Scene {
     this.clock = this.add.text(420, 18, "", TEXT).setOrigin(1, 0.5).setDepth(1000);
     this.pauseButton = addButton(this, 910, 20, t("service.pause"), () => this.togglePause(), 64);
     this.pauseButton.box.setDepth(1000);
-    this.closeButton = addButton(this, 822, 20, t(s.ordersClosed ? "service.closeHall" : "service.closeOrders"), () => this.close(), 84);
-    this.closeButton.box.setDepth(1000);
 
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys("A,D,LEFT,RIGHT,SHIFT,SPACE,E") as typeof this.keys;
@@ -249,19 +248,6 @@ export class ServiceScene extends Phaser.Scene {
     if (this.shift.s.pouring) this.shift.pourEnd();
   }
 
-  // First press: no one else comes in. Second press: whoever still waits for a dish leaves angry.
-  private close() {
-    if (this.ended) return;
-    if (!this.shift.s.ordersClosed) {
-      this.shift.closeOrders();
-      this.closeButton.setText(t("service.closeHall"));
-      this.pop(480, 90, t("service.ordersClosed"), "#ffd166");
-      return;
-    }
-    this.shift.closeHall();
-    this.closeButton.setEnabled(false);
-  }
-
   private togglePause() {
     this.paused = !this.paused;
     this.pauseButton.setText(this.paused ? t("service.resume") : t("service.pause"));
@@ -269,10 +255,10 @@ export class ServiceScene extends Phaser.Scene {
 
   update(time: number, rawDt: number) {
     if (this.paused || this.ended) return;
-    const dt = Math.min(rawDt, MAX_DT_MS);
+    const dt = Math.min(rawDt, MAX_GAP_MS);
     const k = this.keys;
     const x = Phaser.Math.Clamp((k.D.isDown || k.RIGHT.isDown ? 1 : 0) - (k.A.isDown || k.LEFT.isDown ? 1 : 0) + this.stickX, -1, 1);
-    this.shift.tick(dt, { x, run: k.SHIFT.isDown || Math.abs(this.stickX) > 0.9 });
+    for (let left = dt; left > 0; left -= STEP_MS) this.shift.tick(Math.min(left, STEP_MS), { x, run: k.SHIFT.isDown || Math.abs(this.stickX) > 0.9 });
     if (this.shift.s.clock - this.savedAt > 1000) {
       this.savedAt = this.shift.s.clock;
       saveShift(sessionStorage, this.data0.serviceId, this.shift.s);
@@ -325,11 +311,9 @@ export class ServiceScene extends Phaser.Scene {
           this.pop(LAYOUT.coalBox, 348, t("service.coalOut"), "#ff8080");
           break;
         case "soldOut":
-          this.closeButton.setText(t("service.closeHall"));
           this.pop(480, 90, t("service.soldOut"), "#ffd166");
           break;
         case "closing":
-          this.closeButton.setText(t("service.closeHall"));
           this.pop(480, 90, t("service.closing"), "#ffd166");
           break;
       }

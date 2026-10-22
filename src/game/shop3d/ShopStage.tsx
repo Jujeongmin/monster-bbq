@@ -23,7 +23,10 @@ import { ShopView } from "./ShopView";
 // words, draw the room, then the HUD over it. When the night is done its report goes to onEnd. A failed
 // load (textures, WebGL) calls onFail so the page can fall back to the 2D shop.
 
-const MAX_DT_MS = 50;
+// the night moves in slices of at most this much real time, as many as the frame took (a phone drawing
+// fewer frames runs the night as fast as a PC: user 2026-10-22); a longer gap (the tab hidden) counts as MAX_GAP_MS
+const STEP_MS = 50;
+const MAX_GAP_MS = 250;
 const POP_MS = 1500;
 const TIP_MS = 4000; // the lid's line stays this long (the clock of the night, so a pause holds it)
 const BAND_MS = 1600;
@@ -88,8 +91,7 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
   const [hud, setHud] = useState<Hud | null>(null);
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(() => sfx.isMuted());
-  const [closeStep, setCloseStep] = useState<0 | 1 | 2>(0); // 0 open, 1 orders closed, 2 hall closed
-  const ctl = useRef({ press: () => {}, release: () => {}, stick: (_x: number | null) => {}, pause: () => {}, close: () => {} });
+  const ctl = useRef({ press: () => {}, release: () => {}, stick: (_x: number | null) => {}, pause: () => {} });
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
 
   useEffect(() => {
@@ -107,7 +109,6 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
     // a reload picks the night up where it was (the ingredients went when the shop opened)
     const saved = loadShift(sessionStorage, shop.serviceId);
     const shift = new Shift(cfg, saved && saved.seats.length === shop.stools ? saved : undefined);
-    if (shift.s.ordersClosed) setCloseStep(1);
     let view: ShopView;
     try {
       view = new ShopView(canvas.current!, shift.s.seats.map((s) => s.x));
@@ -172,7 +173,6 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
       const g = shift.s.guests.find((x) => x.id === id);
       return g ? view.project(g.x, FLOOR_Y + 64, g.seat !== null ? Z.seated : Z.walk) : null;
     };
-    const top = { x: 480, y: 90 };
 
     // tonight's plates as this page knows them, to add only what the server added
     const made = new Map(shop.dishes.map((d) => [d.dish, d.plates]));
@@ -222,18 +222,6 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
       pause: () => {
         isPaused = !isPaused;
         setPaused(isPaused);
-      },
-      // first press: no one else comes in; second: whoever still waits for a dish leaves angry
-      close: () => {
-        if (ended) return;
-        if (!shift.s.ordersClosed) {
-          shift.closeOrders();
-          setCloseStep(1);
-          pop(top, t("service.ordersClosed"), "#ffd166");
-          return;
-        }
-        shift.closeHall();
-        setCloseStep(2);
       },
     };
 
@@ -288,17 +276,10 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
           pop(view.project(LAYOUT.coalBox, FLOOR_Y + 64, Z.station), t("service.coalOut"), "#ff8080");
           break;
         case "soldOut":
-          setCloseStep((c) => (c === 0 ? 1 : c));
           band = { id: ++popId, key: "service.band.soldOut", born: now };
           break;
         case "closing":
-          setCloseStep((c) => (c === 0 ? 1 : c));
           band = { id: ++popId, key: "service.band.closing", born: now };
-          break;
-        case "reopened":
-          setCloseStep(0);
-          band = { id: ++popId, key: "service.band.reopened", born: now };
-          sfx.play("bell");
           break;
       }
     };
@@ -307,12 +288,11 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
       view.setWidth(layerW.current);
       if (!alive) return;
       now = time;
-      const dt = Math.min(time - last, MAX_DT_MS);
+      const dt = Math.min(time - last, MAX_GAP_MS);
       last = time;
       const move = moveFrom(keys, stick);
-      shift.waitForMenu = (addMenuRef.current?.options.length ?? 0) > 0;
       if (!isPaused && !ended && !holdRef.current && !menuOpenRef.current) {
-        shift.tick(dt, move);
+        for (let left = dt; left > 0; left -= STEP_MS) shift.tick(Math.min(left, STEP_MS), move);
         if (shift.s.clock - savedAt > 1000) {
           savedAt = shift.s.clock;
           saveShift(sessionStorage, shop.serviceId, shift.s);
@@ -403,15 +383,12 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
             clock={hud.clock}
             dishes={shop.dishes.slice(0, 6).map((d) => d.dish)}
             time={hud.time}
-            closeLabel={closeStep === 0 ? t("service.closeOrders") : t("service.closeHall")}
-            closeDisabled={closeStep === 2}
             paused={paused}
             pops={hud.pops}
             tip={hud.tip}
             band={hud.band}
             fx={hud.fx}
             touch={touch}
-            onClose={() => ctl.current.close()}
             onPause={() => ctl.current.pause()}
             muted={muted}
             onMute={() => {

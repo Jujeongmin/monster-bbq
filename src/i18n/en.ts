@@ -354,7 +354,7 @@ export const en: Record<keyof typeof ko, string> = {
   "kitchen.noSets": "Not enough",
   "kitchen.noDishes": "No dishes researched yet. Research one in the cookbook.",
   "service.platesLeft": "{n} plates left",
-  "service.soldOut": "Sold out! Last orders",
+  "service.soldOut": "Sold out! Rice only now",
   "service.pour.perfect": "PERFECT",
   "service.pour.good": "GOOD",
   "service.pour.bad": "BAD",
@@ -372,7 +372,7 @@ export const en: Record<keyof typeof ko, string> = {
   "tip.mess": "Clear the leftovers, or no one can sit there.",
   "tip.angry": "Too slow and they storm out. That costs reputation.",
   "tip.charcoal": "Grandma's secret golden charcoal. It awakens your gear and dishes.",
-  "service.band.soldOut": "Sold out!",
+  "service.band.soldOut": "Sold out! Rice only now",
   "service.band.closing": "Closing time!",
   // adding to the menu during the night (shop remake step 4)
   "prompt.menu": "Add to menu",

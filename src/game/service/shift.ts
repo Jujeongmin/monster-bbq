@@ -1,5 +1,5 @@
 import { BALANCE } from "../../../shared/balance";
-import type { DishId } from "../../../shared/content/dishes";
+import { HOUSE_DISH, type DishId, type ServedDish } from "../../../shared/content/dishes";
 import { RECIPES } from "../../../shared/content/recipes";
 import type { TonightDish } from "../../../shared/kitchen/dish";
 import type { Customer, Drink } from "../../../shared/service/plan";
@@ -47,7 +47,7 @@ export type GuestPhase = "queue" | "walk" | "seated" | "eating" | "thirsty" | "l
 export interface Guest {
   id: string;
   kind: Customer["kind"];
-  dish: DishId;
+  dish: ServedDish;
   patienceMs: number;
   drink: Drink;
   messy: boolean;
@@ -70,7 +70,7 @@ export interface Seat {
   messBy: string | null; // the guest who left it dirty
 }
 
-export type TrayItem = { kind: "dish"; dish: DishId } | { kind: "drink"; drink: Exclude<Drink, "none">; pour: Pour };
+export type TrayItem = { kind: "dish"; dish: ServedDish } | { kind: "drink"; drink: Exclude<Drink, "none">; pour: Pour };
 
 export type Target = { kind: "seat"; seat: number } | { kind: "pass" } | { kind: "drinks" } | { kind: "coal" };
 
@@ -78,9 +78,9 @@ export type Target = { kind: "seat"; seat: number } | { kind: "pass" } | { kind:
 export type ShiftEvent =
   | { type: "arrive" | "sit" | "order" | "eat" | "leave"; guest: string }
   | { type: "angry"; guest: string }
-  | { type: "served"; guest: string; dish: DishId; tip: number; ratio: number } // ratio: the patience the wait used
+  | { type: "served"; guest: string; dish: ServedDish; tip: number; ratio: number } // ratio: the patience the wait used
   | { type: "drink"; guest: string; pour: Pour }
-  | { type: "cooked"; dish: DishId }
+  | { type: "cooked"; dish: ServedDish }
   | { type: "take"; n: number }
   | { type: "coal"; level: number }
   | { type: "noCoal" }
@@ -88,7 +88,6 @@ export type ShiftEvent =
   | { type: "pour"; pour: Pour }
   | { type: "closing" }
   | { type: "soldOut" }
-  | { type: "reopened" }
   | { type: "calmed"; guest: string };
 
 export interface ShiftConfig {
@@ -122,17 +121,19 @@ export interface ShiftState {
   guests: Guest[];
   seats: Seat[];
   plates: Partial<Record<DishId, number>>; // plates not ordered yet
-  kitchen: { dish: DishId; leftMs: number; started: boolean }[];
-  pass: DishId[];
+  kitchen: { dish: ServedDish; leftMs: number; started: boolean }[];
+  pass: ServedDish[];
   tray: TrayItem[];
   coal: number;
   x: number;
   facing: 1 | -1;
   busyMs: number;
   pouring: { drink: Exclude<Drink, "none">; fill: number } | null;
+  // closing time has come: no one else comes in (Dave's clock; there is no closing early: user 2026-10-22)
   ordersClosed: boolean;
-  // who closed the orders: a sell-out reopens when plates are added (shop remake step 4), the others do not
-  closedBy: "soldOut" | "player" | "clock" | null;
+  closedBy: "soldOut" | "player" | "clock" | null; // nights saved before 2026-10-22 may hold the others
+  // the sell-out has been called (the guests order rice from then on, HOUSE_DISH); more plates undo it
+  soldOutSaid?: boolean;
   left: string[];
   cleaned: string[];
   seated: number; // guests seated so far (spreads them over the stools)
@@ -148,19 +149,17 @@ export function judgePour(fill: number): Pour {
 export class Shift {
   s: ShiftState;
   readonly cfg: ShiftConfig;
-  private prices: Map<DishId, number>;
+  private prices: Map<ServedDish, number>;
   // tonight's dishes in menu order, growing when one is added during the night
   private menu: DishId[];
   private readonly fx: StaffEffects;
   private readonly rand: () => number;
   private events: ShiftEvent[] = [];
-  // set by the page while more can still be added to the menu: a sold-out night then waits for it (or for
-  // the hall to be closed) instead of ending when the last guest leaves
-  waitForMenu = false;
 
   constructor(cfg: ShiftConfig, saved?: ShiftState) {
     this.cfg = cfg;
-    this.prices = new Map(cfg.dishes.map((d) => [d.dish, d.price]));
+    this.prices = new Map<ServedDish, number>(cfg.dishes.map((d) => [d.dish, d.price]));
+    this.prices.set(HOUSE_DISH, SV.house.price);
     this.menu = cfg.dishes.map((d) => d.dish);
     this.fx = staffEffects(cfg.staff ?? {});
     this.rand = cfg.rand ?? Math.random;
@@ -210,8 +209,6 @@ export class Shift {
   }
 
   get done(): boolean {
-    const s = this.s;
-    if (this.waitForMenu && s.closedBy === "soldOut" && s.arrived < this.cfg.customers.length && s.clock < SV.openMs) return false;
     const all = this.s.arrived >= this.cfg.customers.length || this.s.ordersClosed;
     return all && (this.cfg.customers.length > 0 || this.s.ordersClosed) && this.s.guests.every((g) => g.phase === "gone");
   }
@@ -238,10 +235,9 @@ export class Shift {
     this.cook(dt);
     for (const g of s.guests) this.stepGuest(g, dt);
     this.stepHelpers(dt);
-    // nothing left to order: no one else comes in
-    if (!s.ordersClosed && this.platesLeft() === 0 && !s.guests.some((g) => g.phase === "queue" || g.phase === "walk" || (g.phase === "seated" && !g.ordered))) {
-      s.ordersClosed = true;
-      s.closedBy = "soldOut";
+    // nothing left on the menu: the guests keep coming and order rice (Dave's nori maki), said once
+    if (!s.soldOutSaid && this.menu.length > 0 && this.platesLeft() === 0) {
+      s.soldOutSaid = true;
       this.events.push({ type: "soldOut" });
     }
   }
@@ -278,6 +274,8 @@ export class Shift {
     const s = this.s;
     const job = s.kitchen[0];
     if (!job) return;
+    // a bowl of rice burns no charcoal
+    if (!job.started && job.dish === HOUSE_DISH) job.started = true;
     if (!job.started) {
       if (s.coal <= 0) return;
       s.coal = Math.max(0, s.coal - this.cfg.coalPerDish * this.fx.coalMul);
@@ -293,7 +291,7 @@ export class Shift {
   }
 
   // Plates of a dish already cooking, on the pass or carried, beyond the guests waiting for it.
-  private spare(dish: DishId, except?: Guest): number {
+  private spare(dish: ServedDish, except?: Guest): number {
     const s = this.s;
     const have = s.kitchen.filter((k) => k.dish === dish).length + s.pass.filter((d) => d === dish).length + s.tray.filter((t) => t.kind === "dish" && t.dish === dish).length;
     const waiting = s.guests.filter((g) => g !== except && g.dish === dish && g.ordered && g.servedMs === null && g.phase === "seated").length;
@@ -301,16 +299,17 @@ export class Shift {
   }
 
   // The order a seated guest gives: their dish while plates of it are left, else any dish that still
-  // has some; a plate already cooked for someone who left goes to them first. false: sold out.
+  // has some (a plate already cooked for someone who left goes to them first), else a bowl of rice once
+  // everything is sold out (Dave's nori maki, user 2026-10-22). Always true: no one goes home unfed.
   private order(g: Guest): boolean {
     const s = this.s;
     const avail = (d: DishId) => (s.plates[d] ?? 0) > 0 || this.spare(d, g) > 0;
-    const dish = avail(g.dish) ? g.dish : (this.menu.find(avail) ?? null);
-    if (!dish) return false;
+    const dish: ServedDish = g.dish !== HOUSE_DISH && avail(g.dish) ? g.dish : (this.menu.find(avail) ?? HOUSE_DISH);
     g.dish = dish;
     if (this.spare(dish, g) <= 0) {
-      s.plates[dish] = (s.plates[dish] ?? 0) - 1;
-      s.kitchen.push({ dish, leftMs: Math.round(RECIPES[dish].cookMs * this.fx.cookMul), started: false });
+      if (dish !== HOUSE_DISH) s.plates[dish] = (s.plates[dish] ?? 0) - 1;
+      const cookMs = dish === HOUSE_DISH ? SV.house.cookMs : RECIPES[dish].cookMs;
+      s.kitchen.push({ dish, leftMs: Math.round(cookMs * this.fx.cookMul), started: false });
     }
     this.events.push({ type: "order", guest: g.id });
     return true;
@@ -411,7 +410,7 @@ export class Shift {
       const i = s.kitchen.map((k) => (k.started ? null : k.dish)).lastIndexOf(g.dish);
       if (i >= 0 && this.spare(g.dish, g) > 0) {
         s.kitchen.splice(i, 1);
-        s.plates[g.dish] = (s.plates[g.dish] ?? 0) + 1;
+        if (g.dish !== HOUSE_DISH) s.plates[g.dish] = (s.plates[g.dish] ?? 0) + 1;
       }
     }
     g.angry = true;
@@ -572,7 +571,7 @@ export class Shift {
   }
 
   // guests waiting for a dish that no one is bringing yet
-  private waitingFor(dish: DishId, by: Helper): Guest[] {
+  private waitingFor(dish: ServedDish, by: Helper): Guest[] {
     const s = this.s;
     const carried = [...s.tray, ...s.helpers.filter((o) => o !== by).flatMap((o) => o.carry)].filter((t) => t.kind === "dish" && t.dish === dish).length;
     const waiting = s.guests.filter((g) => g.phase === "seated" && g.ordered && g.servedMs === null && g.dish === dish && !this.taken(g.id, by));
@@ -757,23 +756,8 @@ export class Shift {
     s.plates[dish] = (s.plates[dish] ?? 0) + plates;
     if (!this.menu.includes(dish)) this.menu.push(dish);
     if (!this.prices.has(dish)) this.prices.set(dish, price);
-    if (s.ordersClosed && s.closedBy === "soldOut" && s.clock < SV.openMs) {
-      s.ordersClosed = false;
-      s.closedBy = null;
-      this.events.push({ type: "reopened" });
-    }
-  }
-
-  // First press: no one else comes in. Second: whoever still waits for a dish leaves angry.
-  closeOrders() {
-    this.s.ordersClosed = true;
-    this.s.closedBy = "player";
-  }
-
-  closeHall() {
-    this.s.ordersClosed = true;
-    this.s.closedBy = "player";
-    for (const g of this.s.guests) if ((g.phase === "queue" || g.phase === "walk" || g.phase === "seated") && g.servedMs === null) this.storm(g);
+    // new plates: the next sell-out is called again
+    s.soldOutSaid = false;
   }
 
   // What goes to the server: every guest who got their dish, with the wait and the pour; the leftovers

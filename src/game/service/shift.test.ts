@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BALANCE } from "../../../shared/balance";
+import { HOUSE_DISH } from "../../../shared/content/dishes";
 import { RECIPES } from "../../../shared/content/recipes";
 import type { Customer } from "../../../shared/service/plan";
 import { HELPER_HOME, judgePour, LAYOUT, Shift, type ShiftConfig } from "./shift";
@@ -157,11 +158,11 @@ describe("the night at the counter (Dave's rules)", () => {
     expect(sh.s.plates.grilled_belly).toBe(2);
   });
 
-  it("orders another dish when theirs is sold out, and closes the doors once every plate is ordered", () => {
+  it("orders another dish when theirs is sold out, and keeps the doors open once every plate is ordered", () => {
     const sh = new Shift(cfg([guest("c0", 0), guest("c1", 100)], { dishes: [{ dish: "grilled_belly", plates: 1, price: 40 }, { dish: "garlic_neck", plates: 1, price: 50 }] }));
     run(sh, SETTLE + 3000);
     expect(sh.s.guests.map((g) => g.dish).sort()).toEqual(["garlic_neck", "grilled_belly"]);
-    expect(sh.s.ordersClosed).toBe(true);
+    expect(sh.s.ordersClosed).toBe(false);
   });
 
   it("lets no one in after closing time", () => {
@@ -203,13 +204,13 @@ describe("the night at the counter (Dave's rules)", () => {
     expect(sh.report().served[0].drink).toBeUndefined();
   });
 
-  it("closes the hall: everyone still waiting for a dish leaves angry, the doors stay shut", () => {
-    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 1000), guest("c2", 60_000)]));
-    run(sh, 3000);
-    sh.closeHall();
-    expect(sh.s.left.sort()).toEqual(["c0", "c1"]);
-    run(sh, 70_000);
-    expect(sh.s.guests).toHaveLength(2);
+  it("at closing time lets no one else in, and ends once the last guest inside has gone (Dave's clock)", () => {
+    const sh = new Shift(cfg([guest("c0", 0), guest("c1", SV.openMs + 5000)]));
+    serveFirst(sh);
+    run(sh, SV.openMs - sh.s.clock + 100);
+    expect(sh.drain().some((e) => e.type === "closing")).toBe(true);
+    run(sh, 10_000);
+    expect(sh.s.guests.map((g) => g.id)).toEqual(["c0"]);
     expect(sh.done).toBe(true);
   });
 
@@ -237,60 +238,37 @@ describe("what a serve tells the screen", () => {
   });
 });
 
-describe("more dishes during the night (shop remake step 4)", () => {
+describe("a sell-out (Dave's nori maki: a bowl of rice, user 2026-10-22)", () => {
   const one = { dishes: [{ dish: "grilled_belly" as const, plates: 1, price: 40 }] };
-  const soldOut = (sh: Shift) => {
-    for (let t = 0; t < 30_000 && !sh.s.ordersClosed; t += 50) sh.tick(50);
+  const ordered = (sh: Shift, id: string) => sh.s.guests.find((g) => g.id === id);
+  it("keeps the doors open and has the next guest order rice, cooked without charcoal", () => {
+    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 100)], one));
+    run(sh, SETTLE + 3000);
     expect(sh.drain().some((e) => e.type === "soldOut")).toBe(true);
-  };
-  it("reopens orders after a sell-out when plates are added, and the next guest comes in", () => {
-    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 20_000)], one));
-    soldOut(sh);
-    sh.addPlates("grilled_belly", 2, 40);
-    expect(sh.drain()).toContainEqual({ type: "reopened" });
     expect(sh.s.ordersClosed).toBe(false);
-    run(sh, 21_000 - sh.s.clock);
-    expect(sh.s.arrived).toBe(2);
+    expect(ordered(sh, "c0")).toMatchObject({ dish: "grilled_belly", ordered: true });
+    expect(ordered(sh, "c1")).toMatchObject({ dish: HOUSE_DISH, ordered: true });
+    expect([...sh.s.kitchen.map((k) => k.dish), ...sh.s.pass]).toContain(HOUSE_DISH);
   });
-  it("does not reopen orders the player closed", () => {
-    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 20_000)], one));
-    run(sh, 1000);
-    sh.closeOrders();
-    sh.addPlates("grilled_belly", 2, 40);
-    expect(sh.s.ordersClosed).toBe(true);
-    expect(sh.drain().some((e) => e.type === "reopened")).toBe(false);
-  });
-  it("does not reopen after closing time", () => {
-    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 20_000)], one));
-    soldOut(sh);
-    sh.s.clock = SV.openMs + 1;
-    sh.addPlates("grilled_belly", 2, 40);
-    expect(sh.s.ordersClosed).toBe(true);
-  });
-  it("lets guests order a dish added tonight", () => {
-    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 20_000)], one));
-    soldOut(sh);
-    sh.addPlates("garlic_neck", 3, 50);
-    // c1 walks to a free stool further along, then orders
-    run(sh, 20_000 - sh.s.clock + SETTLE + 6000);
-    expect(sh.s.guests.find((g) => g.id === "c1")).toMatchObject({ dish: "garlic_neck", ordered: true });
-  });
-  it("waits after a sell-out while more could be added, until the player closes the hall", () => {
-    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 60_000)], one));
-    soldOut(sh);
+  it("reports the bowl of rice like any dish, for the server to pay its coin", () => {
+    const sh = new Shift(cfg([guest("c0", 0)], { dishes: [] }));
+    run(sh, SETTLE + SV.house.cookMs + 200);
+    expect(sh.s.pass).toEqual([HOUSE_DISH]);
     goTo(sh, LAYOUT.pass);
-    run(sh, RECIPES.grilled_belly.cookMs + 200);
     sh.act();
     goTo(sh, sh.s.seats[0].x);
     sh.act();
-    run(sh, SV.eatMs + 3000);
-    sh.waitForMenu = true;
-    expect(sh.done).toBe(false);
-    sh.waitForMenu = false;
-    expect(sh.done).toBe(true);
-    sh.waitForMenu = true;
-    sh.closeHall();
-    expect(sh.done).toBe(true);
+    expect(sh.report().served).toEqual([expect.objectContaining({ customer: "c0", dish: HOUSE_DISH })]);
+  });
+  it("lets guests order a dish added tonight, and calls the next sell-out again", () => {
+    const sh = new Shift(cfg([guest("c0", 0), guest("c1", 20_000)], one));
+    run(sh, SETTLE + 3000);
+    expect(sh.drain().some((e) => e.type === "soldOut")).toBe(true);
+    sh.addPlates("garlic_neck", 3, 50);
+    expect(sh.s.soldOutSaid).toBe(false);
+    // c1 walks to a free stool further along, then orders
+    run(sh, 20_000 - sh.s.clock + SETTLE + 6000);
+    expect(ordered(sh, "c1")).toMatchObject({ dish: "garlic_neck", ordered: true });
   });
 });
 

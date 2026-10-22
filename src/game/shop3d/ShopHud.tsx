@@ -60,15 +60,12 @@ export interface HudProps {
   clock: string;
   dishes: string[];
   time: number;
-  closeLabel: string;
-  closeDisabled: boolean;
   paused: boolean;
   pops: Pop[];
   tip: Tip | null;
   band: Band | null;
   fx: Fx[];
   touch: boolean;
-  onClose: () => void;
   onPause: () => void;
   muted: boolean;
   onMute: () => void;
@@ -127,9 +124,6 @@ export function ShopHud(p: HudProps) {
         <span className="s3-clock">{p.clock}</span>
       </div>
       <div className="s3-buttons">
-        <button className="ui-btn" disabled={p.closeDisabled} onClick={p.onClose}>
-          {p.closeLabel}
-        </button>
         <button className="ui-btn" onClick={p.onPause}>
           {p.paused ? t("service.resume") : t("service.pause")}
         </button>

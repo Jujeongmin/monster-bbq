@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { DISHES } from "../../../shared/content/dishes";
+import { DISHES, HOUSE_DISH } from "../../../shared/content/dishes";
 import { STAFF_IDS, type StaffId } from "../../../shared/content/staff";
 import { artUrl, hasArt } from "../art";
 import { LAYOUT } from "../service/shift";
@@ -47,7 +47,8 @@ function textureUrls(day: boolean): Record<string, string> {
   // a dish set in the room (the pass, the counter): its small 20 px picture once approved and in, beside a
   // 48 px grandchild (the HUD's bubbles and plaques keep the 32 px one)
   const dishArt = (d: string) => [`test/shop3d/dishes/${d}.png`, `test/shop/dishes/${d}.png`].find(hasArt) ?? `test/dishes/${d}.png`;
-  for (const d of Object.keys(DISHES)) urls[`dish_${d}`] = artUrl(dishArt(d));
+  // and the bowl of rice once the dishes are gone (HOUSE_DISH)
+  for (const d of [...Object.keys(DISHES), HOUSE_DISH]) urls[`dish_${d}`] = artUrl(dishArt(d));
   for (const y of YOKAI) for (const p of YK_POSES) urls[`yk_${y}_${p}`] = artUrl(`test/yokai/counter/${y}_${p}.png`);
   for (const b of BANDAL) urls[`bandal_${b}`] = artUrl(`test/bandal/${b}.png`);
   for (const h of HERO) urls[`hero_${h}`] = artUrl(`test/shop3d/hero/${h}.png`);

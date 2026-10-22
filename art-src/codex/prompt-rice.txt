@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image: one more dish for a cozy, comic Korean BBQ restaurant game, in exactly the art style of the attached dish icons (scaled up 8 times on magenta): the same chunky pixels, the same 1-art-pixel dark outline, the same warm palette, flat colours with 2-3 shades, no gradients, no anti-aliasing, seen from the same slight high angle.
+
+The dish: gonggi-bap, the plain bowl of steamed white rice every Korean BBQ restaurant sells for a coin — a small round stainless-steel rice bowl (the classic Korean restaurant one) heaped with fluffy white rice, its steel lid tipped against its side, a little steam rising. Simple and humble: it is the cheapest thing on the menu.
+
+Draw it about 42 art pixels wide and 40 tall (the size of the attached dishes), every art pixel an exact 8x8 block on one even grid, centred in the picture.
+
+Save as art-src/codex/raw/rice.png — exactly 480x480. Background: one perfectly flat solid magenta #FF00FF everywhere, no shadow on it. No text.
+
+Reply only with the saved file path.

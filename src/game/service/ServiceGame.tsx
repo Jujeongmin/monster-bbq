@@ -62,7 +62,6 @@ function Service2D({ shop, hold, addMenu, onEnd }: { shop: ServiceData; hold: bo
     return () => g.destroy(true);
   }, []);
   useEffect(() => holdLoop(game.current, hold || menuOpen, holdRef), [hold, menuOpen]);
-  useEffect(() => void game.current?.events.emit("service:waitForMenu", (addMenu?.options.length ?? 0) > 0), [addMenu?.options.length]);
 
   return (
     <>

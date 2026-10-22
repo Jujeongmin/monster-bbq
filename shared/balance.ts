@@ -152,6 +152,7 @@ export const BALANCE: {
     eatMs: number;
     minMsPerServe: number; // no faster than this per plate (server check)
     rep: { happy: number; left: number; badDrink: number };
+    house: { price: number; cookMs: number }; // the bowl of rice once the dishes are gone (HOUSE_DISH)
     tipRate: number; // a plate's tip, share of its price
     teaMul: number; // a perfect barley tea multiplies the tip
     messy: number; // share of guests who leave the grill dirty
@@ -392,6 +393,7 @@ export const BALANCE: {
     eatMs: 6000,
     minMsPerServe: 2500,
     rep: { happy: 1, left: -2, badDrink: -1 },
+    house: { price: 1, cookMs: 1500 },
     tipRate: 0.1,
     teaMul: 1.5,
     messy: 0.4,

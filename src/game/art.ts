@@ -13,6 +13,9 @@ const STAND_IN: Record<string, string> = {
   "test/items/icon_king_rib.png": "test/items/icon_boar_rib.png",
   "test/dishes/king_galbi.png": "test/dishes/rib_stew.png",
   "test/shop/dishes/king_galbi.png": "test/shop/dishes/rib_stew.png",
+  // the bowl of rice (HOUSE_DISH, 2026-10-22) until its picture is approved and copied in
+  "test/dishes/rice.png": "test/dishes/shiitake_grill.png",
+  "test/shop/dishes/rice.png": "test/shop/dishes/shiitake_grill.png",
   // the Dave-style UI's pictures (design 2026-10-16-dave-ui, section 8): near icons (the bag: the starter
   // pack's bojagi bundle, not the pork belly it first borrowed: user, 2026-10-16) until the drawn
   // ones are approved and copied in

@@ -1,5 +1,5 @@
 import { BALANCE } from "../balance";
-import { isDishId, type DishId } from "../content/dishes";
+import { HOUSE_DISH, isServedDish, type DishId, type ServedDish } from "../content/dishes";
 import { RECIPES } from "../content/recipes";
 import type { SaveData } from "../save";
 import { staffEffects } from "../staff/effects";
@@ -15,7 +15,7 @@ const isPour = (v: unknown): v is Pour => v === "bad" || v === "good" || v === "
 // drink they asked for was poured (missing = none poured).
 export interface ServedEntry {
   customer: string;
-  dish: DishId;
+  dish: ServedDish;
   waitMs: number;
   drink?: Pour;
 }
@@ -32,8 +32,9 @@ export function tipFor(price: number, perfectTea: boolean): number {
 // word, so what they can earn is capped (a perfect pour). Grills scrubbed (`cleaned`) only count for
 // guests the seed made messy who were served. The server pays tonight's price per plate, the tip, the
 // drinks, the scrubbing, and moves the reputation; customers who went without while there were
-// plates to give count as gone (those after the last plate do not). The same report sent again after it
-// was settled changes nothing.
+// plates to give count as gone (those after the last plate do not). A bowl of rice (HOUSE_DISH, once the
+// dishes are gone: Dave's nori maki) needs no plate, pays its coin and leaves the reputation as it is.
+// The same report sent again after it was settled changes nothing.
 export function settleService(save: SaveData, a: Record<string, unknown>, now: number): { save: SaveData; error?: string } {
   if (typeof a.serviceId === "string" && a.serviceId === save.lastService?.id) return { save };
   const svc = save.service;
@@ -52,22 +53,28 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
   let tips = 0;
   let drinks = 0;
   let badPours = 0;
+  let rice = 0;
   const sold = new Map<DishId, { plates: number; gold: number }>();
   for (const raw of a.served as unknown[]) {
     const e = raw as Partial<Record<keyof ServedEntry, unknown>> | null;
-    if (!e || typeof e !== "object" || typeof e.customer !== "string" || seen.has(e.customer) || !isDishId(e.dish)) return bad;
+    if (!e || typeof e !== "object" || typeof e.customer !== "string" || seen.has(e.customer) || !isServedDish(e.dish)) return bad;
     const c = customers.get(e.customer);
-    const left = plates.get(e.dish) ?? 0;
+    const house = e.dish === HOUSE_DISH;
+    const left = house ? Infinity : (plates.get(e.dish as DishId) ?? 0);
     if (!c || left < 1) return bad;
     const wait = e.waitMs;
-    if (typeof wait !== "number" || !Number.isFinite(wait) || wait < Math.floor(RECIPES[e.dish].cookMs * fx.cookMul) || wait > Math.ceil(c.patienceMs * fx.patienceMul * (fx.calm ? 1.5 : 1)) || c.arriveMs + wait > elapsed) return bad;
+    const cookMs = house ? SV.house.cookMs : RECIPES[e.dish as DishId].cookMs;
+    if (typeof wait !== "number" || !Number.isFinite(wait) || wait < Math.floor(cookMs * fx.cookMul) || wait > Math.ceil(c.patienceMs * fx.patienceMul * (fx.calm ? 1.5 : 1)) || c.arriveMs + wait > elapsed) return bad;
     if (e.drink !== undefined && (!isPour(e.drink) || c.drink === "none")) return bad;
-    plates.set(e.dish, left - 1);
     seen.add(e.customer);
-    const p = price.get(e.dish)!;
+    const p = house ? SV.house.price : price.get(e.dish as DishId)!;
     sales += p;
-    const line = sold.get(e.dish) ?? { plates: 0, gold: 0 };
-    sold.set(e.dish, { plates: line.plates + 1, gold: line.gold + p });
+    if (house) rice++;
+    else {
+      plates.set(e.dish as DishId, left - 1);
+      const line = sold.get(e.dish as DishId) ?? { plates: 0, gold: 0 };
+      sold.set(e.dish as DishId, { plates: line.plates + 1, gold: line.gold + p });
+    }
     const perfectTea = c.drink === "tea" && e.drink === "perfect";
     tips += Math.round(tipFor(p, perfectTea) * fx.tipMul);
     if (e.drink && c.drink !== "none") drinks += Math.round(SV.drinks.price[c.drink] * (e.drink === "perfect" ? SV.drinks.perfectMul : 1));
@@ -85,7 +92,8 @@ export function settleService(save: SaveData, a: Record<string, unknown>, now: n
   // every guest of the night who went without counts as gone, however few plates were made (balance check
   // 2026-10-21: counting only up to the plates made let a short menu spare the reputation)
   const gone = Math.max(0, customers.size - seen.size);
-  const happy = seen.size;
+  // a bowl of rice is neither a happy guest nor a lost one
+  const happy = seen.size - rice;
   const reputation = Math.max(0, save.reputation + happy * SV.rep.happy + gone * SV.rep.left + badPours * SV.rep.badDrink);
   return {
     save: {

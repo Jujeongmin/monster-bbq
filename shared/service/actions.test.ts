@@ -54,6 +54,17 @@ describe("finishService (restaurant v2 stage 2: the waiter carries, tips, drinks
     expect(r.save.lastService).toEqual({ id: svc.id, served: 2, left: gone, sales: 90, tips: 9, drinks: 0, cleaned: 0, happy: 2, repDelta: 2 * SV.rep.happy + gone * SV.rep.left, dishes: [{ dish: "grilled_belly", plates: 1, gold: 40 }, { dish: "garlic_neck", plates: 1, gold: 50 }] });
     expect(r.save.reputation).toBe(Math.max(0, 60 + 2 * SV.rep.happy + gone * SV.rep.left));
   });
+  it("pays a coin for a bowl of rice once the dishes are gone, needs no plate and leaves the reputation as it is (user 2026-10-22)", () => {
+    const rice = c.slice(0, 5).map((x) => ({ customer: x.id, dish: "rice", waitMs: slow(x) }));
+    const r = applyAction(s0, report(rice), after(late));
+    expect(r.error).toBeUndefined();
+    expect(r.save.lastService).toMatchObject({ served: 5, sales: 5 * SV.house.price, happy: 0, left: c.length - 5, dishes: [] });
+    expect(r.save.lastService!.repDelta).toBe(Math.max(-60, (c.length - 5) * SV.rep.left));
+  });
+  it("turns down a bowl of rice served faster than Bandal makes one", () => {
+    const r = applyAction(s0, report([{ customer: c[0].id, dish: "rice", waitMs: SV.house.cookMs - 1 }]), after(late));
+    expect(r.error).toBe("bad_service");
+  });
   it("tips a tenth of the price however quick the plate was", () => {
     expect(tipFor(40, false)).toBe(4);
     expect(tipFor(40, true)).toBe(6);
