@@ -4,7 +4,7 @@
 .s3-layer { position: relative; width: 960px; height: 540px; flex: none; transform-origin: center; --s: 1; --k: 2px; --fs: 12px; --fs-small: 10px; font: 700 12px "Galmuri11", monospace; color: #fff3d8; }
 .s3-layer canvas { position: absolute; inset: 0; width: 960px; height: 540px; image-rendering: pixelated; }
 .s3-hud { position: absolute; inset: 0; pointer-events: none; }
-.s3-hud button, .s3-stick { pointer-events: auto; }
+.s3-hud button { pointer-events: auto; }
 .s3-hud span, .s3-hud div { text-shadow: 1px 1px 0 #2a1408; }
 
 .s3-topbar {
@@ -43,14 +43,15 @@
 .s3-pop { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; animation: s3-pop 1.5s ease-out forwards; }
 @keyframes s3-pop { 0%, 45% { opacity: 1; margin-top: 0; } 100% { opacity: 0; margin-top: -18px; } }
 
-/* the touch pad's stick (art/test/ui/pad, the hunt's too: user 2026-10-22), one art pixel two layer pixels:
-   the wooden dish 48 art px across, the knob its yellow dome only (18x17), centred until pushed */
-.s3-stick { position: absolute; width: 96px; height: 96px; background: url("../../../art/test/ui/pad/stick_base.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated; touch-action: none; }
-.s3-knob { position: absolute; left: 30px; top: 31px; width: 36px; height: 34px; background: url("../../../art/test/ui/pad/stick_knob.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
+/* the touch pad's stick (TouchStick.tsx; art/test/ui/pad, the hunt's too: user 2026-10-22): the wooden
+   dish and its knob (the yellow dome only), sized and placed by the component; a thumb lands on the zone */
+.s3-stick-zone { position: absolute; pointer-events: auto; touch-action: none; }
+.s3-stick { position: absolute; pointer-events: none; background: url("../../../art/test/ui/pad/stick_base.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
+.s3-knob { position: absolute; background: url("../../../art/test/ui/pad/stick_knob.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
 /* the action button sits inward of the bag in the bottom-right corner (2026-10-22) */
 .s3-act { position: absolute; right: 136px; bottom: 36px; touch-action: none; }
 /* thumb-sized; specific enough to beat the phone rule for every button (:root.touch-small .ui-btn) */
-.s3-layer .s3-hud.touch .s3-act { min-width: 112px; min-height: 68px; font-size: 16px; }
+.s3-layer .s3-hud.touch .s3-act { min-width: calc(112px * var(--pad, 1)); min-height: calc(68px * var(--pad, 1)); font-size: calc(16px * var(--pad, 1)); }
 /* on touch the night's top buttons are big enough for a finger (mobile pass, user 2026-10-21) */
 .s3-hud.touch .s3-buttons .ui-btn { min-height: 52px; padding: 0 14px; font-size: 14px; }
 

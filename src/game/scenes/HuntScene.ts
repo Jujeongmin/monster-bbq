@@ -31,8 +31,9 @@ import { createCharacterAnims, loadCharacterArt, lookOf, stepBob } from "../hunt
 import { bagLevel } from "../hunt/bagGauge";
 import { angerFlock, CHAR_SCALE, createMob, drawMob, isMobVulnerable, isTargetable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { fleerHit } from "../../../shared/hunt/fleer";
-import { joystickVector } from "../joystick";
-import { addGauge, addMenuItem, KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type MenuItem, type UiGauge } from "../ui";
+import { floatStick, joystickVector, padLayout, type PadLayout } from "../joystick";
+import { IDLE_STICK_ALPHA, nextPadPrefs, PAD_ALPHA, PAD_SCALE, pageStore, readPadPrefs, writePadPrefs, type PadPrefs } from "../padPrefs";
+import { addButton, addGauge, addMenuItem, KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type MenuItem, type UiGauge } from "../ui";
 
 // The forest hunt (plan 03, hunt v3), quarter view, Dave-the-Diver controls.
 // PC: WASD / arrows move, aim with the mouse, left click = harpoon (and mash while capturing), right click
@@ -53,17 +54,14 @@ const USE_RANGE = 28;
 const RING = { x: 50, y: 48, r: 40 };
 const GATHER_MS = 1000;
 const REFILL_DELAY_MS = 2500;
-// Touch controls (art/test/ui/pad, drawn KIT times bigger), in screen pixels of the game: the stick bottom
-// left; slash in the bottom-right corner, the side weapon left of it and use above that, clear of the
-// lunchbox column on the right (it ends at y 203). radius: the button's own half width, which is also where
-// a press counts (plus a little); the stick's knob travels `radius` from the centre.
-const STICK = { x: 77, y: 281, radius: 36, deadZone: 0.2 };
-const SLASH_BTN = { x: 578, y: 298, radius: 40 };
-const GATHER_BTN = { x: 494, y: 236, radius: 34 };
+// Touch controls (art/test/ui/pad, drawn KIT times bigger, at the size picked in the pause menu): where
+// they sit is padLayout (joystick.ts). The stick floats: a thumb anywhere on the left part brings it there.
+const STICK_DEAD_ZONE = 0.2;
+// a floating stick stays below the HUD in the top-left corner
+const STICK_TOP = 90;
 // shots left at or below this show red
 const AMMO_LOW = 2;
-const SIDE_BTN = { x: 492, y: 312, radius: 40 };
-// the side weapon's icon fits this many game pixels across inside its button's face
+// the side weapon's icon fits this many game pixels across inside its button's face (normal size)
 const SIDE_ICON = 50;
 // a mash every this often while auto-mash is on (pause menu)
 // the deep floors' ground tiles (art/test/bg/<ground>.png), loaded only on their own floor
@@ -223,6 +221,15 @@ export class HuntScene extends Phaser.Scene {
   private stickPointer: number | null = null;
   private stickVec: Vec = { x: 0, y: 0 };
   private stickKnob!: Phaser.GameObjects.Image;
+  private stickBase!: Phaser.GameObjects.Image;
+  // the touch pad: its size and shade (pause menu), where it sits, the stick's centre now
+  private padPrefs: PadPrefs = readPadPrefs(null);
+  private pad: PadLayout = padLayout(1, GAME_WIDTH, GAME_HEIGHT);
+  private stickAt: Vec = { x: 0, y: 0 };
+  private slashButton: Phaser.GameObjects.Image | null = null;
+  private sideButton: Phaser.GameObjects.Image | null = null;
+  // on touch, the pause menu's own button (Esc on PC)
+  private pauseButton: Phaser.GameObjects.Container | null = null;
   private aimPointer: number | null = null;
   private aimScreen: Vec | null = null;
   private sideQueued: Vec | null = null;
@@ -376,7 +383,11 @@ export class HuntScene extends Phaser.Scene {
 
     // touch controls on touch devices (add ?touch to the URL to try them with a mouse)
     this.touch = this.sys.game.device.input.touch || new URLSearchParams(location.search).has("touch");
-    if (this.touch) this.createTouchControls();
+    if (this.touch) {
+      this.padPrefs = readPadPrefs(pageStore());
+      this.pad = padLayout(PAD_SCALE[this.padPrefs.size], GAME_WIDTH, GAME_HEIGHT);
+      this.createTouchControls();
+    }
     else this.createMouseControls();
 
     const hudStyle = TEXT_SMALL;
@@ -441,12 +452,13 @@ export class HuntScene extends Phaser.Scene {
     });
     // the side weapon taken out in its kit slot, shots left of all it carried in big figures below it, bottom
     // right (on touch: on its button) — red when nearly out, the slot dimmed when empty
-    const sideAt = this.touch ? SIDE_BTN : { x: GAME_WIDTH - 44, y: GAME_HEIGHT - 60 };
+    const sideAt = this.touch ? this.pad.side : { x: GAME_WIDTH - 44, y: GAME_HEIGHT - 60 };
     if (!this.touch) this.ammoSlot = kitSlice(this, sideAt.x, sideAt.y, "slot", 56, 56, 4, 4, 4, 4).setScrollFactor(0).setDepth(9999);
     this.ammoIcon = hud(this.add.image(sideAt.x, sideAt.y, `side_${this.huntData.side}`));
     // on touch the icon sits in the middle of its button's face, as big as fits
-    this.ammoIcon.setScale(this.touch ? SIDE_ICON / Math.max(this.ammoIcon.width, this.ammoIcon.height) : KIT * 0.85);
-    this.ammoText = hud(this.add.text(sideAt.x, sideAt.y + (this.touch ? 32 : 38), "", { ...TEXT, fontStyle: "bold", stroke: "#2b1408", strokeThickness: 3 }).setOrigin(0.5));
+    this.ammoIcon.setScale(KIT * 0.85);
+    this.ammoText = hud(this.add.text(sideAt.x, sideAt.y + 38, "", { ...TEXT, fontStyle: "bold", stroke: "#2b1408", strokeThickness: 3 }).setOrigin(0.5));
+    if (this.touch) this.placePad();
     this.ammoShown = this.run.ammo;
     this.cameras.main.fadeIn(300, 0, 0, 0);
     this.floorCard();
@@ -495,27 +507,34 @@ export class HuntScene extends Phaser.Scene {
     });
   }
 
-  // Touch controls (user-approved pad art, 2026-10-22). Left part: a stick. Right part: press on a spot to
-  // aim, release to fire the harpoon there. Slash, side weapon and use buttons on the right.
+  // Touch controls (user-approved pad art, 2026-10-22; Dave the Diver mobile's floating stick and button
+  // settings). Left part: the stick comes to the thumb. Right part: press on a spot to aim, release to fire
+  // the harpoon there. Slash, side weapon and use buttons on the right; the pause button top right.
   private createTouchControls() {
     this.input.addPointer(2);
-    const ui = (b: { x: number; y: number }, key: string) => this.add.image(b.x, b.y, `pad_${key}`).setScale(KIT).setScrollFactor(0).setDepth(10000);
+    const ui = (key: string) => this.add.image(0, 0, `pad_${key}`).setScrollFactor(0).setDepth(10000);
     // a press counts within the button's round face (plus a little), in the image's own pixels
     const round = (o: Phaser.GameObjects.Image) => o.setInteractive(new Phaser.Geom.Circle(o.width / 2, o.height / 2, o.width / 2 + 3), Phaser.Geom.Circle.Contains);
-    ui(STICK, "stick_base");
+    this.stickBase = ui("stick_base");
     // the knob only, its yellow dome (user, 2026-10-22)
-    this.stickKnob = ui(STICK, "stick_knob").setDepth(10001);
-    round(ui(SLASH_BTN, "btn_slash")).on("pointerdown", () => (this.slashQueued = true));
-    this.gatherButton = round(ui(GATHER_BTN, "btn_use")).setVisible(false);
+    this.stickKnob = ui("stick_knob").setDepth(10001);
+    this.slashButton = round(ui("btn_slash"));
+    this.slashButton.on("pointerdown", () => (this.slashQueued = true));
+    this.gatherButton = round(ui("btn_use")).setVisible(false);
     this.gatherButton.on("pointerdown", () => (this.gatherQueued = true));
     // the side weapon fires the way the hunter aims; its icon goes on the empty face (create)
-    round(ui(SIDE_BTN, "btn_side")).on("pointerdown", () => {
+    this.sideButton = round(ui("btn_side"));
+    this.sideButton.on("pointerdown", () => {
       const p = this.player;
       this.sideQueued = { x: p.pos.x + p.aim.x * 100, y: p.pos.y + p.aim.y * 100 - H.harpoon.handHeight };
     });
+    // made at its height (a press nudges it from there), then set in from the right edge by its width
+    const pause = addButton(this, 0, 16, t("hunt.paused"), () => !this.paused && this.togglePause());
+    this.pauseButton = pause.box.setScrollFactor(0).setDepth(10000);
+    this.pauseButton.x = GAME_WIDTH - 8 - this.pauseButton.width / 2;
 
     const onButton = (p: Phaser.Input.Pointer) =>
-      [SLASH_BTN, SIDE_BTN, ...(this.gatherButton?.visible ? [GATHER_BTN] : [])].some((b) => Phaser.Math.Distance.Between(p.x, p.y, b.x, b.y) <= b.radius + 6);
+      [this.pad.slash, this.pad.side, ...(this.gatherButton?.visible ? [this.pad.use] : [])].some((b) => Phaser.Math.Distance.Between(p.x, p.y, b.x, b.y) <= b.radius + 6);
     this.input.on("pointerdown", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (this.paused) return;
       // capturing or pinned: any tap away from the stick mashes
@@ -527,6 +546,8 @@ export class HuntScene extends Phaser.Scene {
       if (p.x < GAME_WIDTH * 0.45) {
         if (this.stickPointer === null) {
           this.stickPointer = p.id;
+          this.stickAt = floatStick({ x: p.x, y: p.y }, this.stickBase.displayWidth / 2, GAME_WIDTH, GAME_HEIGHT, STICK_TOP);
+          this.showStick(true);
           this.updateStick(p);
         }
       } else if (this.aimPointer === null) {
@@ -546,7 +567,7 @@ export class HuntScene extends Phaser.Scene {
       if (p.id === this.stickPointer) {
         this.stickPointer = null;
         this.stickVec = { x: 0, y: 0 };
-        this.stickKnob.setPosition(STICK.x, STICK.y);
+        this.showStick(false);
       }
       if (p.id === this.aimPointer) {
         if (this.aimScreen) this.shotQueued = this.toWorld(this.aimScreen.x, this.aimScreen.y);
@@ -558,9 +579,35 @@ export class HuntScene extends Phaser.Scene {
     this.input.on("pointerupoutside", release);
   }
 
+  // The pad at its size and shade (the pause menu changes them while the hunt waits).
+  private placePad() {
+    const f = PAD_SCALE[this.padPrefs.size];
+    const a = PAD_ALPHA[this.padPrefs.alpha];
+    this.pad = padLayout(f, GAME_WIDTH, GAME_HEIGHT);
+    const put = (o: Phaser.GameObjects.Image | null, at: { x: number; y: number }) => o?.setPosition(at.x, at.y).setScale(KIT * f).setAlpha(a);
+    put(this.slashButton, this.pad.slash);
+    put(this.sideButton, this.pad.side);
+    put(this.gatherButton, this.pad.use);
+    this.stickBase.setScale(KIT * f);
+    this.stickKnob.setScale(KIT * f);
+    this.showStick(this.stickPointer !== null);
+    const side = this.pad.side;
+    this.ammoIcon.setPosition(side.x, side.y).setScale((SIDE_ICON * f) / Math.max(this.ammoIcon.width, this.ammoIcon.height));
+    this.ammoText.setPosition(side.x, side.y + side.radius * 0.8);
+  }
+
+  // Held: the stick where the thumb came down, at the pad's shade. Let go: back home, faint.
+  private showStick(held: boolean) {
+    if (!held) this.stickAt = { x: this.pad.stick.x, y: this.pad.stick.y };
+    const a = PAD_ALPHA[this.padPrefs.alpha] * (held ? 1 : IDLE_STICK_ALPHA);
+    this.stickBase.setPosition(this.stickAt.x, this.stickAt.y).setAlpha(a);
+    this.stickKnob.setPosition(this.stickAt.x, this.stickAt.y).setAlpha(a);
+  }
+
   private updateStick(p: Phaser.Input.Pointer) {
-    this.stickVec = joystickVector(STICK, { x: p.x, y: p.y }, STICK.radius, STICK.deadZone);
-    this.stickKnob.setPosition(STICK.x + this.stickVec.x * STICK.radius, STICK.y + this.stickVec.y * STICK.radius);
+    const r = this.pad.stick.radius;
+    this.stickVec = joystickVector(this.stickAt, { x: p.x, y: p.y }, r, STICK_DEAD_ZONE);
+    this.stickKnob.setPosition(this.stickAt.x + this.stickVec.x * r, this.stickAt.y + this.stickVec.y * r);
   }
 
   // Keys and the stick add up; the rules cap the length at 1.
@@ -723,7 +770,7 @@ export class HuntScene extends Phaser.Scene {
 
   // A press on the HUD (the way home, a lunch) is not a shot or a slash.
   private overHud(over: Phaser.GameObjects.GameObject[]) {
-    return this.lunch.some((l) => over.includes(l.button));
+    return this.lunch.some((l) => over.includes(l.button)) || (!!this.pauseButton && over.includes(this.pauseButton));
   }
 
   // Lunch from the box: health back by the dish's worth, and a quick step for a few dishes.
@@ -1325,24 +1372,42 @@ export class HuntScene extends Phaser.Scene {
     }
     this.anims.pauseAll();
     this.tweens.pauseAll();
-    const panel = kitSlice(this, 0, 0, "panel", 200, 124, 5, 5, 5, 5);
-    const title = this.add.text(0, -40, t("hunt.paused"), { ...TEXT, fontStyle: "bold", color: "#d8c4a4" }).setOrigin(0.5);
-    let toggle: MenuItem;
-    const label = () => t(this.autoMash ? "hunt.autoMashOn" : "hunt.autoMashOff");
-    const resume = addMenuItem(this, 0, -12, t("hunt.resume"), () => this.togglePause(), () => this.pickPause(0));
-    // the controls panel, drawn by the page over the paused hunt
-    const controls = addMenuItem(this, 0, 12, t("controls.title"), () => this.game.events.emit("hunt:controls"), () => this.pickPause(1));
-    toggle = addMenuItem(this, 0, 36, label(), () => {
-      this.autoMash = !this.autoMash;
-      try {
-        localStorage.setItem(AUTO_MASH_KEY, this.autoMash ? "1" : "0");
-      } catch {
-        // private mode: the switch lasts this hunt only
-      }
-      toggle.setText(label());
-    }, () => this.pickPause(2));
-    this.pauseMenu = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2, [panel, title, resume.box, controls.box, toggle.box]).setScrollFactor(0).setDepth(20000);
-    this.pauseItems = [resume, controls, toggle];
+    // the lines: resume, the controls panel (drawn by the page over the paused hunt), auto-mash, and on touch
+    // the pad's size and shade (Dave the Diver mobile's button settings, user 2026-10-22)
+    const lines: { label: () => string; press: () => void }[] = [
+      { label: () => t("hunt.resume"), press: () => this.togglePause() },
+      { label: () => t("controls.title"), press: () => this.game.events.emit("hunt:controls") },
+      {
+        label: () => t(this.autoMash ? "hunt.autoMashOn" : "hunt.autoMashOff"),
+        press: () => {
+          this.autoMash = !this.autoMash;
+          try {
+            localStorage.setItem(AUTO_MASH_KEY, this.autoMash ? "1" : "0");
+          } catch {
+            // private mode: the switch lasts this hunt only
+          }
+        },
+      },
+    ];
+    if (this.touch)
+      for (const which of ["size", "alpha"] as const)
+        lines.push({
+          label: () => t(`hunt.pad.${which}`, { v: t(`hunt.pad.${which}.${this.padPrefs[which]}` as StringKey) }),
+          press: () => {
+            this.padPrefs = nextPadPrefs(this.padPrefs, which);
+            writePadPrefs(pageStore(), this.padPrefs);
+            this.placePad();
+          },
+        });
+    const height = 52 + 24 * lines.length;
+    const panel = kitSlice(this, 0, 0, "panel", 200, height, 5, 5, 5, 5);
+    const top = -height / 2 + 22;
+    const title = this.add.text(0, top, t("hunt.paused"), { ...TEXT, fontStyle: "bold", color: "#d8c4a4" }).setOrigin(0.5);
+    this.pauseItems = lines.map((line, i) => {
+      const item: MenuItem = addMenuItem(this, 0, top + 28 + i * 24, line.label(), () => (line.press(), item.setText(line.label())), () => this.pickPause(i));
+      return item;
+    });
+    this.pauseMenu = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2, [panel, title, ...this.pauseItems.map((m) => m.box)]).setScrollFactor(0).setDepth(20000);
     this.pickPause(0);
   }
 

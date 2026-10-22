@@ -16,6 +16,7 @@ function rows(touch: boolean, side: SideWeaponId): Row[] {
       { keys: [t("controls.key.slashBtn")], icon: "test/ui/upg_melee.png", what: "controls.slash" },
       { keys: [t("controls.key.sideBtn")], icon: `test/ui/side/${side}.png`, what: "controls.side" },
       { keys: [t("controls.key.useBtn")], what: "controls.use" },
+      { keys: [t("controls.key.pauseBtn")], what: "controls.pause" },
     ];
   return [
     { keys: ["W", "A", "S", "D"], what: "controls.move" },

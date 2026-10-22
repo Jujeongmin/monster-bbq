@@ -1,10 +1,12 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { BALANCE } from "../../../shared/balance";
 import { t, type StringKey } from "../../i18n";
 import { LidLine } from "../../screens/hud/LidLine";
 import type { LidFace } from "../../screens/dialogue/Dialogue";
 import { artUrl, hasArt } from "../art";
+import { pageStore, readPadPrefs } from "../padPrefs";
 import { patienceTier, type Prompt, type ShopLook } from "./look";
+import { padButton, TouchStick } from "./TouchStick";
 import "./shop3d.css";
 
 // What sits over the 3D shop (shop 3D design 7), drawn in the 960x540 picture's own pixels with the UI kit
@@ -66,7 +68,6 @@ export interface HudProps {
   band: Band | null;
   fx: Fx[];
   touch: boolean;
-  stickX: number;
   onClose: () => void;
   onPause: () => void;
   muted: boolean;
@@ -114,16 +115,8 @@ const FRAME_MS = 110;
 export function ShopHud(p: HudProps) {
   const { look } = p;
   const gold = useRolling(look.gold, p.time);
-  // big enough for a thumb on a small phone (mobile pass, user 2026-10-21), inward of the notebook in the
-  // bottom-left corner (it stays where it is on PC, 2026-10-22)
-  // r: half the dish; travel: how far the knob slides from the centre
-  const STICK = { x: 180, y: 448, r: 48, travel: 30 };
-  const stick = (e: React.PointerEvent<HTMLDivElement>) => {
-    const box = e.currentTarget.getBoundingClientRect();
-    const scale = box.width / (STICK.r * 2);
-    const dx = (e.clientX - (box.left + box.width / 2)) / scale / STICK.r;
-    p.onStick(Math.abs(dx) < 0.25 ? 0 : Math.max(-1, Math.min(1, dx)));
-  };
+  // the pad's size and shade, as last set in the hunt's pause menu
+  const [pad] = useState(() => readPadPrefs(pageStore()));
   return (
     <div className={`s3-hud${p.touch ? " touch" : ""}`}>
       <div className="s3-topbar">
@@ -209,10 +202,8 @@ export function ShopHud(p: HudProps) {
       )}
       {p.touch && (
         <>
-          <div className="s3-stick" style={{ left: STICK.x - STICK.r, top: STICK.y - STICK.r }} onPointerDown={(e) => (e.currentTarget.setPointerCapture(e.pointerId), stick(e))} onPointerMove={(e) => e.buttons && stick(e)} onPointerUp={() => p.onStick(null)} onPointerCancel={() => p.onStick(null)}>
-            <div className="s3-knob" style={{ transform: `translateX(${p.stickX * STICK.travel}px)` }} />
-          </div>
-          <button className="ui-btn s3-act" onPointerDown={p.onPress} onPointerUp={p.onRelease} onPointerLeave={p.onRelease} onPointerCancel={p.onRelease}>
+          <TouchStick prefs={pad} onMove={p.onStick} />
+          <button className="ui-btn s3-act" style={padButton(pad)} onPointerDown={p.onPress} onPointerUp={p.onRelease} onPointerLeave={p.onRelease} onPointerCancel={p.onRelease}>
             {look.prompt?.ok ? t(`prompt.short.${look.prompt.verb}` as StringKey) : t("service.actButton")}
           </button>
         </>

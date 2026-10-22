@@ -86,7 +86,6 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(() => sfx.isMuted());
   const [closeStep, setCloseStep] = useState<0 | 1 | 2>(0); // 0 open, 1 orders closed, 2 hall closed
-  const [stickX, setStickX] = useState(0);
   const ctl = useRef({ press: () => {}, release: () => {}, stick: (_x: number | null) => {}, pause: () => {}, close: () => {} });
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
 
@@ -217,7 +216,6 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
       release,
       stick: (x) => {
         stick = x ?? 0;
-        setStickX(stick);
       },
       pause: () => {
         isPaused = !isPaused;
@@ -410,7 +408,6 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
             band={hud.band}
             fx={hud.fx}
             touch={touch}
-            stickX={stickX}
             onClose={() => ctl.current.close()}
             onPause={() => ctl.current.pause()}
             muted={muted}

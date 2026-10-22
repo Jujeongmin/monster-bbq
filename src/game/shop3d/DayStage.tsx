@@ -7,6 +7,8 @@ import { LidLine } from "../../screens/hud/LidLine";
 import { seatXs } from "../service/shift";
 import { daySpots, DAY_START, nearSpot, walk, type DayScene, type Spot, type SpotId } from "./day";
 import { moveFrom } from "./input";
+import { pageStore, readPadPrefs } from "../padPrefs";
+import { padButton, TouchStick } from "./TouchStick";
 import { displayScale, FLOOR_Y, Z } from "./layout";
 import type { ShopLook } from "./look";
 import { ShopView } from "./ShopView";
@@ -42,7 +44,6 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
   const [arrow, setArrow] = useState<{ x: number; y: number } | null>(null);
   const ctl = useRef({ act: () => {}, stick: (_x: number) => {} });
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
-  const [stickX, setStickX] = useState(0);
   // the friends coming in: their order and places (fixed when the visit starts), who is walking now and
   // since when; `shown` is the one standing there now with their bubble's place on screen
   const visitRun = useRef<{ order: Visitor[]; slots: number[]; i: number; since: number } | null>(null);
@@ -190,18 +191,8 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
   const lastShown = !!shown && !!visitRun.current && shown.i + 1 >= visitRun.current.order.length;
   // a hero or a legend arriving shakes the room once
   const visitShake = !!who && (STAFF[who.id].rarity === "hero" || STAFF[who.id].rarity === "legend");
-  // big enough for a thumb on a small phone (mobile pass, user 2026-10-21), inward of the notebook in the
-  // bottom-left corner (it stays where it is on PC, 2026-10-22)
-  // r: half the dish; travel: how far the knob slides from the centre
-  const STICK = { x: 180, y: 448, r: 48, travel: 30 };
-  const stickAt = (e: React.PointerEvent<HTMLDivElement>) => {
-    const box = e.currentTarget.getBoundingClientRect();
-    const dx = (e.clientX - (box.left + box.width / 2)) / (box.width / 2);
-    const v = Math.abs(dx) < 0.25 ? 0 : Math.max(-1, Math.min(1, dx));
-    ctl.current.stick(v);
-    setStickX(v);
-  };
-  const release = () => (ctl.current.stick(0), setStickX(0));
+  // the pad's size and shade, as last set in the hunt's pause menu
+  const [pad] = useState(() => readPadPrefs(pageStore()));
   return (
     <div ref={stage} className="s3-stage day-stage">
       <div className={`s3-layer${visitShake ? " visit-shake" : ""}`} style={{ transform: `scale(${scale})` }}>
@@ -241,10 +232,8 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
           )}
           {touch && active && (
             <>
-              <div className="s3-stick" style={{ left: STICK.x - STICK.r, top: STICK.y - STICK.r }} onPointerDown={(e) => (e.currentTarget.setPointerCapture(e.pointerId), stickAt(e))} onPointerMove={(e) => e.buttons && stickAt(e)} onPointerUp={release} onPointerCancel={release}>
-                <div className="s3-knob" style={{ transform: `translateX(${stickX * STICK.travel}px)` }} />
-              </div>
-              <button className="ui-btn s3-act" disabled={!near?.spot.open} onPointerDown={() => ctl.current.act()}>
+              <TouchStick prefs={pad} onMove={(v) => ctl.current.stick(v ?? 0)} />
+              <button className="ui-btn s3-act" style={padButton(pad)} disabled={!near?.spot.open} onPointerDown={() => ctl.current.act()}>
                 {t("day.act")}
               </button>
             </>
