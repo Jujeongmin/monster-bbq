@@ -19,9 +19,9 @@ describe("the 3D shop's room", () => {
     expect(layerFit(900, 600).w).toBe(960);
     expect(layerFit(900, 600).scale).toBeCloseTo(900 / 960);
   });
-  it("widens the picture for a longer phone, up to 19.5:9 (user, 2026-10-22: no black bars)", () => {
+  it("widens the picture for a longer phone, up to 21:9 (user, 2026-10-22 and 27: no black bars)", () => {
     expect(layerFit(844, 390)).toEqual({ w: 1168, scale: 390 / 540 });
-    expect(layerFit(2000, 390).w).toBe(1170);
+    expect(layerFit(2000, 390).w).toBe(1260);
   });
   it("keeps the grandchild whole in front of the pass and Bandal's waist behind it", () => {
     // his picture, leaning back from his feet, is still in front of the pass's front at the pass's top

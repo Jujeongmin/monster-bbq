@@ -9,7 +9,7 @@ import { isSideWeaponId, type SideWeaponId } from "./content/sideWeapons";
 import { itemKey, parseItemKey, type ItemId } from "./content/items";
 import { addToBag } from "./hunt/bag";
 import { dropFor } from "./hunt/drops";
-import { planFloor, type FloorPlan } from "./hunt/plan";
+import { isTutorialHunt, planFloor, type FloorPlan } from "./hunt/plan";
 import { FLOORS, isFloorId, type FloorId } from "./content/floors";
 import { levelCost, MAX_SETS, planShop, takeSets, type MenuLine } from "./kitchen/dish";
 import { addToMenu } from "./service/addMenu";
@@ -83,7 +83,8 @@ function settleHunt(save: SaveData, a: Record<string, unknown>, now: number): { 
   if (!hunt || a.huntId !== hunt.id || !Array.isArray(a.events) || a.events.length > MAX_EVENTS || typeof a.ko !== "boolean") return null;
   if (a.ko ? a.exit !== null : typeof a.exit !== "string") return null;
   const plans = new Map<FloorId, FloorPlan>();
-  const planOf = (f: FloorId) => plans.get(f) ?? plans.set(f, planFloor(hunt.seed, f, hunt.period)).get(f)!;
+  const tutorial = isTutorialHunt(save.day, hunt.period);
+  const planOf = (f: FloorId) => plans.get(f) ?? plans.set(f, planFloor(hunt.seed, f, hunt.period, tutorial)).get(f)!;
   let floor: FloorId = 1;
   const taken = new Set<string>();
   const killsOn = new Map<FloorId, number>();

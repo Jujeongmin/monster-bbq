@@ -39,6 +39,11 @@
 .s3-gauge { position: absolute; height: 14px; box-sizing: border-box; border: 4px solid transparent; border-width: 4px 6px; border-image: url("../../../art/test/ui2/gauge_empty.png") 2 3 fill / 4px 6px stretch; }
 .s3-gauge-full { position: absolute; left: -6px; top: -4px; height: 14px; box-sizing: border-box; border: 4px solid transparent; border-width: 4px 6px; border-image: url("../../../art/test/ui2/gauge_full.png") 2 3 fill / 4px 6px stretch; }
 .s3-mark { position: absolute; transform: translate(-50%, 0); font-size: 10px; }
+/* the pour, big at the bottom's middle while it runs: what to do over the kit gauge and its line */
+.s3-pour { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 30px; pointer-events: none; z-index: 5; }
+.s3-pour-say { font-size: 16px; white-space: nowrap; text-shadow: 2px 2px 0 #2a1408 !important; }
+.s3-pour-bar { position: relative; width: 200px; height: 14px; transform: scale(1.5); }
+.s3-pour-bar .s3-mark { color: #ffd166; font-size: 12px; }
 
 .s3-pop { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; animation: s3-pop 1.5s ease-out forwards; }
 @keyframes s3-pop { 0%, 45% { opacity: 1; margin-top: 0; } 100% { opacity: 0; margin-top: -18px; } }

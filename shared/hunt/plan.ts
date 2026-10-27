@@ -24,7 +24,13 @@ const START_KEEP_AWAY = 170;
 const TREE_COUNT = 18;
 const SMALL_COUNT = 12;
 
-export function planFloor(seed: number, floor: FloorId, period: Period): FloorPlan {
+// The first hunt (day 1, the morning: the tutorial) has one horned rabbit of its own waiting just in front
+// of the nearest of Bandal's carts, to learn on: the sling to wear it down, then the harpoon to catch it
+// (user 2026-10-27). The server asks the same question to re-create the floor.
+export const isTutorialHunt = (day: number, period: Period): boolean => day === 1 && period === "morning";
+const TUTORIAL_RABBIT = { x: 280, y: 220 };
+
+export function planFloor(seed: number, floor: FloorId, period: Period, tutorial = false): FloorPlan {
   const f = FLOORS[floor];
   const area = { minX: 30, maxX: f.world.w - 30, minY: 60, maxY: f.world.h - 10 };
   const open = [f.start, ...f.exits, ...(f.down ? [f.down] : [])].map((p) => ({ x: p.x, y: p.y, r: KEEP_OPEN }));
@@ -93,6 +99,8 @@ export function planFloor(seed: number, floor: FloorId, period: Period): FloorPl
     const at = spots(s0 + 400, 1, 0, 24)[0];
     if (at) spawns.push({ id: "2-boss", monster: "tusk", x: at.x, y: at.y, wave: 0 });
   }
+
+  if (tutorial && floor === 1) spawns.push({ id: "1-tut", monster: "rabbit", x: TUTORIAL_RABBIT.x, y: TUTORIAL_RABBIT.y, wave: 0 });
 
   // the Charge King (plan 08d): always in his den, the one monster there
   if (floor === 5) spawns.push({ id: "5-boss", monster: "king", x: KING_AT.x, y: KING_AT.y, wave: 0 });

@@ -31,7 +31,9 @@ export function dayGoal(save: Pick<SaveData, "day" | "story" | "hunt">, phase: P
   }
 }
 
-export const HUNT_STEPS = ["move", "harpoon", "slash", "gather"] as const;
+// move, then the rabbit waiting by the cart: the sling wears it down, the harpoon catches it once it is weak
+// (user 2026-10-27), then the slash and picking greens
+export const HUNT_STEPS = ["move", "sling", "capture", "slash", "gather"] as const;
 export type HuntStep = (typeof HUNT_STEPS)[number] | "recipe" | "cart";
 // the first lunch came with nothing to pack (user, 2026-10-21): after the controls the first hunt asks for
 // the makings of the one dish known, chicken breast and perilla, two each (the lunchbox and the first night)
@@ -63,7 +65,7 @@ export function huntStep(done: ReadonlySet<string>, bag: Record<string, number>,
 
 export function huntGoal(step: HuntStep, touch: boolean, have: number[] = []): { goal: StringKey; tip: TipId | null; vars?: Record<string, number> } {
   if (step === "recipe") return { goal: "goal.recipe", tip: "tutRecipe", vars: { a: have[0] ?? 0, b: have[1] ?? 0 } };
-  const tip: TipId | null = step === "move" || step === "harpoon" ? "tutHunt" : step === "cart" ? "tutCart" : null;
+  const tip: TipId | null = step === "move" || step === "sling" ? "tutHunt" : step === "cart" ? "tutCart" : null;
   const goal = step === "cart" ? "goal.cart" : `goal.${step}${touch ? "Touch" : ""}`;
   return { goal: goal as StringKey, tip };
 }
@@ -77,3 +79,28 @@ export function kitchenGuide(tab: string, onBoard: number, canOpen: boolean, can
   if (!canPut) return null;
   return tab === "menu" ? "dish" : "menuTab";
 }
+
+// The first night's goal line (user 2026-10-27: the night's systems one at a time): what to do now, from
+// what is going on at the counter, the most pressing first: a pour under way, a plate in hand, a plate
+// ready on the pass, leftovers to scrub, charcoal running low, tea wanted, an order cooking, else guests
+// to wait for.
+export type NightGoal = "pour" | "serve" | "take" | "scrub" | "coal" | "tea" | "wait" | "guests";
+export interface NightState {
+  pouring: boolean;
+  carryingDish: boolean;
+  dishReady: boolean;
+  dirty: boolean;
+  coalLow: boolean;
+  teaWanted: boolean;
+  cooking: boolean;
+}
+export function nightGoal(n: NightState): NightGoal {
+  if (n.pouring) return "pour";
+  if (n.carryingDish) return "serve";
+  if (n.dishReady) return "take";
+  if (n.dirty) return "scrub";
+  if (n.coalLow) return "coal";
+  if (n.teaWanted) return "tea";
+  return n.cooking ? "wait" : "guests";
+}
+export const nightGoalKey = (g: NightGoal, touch: boolean): StringKey => `goal.night.${g}${touch && (g === "pour" || g === "take" || g === "serve") ? "Touch" : ""}` as StringKey;

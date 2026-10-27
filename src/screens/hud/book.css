@@ -173,5 +173,8 @@
 .book .rank-naming { display: grid; gap: calc(3px * var(--s)); }
 .book .rank-naming label { font-size: var(--fs-small); color: var(--paper-ink-soft); }
 .book .rank-left { justify-content: flex-start; }
-.book .rank-input { font: var(--fs) "Galmuri11", monospace; color: var(--cream); caret-color: var(--brass); padding: 0 calc(4px * var(--s)); height: calc(18px * var(--s)); outline: none; user-select: text; -webkit-user-select: text; }
+.book .rank-input { font: var(--fs) "Galmuri11", monospace; color: var(--cream); caret-color: var(--brass); padding: 0 calc(4px * var(--s)); height: calc(18px * var(--s)); outline: none; box-sizing: border-box; width: 100%; min-width: 0; user-select: text; -webkit-user-select: text; }
+/* as wide as the page and no wider (user 2026-10-27: its end was cut off); on a phone 16 px, or iPhone
+   Safari zooms the whole page in when the box takes the focus */
+:root.touch-small .book .rank-input { font-size: 16px; height: 30px; }
 .book .rank-naming .ui-btn { justify-self: start; }

@@ -1,12 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { FLOORS } from "../content/floors";
 import { MONSTERS } from "../content/monsters";
-import { planFloor, type FloorPlan } from "./plan";
+import { isTutorialHunt, planFloor, type FloorPlan } from "./plan";
 
 const footOverlaps = (plan: FloorPlan, x: number, y: number, r: number) =>
   plan.objects.some((o) => x > o.foot.x0 - r && x < o.foot.x1 + r && y > o.foot.y0 - r && y < o.foot.y1 + r);
 
 describe("planFloor", () => {
+  it("puts the first hunt's own rabbit in front of the nearest cart, on floor 1 only (tutorial, user 2026-10-27)", () => {
+    expect(isTutorialHunt(1, "morning")).toBe(true);
+    expect(isTutorialHunt(1, "afternoon")).toBe(false);
+    expect(isTutorialHunt(2, "morning")).toBe(false);
+    const tut = planFloor(7, 1, "morning", true).spawns.filter((s) => s.id === "1-tut");
+    expect(tut).toEqual([expect.objectContaining({ monster: "rabbit", wave: 0 })]);
+    expect(planFloor(7, 1, "morning").spawns.some((s) => s.id === "1-tut")).toBe(false);
+    expect(planFloor(7, 2, "morning", true).spawns.some((s) => s.id.endsWith("-tut"))).toBe(false);
+    // the rest of the floor is the same with or without it
+    expect(planFloor(7, 1, "morning", true).spawns.filter((s) => s.id !== "1-tut")).toEqual(planFloor(7, 1, "morning").spawns);
+  });
   it("lays out the same floor for the same seed", () => {
     expect(planFloor(42, 1, "morning")).toEqual(planFloor(42, 1, "morning"));
   });

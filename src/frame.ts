@@ -1,9 +1,10 @@
 // The game's one frame, sized in pixels from the window (not with vw/vh: iPhone Safari in Verse8's iframe got
-// those wrong). It is 16:9 at the least and widens with a wider screen up to a long phone's 19.5:9, so a phone
-// held sideways is filled edge to edge with more of the scene, not black bars (user, 2026-10-22, like Dave
-// the Diver mobile); a squarer window (a tablet) keeps 16:9 with bars above and below. The UI's pixel scale
+// those wrong). It is 16:9 at the least and widens with a wider screen up to the longest phones' 21:9, so a
+// phone held sideways is filled edge to edge with more of the scene, not black bars (user, 2026-10-22, like
+// Dave the Diver mobile; 2026-10-27: 19.5:9 still left bars on 20:9 phones); a squarer window (a tablet)
+// keeps 16:9 with bars above and below. The UI's pixel scale
 // (--s) is the frame height in whole multiples of the game's 360 px, so pixel art and fonts stay crisp.
-export const MAX_ASPECT = 19.5 / 9;
+export const MAX_ASPECT = 21 / 9;
 const MIN_ASPECT = 16 / 9;
 
 export function frameSize(w: number, h: number): { width: number; height: number; s: number } {

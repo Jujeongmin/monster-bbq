@@ -762,12 +762,8 @@ export class Shift {
 
   // What goes to the server: every guest who got their dish, with the wait and the pour; the leftovers
   // scrubbed after messy guests.
-  report(): { served: ServedEntry[]; left: string[]; cleaned: string[] } {
-    const served = this.s.guests
-      .filter((g) => g.servedMs !== null)
-      .map((g): ServedEntry => ({ customer: g.id, dish: g.dish, waitMs: g.servedMs!, ...(g.pour ? { drink: g.pour } : {}) }));
-    const ate = new Set(served.map((e) => e.customer));
-    return { served, left: [...this.s.left], cleaned: this.s.cleaned.filter((id) => ate.has(id)) };
+  report(): ShiftReport {
+    return shiftReport(this.s);
   }
 
   // Tonight's takings so far as the server will count them (the tally at the top).
@@ -783,4 +779,20 @@ export class Shift {
     }
     return gold + this.s.cleaned.filter((id) => ate.has(id)).length * SV.cleanTip;
   }
+}
+
+export interface ShiftReport {
+  served: ServedEntry[];
+  left: string[];
+  cleaned: string[];
+}
+
+// The night's report from its state alone (a night kept in storage is settled from it when the game comes
+// back after being closed mid-night: night.ts).
+export function shiftReport(s: ShiftState): ShiftReport {
+  const served = s.guests
+    .filter((g) => g.servedMs !== null)
+    .map((g): ServedEntry => ({ customer: g.id, dish: g.dish, waitMs: g.servedMs!, ...(g.pour ? { drink: g.pour } : {}) }));
+  const ate = new Set(served.map((e) => e.customer));
+  return { served, left: [...s.left], cleaned: s.cleaned.filter((id) => ate.has(id)) };
 }

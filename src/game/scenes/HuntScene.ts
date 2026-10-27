@@ -23,7 +23,7 @@ import { drainStamina, LOW_STAMINA } from "../../../shared/hunt/stamina";
 import { shotHits, stepShot, type Shot } from "../../../shared/hunt/shooter";
 import type { Vec } from "../../../shared/hunt/types";
 import type { Zone } from "../../../shared/save";
-import { FLOORS, isFloorId, nearestExit, type FloorDef, type FloorId, type Period } from "../../../shared/content/floors";
+import { FLOORS, isFloorId, type FloorDef, type FloorId, type Period } from "../../../shared/content/floors";
 import { itemName, t, type StringKey } from "../../i18n";
 import { artUrl, hasArt } from "../art";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
@@ -207,12 +207,11 @@ export class HuntScene extends Phaser.Scene {
   private shownBag = -1;
   private gatherHint!: Phaser.GameObjects.Text;
   private staminaText!: Phaser.GameObjects.Text;
-  private exitArrow!: Phaser.GameObjects.Text;
   // the first hunt: a ▼ bobbing over the nearest greens to pick (they read as scenery otherwise)
   private forageMark!: Phaser.GameObjects.Text;
   // a hurt monster's health over it, and once it is weak enough to capture the gauge goes gold with the
   // harpoon over it (user, 2026-10-21: how weak was invisible)
-  private mobBars = new Map<Mob, { gauge: UiGauge; cue: Phaser.GameObjects.Image }>();
+  private mobBars = new Map<Mob, { gauge: UiGauge }>();
   private lowGlow!: Phaser.GameObjects.Image;
   private gatherButton: Phaser.GameObjects.Image | null = null;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -231,6 +230,10 @@ export class HuntScene extends Phaser.Scene {
   private stickAt: Vec = { x: 0, y: 0 };
   private slashButton: Phaser.GameObjects.Image | null = null;
   private sideButton: Phaser.GameObjects.Image | null = null;
+  private harpoonButton: Phaser.GameObjects.Image | null = null;
+  private harpoonIcon: Phaser.GameObjects.Image | null = null;
+  // a thumb on the harpoon button: where it came down, and the way it has been dragged (null: not yet)
+  private harpoonDrag: { id: number; from: Vec; dir: Vec | null } | null = null;
   // on touch, the pause menu's own button (Esc on PC)
   private pauseButton: Phaser.GameObjects.Container | null = null;
   private aimPointer: number | null = null;
@@ -287,7 +290,7 @@ export class HuntScene extends Phaser.Scene {
     this.lunch = [];
     this.speedUntil = 0;
     this.floorDef = FLOORS[this.run.floor];
-    this.plan = planFloor(data.seed, this.run.floor, data.period);
+    this.plan = planFloor(data.seed, this.run.floor, data.period, !!data.tutorial);
     this.player = { pos: { ...this.floorDef.start }, aim: { x: 1, y: 0 }, face: { x: 0, y: 1 }, cooldownMs: 0, harpoonCooldownMs: 0, swingMs: 0, comboStep: 0, msSinceSwing: Infinity, down: false };
     this.mobs = [];
     this.refills = this.plan.spawns.filter((s) => s.wave > 0);
@@ -378,6 +381,9 @@ export class HuntScene extends Phaser.Scene {
     this.hunter = this.add.sprite(this.player.pos.x, this.player.pos.y, "hunter_down_1").setOrigin(0.5, HUNTER_FEET).setScale(CHAR_SCALE);
     this.fx = this.add.graphics().setDepth(5000);
     for (const s of this.plan.spawns.filter((s) => s.wave === 0)) this.mobs.push(createMob(this, s));
+    // the first hunt's rabbit (tutorial) comes a little hurt, so one sling hit brings it low enough to catch
+    const tut = this.mobs.find((m) => m.spawn.id === "1-tut");
+    if (tut) tut.hp = Math.ceil(MONSTERS.rabbit.maxHp * BALANCE.hunt.capture.maxHp) + Math.round(H.sling.damage * this.huntData.sidePower) - 1;
 
     const cam = this.cameras.main;
     cam.setBounds(0, 0, this.floorDef.world.w, this.floorDef.world.h);
@@ -419,9 +425,6 @@ export class HuntScene extends Phaser.Scene {
     this.bagGauge.box.setScrollFactor(0).setDepth(10000);
     this.bagCountText = hud(this.add.text(hx + 24 + 86, RING.y + 12, "", { ...TEXT, fontStyle: "bold" }).setOrigin(0, 0.5));
     this.gatherHint = this.add.text(0, 0, "", hudStyle).setOrigin(0.5).setDepth(9500).setVisible(false);
-    // which way the nearest cart is, at the screen's edge when it is out of sight (or always, when the bag
-    // is full or stamina runs low)
-    this.exitArrow = this.add.text(0, 0, "▶", { ...TEXT, color: "#ffd166" }).setOrigin(0.5).setScrollFactor(0).setDepth(10001).setVisible(false);
     this.forageMark = this.add.text(0, 0, "▼", { ...TEXT, color: "#ffd166", stroke: "#2b1408", strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(9500).setVisible(false);
     // low stamina: the screen's edge pulses red (Dave the Diver's oxygen warning)
     // low stamina: the screen's edges go red and beat like a heart (Dave's low oxygen)
@@ -541,6 +544,13 @@ export class HuntScene extends Phaser.Scene {
     this.slashButton.on("pointerdown", () => (this.slashQueued = true));
     this.gatherButton = round(ui("btn_use")).setVisible(false);
     this.gatherButton.on("pointerdown", () => (this.gatherQueued = true));
+    // the harpoon (user 2026-10-27): a tap throws it at the nearest monster (a weakened one first), a drag
+    // aims it that way and letting go throws it, so one on the hunter's left is reached as easily
+    this.harpoonButton = round(ui("btn_side"));
+    this.harpoonIcon = this.add.image(0, 0, "cue_harpoon").setScrollFactor(0).setDepth(10000);
+    this.harpoonButton.on("pointerdown", (p: Phaser.Input.Pointer) => {
+      if (!this.paused && !this.harpoonDrag) this.harpoonDrag = { id: p.id, from: { x: p.x, y: p.y }, dir: null };
+    });
     // the side weapon fires the way the hunter aims; its icon goes on the empty face (create)
     this.sideButton = round(ui("btn_side"));
     this.sideButton.on("pointerdown", () => {
@@ -553,7 +563,7 @@ export class HuntScene extends Phaser.Scene {
     this.pauseButton.x = GAME_WIDTH - 8 - this.pauseButton.width / 2;
 
     const onButton = (p: Phaser.Input.Pointer) =>
-      [this.pad.slash, this.pad.side, ...(this.gatherButton?.visible ? [this.pad.use] : [])].some((b) => Phaser.Math.Distance.Between(p.x, p.y, b.x, b.y) <= b.radius + 6);
+      [this.pad.slash, this.pad.harpoon, this.pad.side, ...(this.gatherButton?.visible ? [this.pad.use] : [])].some((b) => Phaser.Math.Distance.Between(p.x, p.y, b.x, b.y) <= b.radius + 6);
     this.input.on("pointerdown", (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (this.paused) return;
       // capturing or pinned: any tap away from the stick mashes
@@ -576,6 +586,11 @@ export class HuntScene extends Phaser.Scene {
     });
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
       if (p.id === this.stickPointer) this.updateStick(p);
+      const drag = this.harpoonDrag;
+      if (drag && p.id === drag.id && Math.hypot(p.x - drag.from.x, p.y - drag.from.y) > 10) {
+        drag.dir = unit({ x: p.x - drag.from.x, y: p.y - drag.from.y }, this.player.aim);
+        this.player.aim = drag.dir;
+      }
       if (p.id === this.aimPointer) {
         this.aimScreen = { x: p.x, y: p.y };
         const w = this.toWorld(p.x, p.y);
@@ -583,6 +598,11 @@ export class HuntScene extends Phaser.Scene {
       }
     });
     const release = (p: Phaser.Input.Pointer) => {
+      const drag = this.harpoonDrag;
+      if (drag && p.id === drag.id) {
+        this.harpoonDrag = null;
+        if (!this.paused) this.shotQueued = drag.dir ? this.harpoonReach(drag.dir) : this.harpoonTarget();
+      }
       if (p.id === this.stickPointer) {
         this.stickPointer = null;
         this.stickVec = { x: 0, y: 0 };
@@ -605,6 +625,8 @@ export class HuntScene extends Phaser.Scene {
     this.pad = padLayout(f, GAME_WIDTH, GAME_HEIGHT);
     const put = (o: Phaser.GameObjects.Image | null, at: { x: number; y: number }) => o?.setPosition(at.x, at.y).setScale(KIT * f).setAlpha(a);
     put(this.slashButton, this.pad.slash);
+    put(this.harpoonButton, this.pad.harpoon);
+    this.harpoonIcon?.setPosition(this.pad.harpoon.x, this.pad.harpoon.y).setScale((SIDE_ICON * f) / Math.max(this.harpoonIcon.width, this.harpoonIcon.height)).setAlpha(a);
     put(this.sideButton, this.pad.side);
     put(this.gatherButton, this.pad.use);
     this.stickBase.setScale(KIT * f);
@@ -621,6 +643,26 @@ export class HuntScene extends Phaser.Scene {
     const a = PAD_ALPHA[this.padPrefs.alpha] * (held ? 1 : IDLE_STICK_ALPHA);
     this.stickBase.setPosition(this.stickAt.x, this.stickAt.y).setAlpha(a);
     this.stickKnob.setPosition(this.stickAt.x, this.stickAt.y).setAlpha(a);
+  }
+
+  // Where a dragged harpoon goes: its full reach that way from the hand.
+  private harpoonReach(dir: Vec): Vec {
+    const hand = this.hand();
+    return { x: hand.x + dir.x * this.ranged.range, y: hand.y + dir.y * this.ranged.range };
+  }
+
+  // Where a tapped harpoon goes: the nearest monster in reach, a weakened one (that can be captured) before
+  // a strong one; with none in reach, straight ahead.
+  private harpoonTarget(): Vec {
+    const hand = this.hand();
+    const inReach = this.mobs
+      .filter((m) => !m.dead && isTargetable(m) && distance(hand, mobPos(m)) <= this.ranged.range)
+      .map((m) => ({ m, d: distance(hand, mobPos(m)), weak: canCapture(m.spawn.monster, Math.max(0, m.hp) / MONSTERS[m.spawn.monster].maxHp) }))
+      .sort((a, b) => Number(b.weak) - Number(a.weak) || a.d - b.d);
+    const m = inReach[0]?.m;
+    if (!m) return this.harpoonReach(this.player.aim);
+    const at = mobPos(m);
+    return { x: at.x, y: at.y - H.harpoon.bodyOffsetY };
   }
 
   private updateStick(p: Phaser.Input.Pointer) {
@@ -726,7 +768,7 @@ export class HuntScene extends Phaser.Scene {
     }
     if (this.gatherQueued) {
       this.gatherQueued = false;
-      if (use?.kind === "exit") return sfx.play("cart"), this.endHunt(false, use.id);
+      if (use?.kind === "exit") return this.askGoHome(use.id);
       if (use?.kind === "down") return this.goDown();
       if (use?.kind === "sleeper") return this.take(use.mob, "sleep");
       if (use?.kind === "node" && !this.gathering) this.gathering = { node: use.node, ms: 0 };
@@ -975,7 +1017,6 @@ export class HuntScene extends Phaser.Scene {
   // ---------------------------------------------------------------- harpoon and slash
 
   private throwHarpoon(at: Vec) {
-    this.tutDone("harpoon");
     sfx.play("harpoonThrow");
     const p = this.player;
     p.aim = unit({ x: at.x - p.pos.x, y: at.y - this.hand().y }, p.aim);
@@ -1022,12 +1063,9 @@ export class HuntScene extends Phaser.Scene {
     }
   }
 
+  // The harpoon does no harm: it is for catching (user 2026-10-27). Only a weakened one is reeled in to be
+  // captured (user, 2026-10-21); a strong one shrugs it off.
   private harpoonStrike(m: Mob) {
-    const p = this.player;
-    const hit = computeHit({ weapon: this.ranged, comboStep: 1, targetVulnerable: isMobVulnerable(m), attackerPos: p.pos, targetPos: mobPos(m), targetFacing: mobFacing(m) }, H.hit);
-    this.applyHit(m, "ranged", hit.damage, [hit.counter && "카운터!", hit.backAttack && "백어택!"]);
-    this.hitStop(H.hitStopMs);
-    // only a weakened one is reeled in to be captured (user, 2026-10-21); a strong one just takes the hit
     if (!m.dead && !canCapture(m.spawn.monster, Math.max(0, m.hp) / MONSTERS[m.spawn.monster].maxHp)) {
       const at = mobPos(m);
       this.popText(at.x, at.y - 40, t("hunt.tooStrong"), "#ffd166", 800);
@@ -1190,7 +1228,7 @@ export class HuntScene extends Phaser.Scene {
     cap.c = r.c;
     cap.gauge.set(cap.c.fill);
     cap.gauge.box.setPosition(at.x - 20, at.y - 44);
-    if (r.result === "caught") this.take(m, "capture");
+    if (r.result === "caught") this.tutDone("capture"), this.take(m, "capture");
     else if (r.result === "broke") {
       this.endCapture();
       this.popText(at.x, at.y - 40, t("hunt.ropeBroke"), "#ff8080", 900);
@@ -1277,6 +1315,7 @@ export class HuntScene extends Phaser.Scene {
   }
 
   private dartHit(kind: SideWeaponId, m: Mob) {
+    this.tutDone("sling");
     const at = mobPos(m);
     if (kind === "sling") {
       sfx.play("monsterHit");
@@ -1430,6 +1469,31 @@ export class HuntScene extends Phaser.Scene {
     this.pickPause(0);
   }
 
+  // A cart asks before it takes the hunter home (user 2026-10-27: the use button pressed by mistake left
+  // the hunt): the world waits under the question like under the pause menu; Esc or "no" stays.
+  private askGoHome(exitId: string) {
+    this.paused = true;
+    this.anims.pauseAll();
+    this.tweens.pauseAll();
+    const panel = kitSlice(this, 0, 0, "panel", 220, 100, 5, 5, 5, 5);
+    const title = this.add.text(0, -26, t("hunt.goHomeAsk"), { ...TEXT, fontStyle: "bold", color: "#d8c4a4" }).setOrigin(0.5);
+    const yes = addMenuItem(this, 0, 4, t("hunt.goHomeYes"), () => {
+      this.closePauseMenu();
+      sfx.play("cart");
+      this.endHunt(false, exitId);
+    }, () => this.pickPause(0));
+    const no = addMenuItem(this, 0, 28, t("hunt.goHomeNo"), () => this.closePauseMenu(), () => this.pickPause(1));
+    this.pauseMenu = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2, [panel, title, yes.box, no.box]).setScrollFactor(0).setDepth(20000);
+    this.pauseItems = [yes, no];
+    this.pickPause(1);
+  }
+
+  // The pause menu or the cart's question goes, and the world moves again.
+  private closePauseMenu() {
+    if (!this.paused) return;
+    this.togglePause();
+  }
+
   private pickPause(i: number) {
     this.pausePick = (i + this.pauseItems.length) % this.pauseItems.length;
     this.pauseItems.forEach((m, n) => m.setLit(n === this.pausePick));
@@ -1451,6 +1515,11 @@ export class HuntScene extends Phaser.Scene {
     for (const m of this.mobs) {
       if (m.dead || m === this.reeling) continue;
       if (m === this.capturing?.mob) continue;
+      // the first hunt's rabbit stays by the cart, to be slung and caught (tutorial: it never runs)
+      if (m.spawn.id === "1-tut") {
+        setMobPos(m, { x: m.spawn.x, y: m.spawn.y });
+        continue;
+      }
       const piglets = this.mobs.filter((x) => x.spawn.monster === "piglet" && !x.dead).length;
       const step = stepMob(m, dt, seen, this.floorDef.field, this.obstacles, this.dark ? this.huntData.gear.light : 0, piglets);
       if (step.hurt) this.hurtPlayer(step.hurt.damage, step.hurt.dir);
@@ -1600,8 +1669,9 @@ export class HuntScene extends Phaser.Scene {
       g.lineStyle(1, 0xe8d8b0, 1).lineBetween(hand.x, hand.y, end.x, end.y);
       g.fillStyle(0xcfd8e0, 1).fillCircle(end.x, end.y, 1.5);
     }
-    if (this.aimScreen) {
-      const aim = this.toWorld(this.aimScreen.x, this.aimScreen.y);
+    const aimAt = this.aimScreen ? this.toWorld(this.aimScreen.x, this.aimScreen.y) : this.harpoonDrag?.dir ? this.harpoonReach(this.harpoonDrag.dir) : null;
+    if (aimAt) {
+      const aim = aimAt;
       g.lineStyle(1, 0xffffff, 0.5).lineBetween(hand.x, hand.y, aim.x, aim.y).strokeCircle(aim.x, aim.y, 4);
     }
   }
@@ -1736,7 +1806,6 @@ export class HuntScene extends Phaser.Scene {
     this.tutCheck();
     this.drawForageMark();
     this.drawMobBars();
-    this.drawExitArrow();
     this.ammoText.setText(`${this.run.ammo}/${this.huntData.ammo}`).setColor(this.run.ammo === 0 ? "#9a8f84" : this.run.ammo <= AMMO_LOW ? "#ff7070" : "#fff3d8");
     this.ammoIcon.setAlpha(this.run.ammo > 0 ? 1 : 0.4);
     this.ammoSlot?.setAlpha(this.run.ammo > 0 ? 1 : 0.5);
@@ -1774,14 +1843,14 @@ export class HuntScene extends Phaser.Scene {
       const hurt = !m.dead && m.hp < max && m !== this.capturing?.mob;
       let bar = this.mobBars.get(m);
       if (!hurt) {
-        if (bar) bar.gauge.box.setVisible(false), bar.cue.setVisible(false);
+        if (bar) bar.gauge.box.setVisible(false);
         continue;
       }
       if (!bar) {
         // the kit gauge at half size: one game pixel per art pixel
         const gauge = addGauge(this, 0, 0, 44);
         gauge.box.setDepth(9400).setScale(0.5);
-        bar = { gauge, cue: this.add.image(0, 0, "cue_harpoon").setDepth(9401).setScale(0.3) };
+        bar = { gauge };
         this.mobBars.set(m, bar);
       }
       const frac = Math.max(0, m.hp) / max;
@@ -1792,7 +1861,6 @@ export class HuntScene extends Phaser.Scene {
       bar.gauge.set(frac);
       bar.gauge.box.setVisible(true).setPosition(s.x - 11, top);
       for (const part of bar.gauge.box.list as Phaser.GameObjects.NineSlice[]) part.setTint(weak ? 0xffd166 : 0xffffff);
-      bar.cue.setVisible(weak).setPosition(s.x, top - 10 - (Math.floor(this.time.now / 300) % 2) * 2);
       if (weak && !this.capturableSeen) {
         this.capturableSeen = true;
         this.game.events.emit("hunt:tip", "capture");
@@ -1824,29 +1892,6 @@ export class HuntScene extends Phaser.Scene {
     const x = Phaser.Math.Clamp(p.x - cam.worldView.x + Math.cos(a) * 60, 16, GAME_WIDTH - 16);
     const y = Phaser.Math.Clamp(p.y - 14 - cam.worldView.y + Math.sin(a) * 60, 16, GAME_HEIGHT - 16);
     this.forageMark.setText("▶").setScrollFactor(0).setRotation(a).setOrigin(0.5).setPosition(x, y);
-  }
-
-  // The nearest cart: an arrow beside the hunter pointing at it, pushed in to the screen's edge when the
-  // cart is out of sight. Shown when the cart is out of sight, and always when the bag is full or stamina
-  // runs low. On the first hunt only when it is time to go home (user, 2026-10-21: an arrow to the cart
-  // while the goal said "collect chicken breast" read as the thing to do).
-  private drawExitArrow() {
-    const p = this.player.pos;
-    const e = nearestExit(p, this.run.floor);
-    const cam = this.cameras.main;
-    const urgent = bagCount(this.run.bag) >= this.bagSlots || this.run.stamina / this.maxStamina < LOW_STAMINA;
-    const off = !cam.worldView.contains(e.x, e.y);
-    const near = distance(p, e) <= USE_RANGE * 2;
-    const homeTime = this.tutStep?.startsWith("cart:") === true;
-    this.exitArrow.setVisible(!this.player.down && !near && (urgent || homeTime || (off && !this.huntData.tutorial)));
-    if (!this.exitArrow.visible) return;
-    const a = Math.atan2(e.y - p.y, e.x - p.x);
-    // from the hunter's place on screen (his middle, not his feet), 40 px toward the cart, kept 16 px inside
-    const sx = p.x - cam.worldView.x;
-    const sy = p.y - 14 - cam.worldView.y;
-    const x = Phaser.Math.Clamp(sx + Math.cos(a) * 40, 16, GAME_WIDTH - 16);
-    const y = Phaser.Math.Clamp(sy + Math.sin(a) * 40, 16, GAME_HEIGHT - 16);
-    this.exitArrow.setPosition(x, y).setRotation(a);
   }
 
   // Home: through a cart (its exit id), or knocked out (null). The report goes to the day flow; the server

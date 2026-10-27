@@ -8,8 +8,8 @@ describe("fitGameWidth", () => {
     expect(fitGameWidth(2)).toBe(720);
     expect(GAME_HEIGHT).toBe(360);
   });
-  it("never narrower than 16:9 nor wider than 19.5:9", () => {
+  it("never narrower than 16:9 nor wider than 21:9", () => {
     expect(fitGameWidth(4 / 3)).toBe(640);
-    expect(fitGameWidth(3)).toBe(780);
+    expect(fitGameWidth(3)).toBe(840);
   });
 });

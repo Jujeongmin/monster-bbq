@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { loadShift, saveShift } from "./night";
+import { clearShift, leftNightReport, loadShift, saveShift } from "./night";
 import { Shift } from "./shift";
 
 const memory = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
+  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) };
 };
 
 describe("the night kept across a reload", () => {
@@ -25,8 +25,19 @@ describe("the night kept across a reload", () => {
     expect(loadShift(s, "s1")).toBeUndefined();
   });
   it("does not throw when storage is blocked", () => {
-    const blocked = { getItem: () => { throw new Error("no"); }, setItem: () => { throw new Error("no"); } };
+    const blocked = { getItem: () => { throw new Error("no"); }, setItem: () => { throw new Error("no"); }, removeItem: () => { throw new Error("no"); } };
     expect(() => saveShift(blocked, "s1", shift().s)).not.toThrow();
     expect(loadShift(blocked, "s1")).toBeUndefined();
+    expect(() => clearShift(blocked, "s1")).not.toThrow();
+  });
+  it("settles a night left open from what was kept, or as nothing served (user 2026-10-27)", () => {
+    const s = memory();
+    const sh = shift();
+    sh.s.guests.push({ ...sh.s.guests[0], id: "c9", servedMs: 9000, pour: null } as never);
+    saveShift(s, "s1", sh.s);
+    expect(leftNightReport(s, "s1")).toEqual(sh.report());
+    expect(leftNightReport(s, "s2")).toEqual({ served: [], left: [], cleaned: [] });
+    clearShift(s, "s1");
+    expect(loadShift(s, "s1")).toBeUndefined();
   });
 });

@@ -12,7 +12,7 @@ import { Board, loadTextures } from "./sprites";
 // art on boxes and upright boards, drawn at 960x540 through an orthographic camera so one art pixel is
 // always two screen pixels. It only draws: the night's rules are Shift, what to show is lookAt.
 
-// the picture's height; its width follows the screen (layerFit), 960 to 1170
+// the picture's height; its width follows the screen (layerFit), 960 to 1260
 const H = 540;
 // past the back wall's ends (480 world units) the wall runs on as its own end strips, this many art
 // pixels wide, tiled and a little darker (a longer phone sees more room: user, 2026-10-22)

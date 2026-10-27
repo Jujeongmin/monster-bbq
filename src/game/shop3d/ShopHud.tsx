@@ -74,6 +74,9 @@ export interface HudProps {
   onStick: (x: number | null) => void;
 }
 
+// the big pour gauge's width in the picture's pixels (drawn half as big again)
+const POUR_W = 200;
+
 function Gauge({ x, y, width, value }: { x: number; y: number; width: number; value: number }) {
   const v = Math.max(0, Math.min(1, value));
   return (
@@ -170,6 +173,17 @@ export function ShopHud(p: HudProps) {
           <span className="s3-mark" style={{ left: p.anchors.cart.x - 36 + 72 * BALANCE.service.drinks.line, top: p.anchors.cart.y - 22 }}>
             ▼
           </span>
+          {/* the pour big at the bottom's middle too, with what to do (user 2026-10-27: the small gauge by the
+              cart was hard to see, on a phone above all) */}
+          <div className="s3-pour" role="status">
+            <span className="s3-pour-say">{t(p.touch ? "night.pourHintTouch" : "night.pourHint")}</span>
+            <div className="s3-pour-bar">
+              <Gauge x={POUR_W / 2} y={7} width={POUR_W} value={look.pour} />
+              <span className="s3-mark" style={{ left: POUR_W * BALANCE.service.drinks.line, top: -16 }}>
+                ▼
+              </span>
+            </div>
+          </div>
         </>
       )}
       {p.fx.map((f) =>

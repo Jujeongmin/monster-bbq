@@ -3,7 +3,8 @@ import { BALANCE } from "../../../shared/balance";
 import { bgm } from "../../audio/bgm";
 import { sfx } from "../../audio/sfx";
 import { t, type StringKey } from "../../i18n";
-import { markSeen, nightTipDue, readSeen, TIP_FACE, tipStore, type TipId } from "../../screens/tips";
+import { COAL_LOW, markSeen, nightTipDue, readSeen, TIP_FACE, tipStore, type TipId } from "../../screens/tips";
+import { nightGoal, type NightGoal } from "../../screens/tutorial";
 import { loadShift, saveShift } from "../service/night";
 import { LAYOUT, Shift, type ShiftEvent } from "../service/shift";
 import { clockText, type ServiceData, type ShopReport } from "../service/types";
@@ -63,7 +64,10 @@ export interface AddMenuHook {
 }
 
 // `hold`: the day's title card is over the shop, so the night waits (no clock, no guests) until it is gone.
-export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop: ServiceData; hold?: boolean; addMenu?: AddMenuHook; onEnd: (r: ShopReport) => void; onFail: () => void }) {
+// onGoal: what to do now at the counter (the first night's goal line, tutorial.ts), told when it changes
+export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail, onGoal }: { shop: ServiceData; hold?: boolean; addMenu?: AddMenuHook; onEnd: (r: ShopReport) => void; onFail: () => void; onGoal?: (g: NightGoal) => void }) {
+  const onGoalRef = useRef(onGoal);
+  onGoalRef.current = onGoal;
   const addMenuRef = useRef(addMenu);
   addMenuRef.current = addMenu;
   // Bandal's menu board: open (the night waits), sending, and why it was refused
@@ -107,7 +111,7 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
     const shop = start.current;
     const cfg = { customers: shop.customers, dishes: shop.dishes, stools: shop.stools, walkMul: shop.walkMul, coalPerDish: shop.coalPerDish, staff: shop.staff };
     // a reload picks the night up where it was (the ingredients went when the shop opened)
-    const saved = loadShift(sessionStorage, shop.serviceId);
+    const saved = loadShift(localStorage, shop.serviceId);
     const shift = new Shift(cfg, saved && saved.seats.length === shop.stools ? saved : undefined);
     let view: ShopView;
     try {
@@ -195,7 +199,7 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
         made.set(d.dish, d.plates);
       }
       // right away: the night is paused, so the every-second save would not run before a reload
-      saveShift(sessionStorage, shop.serviceId, shift.s);
+      saveShift(localStorage, shop.serviceId, shift.s);
       bandal = { tex: "bandal_serve", until: now + 700 };
       setMenuOpen(false);
     };
@@ -284,6 +288,7 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
       }
     };
 
+    let lastGoal: NightGoal | null = null;
     const frame = (time: number) => {
       view.setWidth(layerW.current);
       if (!alive) return;
@@ -295,7 +300,7 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
         for (let left = dt; left > 0; left -= STEP_MS) shift.tick(Math.min(left, STEP_MS), move);
         if (shift.s.clock - savedAt > 1000) {
           savedAt = shift.s.clock;
-          saveShift(sessionStorage, shop.serviceId, shift.s);
+          saveShift(localStorage, shop.serviceId, shift.s);
         }
         const events = shift.drain();
         for (const e of events) handle(e);
@@ -305,6 +310,17 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
             late.add(g.id);
           } else late.delete(g.id);
         }
+        const s = shift.s;
+        const goal = nightGoal({
+          pouring: !!s.pouring,
+          carryingDish: s.tray.some((i) => i.kind === "dish"),
+          dishReady: s.pass.length > 0,
+          dirty: s.seats.some((st) => st.dirty),
+          coalLow: s.coal < COAL_LOW,
+          teaWanted: shift.drinkWanted() !== null,
+          cooking: s.kitchen.length > 0,
+        });
+        if (goal !== lastGoal) (lastGoal = goal), onGoalRef.current?.(goal);
         // the lid's line counts down with the night; when none is up, the next first-time moment gets one
         if (tip && (tip.left -= dt) <= 0) tip = null;
         if (!tip) {
@@ -317,7 +333,7 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail }: { shop
         }
         if (shift.done) {
           ended = true;
-          saveShift(sessionStorage, shop.serviceId, shift.s);
+          saveShift(localStorage, shop.serviceId, shift.s);
           setTimeout(() => alive && onEndRef.current(shift.report()), 800);
         }
       }

@@ -113,14 +113,14 @@ export class ServiceScene extends Phaser.Scene {
     this.data0 = data;
     const cfg = { customers: data.customers, dishes: data.dishes, stools: data.stools, walkMul: data.walkMul, coalPerDish: data.coalPerDish, staff: data.staff };
     // a reload picks the night up where it was (the ingredients went when the shop opened)
-    const saved = loadShift(sessionStorage, data.serviceId);
+    const saved = loadShift(localStorage, data.serviceId);
     this.shift = new Shift(cfg, saved && saved.seats.length === data.stools ? saved : undefined);
     this.savedAt = this.shift.s.clock;
     // plates added to the menu from the page (shop remake step 4), and whether more could still be
     this.game.events.off("service:addPlates");
     this.game.events.on("service:addPlates", (dish: DishId, plates: number, price: number) => {
       this.shift.addPlates(dish, plates, price);
-      saveShift(sessionStorage, data.serviceId, this.shift.s);
+      saveShift(localStorage, data.serviceId, this.shift.s);
     });
     this.paused = false;
     this.ended = false;
@@ -261,13 +261,13 @@ export class ServiceScene extends Phaser.Scene {
     for (let left = dt; left > 0; left -= STEP_MS) this.shift.tick(Math.min(left, STEP_MS), { x, run: k.SHIFT.isDown || Math.abs(this.stickX) > 0.9 });
     if (this.shift.s.clock - this.savedAt > 1000) {
       this.savedAt = this.shift.s.clock;
-      saveShift(sessionStorage, this.data0.serviceId, this.shift.s);
+      saveShift(localStorage, this.data0.serviceId, this.shift.s);
     }
     this.handleEvents(time);
     this.draw(time, x);
     if (this.shift.done) {
       this.ended = true;
-      saveShift(sessionStorage, this.data0.serviceId, this.shift.s);
+      saveShift(localStorage, this.data0.serviceId, this.shift.s);
       this.time.delayedCall(800, () => this.game.events.emit("service:end", this.shift.report()));
     }
   }

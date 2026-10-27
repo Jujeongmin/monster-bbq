@@ -16,6 +16,7 @@ import type { SaveData } from "../../shared/save";
 import { artUrl } from "../game/art";
 import { PhaserGame } from "../game/PhaserGame";
 import { ServiceGame } from "../game/service/ServiceGame";
+import { clearShift, leftNightReport } from "../game/service/night";
 import type { HuntResult } from "../game/scenes/HuntScene";
 import { t, type StringKey } from "../i18n";
 import type { LocalTransport, Transport } from "../net/transport";
@@ -42,7 +43,7 @@ import { appAlerts } from "./hud/alerts";
 import { Ranking } from "./hud/Ranking";
 import { usePortrait } from "./portrait";
 import { ControlsPanel } from "./hud/ControlsPanel";
-import { dayGoal, huntGoal, TUT_NEED, type HuntTut } from "./tutorial";
+import { dayGoal, huntGoal, TUT_NEED, type HuntTut, nightGoalKey, type NightGoal } from "./tutorial";
 import { markSeen, readSeen, TIP_FACE, tipStore, type TipId } from "./tips";
 import { TitleCard } from "./hud/TitleCard";
 import { Cutscene } from "./story/Cutscene";
@@ -107,13 +108,32 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     [transport, localShop],
   );
 
+  // A night still open when the game comes back (it was closed mid-night) is over (user 2026-10-27): it is
+  // settled from what this device kept of it (night.ts), and the next day starts. The server settles a
+  // night once and starts a day once, so a second try (StrictMode's double load, a retry) gives nothing more.
+  const leftNight = useRef<Promise<SaveData> | null>(null);
+  function closeLeftNight(s: SaveData): Promise<SaveData> {
+    if (!s.service) return Promise.resolve(s);
+    const id = s.service.id;
+    leftNight.current ??= (async () => {
+      let next = await transport.act({ type: "finishService", serviceId: id, ...leftNightReport(localStorage, id) });
+      clearShift(localStorage, id);
+      if (next.stage === "settle") next = await transport.act({ type: "endDay" });
+      return next;
+    })().finally(() => (leftNight.current = null));
+    return leftNight.current;
+  }
+
   function load() {
     setLoadFailed(false);
-    transport.load().then((s) => {
-      setSave(s);
-      // back where the server says the day is (a service opened and never settled: back into it)
-      setPhase(s.service ? "service" : s.hunt ? "hunt" : s.stage);
-    }, () => setLoadFailed(true));
+    transport
+      .load()
+      .then(closeLeftNight)
+      .then((s) => {
+        setSave(s);
+        // back where the server says the day is
+        setPhase(s.service ? "service" : s.hunt ? "hunt" : s.stage);
+      }, () => setLoadFailed(true));
   }
   useEffect(load, [transport]);
   // the upgrade shop belongs to the screen it was opened from: a new stage closes it
@@ -189,6 +209,8 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the first day's tutorial (A): the goal now, where to go, the lid's line the first time
   const [lunchVisited, setLunchVisited] = useState(false);
   const [huntTut, setHuntTut] = useState<HuntTut | null>(null);
+  // the first night's goal line (tutorial.ts nightGoal), as the counter reports it
+  const [nightTut, setNightTut] = useState<NightGoal | null>(null);
   // the hunt's controls: before the first hunt starts (once), and from the hunt's pause menu
   const [controlsAsked, setControlsAsked] = useState(false);
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
@@ -407,7 +429,10 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
         />
       )}
       {phase === "kitchen" && (!hub || panel === "kitchen") && <Kitchen guide={save.day === 1} tab={kitchenTab} onTab={setKitchenTab} save={save} busy={busy} act={(a) => void act(a, "kitchen")} onReady={(menu) => void openShop(menu)} onRest={() => void act({ type: "endDay" }, "hunt")} onClose={hub ? () => setPanel(null) : undefined} />}
-      {phase === "service" && save.service && <Night save={save} hold={!!card || portrait} addMenu={{ options: addOptions(save), slots: { used: save.service.dishes.length, max: menuSlots(save) }, send: addToMenu }} onEnd={(r) => act({ type: "finishService", serviceId: save.service!.id, ...r }, "settle")} />}
+      {phase === "service" && save.service && <Night save={save} hold={!!card || portrait} addMenu={{ options: addOptions(save), slots: { used: save.service.dishes.length, max: menuSlots(save) }, send: addToMenu }} onGoal={save.day === 1 ? setNightTut : undefined} onEnd={(r) => {
+            const id = save.service!.id;
+            void act({ type: "finishService", serviceId: id, ...r }, "settle").then((ok) => ok && clearShift(localStorage, id));
+          }} />}
       {phase === "settle" && <Receipt save={save} busy={busy} onNext={() => act({ type: "endDay" }, "hunt")} />}
 
       {/* the morning: pick the side weapon, then set out; at lunch the same window opens from its button */}
@@ -425,6 +450,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {charcoalLine && <LidLine face={TIP_FACE.charcoal} text={t("tip.charcoal")} />}
       {/* the goal line only for the first hunt's controls; by day the arrow alone says where to go (user, 2026-10-20) */}
       {goal && save.hunt && !covered && <GoalLine text={t(goal.goal)} place="middle" items={goal.goal === "goal.recipe" ? TUT_NEED.map(([id, n], i) => ({ icon: artUrl(`test/items/icon_${id}.png`), text: `${t(`item.${id}` as StringKey)} ${huntTut?.have[i] ?? 0}/${n}`, done: (huntTut?.have[i] ?? 0) >= n })) : []} />}
+      {phase === "service" && save.day === 1 && nightTut && !covered && <GoalLine text={t(nightGoalKey(nightTut, touch))} place="date" />}
       {controlsOpen && save.hunt && <ControlsPanel touch={touch} side={save.hunt.side} onClose={() => (setControlsAsked(false), see("huntControls"))} />}
       {goalTip && <LidLine key={goalTip} face={TIP_FACE[goalTip as Exclude<TipId, "awakenApp">]} text={t(`tip.${goalTip}` as StringKey)} low />}
       {win === "bag" && <Bag save={save} shut={shut} onClose={() => setWin(null)} />}
@@ -469,9 +495,9 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
 
 // Tonight's service: the customers the server's seed brings (same plan as the server checks) and the
 // plates the menu board made.
-function Night({ save, hold, addMenu, onEnd }: { save: SaveData; hold: boolean; addMenu: AddMenuHook; onEnd: (r: { served: ServedEntry[]; left: string[]; cleaned: string[] }) => void }) {
+function Night({ save, hold, addMenu, onEnd, onGoal }: { save: SaveData; hold: boolean; addMenu: AddMenuHook; onEnd: (r: { served: ServedEntry[]; left: string[]; cleaned: string[] }) => void; onGoal?: (g: NightGoal) => void }) {
   const svc = save.service!;
   const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.planMenu, extra: staffEffects(svc.staff).extraGuests });
   const shop = { serviceId: svc.id, customers, dishes: svc.dishes, stools: stools(save), walkMul: walkMul(save), coalPerDish: coalPerDish(save), staff: svc.staff };
-  return <ServiceGame key={svc.id} shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} />;
+  return <ServiceGame key={svc.id} shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} onGoal={onGoal} />;
 }

@@ -1,9 +1,10 @@
-import type { ShiftState } from "./shift";
+import { shiftReport, type ShiftReport, type ShiftState } from "./shift";
 
-// The night kept per service in the page's session storage, so a reload mid-night picks up where it
-// was (the ingredients were taken when the shop opened) instead of losing the night.
+// The night kept per service in the device's storage (it outlives closing the game). When the game comes
+// back with a night still open, that night is over (user 2026-10-27): it is settled from what was kept,
+// served guests paid, and the next day starts (DayFlow). A night that was never kept settles as empty.
 
-type Store = Pick<Storage, "getItem" | "setItem">;
+type Store = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 const key = (serviceId: string) => `monster-bbq:service:${serviceId}:shift`;
 
 export function saveShift(store: Store, serviceId: string, s: ShiftState) {
@@ -22,4 +23,18 @@ export function loadShift(store: Store, serviceId: string): ShiftState | undefin
   } catch {
     return undefined;
   }
+}
+
+export function clearShift(store: Store, serviceId: string) {
+  try {
+    store.removeItem(key(serviceId));
+  } catch {
+    // nothing kept, nothing to clear
+  }
+}
+
+// What the server is told for a night left open: what was kept of it, or nothing served.
+export function leftNightReport(store: Store, serviceId: string): ShiftReport {
+  const s = loadShift(store, serviceId);
+  return s ? shiftReport(s) : { served: [], left: [], cleaned: [] };
 }

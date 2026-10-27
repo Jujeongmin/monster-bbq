@@ -5,8 +5,9 @@ describe("frameSize", () => {
   it("fills a phone held sideways edge to edge (iPhone 12 Pro, 19.5:9)", () => {
     expect(frameSize(844, 390)).toEqual({ width: 844, height: 390, s: 1 });
   });
-  it("stops widening past 19.5:9, with narrow bars at the sides", () => {
-    expect(frameSize(1000, 390)).toEqual({ width: 844, height: 390, s: 1 });
+  it("fills a 20:9 phone too (Galaxy, 915x412), and stops widening past 21:9", () => {
+    expect(frameSize(915, 412)).toEqual({ width: 915, height: 412, s: 1 });
+    expect(frameSize(1000, 390)).toEqual({ width: 910, height: 390, s: 1 });
   });
   it("is 16:9 on a 16:9 screen, at a whole pixel scale", () => {
     expect(frameSize(1280, 720)).toEqual({ width: 1280, height: 720, s: 2 });

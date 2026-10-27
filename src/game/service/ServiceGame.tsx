@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import type { NightGoal } from "../../screens/tutorial";
 import { useEffect, useRef, useState } from "react";
 import { holdLoop } from "../holdLoop";
 import { canUse3D } from "../shop3d/input";
@@ -12,9 +13,9 @@ import { SHOP_HEIGHT, SHOP_WIDTH, type ServiceData, type ShopReport } from "./ty
 // The night service in a page: the 3D shop (shop 3D design) where WebGL works, else the 2D Phaser one
 // (also with ?shop2d, and if the 3D one fails to load). Either reports the night to onEnd (each served
 // guest's dish, wait and pour; who left; the leftovers cleared).
-export function ServiceGame({ shop, hold = false, addMenu, onEnd }: { shop: ServiceData; hold?: boolean; addMenu?: AddMenuHook; onEnd: (r: ShopReport) => void }) {
+export function ServiceGame({ shop, hold = false, addMenu, onEnd, onGoal }: { shop: ServiceData; hold?: boolean; addMenu?: AddMenuHook; onEnd: (r: ShopReport) => void; onGoal?: (g: NightGoal) => void }) {
   const [threeD, setThreeD] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
-  return threeD ? <ShopStage shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} onFail={() => setThreeD(false)} /> : <Service2D shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} />;
+  return threeD ? <ShopStage shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} onFail={() => setThreeD(false)} onGoal={onGoal} /> : <Service2D shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} />;
 }
 
 // The 2D shop's menu board opens from a button over the game (its action key is the scene's); the scene

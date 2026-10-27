@@ -27,13 +27,14 @@ describe("padLayout", () => {
     const p = padLayout(1, 640, 360);
     expect(p.stick).toEqual({ x: 77, y: 281, radius: 36 });
     expect(p.slash).toEqual({ x: 578, y: 298, radius: 40 });
-    expect(p.side).toEqual({ x: 492, y: 312, radius: 40 });
-    expect(p.use).toEqual({ x: 494, y: 234, radius: 34 });
+    expect(p.harpoon).toEqual({ x: 492, y: 312, radius: 40 });
+    expect(p.side).toEqual({ x: 494, y: 228, radius: 40 });
+    expect(p.use).toEqual({ x: 412, y: 318, radius: 34 });
   });
   it("keeps every piece on the screen and apart at every size", () => {
     for (const s of [0.75, 1, 1.25]) {
       const p = padLayout(s, 640, 360);
-      const pieces = [p.slash, p.side, p.use];
+      const pieces = [p.slash, p.harpoon, p.side, p.use];
       for (const b of pieces) {
         expect(b.x - b.radius).toBeGreaterThanOrEqual(0);
         expect(b.x + b.radius).toBeLessThanOrEqual(640);
