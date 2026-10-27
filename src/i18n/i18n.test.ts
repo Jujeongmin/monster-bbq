@@ -8,6 +8,12 @@ describe("detectLocale", () => {
     expect(detectLocale("", "en-US")).toBe("en");
     expect(detectLocale("", "ja-JP")).toBe("en");
   });
+  it("keeps the language picked in the settings over the browser's, ?lang= still first", () => {
+    expect(detectLocale("", "ko-KR", "en")).toBe("en");
+    expect(detectLocale("", "en-US", "ko")).toBe("ko");
+    expect(detectLocale("?lang=en", "ko-KR", "ko")).toBe("en");
+    expect(detectLocale("", "ko-KR", "fr")).toBe("ko");
+  });
 });
 
 describe("t", () => {

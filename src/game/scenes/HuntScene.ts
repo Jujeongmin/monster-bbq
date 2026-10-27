@@ -1108,7 +1108,7 @@ export class HuntScene extends Phaser.Scene {
       const at = mobPos(m);
       const away = unit({ x: at.x - p.pos.x, y: at.y - p.pos.y }, aim);
       setMobPos(m, clampToField(pushOutOfRects({ x: at.x + away.x * hit.knockback, y: at.y + away.y * hit.knockback }, this.obstacles, mobRadius(m)), this.floorDef.field));
-      this.applyHit(m, "melee", hit.damage, [hit.counter && "카운터!", hit.backAttack && "백어택!", hit.finisher && "막타!"]);
+      this.applyHit(m, "melee", hit.damage, [hit.counter && t("hunt.hit.counter"), hit.backAttack && t("hunt.hit.back"), hit.finisher && t("hunt.hit.finisher")]);
       if (hit.finisher) this.flip(m);
     }
     // game feel: one freeze per swing, longer and with a shake on big hits
@@ -1341,7 +1341,7 @@ export class HuntScene extends Phaser.Scene {
       b.sprite.destroy();
       // bang: everything nearby is startled still; a flock bursts apart
       this.cameras.main.shake(140, 0.01);
-      this.popText(b.at.x, b.at.y - 10, "펑!", "#ffd166", 700);
+      this.popText(b.at.x, b.at.y - 10, t("hunt.hit.bang"), "#ffd166", 700);
       for (const m of this.mobs) {
         if (m.dead || distance(mobPos(m), b.at) > H.firecracker.radius) continue;
         m.status = stun(m.status, H.firecracker.stunMs * this.huntData.sidePower);

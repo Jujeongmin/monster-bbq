@@ -7,16 +7,25 @@ export type StringKey = keyof typeof ko;
 const DICTS: Record<Locale, Record<StringKey, string>> = { ko, en };
 let current: Locale = "ko";
 
-// ?lang=ko|en wins; otherwise Korean browsers get Korean and everyone else English.
-export function detectLocale(search: string, navigatorLanguage: string): Locale {
+export const LOCALES: Locale[] = ["ko", "en"];
+const isLocale = (v: unknown): v is Locale => v === "ko" || v === "en";
+// the language picked in the settings, kept per device
+export const LOCALE_KEY = "monster-bbq:lang";
+
+// ?lang=ko|en wins, then the language picked in the settings; otherwise Korean browsers get Korean and
+// everyone else English.
+export function detectLocale(search: string, navigatorLanguage: string, picked: string | null = null): Locale {
   const asked = new URLSearchParams(search).get("lang");
-  if (asked === "ko" || asked === "en") return asked;
+  if (isLocale(asked)) return asked;
+  if (isLocale(picked)) return picked;
   return navigatorLanguage.toLowerCase().startsWith("ko") ? "ko" : "en";
 }
 
 export function setLocale(l: Locale) {
   current = l;
 }
+
+export const locale = (): Locale => current;
 
 // The string for `key` in the current language with {name} filled from `vars` (left as is if missing).
 export function t(key: StringKey, vars: Record<string, string | number> = {}): string {

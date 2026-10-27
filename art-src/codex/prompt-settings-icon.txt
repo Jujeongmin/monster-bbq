@@ -1,0 +1,9 @@
+Use your image generation tool (do not write code to draw) to create ONE image: a single small HUD button icon for the SETTINGS menu of a cozy, comic Korean BBQ restaurant game (pixel art, the hunter fights monsters in a forest by day, cooks the meat at night).
+
+The attached picture shows the game's existing HUD art scaled up 6 times on magenta: grandma's notebook, the cloth bag, a shop app icon, the power badge and a wooden pad button. Match that look exactly: dark walnut wood, warm brass gold, a 1-art-pixel near-black outline, flat colours with 2-3 shades, NO gradients, NO anti-aliasing, NO texture noise, chunky and cute rather than detailed.
+
+Draw ONE icon, centred: a settings cog about 20 art pixels across. A chunky cog wheel with 8 short rounded teeth, made of warm brass gold with a darker brass shade on its lower right, a round hole in the middle showing a small dark walnut-wood centre, a tiny highlight at its top left. It must read clearly as "settings" at 20x20 pixels. Nothing else: no frame, no shadow, no text.
+
+Save as art-src/codex/raw/settings_icon.png — exactly 480x480, every art pixel an exact 16x16 block on one even grid (so the cog is about 320 px wide), centred. Background: one perfectly flat solid magenta #FF00FF everywhere, no shadow on it. No text, no letters.
+
+Reply only with the saved file path.

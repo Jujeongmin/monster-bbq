@@ -3,7 +3,14 @@
 .dh > * { pointer-events: auto; }
 .dh-left { position: absolute; left: calc(12px * var(--s)); top: calc(10px * var(--s)); display: flex; gap: calc(6px * var(--s)); align-items: center; pointer-events: none; }
 .dh-time { padding: 0 calc(6px * var(--s)); line-height: calc(10px * var(--s)); white-space: nowrap; display: inline-flex; align-items: center; gap: calc(4px * var(--s)); }
-.dh-res { position: absolute; right: calc(12px * var(--s)); top: calc(13px * var(--s)); padding: 0 calc(6px * var(--s)); display: flex; gap: calc(12px * var(--s)); align-items: center; white-space: nowrap; pointer-events: none; }
+.dh-res { position: absolute; right: calc(38px * var(--s)); top: calc(13px * var(--s)); padding: 0 calc(6px * var(--s)); display: flex; gap: calc(12px * var(--s)); align-items: center; white-space: nowrap; pointer-events: none; }
+/* the settings gear at the top right corner, the picture itself (no box) */
+.dh-gear { position: absolute; right: calc(10px * var(--s)); top: calc(10px * var(--s)); width: calc(22px * var(--s)); height: calc(22px * var(--s)); padding: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(0 var(--s) 0 rgba(20, 10, 4, 0.6)); }
+.dh-gear img { width: 100%; height: 100%; image-rendering: pixelated; transition: transform 0.12s steps(3); }
+.dh-gear:hover img { transform: rotate(45deg); }
+/* on a phone a thumb-sized gear (the 20 px art at 3 screen pixels each), the money moved over for it */
+:root.touch-small .dh-gear { width: 30px; height: 30px; right: 8px; top: 8px; }
+:root.touch-small .dh-res { right: 44px; }
 .dh-res span { display: inline-flex; align-items: center; gap: calc(4px * var(--s)); }
 /* the notebook and the bag: the picture itself, big, with its key and name under it (no box) */
 .dh-big { position: absolute; bottom: calc(4px * var(--s)); padding: 0; border: 0; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: calc(1px * var(--s)); color: var(--cream); font: 700 var(--fs-small) "Galmuri11", monospace; text-shadow: var(--s) var(--s) 0 #2b1408; filter: drop-shadow(0 calc(2px * var(--s)) 0 rgba(20, 10, 4, 0.6)); }

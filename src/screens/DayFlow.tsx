@@ -32,6 +32,7 @@ import { DayHud } from "./hud/DayHud";
 import { Notebook } from "./hud/Notebook";
 import { CookbookBook } from "./kitchen/CookbookBook";
 import { Credits } from "./hud/Credits";
+import { Settings } from "./hud/Settings";
 import { bgm } from "../audio/bgm";
 import { Friends, type Result as FriendResult } from "./hud/Friends";
 import "./hud/friends.css";
@@ -75,7 +76,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the side weapon window at lunch (in the morning it shows by itself before the hunt)
   const [picking, setPicking] = useState(false);
   // the bag or Grandma's notebook, opened from the day's HUD
-  const [win, setWin] = useState<"bag" | "notebook" | "cookbook" | "friends" | "credits" | "ranking" | null>(null);
+  const [win, setWin] = useState<"bag" | "notebook" | "cookbook" | "friends" | "credits" | "ranking" | "settings" | null>(null);
   // story scenes played to the end here (saved by the server just after; see storyDue)
   const [watched, setWatched] = useState<StoryId[]>([]);
   // a key asked the open window to close (it plays its closing, then calls back)
@@ -401,6 +402,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           alerts={alerts}
           onBag={() => setWin("bag")}
           onNotebook={() => setWin("notebook")}
+          onSettings={() => setWin("settings")}
         />
       )}
 
@@ -469,6 +471,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {appTip && <LidLine key={appTip} face={TIP_FACE[APP_TIP[appTip]]} text={t(`tip.${APP_TIP[appTip]}` as StringKey)} low />}
       {win === "cookbook" && <CookbookBook save={save} onClose={() => setWin(null)} />}
       {win === "credits" && <Credits onClose={() => setWin(null)} />}
+      {win === "settings" && <Settings onClose={() => setWin(null)} />}
       {win === "ranking" && <Ranking save={save} busy={busy} load={() => transport.ranking()} act={actSave} onClose={() => setWin(null)} />}
       {store && <Shop save={save} items={storeItems} checking={checking} onBuy={buy} onClose={() => setStore(false)} />}
 

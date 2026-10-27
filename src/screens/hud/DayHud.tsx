@@ -10,7 +10,7 @@ import "./hud.css";
 // the bottom left (Tab) and the bag at the bottom right (I); while a window is open (`quiet`) those two
 // step aside, like Dave's HUD while the phone is out. The hunt and the night's service hide it (they carry their own).
 // `alerts`: the notebook's apps with a ! (alerts.ts): a ! on the notebook, and on the bag when it is one
-export function DayHud({ save, time, quiet = false, alerts = [], onBag, onNotebook }: { save: SaveData; time: TimeOfDay; quiet?: boolean; alerts?: App[]; onBag: () => void; onNotebook: () => void }) {
+export function DayHud({ save, time, quiet = false, alerts = [], onBag, onNotebook, onSettings }: { save: SaveData; time: TimeOfDay; quiet?: boolean; alerts?: App[]; onBag: () => void; onNotebook: () => void; onSettings: () => void }) {
   const vip = vipLevel(save.vip.spent);
   const touch = typeof window !== "undefined" && ("ontouchstart" in window || new URLSearchParams(location.search).has("touch"));
   return (
@@ -26,6 +26,10 @@ export function DayHud({ save, time, quiet = false, alerts = [], onBag, onNotebo
           <b>{powerOf(save).total.toLocaleString()}</b>
         </div>
       </div>
+      {/* the settings (language, sound, the touch pad): the gear in the corner (user, 2026-10-27) */}
+      <button className="dh-gear" onClick={onSettings} aria-label={t("settings.button")} title={t("settings.button")}>
+        <img src={artUrl(HUD_ART.settings)} alt="" />
+      </button>
       <div className="ui-bar dh-res">
         <span>
           <img className="ui-icon" src={artUrl("test/ui/icon_gold.png")} alt="" />

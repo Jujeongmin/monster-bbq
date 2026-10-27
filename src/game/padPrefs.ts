@@ -13,8 +13,8 @@ export const PAD_ALPHA: Record<PadAlpha, number> = { solid: 1, normal: 0.8, fain
 export const IDLE_STICK_ALPHA = 0.45;
 
 const KEY = "monster-bbq:pad";
-const SIZES: PadSize[] = ["small", "normal", "big"];
-const ALPHAS: PadAlpha[] = ["solid", "normal", "faint"];
+export const SIZES: PadSize[] = ["small", "normal", "big"];
+export const ALPHAS: PadAlpha[] = ["solid", "normal", "faint"];
 const DEFAULT: PadPrefs = { size: "normal", alpha: "normal" };
 
 type Store = Pick<Storage, "getItem" | "setItem">;
@@ -31,12 +31,16 @@ export function readPadPrefs(store: Store | null): PadPrefs {
   }
 }
 
+// sent on the window when a choice changes, for a screen already showing the pad (the day's shop)
+export const PAD_EVENT = "monster-bbq:pad";
+
 export function writePadPrefs(store: Store | null, p: PadPrefs): void {
   try {
     store?.setItem(KEY, JSON.stringify(p));
   } catch {
     // storage blocked: the choice lasts this visit only
   }
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent<PadPrefs>(PAD_EVENT, { detail: p }));
 }
 
 // the next choice of one setting, round and round

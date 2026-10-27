@@ -107,6 +107,14 @@
 .shop-go { align-self: flex-start; margin-top: calc(4px * var(--s)); }
 .book .credits p { margin: 0; overflow-wrap: anywhere; }
 .book .credits h3 { margin-top: calc(4px * var(--s)); }
+/* the settings: each choice a row of words, the one in use on a card (Settings.tsx) */
+.book .set-page { gap: calc(3px * var(--s)); }
+.book .set-page h3:not(:first-child) { margin-top: calc(6px * var(--s)); }
+.book .set-page .set-sub { margin-top: calc(2px * var(--s)); font-size: var(--fs-small); }
+.book .set-page p { margin: 0; }
+.set-choices { display: flex; flex-wrap: wrap; gap: calc(2px * var(--s)); }
+.book-row.set-choice { display: inline-block; padding: 0 calc(5px * var(--s)); font: var(--fs) "Galmuri11", monospace; }
+.book-row.set-choice.on { font-weight: 700; cursor: default; }
 
 /* Bandal's kitchen on the book */
 .book-close .menu-item:not(.marked) { color: var(--cream); font-size: var(--fs-small); }

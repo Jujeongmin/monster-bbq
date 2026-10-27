@@ -7,7 +7,7 @@ import { LidLine } from "../../screens/hud/LidLine";
 import { seatXs } from "../service/shift";
 import { daySpots, DAY_START, nearSpot, walk, type DayScene, type Spot, type SpotId } from "./day";
 import { moveFrom } from "./input";
-import { pageStore, readPadPrefs } from "../padPrefs";
+import { PAD_EVENT, pageStore, readPadPrefs, type PadPrefs } from "../padPrefs";
 import { padButton, TouchStick } from "./TouchStick";
 import { layerFit, FLOOR_Y, Z } from "./layout";
 import type { ShopLook } from "./look";
@@ -195,8 +195,13 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
   const lastShown = !!shown && !!visitRun.current && shown.i + 1 >= visitRun.current.order.length;
   // a hero or a legend arriving shakes the room once
   const visitShake = !!who && (STAFF[who.id].rarity === "hero" || STAFF[who.id].rarity === "legend");
-  // the pad's size and shade, as last set in the hunt's pause menu
-  const [pad] = useState(() => readPadPrefs(pageStore()));
+  // the pad's size and shade, as last set in the settings or the hunt's pause menu
+  const [pad, setPad] = useState(() => readPadPrefs(pageStore()));
+  useEffect(() => {
+    const on = (e: Event) => setPad((e as CustomEvent<PadPrefs>).detail);
+    addEventListener(PAD_EVENT, on);
+    return () => removeEventListener(PAD_EVENT, on);
+  }, []);
   return (
     <div ref={stage} className="s3-stage day-stage">
       <div className={`s3-layer${visitShake ? " visit-shake" : ""}`} style={{ width: layer.w, transform: `scale(${layer.scale})` }}>
