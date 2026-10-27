@@ -186,6 +186,9 @@ export const BALANCE: {
   // the shop's power for the ranking (shared/power.ts, user 2026-10-21) and the charcoal each milestone pays once
   power: { upgradeLevel: number; star: number; dishKnown: number; dishLevel: number; rarity: Record<"common" | "rare" | "hero" | "legend", number>; staffStar: number; milestones: { at: number; charcoal: number }[] };
   shop: { charcoalPerVx: number; vipAt: number[]; vipBonus: number[]; vipDaily: number; bossCharcoal: number; bossRepeat: { tusk: number; king: number }; keepPurchases: number };
+  // rewarded ads (user 2026-10-27): golden charcoal per ad and ads a day (the Korean calendar day); the hunt's
+  // revive stands up with this share of full stamina, once a hunt
+  ads: { charcoal: number; charcoalPerDay: number; reviveStamina: number };
 } = {
   hunt: {
     player: { maxHp: 100, speed: 85, depthSpeedRatio: 0.9, radius: 6 },
@@ -421,5 +424,6 @@ export const BALANCE: {
       { at: 300_000, charcoal: 100 },
     ],
   },
+  ads: { charcoal: 2, charcoalPerDay: 3, reviveStamina: 0.5 },
   shop: { charcoalPerVx: 0.3, vipAt: [100, 500, 1500, 3000, 6000, 12000, 25000, 45000, 70000, 100000], vipBonus: [0.02, 0.04, 0.06, 0.08, 0.1, 0.13, 0.16, 0.19, 0.22, 0.25], vipDaily: 2, bossCharcoal: 50, bossRepeat: { tusk: 3, king: 10 }, keepPurchases: 200 },
 };

@@ -42,6 +42,7 @@ const FRESH = {
   shop: { firstBuy: [], purchases: [] },
   shopName: "",
   powerRewards: [],
+  ads: { day: 0, count: 0, ids: [] },
 };
 
 describe("newSave", () => {
@@ -76,6 +77,7 @@ describe("readSave (version 9)", () => {
     staff: { owned: { park: { shards: 1, stars: 2 } }, roster: { coal: "park" }, pulls: 3, sinceLegend: 3, freeUsed: true, pullIds: ["x"] },
     shopName: "곰네 고깃집",
     powerRewards: [3000],
+    ads: { day: 20388, count: 2, ids: ["ad-request-1", "ad-request-2"] },
   };
   it("reads a version 8 save as version 9 with no charcoal, stars, VIP or purchases", () => {
     const s = readSave({ ...valid, version: 8, charcoal: undefined, stars: undefined, vip: undefined, shop: undefined });

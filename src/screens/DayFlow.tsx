@@ -34,6 +34,9 @@ import { CookbookBook } from "./kitchen/CookbookBook";
 import { Credits } from "./hud/Credits";
 import { Settings } from "./hud/Settings";
 import { bgm } from "../audio/bgm";
+import { sfx } from "../audio/sfx";
+import { adsAvailable, redeem, watchAd } from "../net/ads";
+import { AD_PLACEMENT, adCharcoalLeft } from "../../shared/ads";
 import { Friends, type Result as FriendResult } from "./hud/Friends";
 import "./hud/friends.css";
 import { Receipt } from "./hud/Receipt";
@@ -95,6 +98,26 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   };
   const [storeItems, setStoreItems] = useState<ShopItem[]>([]);
   const [checking, setChecking] = useState(false);
+  // golden charcoal for an ad (user 2026-10-27): one under way, and the last word on it
+  const [adBusy, setAdBusy] = useState(false);
+  const [adNote, setAdNote] = useState<string | null>(null);
+  async function watchForCharcoal() {
+    if (adBusy) return;
+    setAdBusy(true);
+    setAdNote(null);
+    try {
+      const seen = await watchAd(AD_PLACEMENT.charcoal);
+      if (!seen.ok) return setAdNote(t(seen.reason === "dismissed" ? "shop.ad.dismissed" : seen.reason === "unsupported" ? "shop.ad.unsupported" : "shop.ad.failed"));
+      const r = await redeem((last) => transport.adCharcoal(seen.requestId, last));
+      setSave(r.save);
+      sfx.play("coin");
+      setAdNote(t("shop.ad.got", { n: BALANCE.ads.charcoal }));
+    } catch {
+      setAdNote(t("shop.ad.refused"));
+    } finally {
+      setAdBusy(false);
+    }
+  }
   useEffect(
     () =>
       startShop({
@@ -474,7 +497,16 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {win === "credits" && <Credits onClose={() => setWin(null)} />}
       {win === "settings" && <Settings onClose={() => setWin(null)} />}
       {win === "ranking" && <Ranking save={save} busy={busy} load={() => transport.ranking()} act={actSave} onClose={() => setWin(null)} />}
-      {store && <Shop save={save} items={storeItems} checking={checking} onBuy={buy} onClose={() => setStore(false)} />}
+      {store && (
+        <Shop
+          save={save}
+          items={storeItems}
+          checking={checking}
+          ad={adsAvailable() ? { left: adCharcoalLeft(save, Date.now()), busy: adBusy, note: adNote, onWatch: () => void watchForCharcoal() } : null}
+          onBuy={buy}
+          onClose={() => (setStore(false), setAdNote(null))}
+        />
+      )}
 
       {story && <Cutscene key={story} scene={story} onDone={() => setWatched((w) => [...w, story])} />}
       {card && <TitleCard key={card.key} day={card.day} time={card.time} line={card.line} onDone={() => setCard(null)} />}

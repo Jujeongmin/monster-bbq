@@ -119,3 +119,19 @@ describe("purchases", () => {
     expect(r.success).toBe(false);
   });
 });
+
+// Golden charcoal for a rewarded ad (user 2026-10-27): what is not an ad id never pays. (A well-formed id
+// depends on whether Verse8's verifier is reachable from the test run, so the cap is tested in shared/ads.)
+describe("ad charcoal", () => {
+  test("refuses what is not an ad id", async (server) => {
+    server.connect({ account: `ads-${Date.now()}` });
+    await server.load();
+    let refused = false;
+    try {
+      await server.adCharcoal("<not an id>", true);
+    } catch {
+      refused = true;
+    }
+    expect(refused).toBe(true);
+  });
+});

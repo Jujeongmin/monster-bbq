@@ -1,4 +1,5 @@
 import { applyAction, type Action, type ActionContext } from "../../shared/actions";
+import { claimAdCharcoal } from "../../shared/ads";
 import { RANKING_TOP, rankEntry, type RankingView } from "../../shared/ranking";
 import { readSave, type SaveData } from "../../shared/save";
 import { grantPurchase } from "../../shared/shop";
@@ -9,7 +10,11 @@ export interface Transport {
   act(action: Action): Promise<SaveData>;
   // the power ranking's top lines and the player's rank (reads only)
   ranking(): Promise<RankingView>;
+  // golden charcoal for a rewarded ad (shared/ads.ts); "pending" while Verse8 has not confirmed the ad yet
+  // (ask again shortly; `last` on the final try)
+  adCharcoal(requestId: string, last: boolean): Promise<AdCharcoalReply>;
 }
+export type AdCharcoalReply = { status: "granted"; save: SaveData } | { status: "pending" };
 
 // The server's rules run in the page against browser storage: local development and tests.
 export class LocalTransport implements Transport {
@@ -37,6 +42,14 @@ export class LocalTransport implements Transport {
     if (result.error) throw new Error(result.error);
     this.storage.setItem(this.key, JSON.stringify(result.save));
     return result.save;
+  }
+
+  // ?local development: no verifier, only the day's cap
+  async adCharcoal(requestId: string): Promise<AdCharcoalReply> {
+    const r = claimAdCharcoal(await this.load(), requestId, this.context().now);
+    if (r.error) throw new Error(r.error);
+    this.storage.setItem(this.key, JSON.stringify(r.save));
+    return { status: "granted", save: r.save };
   }
 
   // ?local development: a ranking of one, the player's own shop
@@ -98,6 +111,13 @@ export class Verse8Transport implements Transport {
 
   async ranking(): Promise<RankingView> {
     return asRanking(await withTimeout(this.server.remoteFunction("ranking"), this.timeoutMs));
+  }
+
+  async adCharcoal(requestId: string, last: boolean): Promise<AdCharcoalReply> {
+    const r = (await withTimeout(this.server.remoteFunction("adCharcoal", [requestId, last]), this.timeoutMs)) as { status?: unknown; save?: unknown } | null;
+    if (r?.status === "pending") return { status: "pending" };
+    if (r?.status === "granted") return { status: "granted", save: asSave(r.save) };
+    throw new Error("bad_reply");
   }
 }
 

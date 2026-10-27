@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { koLost, type HuntEvent } from "../../../shared/actions";
+import { AD_PLACEMENT } from "../../../shared/ads";
 import { BALANCE } from "../../../shared/balance";
 import type { DishId } from "../../../shared/content/dishes";
 import { ITEMS, itemKey, parseItemKey, type ItemId } from "../../../shared/content/items";
@@ -33,6 +34,7 @@ import { angerFlock, CHAR_SCALE, createMob, drawMob, isMobVulnerable, isTargetab
 import { fleerHit } from "../../../shared/hunt/fleer";
 import { floatStick, joystickVector, padLayout, type PadLayout } from "../joystick";
 import { IDLE_STICK_ALPHA, nextPadPrefs, PAD_ALPHA, PAD_EVENT, PAD_SCALE, pageStore, readPadPrefs, writePadPrefs, type PadPrefs } from "../padPrefs";
+import { adsAvailable, watchAd } from "../../net/ads";
 import { addButton, addGauge, addMenuItem, KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type MenuItem, type UiGauge } from "../ui";
 
 // The forest hunt (plan 03, hunt v3), quarter view, Dave-the-Diver controls.
@@ -48,6 +50,8 @@ const H = BALANCE.hunt;
 // moves the hunter as fast as a PC does (user, 2026-10-22: one 50 ms cap made slow phones walk slowly).
 // A gap longer than MAX_GAP_MS (the tab was hidden) counts as that much, so nothing teleports.
 const STEP_MS = 1000 / 60;
+// stood up after an ad: this long untouchable, blinking
+const REVIVE_GRACE_MS = 2000;
 const MAX_GAP_MS = 250;
 const HUNTER_FEET = 0.92;
 const GATHER_RANGE = 26;
@@ -119,6 +123,8 @@ interface Run {
   tut: string[];
   // side weapon shots left (one supply for the whole hunt)
   ammo: number;
+  // stood up again after an ad this hunt (once a hunt, user 2026-10-27)
+  revived?: boolean;
 }
 
 // What the hunt hands to the day flow when it ends (PhaserGame forwards the "hunt:end" event): what was
@@ -251,6 +257,13 @@ export class HuntScene extends Phaser.Scene {
   private autoMash = false;
   private autoMashMs = 0;
   private paused = false;
+  // the knock-out's offer to stand up after an ad (user 2026-10-27): asked, an ad under way, and what the
+  // fall hid (the HUD's pieces at their alpha, the black cover and its hole) to bring back
+  private reviving = false;
+  private reviveBusy = false;
+  private koHidden: [Phaser.GameObjects.Image, number][] = [];
+  private koCover: Phaser.GameObjects.GameObject[] = [];
+  private graceUntil = 0;
   // real time not yet stepped through (update)
   private stepMs = 0;
   private pauseMenu: Phaser.GameObjects.Container | null = null;
@@ -495,7 +508,11 @@ export class HuntScene extends Phaser.Scene {
   update(_time: number, rawDt: number) {
     const dt = Math.min(rawDt, MAX_GAP_MS);
     if (this.ended) return;
-    if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) this.togglePause();
+    if (Phaser.Input.Keyboard.JustDown(this.keys.ESC)) {
+      // on the knock-out's question Esc means going home, never the pause menu
+      if (this.reviving) this.giveUp();
+      else this.togglePause();
+    }
     // paused: nothing moves and stamina holds
     if (this.paused) return this.pauseKeys();
     this.stepMs += dt;
@@ -873,7 +890,8 @@ export class HuntScene extends Phaser.Scene {
 
   private hurtPlayer(damage: number, dir: Vec) {
     const p = this.player;
-    if (p.down) return;
+    // just stood up after an ad: a moment untouchable
+    if (p.down || this.time.now < this.graceUntil) return;
     damage = Math.max(1, Math.round(damage * this.huntData.stats.damageTaken));
     this.run.stamina = Math.max(0, this.run.stamina - damage);
     p.pos = clampToField(pushOutOfRects({ x: p.pos.x + dir.x * 24, y: p.pos.y + dir.y * 24 }, this.obstacles, H.player.radius), this.floorDef.field);
@@ -903,7 +921,10 @@ export class HuntScene extends Phaser.Scene {
     // the HUD steps aside (everything fixed to the screen)
     for (const o of this.children.list as Phaser.GameObjects.GameObject[]) {
       const g = o as Phaser.GameObjects.Image;
-      if ((g.scrollFactorX === 0 || g.depth >= 9999) && g.alpha > 0) this.tweens.add({ targets: g, alpha: 0, duration: 250 });
+      if ((g.scrollFactorX === 0 || g.depth >= 9999) && g.alpha > 0) {
+        this.koHidden.push([g, g.alpha]);
+        this.tweens.add({ targets: g, alpha: 0, duration: 250 });
+      }
     }
     cam.flash(180, 255, 60, 60);
     cam.shake(160, 0.008);
@@ -938,11 +959,81 @@ export class HuntScene extends Phaser.Scene {
         cover.clearMask();
         cam.setZoom(1);
         if (grey) cam.postFX.clear();
-        const line = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, t("hunt.ko"), { ...TEXT, color: "#c8bfb4" }).setOrigin(0.5).setScrollFactor(0).setDepth(10003).setAlpha(0);
-        this.tweens.add({ targets: line, alpha: 1, duration: 400 });
-        this.time.delayedCall(1500, () => this.endHunt(true, null));
+        this.koCover = [cover, hole];
+        if (!this.run.revived && adsAvailable()) this.askRevive();
+        else this.giveUp();
       },
     });
+  }
+
+  // Down, once a hunt (user 2026-10-27): stand up where he fell after an ad, the bag kept, or go home as a
+  // knock-out. The world waits under the question.
+  private askRevive() {
+    this.reviving = true;
+    this.paused = true;
+    const panel = kitSlice(this, 0, 0, "panel", 250, 130, 5, 5, 5, 5);
+    const title = this.add.text(0, -40, t("hunt.reviveAsk"), { ...TEXT, fontStyle: "bold", color: "#d8c4a4" }).setOrigin(0.5);
+    const note = this.add.text(0, 40, t("hunt.reviveLoss"), { ...TEXT_SMALL, color: "#c8bfb4" }).setOrigin(0.5);
+    const yes = addMenuItem(this, 0, -10, t("hunt.reviveAd"), () => void this.reviveByAd(yes, note), () => this.pickPause(0));
+    const no = addMenuItem(this, 0, 14, t("hunt.reviveNo"), () => this.giveUp(), () => this.pickPause(1));
+    this.pauseMenu = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2, [panel, title, yes.box, no.box, note]).setScrollFactor(0).setDepth(20000);
+    this.pauseItems = [yes, no];
+    this.pickPause(0);
+  }
+
+  private async reviveByAd(yes: MenuItem, note: Phaser.GameObjects.Text) {
+    if (this.reviveBusy || !this.reviving) return;
+    this.reviveBusy = true;
+    yes.setText(t("hunt.reviveWatching"));
+    note.setText("");
+    const r = await watchAd(AD_PLACEMENT.revive);
+    this.reviveBusy = false;
+    if (!this.reviving || !this.sys.isActive()) return;
+    if (r.ok) return this.standUp();
+    yes.setText(t("hunt.reviveAd"));
+    note.setText(t(r.reason === "dismissed" ? "hunt.reviveDismissed" : r.reason === "unsupported" ? "shop.ad.unsupported" : "shop.ad.failed"));
+    // no ads here after all: only the way home is left
+    if (r.reason === "unsupported") {
+      yes.box.setVisible(false);
+      this.pauseItems = this.pauseItems.filter((m) => m !== yes);
+      this.pickPause(0);
+    }
+  }
+
+  // The ad watched: up again where he fell with part of his stamina and the bag as it was, the HUD back,
+  // a moment untouchable (the monsters that downed him are still there).
+  private standUp() {
+    this.closeKoQuestion();
+    this.run.revived = true;
+    this.run.stamina = Math.max(1, Math.round(this.maxStamina * BALANCE.ads.reviveStamina));
+    for (const o of this.koCover) o.destroy();
+    this.koCover = [];
+    for (const [g, alpha] of this.koHidden) if (g.active) this.tweens.add({ targets: g, alpha, duration: 250 });
+    this.koHidden = [];
+    const p = this.player;
+    p.down = false;
+    this.hunter.clearTint().setAlpha(1);
+    this.graceUntil = this.time.now + REVIVE_GRACE_MS;
+    this.tweens.add({ targets: this.hunter, alpha: 0.4, duration: 120, yoyo: true, repeat: Math.floor(REVIVE_GRACE_MS / 240) - 1, onComplete: () => this.hunter.setAlpha(1) });
+    this.popText(p.pos.x, p.pos.y - 40, t("hunt.revived"), "#ffd166", 1000);
+  }
+
+  // Home as a knock-out (the line, then the summary with what was lost).
+  private giveUp() {
+    if (this.ended) return;
+    this.closeKoQuestion();
+    this.paused = true;
+    const line = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, t("hunt.ko"), { ...TEXT, color: "#c8bfb4" }).setOrigin(0.5).setScrollFactor(0).setDepth(10003).setAlpha(0);
+    this.tweens.add({ targets: line, alpha: 1, duration: 400 });
+    this.time.delayedCall(1500, () => this.endHunt(true, null));
+  }
+
+  private closeKoQuestion() {
+    this.reviving = false;
+    this.paused = false;
+    this.pauseMenu?.destroy();
+    this.pauseMenu = null;
+    this.pauseItems = [];
   }
 
   // What E (or the action button) would use here: an exit, the way down, a sleeping monster, else a

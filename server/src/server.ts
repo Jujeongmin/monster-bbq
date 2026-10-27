@@ -1,4 +1,5 @@
 import { applyAction } from "../../shared/actions";
+import { claimAdCharcoal, isAdId } from "../../shared/ads";
 import { RANKING, RANKING_TOP, rankEntry, sameRank, type RankEntry, type RankingView } from "../../shared/ranking";
 import { readSave, type SaveData } from "../../shared/save";
 import { grantPurchase } from "../../shared/shop";
@@ -19,6 +20,27 @@ async function writeRank(account: string, before: SaveData | null, after: SaveDa
     await $global.addCollectionItem(RANKING, { account, ...line, updatedAt: Date.now() }, { id: account });
   } catch {
     // the ranking is not currency (Verse8 docs): a missed line is only a stale one
+  }
+}
+
+// What Verse8's ad verifier says of one rewarded ad (docs.verse8.io/ko/docs/ads/server-verification): watched
+// to the end, not yet known, not watched, or unknown because the verifier could not be reached (the game
+// server may have no fetch: Verse8 documents no outbound HTTP there yet). Read-only, so asking twice is safe.
+type AdCheck = "verified" | "pending" | "rejected" | "unknown";
+const AD_VERIFIER = "https://ads-verifier.verse8.io/ads/status?requestId=";
+async function checkAd(requestId: string): Promise<AdCheck> {
+  const get = (globalThis as { fetch?: (url: string) => Promise<{ status: number; json(): Promise<unknown> }> }).fetch;
+  if (typeof get !== "function") return "unknown";
+  try {
+    const res = await get(AD_VERIFIER + encodeURIComponent(requestId));
+    if (res.status === 202) return "pending";
+    // an id the verifier has never seen was never shown
+    if (res.status === 404) return "rejected";
+    if (res.status !== 200) return "unknown";
+    const body = (await res.json()) as { status?: unknown } | null;
+    return body?.status === "verified" ? "verified" : body?.status === "pending" ? "pending" : "rejected";
+  } catch {
+    return "unknown";
   }
 }
 
@@ -43,6 +65,25 @@ export class Server {
       await $global.updateMyState({ [SAVE_KEY]: result.save });
       await writeRank($sender.account, before, result.save);
       return result.save;
+    });
+  }
+
+  // Golden charcoal for a rewarded ad (user 2026-10-27). The ad id is checked with Verse8's verifier; while
+  // it is still pending the client asks again a moment later (no timers on the game server), and on its
+  // `last` try, or where the verifier cannot be reached, the day's small cap is the only limit (user's
+  // choice). One id pays once, under the save's lock (shared/ads.ts).
+  async adCharcoal(requestId: unknown, last: unknown): Promise<{ status: "granted" | "pending"; save?: SaveData }> {
+    if (!isAdId(requestId)) throw new Error("bad_ad");
+    const check = await checkAd(requestId);
+    if (check === "rejected") throw new Error("ad_not_watched");
+    if (check === "pending" && last !== true) return { status: "pending" };
+    return $lock(`save:${$sender.account}`, async () => {
+      const state = await $global.getMyState();
+      const before = readSave(state?.[SAVE_KEY]);
+      const result = claimAdCharcoal(before, requestId, Date.now());
+      if (result.error) throw new Error(result.error);
+      await $global.updateMyState({ [SAVE_KEY]: result.save });
+      return { status: "granted" as const, save: result.save };
     });
   }
 

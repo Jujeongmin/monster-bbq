@@ -16,13 +16,24 @@ import "./shop.css";
 // product the Verse8 shop does not list (not registered yet, or the list still loading) says so and cannot
 // be bought, nor one it will not sell (limit reached). While a purchase is being checked (the webhook can
 // trail the payment window) the buttons wait.
-export function Shop({ save, items, checking, onBuy, onClose }: { save: SaveData; items: ShopItem[]; checking: boolean; onBuy: (productId: string) => void; onClose: () => void }) {
+// `ad`: golden charcoal for a rewarded ad (user 2026-10-27), first in the list while ads can be shown here:
+// today's ads left, whether one is under way, and the last word on it.
+export interface AdOffer {
+  left: number;
+  busy: boolean;
+  note: string | null;
+  onWatch: () => void;
+}
+const AD = "ad";
+
+export function Shop({ save, items, checking, ad, onBuy, onClose }: { save: SaveData; items: ShopItem[]; checking: boolean; ad: AdOffer | null; onBuy: (productId: string) => void; onClose: () => void }) {
   const lv = vipLevel(save.vip.spent);
   const next = BALANCE.shop.vipAt[lv];
   const icon = (id: string) => artUrl(hasArt(`test/shop/products/${id}.png`) ? `test/shop/products/${id}.png` : "test/ui/icon_golden_charcoal.png");
   const offer = shopOffer(save);
   const [picked, setPicked] = useState<string | null>(null);
-  const o = offer.find((x) => x.id === picked) ?? offer[0];
+  const adPicked = !!ad && (picked === AD || picked === null);
+  const o = adPicked ? undefined : (offer.find((x) => x.id === picked) ?? offer[0]);
   const item = o ? items.find((i) => i.productId === o.id) : undefined;
   const ok = !!item && item.purchasable && !item.purchaseLimitReached;
   return (
@@ -36,6 +47,13 @@ export function Shop({ save, items, checking, onBuy, onClose }: { save: SaveData
             {next === undefined ? t("shop.vipMax") : t("shop.vip", { lv, need: next - save.vip.spent })}
           </p>
           <div className="book-list">
+            {ad && (
+              <button className={`book-row${adPicked ? " on" : ""}`} onClick={() => setPicked(AD)}>
+                <img src={artUrl("test/ui/icon_golden_charcoal.png")} alt="" />
+                <span className="name">{t("shop.ad.row")}</span>
+                <span className="sub">{t("shop.ad.left", { left: ad.left, max: BALANCE.ads.charcoalPerDay })}</span>
+              </button>
+            )}
             {offer.map((x) => {
               const it = items.find((i) => i.productId === x.id);
               return (
@@ -50,7 +68,24 @@ export function Shop({ save, items, checking, onBuy, onClose }: { save: SaveData
         </>
       }
       right={
-        o && (
+        adPicked && ad ? (
+          <div className="book-detail shop-detail">
+            <div className="head">
+              <img src={artUrl("test/ui/icon_golden_charcoal.png")} alt="" />
+              <span>
+                <h3>{t("shop.ad.row")}</h3>
+                <span className="fx">{t("shop.ad.gives", { n: BALANCE.ads.charcoal })}</span>
+              </span>
+            </div>
+            <p className="soft">{ad.left > 0 ? t("shop.ad.today", { left: ad.left, max: BALANCE.ads.charcoalPerDay }) : t("shop.ad.none")}</p>
+            <p className="soft">{t("shop.have", { n: save.charcoal })}</p>
+            <button className="ui-btn shop-go" disabled={ad.left === 0 || ad.busy} onClick={ad.onWatch}>
+              {ad.busy ? t("shop.ad.watching") : t("shop.ad.watch")}
+            </button>
+            {ad.note && <p className="soft">{ad.note}</p>}
+          </div>
+        ) : (
+          o && (
           <div className="book-detail shop-detail">
             <div className="head">
               <img src={icon(o.id)} alt="" />
@@ -69,6 +104,7 @@ export function Shop({ save, items, checking, onBuy, onClose }: { save: SaveData
             </button>
             {checking && <p className="soft">{t("shop.checking")}</p>}
           </div>
+          )
         )
       }
     />

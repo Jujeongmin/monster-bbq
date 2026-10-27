@@ -102,6 +102,9 @@ export interface SaveData {
   // the shop's name on the ranking ("" until named) and the power milestones already paid (shared/power.ts)
   shopName: string;
   powerRewards: number[];
+  // the rewarded ads (user 2026-10-27, shared/ads.ts): golden charcoal watched for today (the Korean
+  // calendar day, `day`) and the last ad ids granted, so one ad pays once
+  ads: { day: number; count: number; ids: string[] };
 }
 
 // Everyone starts knowing chicken breast with perilla, made from the first floor alone (user, 2026-10-16):
@@ -109,6 +112,8 @@ export interface SaveData {
 const FIRST_DISH: Partial<Record<DishId, number>> = { chicken_perilla: 1 };
 
 export const SHOP_NAME_MAX = 15;
+// rewarded ad ids kept against a second grant (a day allows only a few)
+export const AD_IDS_KEPT = 20;
 
 export function newSave(): SaveData {
   return {
@@ -136,6 +141,7 @@ export function newSave(): SaveData {
     shop: { firstBuy: [], purchases: [] },
     shopName: "",
     powerRewards: [],
+    ads: { day: 0, count: 0, ids: [] },
   };
 }
 
@@ -345,6 +351,7 @@ export function readSave(raw: unknown): SaveData {
   if (Object.keys(dishes).length === 0) Object.assign(dishes, FIRST_DISH);
   const vip = (r.vip ?? {}) as { spent?: unknown; day?: unknown };
   const shop = (r.shop ?? {}) as { firstBuy?: unknown; purchases?: unknown };
+  const ads = (r.ads ?? {}) as { day?: unknown; count?: unknown; ids?: unknown };
   return {
     version: 9,
     day: count(r.day, 1),
@@ -371,6 +378,7 @@ export function readSave(raw: unknown): SaveData {
     shop: { firstBuy: strings(shop.firstBuy, 50), purchases: strings(shop.purchases, 200) },
     shopName: typeof r.shopName === "string" ? r.shopName.trim().slice(0, SHOP_NAME_MAX) : "",
     powerRewards: Array.isArray(r.powerRewards) ? [...new Set(r.powerRewards.filter((n): n is number => typeof n === "number" && Number.isFinite(n)))].slice(0, 50) : [],
+    ads: { day: count(ads.day), count: count(ads.count), ids: strings(ads.ids, AD_IDS_KEPT) },
   };
 }
 
