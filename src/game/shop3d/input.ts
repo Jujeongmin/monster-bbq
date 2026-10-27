@@ -11,8 +11,15 @@ export function canUse3D(makeCanvas: () => { getContext(kind: string): unknown }
   if (new URLSearchParams(search).has("shop2d")) return false;
   try {
     const c = makeCanvas();
-    return !!(c.getContext("webgl2") || c.getContext("webgl"));
+    const gl = (c.getContext("webgl2") || c.getContext("webgl")) as { getExtension?: (n: string) => { loseContext(): void } | null } | null;
+    // the test's own context is let go at once (phones allow few contexts: mobile frame drops, 2026-10-27)
+    gl?.getExtension?.("WEBGL_lose_context")?.loseContext();
+    return !!gl;
   } catch {
     return false;
   }
 }
+
+// asked once a page: every night and every day used to ask again, each leaving a context behind
+let known: boolean | null = null;
+export const has3D = (): boolean => (known ??= canUse3D(() => document.createElement("canvas"), location.search));

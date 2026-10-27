@@ -29,6 +29,7 @@ import { ShopView } from "./ShopView";
 const STEP_MS = 50;
 const MAX_GAP_MS = 250;
 const POP_MS = 1500;
+const HUD_MS = 33;
 const TIP_MS = 4000; // the lid's line stays this long (the clock of the night, so a pause holds it)
 const BAND_MS = 1600;
 const FX_MS = 1200;
@@ -141,6 +142,7 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail, onGoal }
     // the effects events start (never the state): a reloaded night does not burst into coins
     let fx: Fx[] = [];
     let shakeAt = -Infinity;
+    let hudAt = -Infinity;
     const sprite = (frames: string[] | undefined, at: { x: number; y: number }) => frames && fx.push({ id: ++popId, kind: "sprite", x: at.x, y: at.y, frames, born: now });
     const stamp = (at: { x: number; y: number }, text: string, tone: string) => fx.push({ id: ++popId, kind: "stamp", x: at.x, y: at.y, text, tone, born: now });
 
@@ -343,17 +345,22 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail, onGoal }
       pops = pops.filter((p) => time - p.born < POP_MS);
       if (band && time - band.born > BAND_MS) band = null;
       fx = fx.filter((f) => time - f.born < FX_MS);
-      setHud({
-        look,
-        anchors: view.anchors(look),
-        clock: shift.s.clock >= BALANCE.service.openMs ? t("service.closed") : clockText(shift.s.clock),
-        time,
-        pops: [...pops],
-        tip: tip && { id: tip.id, face: TIP_FACE[tip.id], text: t(`tip.${tip.id}` as StringKey) },
-        band: band && { id: band.id, text: t(band.key) },
-        fx: [...fx],
-        shake: time - shakeAt < SHAKE_MS,
-      });
+      // the HUD (bubbles, gauges, words) follows at most every HUD_MS: the room is drawn every frame, React
+      // at half that (mobile frame drops, user 2026-10-27)
+      if (time - hudAt >= HUD_MS) {
+        hudAt = time;
+        setHud({
+          look,
+          anchors: view.anchors(look),
+          clock: shift.s.clock >= BALANCE.service.openMs ? t("service.closed") : clockText(shift.s.clock),
+          time,
+          pops: [...pops],
+          tip: tip && { id: tip.id, face: TIP_FACE[tip.id], text: t(`tip.${tip.id}` as StringKey) },
+          band: band && { id: band.id, text: t(band.key) },
+          fx: [...fx],
+          shake: time - shakeAt < SHAKE_MS,
+        });
+      }
       raf = requestAnimationFrame(frame);
     };
 

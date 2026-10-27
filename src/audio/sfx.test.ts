@@ -64,3 +64,39 @@ describe("the night's sounds", () => {
     expect(sfx.isMuted()).toBe(true);
   });
 });
+
+describe("sound players kept for reuse (mobile frame drops, user 2026-10-27)", () => {
+  const pooled = () => {
+    const made: { ended: boolean; currentTime: number; plays: number }[] = [];
+    let t = 0;
+    const sfx = makeSfx({
+      urls: { step: "s.mp3" },
+      make: () => {
+        const p = { ended: false, currentTime: 5, plays: 0, volume: 1, play: () => void p.plays++ };
+        made.push(p);
+        return p;
+      },
+      store: memory(),
+      now: () => t,
+    });
+    sfx.unlock();
+    return { sfx, made, tick: (ms: number) => (t += ms) };
+  };
+  it("plays a finished player again from the start instead of making a new one", () => {
+    const { sfx, made, tick } = pooled();
+    for (let i = 0; i < 6; i++) {
+      sfx.play("step");
+      made.forEach((p) => (p.ended = true));
+      tick(100);
+    }
+    expect(made).toHaveLength(1);
+    expect(made[0].plays).toBe(6);
+    expect(made[0].currentTime).toBe(0);
+  });
+  it("overlaps up to three at once, then restarts the oldest", () => {
+    const { sfx, made, tick } = pooled();
+    for (let i = 0; i < 5; i++) sfx.play("step"), tick(100);
+    expect(made).toHaveLength(3);
+    expect(made.map((p) => p.plays)).toEqual([2, 2, 1]);
+  });
+});

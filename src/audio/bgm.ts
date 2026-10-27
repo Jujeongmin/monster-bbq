@@ -11,6 +11,7 @@ interface Player {
   pause: () => void;
   volume: number;
   loop: boolean;
+  release?: () => void;
 }
 interface Deps {
   urls: Partial<Record<Track, string>>;
@@ -24,8 +25,12 @@ export function makeBgm(d: Deps) {
   let unlocked = false;
   let wanted: Track | null = null;
   let playing: { track: Track; p: Player } | null = null;
+  // a tune stopped lets go of its file too (an element only paused keeps its buffered audio until collected)
   const stop = () => {
-    playing?.p.pause();
+    if (playing) {
+      playing.p.pause();
+      playing.p.release?.();
+    }
     playing = null;
   };
   // play what the scene wants, if allowed and not already playing
@@ -51,7 +56,9 @@ export function makeBgm(d: Deps) {
 const FILES = import.meta.glob("../../bgm/*.mp3", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
 const URLS: Partial<Record<Track, string>> = Object.fromEntries(Object.entries(FILES).map(([path, url]) => [path.split("/").pop()!.split("_")[0], url]));
 
-export const bgm = makeBgm({ urls: URLS, make: (url) => new Audio(url), isMuted: () => sfx.isMuted() });
+// an element let go of drops its source, so the browser frees what it buffered
+const element = (url: string) => Object.assign(new Audio(url), { release(this: HTMLAudioElement) { this.removeAttribute("src"); this.load(); } });
+export const bgm = makeBgm({ urls: URLS, make: element, isMuted: () => sfx.isMuted() });
 
 if (typeof window !== "undefined") {
   const first = () => (bgm.unlock(), removeEventListener("pointerdown", first, true), removeEventListener("keydown", first, true));

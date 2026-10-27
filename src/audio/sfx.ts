@@ -11,7 +11,13 @@ export type Sfx = "order" | "tick" | "cooked" | "take" | "coin" | "angry" | "pou
 interface Player {
   play: () => unknown;
   volume: number;
+  // an element that has finished can play again from the start (left out in tests: never reused)
+  ended?: boolean;
+  currentTime?: number;
 }
+// one sound's players kept for reuse: a footstep no longer makes a new audio element every step (mobile
+// frame drops, user 2026-10-27); a sound still playing when the next one comes overlaps up to this many
+const POOL = 3;
 interface Deps {
   urls: Partial<Record<Sfx, string>>;
   make: (url: string) => Player;
@@ -33,6 +39,17 @@ export function makeSfx(d: Deps) {
     muted = false;
   }
   const last = new Map<Sfx, number>();
+  const pools = new Map<string, Player[]>();
+  // a finished player of this sound, else a new one while there is room, else the one that started first
+  const player = (url: string): Player => {
+    const pool = pools.get(url) ?? pools.set(url, []).get(url)!;
+    const free = pool.find((p) => p.ended);
+    if (free) return pool.push(pool.splice(pool.indexOf(free), 1)[0]), free;
+    if (pool.length < POOL) return pool.push(d.make(url)), pool[pool.length - 1];
+    const oldest = pool.shift()!;
+    pool.push(oldest);
+    return oldest;
+  };
   return {
     unlock: () => void (unlocked = true),
     isMuted: () => muted,
@@ -50,7 +67,8 @@ export function makeSfx(d: Deps) {
       const t = d.now();
       if (t - (last.get(name) ?? -Infinity) < GAP_MS) return;
       last.set(name, t);
-      const p = d.make(url);
+      const p = player(url);
+      if (p.currentTime !== undefined) p.currentTime = 0;
       p.volume = VOLUME[name] ?? 0.6;
       Promise.resolve(p.play()).catch(() => {});
     },

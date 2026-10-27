@@ -45,7 +45,13 @@ export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial, onContro
     gameRef.current = game;
     // the dev server only: the running game for headless checks (never in a build)
     if (import.meta.env.DEV) (window as unknown as { __game?: Phaser.Game }).__game = game;
-    return () => game.destroy(true);
+    // the WebGL context goes with the game at once, not at the next garbage collection (a new game every
+    // hunt; phones allow few contexts: mobile frame drops, user 2026-10-27)
+    return () => {
+      const gl = (game.renderer as Phaser.Renderer.WebGL.WebGLRenderer | null)?.gl;
+      game.events.once(Phaser.Core.Events.DESTROY, () => setTimeout(() => gl?.getExtension("WEBGL_lose_context")?.loseContext(), 0));
+      game.destroy(true);
+    };
   }, []);
   useEffect(() => holdLoop(gameRef.current, hold, holdRef), [hold]);
 

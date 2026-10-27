@@ -51,7 +51,7 @@ import { storyDue, storyUnsaved } from "./story/story";
 import type { StoryId } from "../../shared/content/story";
 import { DayStage } from "../game/shop3d/DayStage";
 import type { DayScene } from "../game/shop3d/day";
-import { canUse3D } from "../game/shop3d/input";
+import { has3D } from "../game/shop3d/input";
 import "./dayflow.css";
 
 // One day (hunt v3 design 3): morning hunt -> lunch -> afternoon hunt -> kitchen -> service -> settle -> next day. Every change goes through the transport
@@ -224,7 +224,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       : dayGoal(save, phase, { lunchVisited: lunchVisited || save.lunchbox.length > 0 });
 
   // the shop by day, walked (a window opens from the door or Bandal), where WebGL works
-  const [hub, setHub] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
+  const [hub, setHub] = useState(has3D);
   const [panel, setPanel] = useState<"kitchen" | "side" | null>(null);
   const controlsOpen = !!save?.hunt && !card && (controlsAsked || (tutorialHunt && !seenTips.has("huntControls")));
   // windows over the day hide it; in the hunt only the title card, the controls or an error can (the day's windows are shut)

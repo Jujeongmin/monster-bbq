@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import type { NightGoal } from "../../screens/tutorial";
 import { useEffect, useRef, useState } from "react";
 import { holdLoop } from "../holdLoop";
-import { canUse3D } from "../shop3d/input";
+import { has3D } from "../shop3d/input";
 import { ShopStage, type AddMenuHook } from "../shop3d/ShopStage";
 import { AddMenu } from "../../screens/kitchen/AddMenu";
 import { t } from "../../i18n";
@@ -14,7 +14,7 @@ import { SHOP_HEIGHT, SHOP_WIDTH, type ServiceData, type ShopReport } from "./ty
 // (also with ?shop2d, and if the 3D one fails to load). Either reports the night to onEnd (each served
 // guest's dish, wait and pour; who left; the leftovers cleared).
 export function ServiceGame({ shop, hold = false, addMenu, onEnd, onGoal }: { shop: ServiceData; hold?: boolean; addMenu?: AddMenuHook; onEnd: (r: ShopReport) => void; onGoal?: (g: NightGoal) => void }) {
-  const [threeD, setThreeD] = useState(() => canUse3D(() => document.createElement("canvas"), location.search));
+  const [threeD, setThreeD] = useState(has3D);
   return threeD ? <ShopStage shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} onFail={() => setThreeD(false)} onGoal={onGoal} /> : <Service2D shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} />;
 }
 

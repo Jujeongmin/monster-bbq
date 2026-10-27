@@ -97,6 +97,8 @@ export class ShopView {
   private readonly camera = new THREE.OrthographicCamera(-this.w / 4, this.w / 4, H / 4, -H / 4, 1, 4000);
   private tex: Record<string, THREE.Texture> = {};
   private camX = 0;
+  // where the camera looks this frame (one vector, kept: no allocation per frame)
+  private readonly target = new THREE.Vector3();
   // a closer look at one spot (an old friend arriving, postcard reveal A): world x and zoom, or none
   private focus: { x: number; zoom: number } | null = null;
   private lanterns: THREE.PointLight[] = [];
@@ -369,7 +371,7 @@ export class ShopView {
     }
     const edge = this.w / 4 - this.w / 4 / this.camera.zoom;
     this.camX = this.focus ? Math.max(-edge, Math.min(edge, this.camX + (this.focus.x - this.camX) * ease)) : cameraX(this.camX, wx, dt);
-    const target = new THREE.Vector3(this.camX, 45, 0);
+    const target = this.target.set(this.camX, 45, 0);
     this.camera.position.set(target.x, target.y + Math.sin(CAMERA.pitch) * 1000, target.z + Math.cos(CAMERA.pitch) * 1000);
     this.camera.lookAt(target);
     this.renderer.render(this.scene, this.camera);
@@ -393,8 +395,25 @@ export class ShopView {
     b?.setGlow(true);
   }
 
+  // Everything this view made on the GPU goes with it: every mesh's geometry and material (the boards, the
+  // room, the shadows; the wall ends' own canvas textures), the loaded textures, and the WebGL context
+  // itself, at once rather than at the next garbage collection (phones allow few contexts; a day makes a
+  // new view for every scene: mobile frame drops, user 2026-10-27). The context goes only once its canvas
+  // has left the page: a canvas still there gets a new view (React's development double mount).
   dispose() {
-    this.renderer.dispose();
+    const mats = new Set<THREE.Material>();
+    this.scene.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      m.geometry.dispose();
+      for (const mat of Array.isArray(m.material) ? m.material : [m.material]) mats.add(mat);
+    });
+    for (const m of this.wallEnds) m.map?.dispose();
+    for (const m of mats) m.dispose();
     for (const t of Object.values(this.tex)) t.dispose();
+    this.scene.clear();
+    this.renderer.dispose();
+    const canvas = this.renderer.domElement;
+    setTimeout(() => !canvas.isConnected && this.renderer.forceContextLoss(), 0);
   }
 }
