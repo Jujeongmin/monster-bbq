@@ -14,7 +14,11 @@
 }
 .s3-icon { width: 16px; image-rendering: pixelated; }
 .s3-clock { margin-left: auto; }
-.s3-buttons { position: absolute; right: 10px; top: 6px; display: flex; gap: 6px; }
+.s3-buttons { position: absolute; right: 10px; top: 6px; display: flex; gap: 6px; align-items: center; }
+/* the settings gear beside the pause and sound buttons, the picture itself (no box) */
+.s3-gear { width: 26px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; filter: drop-shadow(0 1px 0 rgba(20, 10, 4, 0.6)); }
+.s3-gear img { width: 100%; height: 100%; image-rendering: pixelated; transition: transform 0.12s steps(3); }
+.s3-gear:hover img { transform: rotate(45deg); }
 .s3-plaque { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; font-size: 10px; }
 .s3-plaque img { image-rendering: pixelated; }
 
@@ -59,6 +63,7 @@
 .s3-layer .s3-hud.touch .s3-act { min-width: calc(112px * var(--pad, 1)); min-height: calc(68px * var(--pad, 1)); font-size: calc(16px * var(--pad, 1)); }
 /* on touch the night's top buttons are big enough for a finger (mobile pass, user 2026-10-21) */
 .s3-hud.touch .s3-buttons .ui-btn { min-height: 52px; padding: 0 14px; font-size: 14px; }
+.s3-hud.touch .s3-gear { width: 40px; height: 40px; }
 
 /* the shop by day: the bubble over the grandchild at a spot, the walking hint */
 .day-stage { z-index: 0; }

@@ -232,7 +232,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   // the scene's music: the day shop's (the prologue too), the hunt's, the night's (the receipt too)
   const track = !save ? null : story ? "day" : save.hunt ? "hunt" : phase === "service" || phase === "settle" ? "night" : "day";
   useEffect(() => bgm.set(track), [track]);
-  const covered = save?.hunt ? !!(card || failed || controlsOpen) : !!(story || card || summary || shopping || store || win || panel || picking || failed);
+  const covered = save?.hunt ? !!(card || failed || controlsOpen || win === "settings") : !!(story || card || summary || shopping || store || win || panel || picking || failed);
   const goalTip = goal?.tip && !seenTips.has(goal.tip) && !covered && !charcoalLine ? goal.tip : null;
   useEffect(() => {
     if (!goalTip) return;
@@ -380,10 +380,11 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
       {phase === "hunt" && save.hunt && (
         <PhaserGame
           key={save.hunt.id}
-          hold={!!card || controlsOpen || portrait}
+          hold={!!card || controlsOpen || portrait || win === "settings"}
           onTutorial={setHuntTut}
           onTip={(id) => id === "capture" && !seenTips.has("capture") && setHuntTip("capture")}
           onControls={() => setControlsAsked(true)}
+          onSettings={() => setWin("settings")}
           hunt={{ tutorial: tutorialHunt, huntId: save.hunt.id, seed: save.hunt.seed, zone: save.hunt.zone, period: save.hunt.period, side: save.hunt.side, ammo: ammoOf(save, save.hunt.side), harpoonLevel: level(save, "ranged"), sleepFallMs: sleepFallMs(save), sidePower: sidePower(save, save.hunt.side), stats: huntStats(save), gear: { boots: level(save, "boots") >= 1, light: lightRadius(save), key: save.bossKey }, bagSlots: bagSlots(save), lunchbox: save.lunchbox.map((dish) => ({ dish, heal: Math.round(dishPrice(dish, save.dishes[dish] ?? 1) * BALANCE.lunch.healPerGold) })) }}
           onHuntEnd={(r: HuntResult) => {
             const before = save.items;

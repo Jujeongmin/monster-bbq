@@ -1,6 +1,6 @@
 /* Grandma's notebook open (art/test/ui/book.png, 460x233, one art pixel to one UI pixel): the pages are the
    cream areas measured on the art (left x 24-214, right 245-434, y 11-214) */
-.book-screen { background: rgba(20, 10, 4, 0.55); }
+.dayflow-screen.book-screen { background: rgba(20, 10, 4, 0.55); }
 .book { position: relative; width: calc(460px * var(--s)); height: calc(233px * var(--s)); background-size: 100% 100%; image-rendering: pixelated; color: var(--ink); font: var(--fs-small) "Galmuri9", monospace; animation: book-in 0.25s steps(5) both; }
 @keyframes book-in { from { opacity: 0; transform: translateY(calc(8px * var(--s))); } }
 @media (prefers-reduced-motion: reduce) { .book { animation: none; } }

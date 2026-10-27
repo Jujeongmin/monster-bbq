@@ -32,7 +32,7 @@ import { bagLevel } from "../hunt/bagGauge";
 import { angerFlock, CHAR_SCALE, createMob, drawMob, isMobVulnerable, isTargetable, mobFacing, mobPos, mobRadius, mobWasHit, setMobPos, stepMob, type Mob, type Spawn } from "../hunt/mobs";
 import { fleerHit } from "../../../shared/hunt/fleer";
 import { floatStick, joystickVector, padLayout, type PadLayout } from "../joystick";
-import { IDLE_STICK_ALPHA, nextPadPrefs, PAD_ALPHA, PAD_SCALE, pageStore, readPadPrefs, writePadPrefs, type PadPrefs } from "../padPrefs";
+import { IDLE_STICK_ALPHA, nextPadPrefs, PAD_ALPHA, PAD_EVENT, PAD_SCALE, pageStore, readPadPrefs, writePadPrefs, type PadPrefs } from "../padPrefs";
 import { addButton, addGauge, addMenuItem, KIT, kitSlice, loadUiArt, TEXT, TEXT_SMALL, type MenuItem, type UiGauge } from "../ui";
 
 // The forest hunt (plan 03, hunt v3), quarter view, Dave-the-Diver controls.
@@ -236,6 +236,7 @@ export class HuntScene extends Phaser.Scene {
   private harpoonDrag: { id: number; from: Vec; dir: Vec | null } | null = null;
   // on touch, the pause menu's own button (Esc on PC)
   private pauseButton: Phaser.GameObjects.Container | null = null;
+  private settingsButton: Phaser.GameObjects.Image | null = null;
   private aimPointer: number | null = null;
   private aimScreen: Vec | null = null;
   private sideQueued: Vec | null = null;
@@ -344,6 +345,7 @@ export class HuntScene extends Phaser.Scene {
     for (const k of Object.keys(OBJECT_KINDS)) this.load.image(`obj_${k}`, artUrl(`test/objects/${k}.png`));
     for (const k of ["ring_empty", "ring_full", "face_fine", "face_tired"]) this.load.image(`stamina_${k}`, artUrl(`test/ui/stamina/${k}.png`));
     this.load.image("hud_bag", artUrl("test/ui/hud/bag.png"));
+    this.load.image("hud_settings", artUrl("test/ui/hud/settings.png"));
     for (const k of ["stick_base", "stick_knob", "btn_slash", "btn_side", "btn_use"]) this.load.image(`pad_${k}`, artUrl(`test/ui/pad/${k}.png`));
     this.load.image(`side_${this.huntData.side}`, artUrl(`test/ui/side/${this.huntData.side}.png`));
     // what the side weapon fires (pebble, dart, net, firecracker); until drawn, its own icon flies
@@ -470,6 +472,19 @@ export class HuntScene extends Phaser.Scene {
     this.ammoIcon.setScale(KIT * 0.85);
     this.ammoText = hud(this.add.text(sideAt.x, sideAt.y + 38, "", { ...TEXT, fontStyle: "bold", stroke: "#2b1408", strokeThickness: 3 }).setOrigin(0.5));
     if (this.touch) this.placePad();
+    // the settings gear (user 2026-10-27), the day's same window drawn by the page over the waiting hunt: in
+    // the top right corner, on touch left of the pause button; a choice of pad made there shows at once
+    // (at one game pixel per art pixel so its pixels stay even; a thumb's press counts a little around it)
+    const gearX = this.pauseButton ? this.pauseButton.x - this.pauseButton.width / 2 - 18 : GAME_WIDTH - 16;
+    this.settingsButton = this.add.image(gearX, 16, "hud_settings").setScrollFactor(0).setDepth(10000);
+    this.settingsButton.setInteractive({ hitArea: new Phaser.Geom.Rectangle(-6, -6, 32, 32), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
+    this.settingsButton.on("pointerdown", () => this.game.events.emit("hunt:settings"));
+    const onPad = (e: Event) => {
+      this.padPrefs = (e as CustomEvent<PadPrefs>).detail;
+      if (this.touch) this.placePad();
+    };
+    addEventListener(PAD_EVENT, onPad);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => removeEventListener(PAD_EVENT, onPad));
     this.ammoShown = this.run.ammo;
     this.cameras.main.fadeIn(300, 0, 0, 0);
     this.floorCard();
@@ -831,7 +846,7 @@ export class HuntScene extends Phaser.Scene {
 
   // A press on the HUD (the way home, a lunch) is not a shot or a slash.
   private overHud(over: Phaser.GameObjects.GameObject[]) {
-    return this.lunch.some((l) => over.includes(l.button)) || (!!this.pauseButton && over.includes(this.pauseButton));
+    return this.lunch.some((l) => over.includes(l.button)) || (!!this.pauseButton && over.includes(this.pauseButton)) || (!!this.settingsButton && over.includes(this.settingsButton));
   }
 
   // Lunch from the box: health back by the dish's worth, and a quick step for a few dishes.

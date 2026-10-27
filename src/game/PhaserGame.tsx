@@ -9,8 +9,8 @@ import type { HuntTut } from "../screens/tutorial";
 // in dev; the first game is destroyed on the cleanup). The scene's "hunt:end" event reaches onHuntEnd.
 // `hold`: the day's title card is over it, so the hunt waits (nothing moves, stamina holds) until it is gone.
 // onTutorial: the first hunt's step due now (tutorial A); onControls: the pause menu asked for the controls;
-// onTip: a moment the lid explains once (a monster weak enough to capture).
-export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial, onControls, onTip }: { hunt: HuntData; hold?: boolean; onHuntEnd: (result: HuntResult) => void; onTutorial?: (tut: HuntTut) => void; onControls?: () => void; onTip?: (id: string) => void }) {
+// onTip: a moment the lid explains once (a monster weak enough to capture); onSettings: the settings gear pressed.
+export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial, onControls, onTip, onSettings }: { hunt: HuntData; hold?: boolean; onHuntEnd: (result: HuntResult) => void; onTutorial?: (tut: HuntTut) => void; onControls?: () => void; onTip?: (id: string) => void; onSettings?: () => void }) {
   const host = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const onEnd = useRef(onHuntEnd);
@@ -21,6 +21,8 @@ export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial, onContro
   onCtl.current = onControls;
   const onTipRef = useRef(onTip);
   onTipRef.current = onTip;
+  const onSet = useRef(onSettings);
+  onSet.current = onSettings;
 
   const holdRef = useRef(hold);
   holdRef.current = hold;
@@ -42,6 +44,7 @@ export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial, onContro
     game.events.on("hunt:tutorial", (tut: HuntTut) => onTut.current?.(tut));
     game.events.on("hunt:controls", () => onCtl.current?.());
     game.events.on("hunt:tip", (id: string) => onTipRef.current?.(id));
+    game.events.on("hunt:settings", () => onSet.current?.());
     gameRef.current = game;
     // the dev server only: the running game for headless checks (never in a build)
     if (import.meta.env.DEV) (window as unknown as { __game?: Phaser.Game }).__game = game;

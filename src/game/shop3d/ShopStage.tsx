@@ -15,6 +15,7 @@ import type { DishId } from "../../../shared/content/dishes";
 import type { TonightDish } from "../../../shared/kitchen/dish";
 import type { AddOption } from "../../../shared/service/addMenu";
 import { AddMenu } from "../../screens/kitchen/AddMenu";
+import { Settings } from "../../screens/hud/Settings";
 import { moveFrom } from "./input";
 import { ShopHud, type Anchors, type Band, type Fx, type Pop, type Tip } from "./ShopHud";
 import { ShopView } from "./ShopView";
@@ -73,6 +74,9 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail, onGoal }
   addMenuRef.current = addMenu;
   // Bandal's menu board: open (the night waits), sending, and why it was refused
   const [menuOpen, setMenuOpen] = useState(false);
+  // the settings (the day's same window, user 2026-10-27): the night pauses under it, and goes on as it
+  // closes unless it was already paused
+  const [settings, setSettings] = useState<{ pausedBefore: boolean } | null>(null);
   const menuOpenRef = useRef(false);
   menuOpenRef.current = menuOpen;
   const [menuBusy, setMenuBusy] = useState(false);
@@ -413,6 +417,10 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail, onGoal }
             fx={hud.fx}
             touch={touch}
             onPause={() => ctl.current.pause()}
+            onSettings={() => {
+              if (!paused) ctl.current.pause();
+              setSettings({ pausedBefore: paused });
+            }}
             muted={muted}
             onMute={() => {
               sfx.unlock();
@@ -427,6 +435,16 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail, onGoal }
         )}
         {menuOpen && addMenu && <AddMenu options={addMenu.options} slots={addMenu.slots} busy={menuBusy} error={menuError} onAdd={(d, n) => addRef.current(d, n)} onClose={() => !menuBusy && setMenuOpen(false)} />}
       </div>
+      {settings && (
+        <Settings
+          onClose={() => {
+            if (!settings.pausedBefore) ctl.current.pause();
+            setSettings(null);
+            // the sound may have been switched there
+            setMuted(sfx.isMuted());
+          }}
+        />
+      )}
     </div>
   );
 }

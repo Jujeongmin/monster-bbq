@@ -69,6 +69,7 @@ export interface HudProps {
   onPause: () => void;
   muted: boolean;
   onMute: () => void;
+  onSettings: () => void;
   onPress: () => void;
   onRelease: () => void;
   onStick: (x: number | null) => void;
@@ -132,6 +133,9 @@ export function ShopHud(p: HudProps) {
         </button>
         <button className="ui-btn" onClick={p.onMute}>
           {p.muted ? t("service.unmute") : t("service.mute")}
+        </button>
+        <button className="s3-gear" onClick={p.onSettings} aria-label={t("settings.button")} title={t("settings.button")}>
+          <img src={artUrl("test/ui/hud/settings.png")} alt="" />
         </button>
       </div>
       {p.dishes.map((d, i) =>
