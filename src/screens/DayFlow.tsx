@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { Action } from "../../shared/actions";
 import { ammoOf, bagSlots, coalPerDish, huntStats, level, lightRadius, menuSlots, sleepFallMs, stools, walkMul } from "../../shared/growth";
 import type { HuntEvent } from "../../shared/actions";
@@ -14,8 +14,7 @@ import { planService } from "../../shared/service/plan";
 import type { ServedEntry } from "../../shared/service/settle";
 import type { SaveData } from "../../shared/save";
 import { artUrl } from "../game/art";
-import { PhaserGame } from "../game/PhaserGame";
-import { ServiceGame } from "../game/service/ServiceGame";
+import { PhaserGame, ServiceGame } from "../game/lazy";
 import { clearShift, leftNightReport } from "../game/service/night";
 import type { HuntResult } from "../game/scenes/HuntScene";
 import { t, type StringKey } from "../i18n";
@@ -401,6 +400,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   return (
     <div className="dayflow">
       {phase === "hunt" && save.hunt && (
+        <Suspense fallback={null}>
         <PhaserGame
           key={save.hunt.id}
           hold={!!card || controlsOpen || portrait || win === "settings"}
@@ -415,6 +415,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
             void act({ type: "finishHunt", huntId: save.hunt!.id, events: r.events, exit: r.exit, ko: r.ko }, save.hunt!.period === "morning" ? "lunch" : "kitchen").then((ok) => ok && setSummary({ events: r.events, ko: r.ko, lost: r.lost, before, ...had }));
           }}
         />
+        </Suspense>
       )}
 
       {/* the day's HUD (Dave-style UI design 4); the hunt and the night's service carry their own */}
@@ -535,5 +536,9 @@ function Night({ save, hold, addMenu, onEnd, onGoal }: { save: SaveData; hold: b
   const svc = save.service!;
   const customers = planService(svc.seed, { day: save.day, reputation: save.reputation, menu: svc.planMenu, extra: staffEffects(svc.staff).extraGuests });
   const shop = { serviceId: svc.id, customers, dishes: svc.dishes, stools: stools(save), walkMul: walkMul(save), coalPerDish: coalPerDish(save), staff: svc.staff };
-  return <ServiceGame key={svc.id} shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} onGoal={onGoal} />;
+  return (
+    <Suspense fallback={null}>
+      <ServiceGame key={svc.id} shop={shop} hold={hold} addMenu={addMenu} onEnd={onEnd} onGoal={onGoal} />
+    </Suspense>
+  );
 }
