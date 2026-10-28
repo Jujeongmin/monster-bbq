@@ -23,6 +23,11 @@ export interface Cut {
   lines: StoryLine[];
 }
 
+// the story's own pictures: left out of the loading screen (a returning player never sees them), each scene
+// fetching its own before it starts (Cutscene)
+export const isStoryArt = (path: string): boolean => path.startsWith("test/story/");
+export const sceneArt = (cuts: Cut[]): string[] => [...new Set(cuts.map((c) => `test/story/${c.pic}.png`))];
+
 export const SCENES: Record<StoryId, Cut[]> = {
   prologue: [
     { pic: "phone", caption: "story.cap.phone", lines: [{ who: "hero", face: "tired", key: "story.p1" }] },

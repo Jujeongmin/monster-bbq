@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { StoryId } from "../../../shared/content/story";
 import { artUrl, hasArt } from "../../game/art";
+import { loadImage } from "../../preload";
 import { t } from "../../i18n";
 import { Dialogue, type DialogueLine } from "../dialogue/Dialogue";
-import { SCENES, type Cut } from "./story";
+import { sceneArt, SCENES, type Cut } from "./story";
 import "./story.css";
 
 // A story scene cut by cut (design 6): each cut's picture with its lines in the dialogue bar; a cut with
@@ -13,18 +14,29 @@ import "./story.css";
 // the lid on his back, the yokai at the door.
 export function Cutscene({ scene, onDone }: { scene: StoryId; onDone: () => void }) {
   const cuts = SCENES[scene];
+  // the scene's own pictures first (they are not on the loading screen): a short wait, never a picture
+  // popping in mid-cut; one that fails to load stands in as before
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void Promise.all(sceneArt(cuts).filter(hasArt).map((p) => loadImage(artUrl(p)).catch(() => {}))).then(() => live && setReady(true));
+    return () => {
+      live = false;
+    };
+  }, [cuts]);
   const [i, setI] = useState(0);
   const cut = cuts[i];
   const next = () => (i + 1 < cuts.length ? setI(i + 1) : onDone());
   const lines = useMemo(() => cut?.lines.map((l) => ({ who: l.who, face: l.face, text: t(l.key) }) as DialogueLine), [cut]);
   // a cut with no lines: a tap, Space or Enter moves on
   useEffect(() => {
-    if (!cut || cut.lines.length) return;
+    if (!ready || !cut || cut.lines.length) return;
     const on = (e: KeyboardEvent) => (e.key === " " || e.key === "Enter") && (e.preventDefault(), next());
     addEventListener("keydown", on);
     return () => removeEventListener("keydown", on);
   });
   if (!cut) return null;
+  if (!ready) return <div className="story dayflow-wait">…</div>;
   return (
     <div className="story" onPointerDown={cut.lines.length ? undefined : next}>
       <Picture key={i} cut={cut} />

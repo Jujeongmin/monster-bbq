@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { allArtUrls, artUrl } from "../game/art";
+import { isStoryArt } from "./story/story";
 import { loadGameChunks } from "../game/lazy";
 import { t } from "../i18n";
 import { loadFile, loadImage, pageCssUrls, runAll } from "../preload";
@@ -12,13 +13,13 @@ const MUSIC = Object.values(import.meta.glob("../../bgm/*.mp3", { eager: true, q
 const AT_ONCE = 6;
 
 // The loading screen (mobile pass, user 2026-10-22): the lid over the kit's gauge while every picture and
-// sound effect, and the Phaser part of the game, is fetched (preload.ts), then the game; the music follows
-// in the background.
+// sound effect, and the Phaser part of the game, is fetched (preload.ts), then the game; the story's
+// pictures (only a new player sees them, user 2026-10-28) and the music follow in the background.
 export function Loading({ onDone }: { onDone: () => void }) {
   const [part, setPart] = useState(0);
   useEffect(() => {
     let live = true;
-    const pictures = [...new Set([...allArtUrls(), ...pageCssUrls()])];
+    const pictures = [...new Set([...allArtUrls((p) => !isStoryArt(p)), ...pageCssUrls()])];
     const all = [...pictures.map((url) => ({ url, image: true })), ...SOUNDS.map((url) => ({ url, image: false }))];
     const byUrl = new Map(all.map((f) => [f.url, f.image]));
     Promise.all([
@@ -32,7 +33,8 @@ export function Loading({ onDone }: { onDone: () => void }) {
     ]).then(() => {
       if (!live) return;
       onDone();
-      void runAll(MUSIC, loadFile, () => {}, 1);
+      // then, quietly: the story's pictures (a scene also waits for its own) and the music
+      void runAll(allArtUrls(isStoryArt), loadImage, () => {}, 2).then(() => runAll(MUSIC, loadFile, () => {}, 1));
     });
     return () => {
       live = false;
