@@ -15,6 +15,7 @@ import type { ServedEntry } from "../../shared/service/settle";
 import type { SaveData } from "../../shared/save";
 import { artUrl } from "../game/art";
 import { PhaserGame, ServiceGame } from "../game/lazy";
+import { HuntArt } from "./Loading";
 import { clearShift, leftNightReport } from "../game/service/night";
 import type { HuntResult } from "../game/scenes/HuntScene";
 import { t, type StringKey } from "../i18n";
@@ -400,6 +401,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
   return (
     <div className="dayflow">
       {phase === "hunt" && save.hunt && (
+        <HuntArt>
         <Suspense fallback={null}>
         <PhaserGame
           key={save.hunt.id}
@@ -416,6 +418,7 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
           }}
         />
         </Suspense>
+        </HuntArt>
       )}
 
       {/* the day's HUD (Dave-style UI design 4); the hunt and the night's service carry their own */}
