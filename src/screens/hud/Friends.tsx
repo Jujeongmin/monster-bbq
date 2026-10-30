@@ -91,7 +91,7 @@ export function Friends({ save, busy, act, onShop, onClose, onVisit, came = null
                     {t(`staff.name.${f}` as StringKey)}
                     {staffDue(save, f) && <NewMark />}
                   </span>
-                  <span className="sub">{at ? t(`staff.pos.${at}` as StringKey).split(" ")[0] : ""}</span>
+                  <span className="sub">{at ? t(`staff.posShort.${at}` as StringKey) : ""}</span>
                 </button>
               );
             })}
@@ -137,7 +137,7 @@ function FriendDetail({ id, mine, at, save, busy, act }: { id: StaffId; mine: { 
           const who = save.staff.roster[p] ?? null;
           return (
             <span key={p} className={`friend-gauge-row${p === best ? " best" : ""}${at === p ? " here" : ""}`}>
-              <span className="friend-stat-name">{t(`staff.pos.${p}` as StringKey).split(" ")[0]}</span>
+              <span className="friend-stat-name">{t(`staff.posShort.${p}` as StringKey)}</span>
               <StatPips value={statOf(id, POSITION_STAT[p], mine.stars)} />
               <button className={`ui-slot friend-seat${at === p ? " on" : ""}`} disabled={busy} title={t(`staff.pos.${p}` as StringKey)} onClick={() => void act({ type: "assignStaff", position: p, staffId: at === p ? null : id })}>
                 {who && <Face id={who} />}

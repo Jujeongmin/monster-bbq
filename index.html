@@ -36,6 +36,22 @@
   </head>
   <body>
     <div id="root"><div class="boot">불판 달구는 중…</div></div>
+    <script>
+      // Before the game's script arrives: the first line and the tab's name in the player's language, picked
+      // as src/i18n detectLocale does (?lang=, then the settings' choice, then the browser's language).
+      (function () {
+        var lang = new URLSearchParams(location.search).get("lang");
+        if (lang !== "ko" && lang !== "en") {
+          try { lang = localStorage.getItem("monster-bbq:lang"); } catch (e) { lang = null; }
+        }
+        if (lang !== "ko" && lang !== "en") lang = /^ko/i.test(navigator.language || "") ? "ko" : "en";
+        if (lang !== "en") return;
+        document.documentElement.lang = "en";
+        document.title = "Monster BBQ";
+        var boot = document.querySelector(".boot");
+        if (boot) boot.textContent = "Heating up the grill…";
+      })();
+    </script>
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

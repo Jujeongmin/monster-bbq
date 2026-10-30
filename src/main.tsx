@@ -8,7 +8,7 @@ import { App } from "./App";
 import { RotatePrompt } from "./screens/hud/RotatePrompt";
 import { Loading } from "./screens/Loading";
 import { frameSize, isTyping } from "./frame";
-import { detectLocale, locale, LOCALE_KEY, setLocale } from "./i18n";
+import { detectLocale, locale, LOCALE_KEY, setLocale, t } from "./i18n";
 import "./index.css";
 
 let picked: string | null = null;
@@ -19,6 +19,7 @@ try {
 }
 setLocale(detectLocale(location.search, navigator.language, picked));
 document.documentElement.lang = locale();
+document.title = t("game.title");
 
 // Phaser draws its text once into a canvas: the pixel fonts must be ready before the first scene, or it
 // keeps the fallback face. A missing font only costs the look, so the game starts anyway.

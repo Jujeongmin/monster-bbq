@@ -44,6 +44,8 @@
 .price .short { color: #c0301c; }
 /* one line, always: price, what it takes, what it does (user, 2026-10-22: "재료 1세트 · 연구하기" broke in two) */
 .buy-card { align-self: flex-start; display: inline-flex; align-items: center; gap: calc(8px * var(--s)); padding: calc(1px * var(--s)) calc(6px * var(--s)); color: var(--ink); font: 700 var(--fs) "Galmuri11", monospace; cursor: pointer; white-space: nowrap; }
+/* a phone's bigger lettering: the parts of a card closer together (the English awakening card ran out) */
+:root.touch-small .buy-card { gap: 4px; }
 .buy-card:hover:not(:disabled) { filter: brightness(1.06); }
 .buy-card:active:not(:disabled) { transform: translateY(var(--s)); }
 .buy-card:disabled { cursor: default; filter: grayscale(0.6); opacity: 0.8; }
