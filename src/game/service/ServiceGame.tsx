@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { NightGoal } from "../../screens/tutorial";
 import { useEffect, useRef, useState } from "react";
+import { guardStep } from "../../crash";
 import { holdLoop } from "../holdLoop";
 import { has3D } from "../shop3d/input";
 import { ShopStage, type AddMenuHook } from "../shop3d/ShopStage";
@@ -57,6 +58,8 @@ function Service2D({ shop, hold, addMenu, onEnd }: { shop: ServiceData; hold: bo
       backgroundColor: "#2b211c",
       scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     });
+    // one error in a frame must not end the night's loop (crash.ts)
+    guardStep(g, "night2d");
     g.scene.add("shop", ServiceScene, true, start.current);
     g.events.on("service:end", (r: ShopReport) => onEndRef.current(r));
     game.current = g;

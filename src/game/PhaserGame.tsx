@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
+import { guardStep } from "../crash";
 import { fitGameWidth, GAME_HEIGHT } from "./config";
 import { holdLoop } from "./holdLoop";
 import { HuntScene, type HuntData, type HuntResult } from "./scenes/HuntScene";
@@ -39,6 +40,8 @@ export function PhaserGame({ hunt, hold = false, onHuntEnd, onTutorial, onContro
       backgroundColor: "#000000",
       scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     });
+    // one error in a frame must not end the hunt's loop (crash.ts)
+    guardStep(game, "hunt");
     game.scene.add("hunt", HuntScene, true, hunt);
     game.events.on("hunt:end", (result: HuntResult) => onEnd.current(result));
     game.events.on("hunt:tutorial", (tut: HuntTut) => onTut.current?.(tut));

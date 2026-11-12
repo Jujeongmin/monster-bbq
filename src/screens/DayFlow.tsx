@@ -36,6 +36,7 @@ import { Settings } from "./hud/Settings";
 import { bgm } from "../audio/bgm";
 import { sfx } from "../audio/sfx";
 import { adsAvailable, redeem, watchAd } from "../net/ads";
+import { swallowNextClick } from "../swallowClick";
 import { AD_PLACEMENT, adCharcoalLeft } from "../../shared/ads";
 import { Friends, type Result as FriendResult } from "./hud/Friends";
 import "./hud/friends.css";
@@ -200,11 +201,12 @@ export function DayFlow({ transport, localShop }: { transport: Transport; localS
     if (!appTip) return;
     const id = setTimeout(() => setAppTip(null), 6000);
     // a click or tap anywhere closes the line at once (user, 2026-10-21); that click does nothing else
+    // (and a press that gives no click, a drag or a canvas touch, does not cost the next tap: swallowClick)
     const close = (e: PointerEvent) => {
       e.stopPropagation();
       e.preventDefault();
       setAppTip(null);
-      addEventListener("click", (c) => (c.stopPropagation(), c.preventDefault()), { capture: true, once: true });
+      swallowNextClick(window);
     };
     addEventListener("pointerdown", close, { capture: true, once: true });
     return () => {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { STAFF } from "../../../shared/content/staff";
+import { reportCrash } from "../../crash";
 import { artUrl } from "../art";
 import { t, type StringKey } from "../../i18n";
 import { MenuLine } from "../../screens/hud/Book";
@@ -99,7 +100,16 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
       if (s?.open) live.current.onSpot(s.id);
     };
     ctl.current = { act, stick: (v) => (stick = v) };
+    // the next frame is asked for whatever this one did: one error must not stop the shop (crash.ts)
     const frame = (time: number) => {
+      try {
+        draw(time);
+      } catch (e) {
+        reportCrash("day", e);
+      }
+      if (alive) raf = requestAnimationFrame(frame);
+    };
+    const draw = (time: number) => {
       view.setWidth(layerW.current);
       if (!alive) return;
       view.setEvening(live.current.scene === "kitchen");
@@ -162,7 +172,6 @@ export function DayStage({ scene, stools, active, point = null, visit = null, on
         arrowShown = arrowKey;
         setArrow(to);
       }
-      raf = requestAnimationFrame(frame);
     };
     const key = (down: boolean) => (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();

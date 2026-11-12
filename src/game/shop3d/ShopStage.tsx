@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BALANCE } from "../../../shared/balance";
 import { bgm } from "../../audio/bgm";
 import { sfx } from "../../audio/sfx";
+import { reportCrash } from "../../crash";
 import { t, type StringKey } from "../../i18n";
 import { COAL_LOW, markSeen, nightTipDue, readSeen, TIP_FACE, tipStore, type TipId } from "../../screens/tips";
 import { nightGoal, type NightGoal } from "../../screens/tutorial";
@@ -295,7 +296,16 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail, onGoal }
     };
 
     let lastGoal: NightGoal | null = null;
+    // the next frame is asked for whatever this one did: one error must not stop the night (crash.ts)
     const frame = (time: number) => {
+      try {
+        draw(time);
+      } catch (e) {
+        reportCrash("night", e);
+      }
+      if (alive) raf = requestAnimationFrame(frame);
+    };
+    const draw = (time: number) => {
       view.setWidth(layerW.current);
       if (!alive) return;
       now = time;
@@ -365,7 +375,6 @@ export function ShopStage({ shop, hold = false, addMenu, onEnd, onFail, onGoal }
           shake: time - shakeAt < SHAKE_MS,
         });
       }
-      raf = requestAnimationFrame(frame);
     };
 
     const key = (down: boolean) => (e: KeyboardEvent) => {

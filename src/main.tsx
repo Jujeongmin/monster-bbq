@@ -1,6 +1,10 @@
 // First, before anything reaches for storage: @agent8/gameserver touches localStorage while its
 // module is being evaluated. See storageFallback.ts.
 import "./storageFallback";
+import { watchCrashes } from "./crash";
+
+// every error nothing else caught, kept on the device (crash.ts)
+watchCrashes();
 
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
